@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Generator, List, Tuple
 from .data_container import DataContainer
 
-class BaseReader(ABC):
+class _BaseReader(ABC):
     @abstractmethod
     def __init__(self, source: str, file_extension: str | Tuple[str, ...], filter_files: bool = True, cache_paths: bool = True):
         """

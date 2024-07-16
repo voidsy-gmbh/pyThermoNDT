@@ -2,10 +2,10 @@ import mat73
 import numpy as np
 import json
 from typing import Tuple
-from .base_reader import BaseReader
+from ._base_reader import _BaseReader
 from .data_container import DataContainer
 
-class SimulationReader(BaseReader):
+class SimulationReader(_BaseReader):
     def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', filter_files: bool = True, cache_paths: bool = True):
         # Call the constructor of the BaseLoader and set the file extension 
         super().__init__(source, file_extension, filter_files=filter_files, cache_paths=cache_paths)

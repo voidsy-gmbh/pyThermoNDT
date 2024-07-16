@@ -1,5 +1,5 @@
 # One Dataloader for each data source
-from .base_reader import BaseReader
+from ._base_reader import _BaseReader
 from .simulation_reader import SimulationReader
 
 # Import DataContainer

@@ -3,7 +3,7 @@ import numpy as np
 import json
 from typing import Tuple
 from ._base_reader import _BaseReader
-from .data_container import DataContainer
+from ..data import DataContainer
 
 class SimulationReader(_BaseReader):
     def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', filter_files: bool = True, cache_paths: bool = True):

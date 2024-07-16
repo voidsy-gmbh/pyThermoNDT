@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 from .data_container import DataContainer
-from ._base_reader import _BaseReader
+from ..readers import _BaseReader
 
 class ThermoDataset(Dataset):
     def __init__( self, data_reader: _BaseReader, input_dataset_path: str, label_dataset_path: str, transform=None):

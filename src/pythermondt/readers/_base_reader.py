@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from typing import Generator, List, Tuple
-from .data_container import DataContainer
+from ..data import DataContainer
 
 class _BaseReader(ABC):
     @abstractmethod

@@ -5,4 +5,4 @@ from .simulation_reader import SimulationReader
 # Import DataContainer
 from .data_container import DataContainer
 
-from .pytorch_dataset import ThermoDataset
+from .thermo_dataset import ThermoDataset

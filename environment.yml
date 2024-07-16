@@ -1,0 +1,20 @@
+name: pythermondt-dev
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  # General
+  - python=3.12.*
+  - pytest=8.2.*
+
+  # Data loading
+  - mat73=0.63
+  - numpy=1.26.*
+  - matplotlib=3.8.*
+
+  # Machine Learning
+  - pytorch=2.3.*
+  - cpuonly
+  - onnx=1.16.*
+  - onnxruntime=1.18.*

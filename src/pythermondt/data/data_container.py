@@ -254,8 +254,18 @@ class DataContainer:
         # Extract the data from the container
         lookuptable = self.datasets[('MetaData', 'LookUpTable')]
         data = self.datasets[('Data', 'Tdata')]
-        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]  
+        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]
 
+        # Type check the data and ground truth
+        if not isinstance(data, Tensor):
+            raise ValueError("Dataset must be of type torch.Tensor")
+        if not isinstance(groundtruth, Tensor):
+            raise ValueError("Ground truth must be of type torch.Tensor")  
+
+        # Convert data from torch.Tensor to numpy array for plotting with matplotlib
+        data = data.numpy(force=True) # Force=True to ensure that the data is copied to the CPU
+
+        # Extract the first raw frame
         firstrawframe = data[:, :, 2]
         
         # If Data has been scaled ==> Subtract Tinit does not make sense
@@ -319,9 +329,19 @@ class DataContainer:
         # Extract the data from the container
         lookuptable = self.datasets[('MetaData', 'LookUpTable')]
         data = self.datasets[('Data', 'Tdata')]
-        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]
         domainvalues = self.datasets[('MetaData', 'DomainValues')]
         domaintype = self.attributes[('MetaData', 'DomainValues')]['DomainType']
+
+        # Type check the data and ground truth
+        if not isinstance(data, Tensor):
+            raise ValueError("Dataset must be of type torch.Tensor")
+        if not isinstance(domainvalues, Tensor):
+            raise ValueError("domainvalues must be of type torch.Tensor")
+        
+        # Convert data from torch.Tensor to numpy array for plotting with matplotlib
+        data = data.numpy(force=True) # Force=True to ensure that the data is copied to the CPU
+
+        # Extract the first raw frame
         firstrawframe = data[:,:,2]
 
         # Validate pixel positions and option value

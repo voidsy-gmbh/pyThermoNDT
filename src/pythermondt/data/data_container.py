@@ -2,7 +2,10 @@ import io, json, os
 import matplotlib.pyplot as plt
 import h5py
 import numpy as np
-from typing import List, overload
+import torch
+from numpy import ndarray
+from torch import Tensor
+from typing import List, Dict, Tuple
 
 class DataContainer:
     """
@@ -35,11 +38,11 @@ class DataContainer:
         return f"\nDataContainer with:\nGroups: {groups_info}\nDatasets: {datasets_info} \n"
 
     @property
-    def groups(self):
+    def groups(self) -> List[str]:
         return self._groups
 
     @property
-    def datasets(self):
+    def datasets(self) -> Dict[Tuple[str, str], Tensor | str]:
         return self._datasets
 
     @property
@@ -62,7 +65,7 @@ class DataContainer:
             self._groups.append(group_name)
             self._attributes[group_name] = attributes
 
-    def __add_dataset(self, group_name: str, dataset_name: str, data: np.ndarray | None = None, **attributes):
+    def __add_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | str | None = None, **attributes):
         """
         Adds an empty dataset to a specified group within the DataContainer. Optionally, initial data and attributes can be provided.
 
@@ -78,7 +81,7 @@ class DataContainer:
         self._datasets[(group_name, dataset_name)] = data
         self._attributes[(group_name, dataset_name)] = attributes
 
-    def __add_datasets(self, group_name, dataset_names, data=None):
+    def __add_datasets(self, group_name, dataset_names, data: Tensor | ndarray | str | None = None):
         """
         Adds a set of emtpy datasets to a specified group within the DataContainer.
 
@@ -98,7 +101,7 @@ class DataContainer:
             self._datasets[(group_name, dataset_name)] = data
             self._attributes[(group_name, dataset_name)] = {}
 
-    def get_dataset_from_names(self, group_name: str, dataset_name: str) -> np.ndarray | str | int | float:
+    def get_dataset_from_names(self, group_name: str, dataset_name: str) -> Tensor | str:
         """
         This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
         It supports modular access to various datasets for processing and analysis.Retrieves a dataset by specifying its group and dataset name.
@@ -116,7 +119,7 @@ class DataContainer:
         else:
             raise KeyError(f"Dataset {dataset_name} in group {group_name} not found.")
         
-    def get_dataset_from_path(self, path: str) -> np.ndarray | str | int | float:
+    def get_dataset_from_path(self, path: str) -> Tensor | str:
         """
         This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
         It supports modular access to various datasets for processing and analysis. Retrieves a dataset by specifying its path.
@@ -130,20 +133,24 @@ class DataContainer:
         group_name, dataset_name = path.split('/')
         return self.get_dataset_from_names(group_name, dataset_name)
 
-    def fill_dataset(self, group_name: str, dataset_name: str, data: np.ndarray | str | float | int, **attributes):
+    def fill_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | str, **attributes):
         """
         Fills specified dataset with data and updates the attributes.
 
         Parameters:
         - group_name (str): The name of the group where the dataset is stored.
         - dataset_name (str): The specific name of the dataset to fill.
-        - data (np.array | str | float | int): The data to fill the dataset with.
+        - data (np.ndarray | torch.Tensor | str): The data to fill the dataset with. np.ndarrays are automatically converted to torch.Tensors.
         - **attributes: Optional attributes to add to the dataset as key-value pairs.
         """
         if group_name not in self._groups:
             raise ValueError("This group does not exist")
         if (group_name, dataset_name) not in self._datasets:
             raise ValueError("This dataset does not exist")
+        
+        # Convert to torch.Tensor if np.ndarray
+        if isinstance(data, ndarray):
+            data = torch.from_numpy(data)
         
         self._datasets[(group_name, dataset_name)] = data
         self.update_attributes(group_name, dataset_name, **attributes)
@@ -247,8 +254,9 @@ class DataContainer:
         # Extract the data from the container
         lookuptable = self.datasets[('MetaData', 'LookUpTable')]
         data = self.datasets[('Data', 'Tdata')]
-        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]
-        firstrawframe = data[:,:,2]
+        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]  
+
+        firstrawframe = data[:, :, 2]
         
         # If Data has been scaled ==> Subtract Tinit does not make sense
         if lookuptable is not None and not np.isnan(lookuptable).any():

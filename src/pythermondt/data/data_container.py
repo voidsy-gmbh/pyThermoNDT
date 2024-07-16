@@ -1,0 +1,341 @@
+import io, json, os
+import matplotlib.pyplot as plt
+import h5py
+import numpy as np
+from typing import List, overload
+
+class DataContainer:
+    """
+    Manages and serializes data into HDF5 format.
+
+    This class provides structured handling of groups and datasets read with the reader classes. It allows for easy access to the data and attributes stored in the DataContainer.
+    It also provieds functions for easy serialization and data visualization.
+    """
+    def __init__(self):
+        """
+        Initializes the DataContainer with predefined groups and datasets.
+        """
+        self._groups = []
+        self._datasets = {}
+        self._attributes = {}
+
+        # Define the structure of the DataContainer: Groups
+        self.__add_group(['Data', 'GroundTruth', 'MetaData'])
+
+        # Define the structure of the DataContainer: Datasets
+        self.__add_datasets(group_name='GroundTruth', dataset_names='DefectMask')
+        self.__add_datasets(group_name='Data', dataset_names='Tdata')
+        self.__add_datasets(group_name='MetaData', dataset_names=['LookUpTable', 'SimulationParameter', 'ExcitationSignal', 'DomainValues'])
+
+    # Override string method for nicer output
+    def __str__(self):
+        # This method will return a string representation of the DataContainer
+        groups_info = ", ".join(self._groups)  # A simple string listing all groups
+        datasets_info = ", ".join(f"{group}/{dataset}" for group, dataset in self._datasets.keys())  # List all datasets by group/dataset pair
+        return f"\nDataContainer with:\nGroups: {groups_info}\nDatasets: {datasets_info} \n"
+
+    @property
+    def groups(self):
+        return self._groups
+
+    @property
+    def datasets(self):
+        return self._datasets
+
+    @property
+    def attributes(self):
+        return self._attributes
+
+
+    def __add_group(self, group_names: str | List[str], **attributes):
+        """
+        Adds a list of group names to the DataContainer with optional attributes.
+
+        Parameters:
+        - group_names (str | List[str]): The name or list of names of the groups to add.
+        - **attributes: Optional attributes to add to the groups as key-value pairs.
+        """
+        if isinstance(group_names, str):
+            group_names = [group_names]
+        
+        for group_name in group_names:
+            self._groups.append(group_name)
+            self._attributes[group_name] = attributes
+
+    def __add_dataset(self, group_name: str, dataset_name: str, data: np.ndarray | None = None, **attributes):
+        """
+        Adds an empty dataset to a specified group within the DataContainer. Optionally, initial data and attributes can be provided.
+
+        Parameters:
+        - group_name (str): The name of the group to add the dataset to.
+        - dataset_name (str): The name of the dataset to add.
+        - data (np.array, optional): Initial data for the dataset. Defaults to None.
+        - **attributes: Optional attributes to add to the dataset as key-value pairs.
+        """
+        if group_name not in self._groups:
+            raise ValueError("This group does not exist")
+        
+        self._datasets[(group_name, dataset_name)] = data
+        self._attributes[(group_name, dataset_name)] = attributes
+
+    def __add_datasets(self, group_name, dataset_names, data=None):
+        """
+        Adds a set of emtpy datasets to a specified group within the DataContainer.
+
+        Parameters:
+        - group_name (str): The name of the group to add the datasets to.
+        - dataset_names (List[str]): The list of dataset names to add.
+        - data (np.array, optional): Initial data for the datasets. Defaults to None.
+        - **attributes: Optional attributes to add to the datasets as key-value pairs.
+        """
+        if group_name not in self._groups:
+            raise ValueError("This group does not exist")
+
+        if isinstance(dataset_names, str):
+            dataset_names = [dataset_names]
+        
+        for dataset_name in dataset_names:
+            self._datasets[(group_name, dataset_name)] = data
+            self._attributes[(group_name, dataset_name)] = {}
+
+    def get_dataset_from_names(self, group_name: str, dataset_name: str) -> np.ndarray | str | int | float:
+        """
+        This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
+        It supports modular access to various datasets for processing and analysis.Retrieves a dataset by specifying its group and dataset name.
+
+        Parameters:
+        - group_name (str): The name of the group where the dataset is stored.
+        - dataset_name (str): The specific name of the dataset to retrieve.
+
+        Returns:
+        - np.array | str | int | float: The data stored in the specified dataset.
+        """
+        key = (group_name, dataset_name)
+        if key in self._datasets:
+            return self._datasets[key]
+        else:
+            raise KeyError(f"Dataset {dataset_name} in group {group_name} not found.")
+        
+    def get_dataset_from_path(self, path: str) -> np.ndarray | str | int | float:
+        """
+        This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
+        It supports modular access to various datasets for processing and analysis. Retrieves a dataset by specifying its path.
+
+        Parameters:
+        - path (str): The path to the dataset in the form of 'group_name/dataset_name'.
+
+        Returns:
+        - np.array | str | int | float: The data stored in the specified dataset.
+        """
+        group_name, dataset_name = path.split('/')
+        return self.get_dataset_from_names(group_name, dataset_name)
+
+    def fill_dataset(self, group_name: str, dataset_name: str, data: np.ndarray | str | float | int, **attributes):
+        """
+        Fills specified dataset with data and updates the attributes.
+
+        Parameters:
+        - group_name (str): The name of the group where the dataset is stored.
+        - dataset_name (str): The specific name of the dataset to fill.
+        - data (np.array | str | float | int): The data to fill the dataset with.
+        - **attributes: Optional attributes to add to the dataset as key-value pairs.
+        """
+        if group_name not in self._groups:
+            raise ValueError("This group does not exist")
+        if (group_name, dataset_name) not in self._datasets:
+            raise ValueError("This dataset does not exist")
+        
+        self._datasets[(group_name, dataset_name)] = data
+        self.update_attributes(group_name, dataset_name, **attributes)
+    
+    def update_attributes(self, group_name: str, dataset_name: str | None =None, **attributes):
+        """
+        Updates attributes for a group or dataset.
+
+        Parameters:
+        - group_name (str): The name of the group to update attributes for.
+        - dataset_name (str, optional): The name of the dataset to update attributes for. Defaults to None, which updates the group attributes.
+        - **attributes: The attributes to update as key-value pairs.
+        """
+        if group_name not in self._groups:
+            raise ValueError("This group does not exist")
+        if (group_name, dataset_name) not in self._datasets:
+            raise ValueError("This dataset does not exist")
+
+        if dataset_name is None:
+            self._attributes[group_name].update(attributes)
+        else:
+            self._attributes[(group_name, dataset_name)].update(attributes)
+
+    def save2hdf5(self, path):
+        """
+        First it serializes the DataContainer instance to an HDF5 file and then saves it to the specified path.
+
+        Parameters:
+        - path (str): The path where the HDF5 file should be saved.
+        """
+        # Extract directory path
+        directory = os.path.dirname(path)
+        
+        # Check if the directory exists
+        if not os.path.isdir(directory):
+            raise NotADirectoryError(f"The specified path {directory} is not a directory.")
+
+        # Check if the filename has a .hdf5 extension
+        if not path.endswith(('.hdf5', 'h5')):
+            raise ValueError("The file must be an HDF5 file with a .hdf5 or .h5 extension.")
+        
+        with open(path, 'wb') as file:
+            file.write(self.serialize().getvalue())
+        
+    def serialize(self) -> io.BytesIO:
+        """
+        Serializes the DataContainer instance to an HDF5 file.
+
+        Returns:
+        - io.BytesIO: The serialized DataContainer instance to a BytesIO object.
+        """
+        # Serialize the class instance into a BytesIO object
+        hdf5_bytes = io.BytesIO()
+
+        with h5py.File(hdf5_bytes, 'w') as f:
+            # 1.) Create all the groups
+            for  group in self.groups:
+                # Create the group
+                grp = f.create_group(group)
+
+                # Add attributes to group if they exist
+                if group in self.attributes and len(self.attributes[group]) != 0:
+                    for attribute_name, value in self.attributes[group].items():
+                        if isinstance(value, (list, tuple, dict)):
+                            value = json.dumps(value)
+                        grp.attrs.create(attribute_name, value)
+            
+            # 2.) Create all the datasets and add the attributes
+            for dataset_name, data in self.datasets.items():
+                # Create the dataset
+                # If the data is not scalar ==> apply compression, else leave the data as it is
+                if not np.isscalar(data):
+                    dset = f.create_dataset('/'.join(dataset_name), data=data, compression="gzip", compression_opts=9)
+                else:
+                    dset = f.create_dataset('/'.join(dataset_name), data=data)
+
+                # Add attributes to dataset if they exist
+                if dataset_name in self.attributes and len(self.attributes[dataset_name]) != 0:
+                    for attribute_name, value in self.attributes[dataset_name].items():
+                        if isinstance(value, (list, tuple, dict)):
+                            value = json.dumps(value)
+                        dset.attrs.create(attribute_name, value)
+
+        # Rewind the buffer
+        hdf5_bytes.seek(0)
+        return hdf5_bytes
+
+    def show_frame(self, frame_number: int, option: str="", subtract_tinit: str="SubstractTinit", cmap: str = 'plasma'):
+        """
+        Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
+
+        Parameters:
+        - frame_number (int): The frame number to visualize.
+        - option (str): The visualization option to apply. Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string. 
+        - subtract_tinit (str): Controls the subtraction of the initial frame from the series to highlight changes. Options are "SubstractTinit" or "DontSubtractTinit".
+        - cmap (str): The color map to use for the visualization. Defaults to 'plasma'.
+        """
+        # Clear current figure
+        plt.clf()
+
+        # Extract the data from the container
+        lookuptable = self.datasets[('MetaData', 'LookUpTable')]
+        data = self.datasets[('Data', 'Tdata')]
+        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]
+        firstrawframe = data[:,:,2]
+        
+        # If Data has been scaled ==> Subtract Tinit does not make sense
+        if lookuptable is not None and not np.isnan(lookuptable).any():
+            subtract_tinit = "DontSubtractTinit"
+        
+        # Subtract firstrawframe from the data if requested
+        if subtract_tinit == "DontSubtractTinit":
+            data_to_show = data[:, :, frame_number]
+        elif subtract_tinit == "SubstractTinit" and firstrawframe is not None:
+            data_to_show = data[:, :, frame_number] - firstrawframe
+        else:
+            data_to_show = data[:, :, frame_number]
+        
+        # Process the option for ground truth
+        if option == "ShowGroundTruth":
+            plt.subplot(1, 2, 1)
+            plt.imshow(data_to_show, aspect='auto', cmap=cmap)
+            plt.title(f'Frame Number: {frame_number}')
+            plt.colorbar()
+            
+            plt.subplot(1, 2, 2)
+            plt.imshow(groundtruth, aspect='auto')
+            plt.title('Ground Truth')
+
+        elif option == "OverlayGroundTruth":
+            plt.imshow(data_to_show, aspect='auto', cmap=cmap)  # Display the original data
+            plt.colorbar()  # Display the colorbar
+            plt.title(f'Frame Number: {frame_number}')
+            
+            if groundtruth is not None:
+                # Prepare the overlay
+                binary_gt = groundtruth > 0  # Create a binary mask of the ground truth
+                rows, cols = groundtruth.shape
+                gt_overlay = np.zeros((rows, cols, 3))  # Initialize an all-zero RGB image for the overlay
+                gt_overlay[:, :, 1] = binary_gt  # Apply green in the binary mask areas
+                
+                plt.imshow(gt_overlay, alpha=0.5)  # Display overlay with transparency
+
+        else:  # Default case, just show the frame data possibly subtracting firstrawframe
+            plt.imshow(data_to_show, aspect='auto', cmap=cmap)
+            plt.title(f'Frame Number: {frame_number}')
+            plt.colorbar()
+        
+        plt.show()
+
+    def show_pixel_profile(self, pixel_pos_x: int, pixel_pos_y: int, option: str=""):
+        """
+        Plot the profile of a specific pixel across the dataset's domain values with an option for data adjustment. The X-axis of the plot is labeled according 
+        to the domaintype attribute, reflecting the dataset's domain (e.g., time, frequency). The Y-axis is generically labeled as 'Temperature in K'.
+
+        Parameters:
+        - pixel_pos_x (int): The X-coordinate (column index) of the pixel. Must be within the dataset's second dimension range.
+        - pixel_pos_y (int): The Y-coordinate (row index) of the pixel. Must be within the dataset's first dimension range.
+        - option (str): Controls the subtraction of the initial pixel value from the series to highlight changes. Options are "DontSubtractTinit" 
+            for using the raw data or an empty string "" to apply subtraction. Defaults to an empty string.
+        """
+        #Clear the current figure
+        plt.clf()
+
+        # Extract the data from the container
+        lookuptable = self.datasets[('MetaData', 'LookUpTable')]
+        data = self.datasets[('Data', 'Tdata')]
+        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]
+        domainvalues = self.datasets[('MetaData', 'DomainValues')]
+        domaintype = self.attributes[('MetaData', 'DomainValues')]['DomainType']
+        firstrawframe = data[:,:,2]
+
+        # Validate pixel positions and option value
+        if pixel_pos_x < 0 or pixel_pos_y < 0 or pixel_pos_x >= data.shape[1] or pixel_pos_y >= data.shape[0]:
+            raise ValueError("Pixel positions must be within the range of data dimensions.")
+        if option not in ["DontSubtractTinit", ""]:
+            raise ValueError('Option must be "DontSubtractTinit" or an empty string.')
+        
+        # If Data has been scaled ==> Subtract Tinit does not make sense
+        if lookuptable is not None and not np.isnan(lookuptable).any():
+            option = "DontSubtractTinit"
+        
+        if option == "DontSubtractTinit":
+            temperature_profile = data[pixel_pos_y, pixel_pos_x, :]
+        else:
+            if firstrawframe is not None:
+                temperature_profile = data[pixel_pos_y, pixel_pos_x, :] - firstrawframe[pixel_pos_y, pixel_pos_x]
+            else:
+                temperature_profile = data[pixel_pos_y, pixel_pos_x, :]
+        
+        plt.plot(domainvalues, temperature_profile)
+        plt.title(f'Profile of Pixel: {pixel_pos_x},{pixel_pos_y}')
+        plt.xlabel(domaintype)
+        plt.ylabel('Temperature in K')
+        plt.show()

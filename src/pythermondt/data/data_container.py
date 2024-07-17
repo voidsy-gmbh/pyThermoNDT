@@ -37,19 +37,6 @@ class DataContainer:
         datasets_info = ", ".join(f"{group}/{dataset}" for group, dataset in self._datasets.keys())  # List all datasets by group/dataset pair
         return f"\nDataContainer with:\nGroups: {groups_info}\nDatasets: {datasets_info} \n"
 
-    @property
-    def groups(self) -> List[str]:
-        return self._groups
-
-    @property
-    def datasets(self) -> Dict[Tuple[str, str], Tensor | str]:
-        return self._datasets
-
-    @property
-    def attributes(self):
-        return self._attributes
-
-
     def __add_group(self, group_names: str | List[str], **attributes):
         """
         Adds a single group or a list of group names to the DataContainer with optional attributes.
@@ -207,19 +194,19 @@ class DataContainer:
 
         with h5py.File(hdf5_bytes, 'w') as f:
             # 1.) Create all the groups
-            for  group in self.groups:
+            for  group in self._groups:
                 # Create the group
                 grp = f.create_group(group)
 
                 # Add attributes to group if they exist
-                if group in self.attributes and len(self.attributes[group]) != 0:
-                    for attribute_name, value in self.attributes[group].items():
+                if group in self._attributes and len(self._attributes[group]) != 0:
+                    for attribute_name, value in self._attributes[group].items():
                         if isinstance(value, (list, tuple, dict)):
                             value = json.dumps(value)
                         grp.attrs.create(attribute_name, value)
             
             # 2.) Create all the datasets and add the attributes
-            for dataset_name, data in self.datasets.items():
+            for dataset_name, data in self._datasets.items():
                 # Create the dataset
                 # If the data is not scalar ==> apply compression, else leave the data as it is
                 if not np.isscalar(data):
@@ -228,8 +215,8 @@ class DataContainer:
                     dset = f.create_dataset('/'.join(dataset_name), data=data)
 
                 # Add attributes to dataset if they exist
-                if dataset_name in self.attributes and len(self.attributes[dataset_name]) != 0:
-                    for attribute_name, value in self.attributes[dataset_name].items():
+                if dataset_name in self._attributes and len(self._attributes[dataset_name]) != 0:
+                    for attribute_name, value in self._attributes[dataset_name].items():
                         if isinstance(value, (list, tuple, dict)):
                             value = json.dumps(value)
                         dset.attrs.create(attribute_name, value)
@@ -252,9 +239,9 @@ class DataContainer:
         plt.clf()
 
         # Extract the data from the container
-        lookuptable = self.datasets[('MetaData', 'LookUpTable')]
-        data = self.datasets[('Data', 'Tdata')]
-        groundtruth = self.datasets[('GroundTruth', 'DefectMask')]
+        lookuptable = self.get_dataset_from_names('MetaData', 'LookUpTable')
+        data = self.get_dataset_from_names('Data', 'Tdata')
+        groundtruth = self.get_dataset_from_names('GroundTruth', 'DefectMask')
 
         # Type check the data and ground truth
         if not isinstance(data, Tensor):
@@ -327,10 +314,10 @@ class DataContainer:
         plt.clf()
 
         # Extract the data from the container
-        lookuptable = self.datasets[('MetaData', 'LookUpTable')]
-        data = self.datasets[('Data', 'Tdata')]
-        domainvalues = self.datasets[('MetaData', 'DomainValues')]
-        domaintype = self.attributes[('MetaData', 'DomainValues')]['DomainType']
+        lookuptable = self.get_dataset_from_names('MetaData', 'LookUpTable')
+        data = self.get_dataset_from_names('Data', 'Tdata')
+        domainvalues = self.get_dataset_from_names('MetaData', 'DomainValues')
+        domaintype = self._attributes[('MetaData', 'DomainValues')]['DomainType']
 
         # Type check the data and ground truth
         if not isinstance(data, Tensor):

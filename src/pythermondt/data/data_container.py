@@ -87,26 +87,8 @@ class DataContainer:
         for dataset_name in dataset_names:
             self._datasets[(group_name, dataset_name)] = data
             self._attributes[(group_name, dataset_name)] = {}
-
-    def get_dataset_from_names(self, group_name: str, dataset_name: str) -> Tensor | str:
-        """
-        This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
-        It supports modular access to various datasets for processing and analysis.Retrieves a dataset by specifying its group and dataset name.
-
-        Parameters:
-        - group_name (str): The name of the group where the dataset is stored.
-        - dataset_name (str): The specific name of the dataset to retrieve.
-
-        Returns:
-        - torch.Tensor | str: The data stored in the specified dataset.
-        """
-        key = (group_name, dataset_name)
-        if key in self._datasets:
-            return self._datasets[key]
-        else:
-            raise KeyError(f"Dataset {dataset_name} in group {group_name} not found.")
         
-    def get_dataset_from_path(self, path: str) -> Tensor | str:
+    def get_dataset(self, path: str) -> Tensor | str:
         """
         This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
         It supports modular access to various datasets for processing and analysis. Retrieves a dataset by specifying its path.
@@ -117,10 +99,21 @@ class DataContainer:
         Returns:
         - torch.Tensor | str: The data stored in the specified dataset.
         """
-        group_name, dataset_name = path.split('/')
-        return self.get_dataset_from_names(group_name, dataset_name)
+        # Split the path into group and dataset names
+        group_name, dataset_name = path.split('/') if '/' in path else (path, '')
+
+        # Check path
+        if dataset_name == '':
+            raise ValueError("The provided path does not contain a dataset name or is not in the form 'group_name/dataset_name'.")
+        if group_name not in self._groups:
+            raise ValueError(f"The group {group_name} does not exist.")
+        if (group_name, dataset_name) not in self._datasets:
+            raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
+
+        # Return Dataset if it exists
+        return self._datasets[(group_name, dataset_name)]
     
-    def get_attribute_from_path(self, path: str, attribute_name: str) -> str | int | float | list | dict:
+    def get_attribute(self, path: str, attribute_name: str) -> str | int | float | list | dict:
         """
         Retrieves an attribute from a dataset or a group specified by the path.
 
@@ -134,11 +127,11 @@ class DataContainer:
         # Split the path into group and dataset names
         group_name, dataset_name = path.split('/') if '/' in path else (path, '')
 
-        # Check if the group and dataset exist
+        # Check path
         if group_name not in self._groups:
-            raise ValueError("This group does not exist")
+            raise ValueError(f"The group {group_name} does not exist.")
         if (group_name, dataset_name) not in self._datasets:
-            raise ValueError("This dataset does not exist")
+            raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
         
         # If the path is a group, return the attribute from the group
         if group_name != '' and dataset_name == '':
@@ -162,45 +155,53 @@ class DataContainer:
         else:
             raise ValueError(f"The provided path: {path} is not valid.")
 
-    def fill_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | str, **attributes):
+    def fill_dataset(self, path: str, data: Tensor | ndarray | str, **attributes):
         """
         Fills specified dataset with data and updates the attributes.
 
         Parameters:
-        - group_name (str): The name of the group where the dataset is stored.
-        - dataset_name (str): The specific name of the dataset to fill.
+        - path (str): The path to the dataset in the form of 'group_name/dataset_name'.
         - data (np.ndarray | torch.Tensor | str): The data to fill the dataset with. np.ndarrays are automatically converted to torch.Tensors.
         - **attributes: Optional attributes to add to the dataset as key-value pairs.
         """
+        # Split the path into group and dataset names
+        group_name, dataset_name = path.split('/') if '/' in path else (path, '')
+
+        # Check path
+        if dataset_name == '':
+            raise ValueError("The provided path does not contain a dataset name or is not in the form 'group_name/dataset_name'.")
         if group_name not in self._groups:
-            raise ValueError("This group does not exist")
+            raise ValueError(f"The group {group_name} does not exist.")
         if (group_name, dataset_name) not in self._datasets:
-            raise ValueError("This dataset does not exist")
+            raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
         
         # Convert to torch.Tensor if np.ndarray
         if isinstance(data, ndarray):
             data = torch.from_numpy(data)
         
         self._datasets[(group_name, dataset_name)] = data
-        self.update_attributes(group_name, dataset_name, **attributes)
+        self.update_attributes(path="/".join([group_name, dataset_name]), **attributes)
     
-    def update_attributes(self, group_name: str, dataset_name: str | None =None, **attributes):
+    def update_attributes(self, path: str, **attributes):
         """
         Updates attributes for a group or dataset.
 
         Parameters:
-        - group_name (str): The name of the group to update attributes for.
-        - dataset_name (str, optional): The name of the dataset to update attributes for. Defaults to None, which updates the group attributes.
+        - path (str): The path to the group or dataset in the form of 'group_name/dataset_name'.
         - **attributes: The attributes to update as key-value pairs.
         """
-        if group_name not in self._groups:
-            raise ValueError("This group does not exist")
-        if (group_name, dataset_name) not in self._datasets:
-            raise ValueError("This dataset does not exist")
+        # Split the path into group and dataset names
+        group_name, dataset_name = path.split('/') if '/' in path else (path, '')
 
-        if dataset_name is None:
+        # Check path
+        if group_name not in self._groups:
+            raise ValueError(f"The group {group_name} does not exist.")
+        if (group_name, dataset_name) not in self._datasets:
+            raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
+
+        if dataset_name=="":  # Update group attributes
             self._attributes[group_name].update(attributes)
-        else:
+        else: # Else update dataset attributes
             self._attributes[(group_name, dataset_name)].update(attributes)
 
     def save2hdf5(self, path):
@@ -281,9 +282,9 @@ class DataContainer:
         plt.clf()
 
         # Extract the data from the container
-        lookuptable = self.get_dataset_from_path('MetaData/LookUpTable')
-        data = self.get_dataset_from_path('Data/Tdata')
-        groundtruth = self.get_dataset_from_path('GroundTruth/DefectMask')
+        lookuptable = self.get_dataset('MetaData/LookUpTable')
+        data = self.get_dataset('Data/Tdata')
+        groundtruth = self.get_dataset('GroundTruth/DefectMask')
 
         # Type check the data and ground truth
         if not isinstance(data, Tensor):
@@ -356,10 +357,10 @@ class DataContainer:
         plt.clf()
 
         # Extract the data from the container
-        lookuptable = self.get_dataset_from_path('MetaData/LookUpTable')
-        data = self.get_dataset_from_path('Data/Tdata')
-        domainvalues = self.get_dataset_from_path('MetaData/DomainValues')
-        domaintype = self.get_attribute_from_path('MetaData/DomainValues', 'DomainType')
+        lookuptable = self.get_dataset('MetaData/LookUpTable')
+        data = self.get_dataset('Data/Tdata')
+        domainvalues = self.get_dataset('MetaData/DomainValues')
+        domaintype = self.get_attribute('MetaData/DomainValues', 'DomainType')
 
         # Emsure that domaintype is a string
         if not isinstance(domaintype, str):

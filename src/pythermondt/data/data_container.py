@@ -52,7 +52,7 @@ class DataContainer:
 
     def __add_group(self, group_names: str | List[str], **attributes):
         """
-        Adds a list of group names to the DataContainer with optional attributes.
+        Adds a single group or a list of group names to the DataContainer with optional attributes.
 
         Parameters:
         - group_names (str | List[str]): The name or list of names of the groups to add.
@@ -111,7 +111,7 @@ class DataContainer:
         - dataset_name (str): The specific name of the dataset to retrieve.
 
         Returns:
-        - np.array | str | int | float: The data stored in the specified dataset.
+        - torch.Tensor | str: The data stored in the specified dataset.
         """
         key = (group_name, dataset_name)
         if key in self._datasets:
@@ -128,7 +128,7 @@ class DataContainer:
         - path (str): The path to the dataset in the form of 'group_name/dataset_name'.
 
         Returns:
-        - np.array | str | int | float: The data stored in the specified dataset.
+        - torch.Tensor | str: The data stored in the specified dataset.
         """
         group_name, dataset_name = path.split('/')
         return self.get_dataset_from_names(group_name, dataset_name)

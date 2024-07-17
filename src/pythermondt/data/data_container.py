@@ -119,6 +119,48 @@ class DataContainer:
         """
         group_name, dataset_name = path.split('/')
         return self.get_dataset_from_names(group_name, dataset_name)
+    
+    def get_attribute_from_path(self, path: str, attribute_name: str) -> str | int | float | list | dict:
+        """
+        Retrieves an attribute from a dataset or a group specified by the path.
+
+        Parameters:
+        - path (str): The path to the dataset in the form of 'group_name/dataset_name'.
+        - attribute_name (str): The name of the attribute to retrieve.
+
+        Returns:
+        - str | int | float | list | dict: The attribute value.
+        """
+        # Split the path into group and dataset names
+        group_name, dataset_name = path.split('/') if '/' in path else (path, '')
+
+        # Check if the group and dataset exist
+        if group_name not in self._groups:
+            raise ValueError("This group does not exist")
+        if (group_name, dataset_name) not in self._datasets:
+            raise ValueError("This dataset does not exist")
+        
+        # If the path is a group, return the attribute from the group
+        if group_name != '' and dataset_name == '':
+            attributes = self._attributes[group_name]
+
+            # Check if the attribute exists
+            if attribute_name not in attributes:
+                raise ValueError(f"The attribute {attribute_name} does not exist in group {group_name}.")
+            return attributes[attribute_name]
+            
+        # If the path is a dataset, return the attribute from the dataset
+        elif group_name != '' and dataset_name != '':
+            attributes = self._attributes[(group_name, dataset_name)]
+
+            # Check if the attribute exists
+            if attribute_name not in attributes:
+                raise ValueError(f"The attribute {attribute_name} does not exist in dataset {dataset_name} of group {group_name}.")
+            return attributes[attribute_name]
+        
+        # Else, the path is invalid
+        else:
+            raise ValueError(f"The provided path: {path} is not valid.")
 
     def fill_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | str, **attributes):
         """
@@ -239,9 +281,9 @@ class DataContainer:
         plt.clf()
 
         # Extract the data from the container
-        lookuptable = self.get_dataset_from_names('MetaData', 'LookUpTable')
-        data = self.get_dataset_from_names('Data', 'Tdata')
-        groundtruth = self.get_dataset_from_names('GroundTruth', 'DefectMask')
+        lookuptable = self.get_dataset_from_path('MetaData/LookUpTable')
+        data = self.get_dataset_from_path('Data/Tdata')
+        groundtruth = self.get_dataset_from_path('GroundTruth/DefectMask')
 
         # Type check the data and ground truth
         if not isinstance(data, Tensor):
@@ -314,10 +356,14 @@ class DataContainer:
         plt.clf()
 
         # Extract the data from the container
-        lookuptable = self.get_dataset_from_names('MetaData', 'LookUpTable')
-        data = self.get_dataset_from_names('Data', 'Tdata')
-        domainvalues = self.get_dataset_from_names('MetaData', 'DomainValues')
-        domaintype = self._attributes[('MetaData', 'DomainValues')]['DomainType']
+        lookuptable = self.get_dataset_from_path('MetaData/LookUpTable')
+        data = self.get_dataset_from_path('Data/Tdata')
+        domainvalues = self.get_dataset_from_path('MetaData/DomainValues')
+        domaintype = self.get_attribute_from_path('MetaData/DomainValues', 'DomainType')
+
+        # Emsure that domaintype is a string
+        if not isinstance(domaintype, str):
+            raise ValueError("DomainType must be of type str.")
 
         # Type check the data and ground truth
         if not isinstance(data, Tensor):

@@ -16,14 +16,6 @@ class _BaseReader(ABC):
         - cache_paths (bool): If True, all file paths in the source directory will be cached. Therefore updates to the source directory 
             will not be reflected at runtime. Default is True.
         """
-        # Check if source is a valid path
-        if not os.path.exists(source):
-            raise ValueError("The source path does not exist.")
-        
-        if not os.path.isdir(source) and not os.path.isfile(source):
-            raise ValueError("The source must be a directory or a file.")
-        self.source = source
-
         # Convert file_extension to a tuple if it is a single string
         extensions = file_extension if isinstance(file_extension, tuple) else (file_extension,)
 
@@ -33,6 +25,23 @@ class _BaseReader(ABC):
         if not all(ext.startswith('.') for ext in extensions):
             raise ValueError("All file extensions must start with a dot.")
         self.file_extension = extensions
+            
+        # Check if source is a valid path
+        if not os.path.exists(source):
+            # If the path does not exist, try appending known extensions to see if a valid file can be found
+            for ext in self.file_extension:
+                potential_file = source + ext
+                if os.path.isfile(potential_file):
+                    source = potential_file
+                    break
+            else:
+                raise ValueError("The source path does not exist and no valid file could be found.")
+
+        # Further check if the path is a directory or a file
+        if not os.path.isdir(source) and not os.path.isfile(source):
+            raise ValueError("The source must be a directory or a file.")
+
+        self.source = source
 
         # Boolean flag to filter files by file extension
         self.filter_files = filter_files
@@ -127,8 +136,12 @@ class _BaseReader(ABC):
         - filter_files (bool): If True, only files with the specified file extension will be returned. Default is specified in the class attribute.
 
         Returns:
-        - List[str]: A list of file paths in the source directory.
+        - List[str]: A list of file paths in the source directory. If the source is a file, returns a list with a single file path.
         """
+        # If the source is a single file, return a list with a single file path
+        if os.path.isfile(self.source):
+            return [self.source]
+
         # Use the function attribute if filter_files is not provided ==> use class attribute
         if filter_files is None:
             filter_files = self.filter_files

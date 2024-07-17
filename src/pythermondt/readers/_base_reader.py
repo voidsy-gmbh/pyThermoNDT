@@ -94,6 +94,10 @@ class _BaseReader(ABC):
         """
         return len(self.file_names())
     
+    @num_files.setter
+    def num_files(self, value: int):
+        raise AttributeError("The number of files cannot be set directly. Please modify the source directory instead.")
+    
 
     def file_names(self, filter_files: bool | None = None) -> List[str]:
         """

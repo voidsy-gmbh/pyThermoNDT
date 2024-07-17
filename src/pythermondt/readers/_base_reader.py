@@ -5,7 +5,7 @@ from ..data import DataContainer
 
 class _BaseReader(ABC):
     @abstractmethod
-    def __init__(self, source: str, file_extension: str | Tuple[str, ...], filter_files: bool = True, cache_paths: bool = True):
+    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True):
         """
         Initialize the DataReader with a single source.
 
@@ -40,11 +40,7 @@ class _BaseReader(ABC):
         # Further check if the path is a directory or a file
         if not os.path.isdir(source) and not os.path.isfile(source):
             raise ValueError("The source must be a directory or a file.")
-
         self.source = source
-
-        # Boolean flag to filter files by file extension
-        self.filter_files = filter_files
 
         # Boolean flag to enable caching of file paths
         self.cache_paths = cache_paths
@@ -62,7 +58,7 @@ class _BaseReader(ABC):
 
     def __next__(self) -> DataContainer:
         # Get all file paths in the source directory
-        files = self.file_paths(filter_files=self.filter_files)
+        files = self.file_paths()
 
         # Check if the current file index is out of bounds
         if self._current_file_index >= len(files):
@@ -75,7 +71,7 @@ class _BaseReader(ABC):
 
     def __getitem__(self, index: int) -> DataContainer:
         # Get all file paths in the source directory
-        files = self.file_paths(filter_files=self.filter_files)
+        files = self.file_paths()
 
         # Check if the index is out of bounds
         if index < 0 or index >= len(files):
@@ -92,26 +88,20 @@ class _BaseReader(ABC):
         Returns:
         - int: The number of files in the source directory.
         """
-        return len(self.file_names())
+        return len(self.file_paths())
     
     @num_files.setter
     def num_files(self, value: int):
         raise AttributeError("The number of files cannot be set directly. Please modify the source directory instead.")
     
 
-    def file_names(self, filter_files: bool | None = None) -> List[str]:
+    def file_names(self) -> List[str]:
         """
-        Get all the file names in the source directory. Optionally filter files by file extension.
+        Get all the file names in the source directory, specified by the source expression and file extension of the reader.
 
-        Parameters:
-        - filter_files (bool): If True, only files with the specified file extension will be returned. Default is specified in the class attribute.
         Returns:
-        - List[str]: A list of file names in the source directory.
+        - List[str]: A list of file names.
         """
-        # Use the function attribute if filter_files is not provided ==> use class attribute
-        if filter_files is None:
-            filter_files = self.filter_files
-        
         # If caching is on and the file names are already cached, return the cached file names
         if self._cached_file_names is not None and self.cache_paths:
             return self._cached_file_names
@@ -119,12 +109,8 @@ class _BaseReader(ABC):
         elif not self.cache_paths:
             self._cached_file_names = None
 
-        # Retrieve all files in the source directory
-        files = [f for f in os.listdir(self.source) if os.path.isfile(os.path.join(self.source, f))]
-
-        # Filter files by file extension
-        if filter_files:
-            files = [f for f in files if f.endswith(self.file_extension)]
+        # Retrieve all files in the source directory and filter by file extension
+        files = [f for f in os.listdir(self.source) if os.path.isfile(os.path.join(self.source, f)) and any(f.endswith(ext) for ext in self.file_extension)]
 
         # Cache the file names if caching is enabled
         if self.cache_paths:
@@ -132,23 +118,16 @@ class _BaseReader(ABC):
 
         return files
     
-    def file_paths(self, filter_files: bool | None = None) -> List[str]:
+    def file_paths(self) -> List[str]:
         """
-        Get all the file paths in the source directory. Optionally filter files by file extension.
-
-        Parameters:
-        - filter_files (bool): If True, only files with the specified file extension will be returned. Default is specified in the class attribute.
+        Get all the file paths in the source directory, specified by the source expression and file extension of the reader.
 
         Returns:
-        - List[str]: A list of file paths in the source directory. If the source is a file, returns a list with a single file path.
+        - List[str]: A list of file paths.
         """
         # If the source is a single file, return a list with a single file path
-        if os.path.isfile(self.source):
+        if os.path.isfile(self.source): 
             return [self.source]
-
-        # Use the function attribute if filter_files is not provided ==> use class attribute
-        if filter_files is None:
-            filter_files = self.filter_files
 
         # If caching is on and the file names are already cached, return the cached file names
         if self._cached_file_paths is not None and self.cache_paths:
@@ -158,7 +137,7 @@ class _BaseReader(ABC):
             self._cached_file_paths = None
 
         # Get all file names in the source directory
-        files = self.file_names(filter_files=filter_files)
+        files = self.file_names()
 
         # Get the full file path for each file
         paths = [os.path.join(self.source, f) for f in files]
@@ -199,27 +178,22 @@ class _BaseReader(ABC):
         """
         pass
 
-    def read_data_batch(self, batch_size: int, filter_files:bool | None = None) -> Generator[List[DataContainer], None, None]:
+    def read_data_batch(self, batch_size: int) -> Generator[List[DataContainer], None, None]:
         """
-        Generator to yield batches of data dynamically from the source directory.
+        Generator to yield batches of data dynamically from the list of files in the source directory. Files are filtered by the file extension specified in the reader.
 
         Parameters:
         - batch_size (int): Number of files to load per batch.
-        - filter_files (bool): If True, only files with the specified file extension will be loaded. Default is specified in the class attribute.
 
         Yields:
         - List[DataContainer]: A batch of DataContainers loaded from batch_size files.
         """
-        # Use the class attribute if filter_files is not provided
-        if filter_files is None:
-            filter_files = self.filter_files
-
         # Check if source is a directory
         if not os.path.isdir(self.source):
             raise ValueError("The source must be a directory for batch processing.")
         
         # Get all file names in the source directory
-        files = self.file_paths(filter_files=filter_files)
+        files = self.file_paths()
 
         # Validate arguments
         if not files:
@@ -251,18 +225,11 @@ class _BaseReader(ABC):
             # Yield the batch of data
             yield batch_data
 
-    def read_data_all(self, filter_files: bool | None = None) -> List[DataContainer]:
+    def read_data_all(self) -> List[DataContainer]:
         """
-        Load all data from the source directory and return it as a list of DataContainers if the dataset size is manageable. Be careful with large datasets!
-
-        Parameters:
-        - filter_files (bool): If True, only files with the specified file extension will be loaded. Default is specified in the class attribute.
+        Load all data from the list of files in the source directory. Files are filtered by the file extension specified in the reader. Be care with large datasets!
 
         Returns:
-        - List[DataContainer]: A list of all DataContainers loaded from the source directory.
+        - List[DataContainer]: A list containing all DataContainers loaded from the files.
         """
-        # Use the class attribute if filter_files is not provided
-        if filter_files is None:
-            filter_files = self.filter_files
-
-        return [self.read_data(f) for f in self.file_paths(filter_files=filter_files)]
+        return [self.read_data(f) for f in self.file_paths()]

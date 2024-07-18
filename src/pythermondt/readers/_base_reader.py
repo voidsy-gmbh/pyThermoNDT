@@ -1,4 +1,6 @@
 import os
+import re
+from glob import glob
 from abc import ABC, abstractmethod
 from typing import Generator, List, Tuple
 from ..data import DataContainer
@@ -10,7 +12,7 @@ class _BaseReader(ABC):
         Initialize the DataReader with a single source.
 
         Parameters:
-        - source (str): Path to the directory containing data files or a single data file.
+        - source (str): Path to the directory containing data files, a single data file or a regex pattern to match multiple files.
         - file_extension (str or Tuple[str]): File extension(s) of the data files to load. Can be a single string or a tuple of strings.
         - filter_files (bool): If True, only files with the specified file extension will be loaded. Default is True.
         - cache_paths (bool): If True, all file paths in the source directory will be cached. Therefore updates to the source directory 
@@ -25,21 +27,17 @@ class _BaseReader(ABC):
         if not all(ext.startswith('.') for ext in extensions):
             raise ValueError("All file extensions must start with a dot.")
         self.file_extension = extensions
-            
-        # Check if source is a valid path
-        if not os.path.exists(source):
-            # If the path does not exist, try appending known extensions to see if a valid file can be found
-            for ext in self.file_extension:
-                potential_file = source + ext
-                if os.path.isfile(potential_file):
-                    source = potential_file
-                    break
-            else:
-                raise ValueError("The source path does not exist and no valid file could be found.")
 
-        # Further check if the path is a directory or a file
-        if not os.path.isdir(source) and not os.path.isfile(source):
-            raise ValueError("The source must be a directory or a file.")
+        # Check if source is a valid regex pattern
+        try:
+            re.compile(source)
+            valid_regex = True
+        except re.error:
+            valid_regex = False  
+
+        # Check if the provided source is either a file, a directory or a regex pattern
+        if not os.path.isfile(source) and not os.path.isdir(source) and not valid_regex:
+            raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         self.source = source
 
         # Boolean flag to enable caching of file paths
@@ -109,14 +107,13 @@ class _BaseReader(ABC):
         elif not self.cache_paths:
             self._cached_file_names = None
 
-        # Retrieve all files in the source directory and filter by file extension
-        files = [f for f in os.listdir(self.source) if os.path.isfile(os.path.join(self.source, f)) and any(f.endswith(ext) for ext in self.file_extension)]
+        file_names = [os.path.basename(f) for f in self.file_paths()]
 
         # Cache the file names if caching is enabled
         if self.cache_paths:
-            self._cached_file_names = files
+            self._cached_file_names = file_names
 
-        return files
+        return file_names
     
     def file_paths(self) -> List[str]:
         """
@@ -125,28 +122,32 @@ class _BaseReader(ABC):
         Returns:
         - List[str]: A list of file paths.
         """
-        # If the source is a single file, return a list with a single file path
-        if os.path.isfile(self.source): 
-            return [self.source]
-
-        # If caching is on and the file names are already cached, return the cached file names
+        # If caching is on and the file paths are already cached, return the cached file names
         if self._cached_file_paths is not None and self.cache_paths:
             return self._cached_file_paths
         # If caching is off, reset the cached file names
         elif not self.cache_paths:
             self._cached_file_paths = None
 
-        # Get all file names in the source directory
-        files = self.file_names()
+        # Resolve the source pattern using glob
+        file_paths = glob(self.source)
 
-        # Get the full file path for each file
-        paths = [os.path.join(self.source, f) for f in files]
+        # Check if the found files match the specified file extension
+        file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extension)]
+        if not file_paths:
+            raise ValueError("No files found. Please check the source path or pattern.")
+        
+        # Now check if all the matched files are valid directories or files
+        if all(os.path.isfile(f) for f in file_paths) or all(os.path.isdir(f) for f in file_paths):
+            self._file_names = file_paths
+        else:
+            raise ValueError("All matched files must be either directories or files.")
 
         # Cache the file paths if caching is enabled
         if self.cache_paths:
-            self._cached_file_paths = paths
+            self._cached_file_paths = file_paths
         
-        return paths
+        return file_paths
 
     def read_data(self, file_path: str) -> DataContainer:
         """

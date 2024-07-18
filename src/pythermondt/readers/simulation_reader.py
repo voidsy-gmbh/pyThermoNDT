@@ -41,8 +41,14 @@ class SimulationReader(_BaseReader):
                     datacontainer.fill_dataset(path='MetaData/ExcitationSignal', data=data[key])
                 case 'ComsolParameters':
                     # Convert Comsol Parameters to a json string
-                    # Convert ndarrays in scalar                    
-                    converted_comsol_parameters = [[item.item() if isinstance(item, np.ndarray) else item for item in sublist] for sublist in data[key]]
+                    converted_comsol_parameters = [
+                        [item.item() if isinstance(item, np.ndarray) else item for item in sublist]
+                        for sublist in data[key]
+                    ]
+
+                    # Replace ' with " to make it a valid json string
+                    converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
+                    print(converted_comsol_parameters)
 
                     # Construct json string
                     json_string = json.dumps(converted_comsol_parameters, indent=4)

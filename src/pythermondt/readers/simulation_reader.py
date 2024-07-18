@@ -53,7 +53,7 @@ class SimulationReader(_BaseReader):
                 case 'Shapes':
                     # Convert the Shapes into a Python dict first:
                     shapes = {data[key].Names[i] : data[key].Numbers[i] for i in range(len(data[key].Names))}
-                    datacontainer.update_attributes(path='MetaData/SimulationParameter', Shapes=shapes)
+                    datacontainer.update_attributes(path='GroundTruth/DefectMask', Shapes=shapes)
 
         # Return the constructed datapoint
         return datacontainer

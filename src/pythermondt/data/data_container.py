@@ -251,6 +251,12 @@ class DataContainer:
             # 2.) Create all the datasets and add the attributes
             for dataset_name, data in self._datasets.items():
                 # Create the dataset
+                # Convert to numpy array before
+                # print(dataset_name, f",Data: {data}", f",Datatype: {type(data)}")
+                if data is None:
+                    continue
+                data = data.numpy(force=True) if isinstance(data, Tensor) else data
+
                 # If the data is not scalar ==> apply compression, else leave the data as it is
                 if not np.isscalar(data):
                     dset = f.create_dataset('/'.join(dataset_name), data=data, compression="gzip", compression_opts=9)
@@ -260,6 +266,9 @@ class DataContainer:
                 # Add attributes to dataset if they exist
                 if dataset_name in self._attributes and len(self._attributes[dataset_name]) != 0:
                     for attribute_name, value in self._attributes[dataset_name].items():
+                        # print(attribute_name, f",Data: {value}", f",Datatype: {type(value)}")
+                        if value is None:
+                            continue
                         if isinstance(value, (list, tuple, dict)):
                             value = json.dumps(value)
                         dset.attrs.create(attribute_name, value)

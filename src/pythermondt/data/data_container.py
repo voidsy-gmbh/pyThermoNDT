@@ -87,6 +87,31 @@ class DataContainer:
         for dataset_name in dataset_names:
             self._datasets[(group_name, dataset_name)] = data
             self._attributes[(group_name, dataset_name)] = {}
+
+    def get_groups(self) -> List[str]:
+        '''
+        Get a list of all groups in the DataContainer.
+        
+        Returns:
+        - List[str]: A list of all groups in the DataContainer.
+        '''
+        return self._groups.copy()
+    
+    def get_datasets(self, group_name: str='') -> List[str]:
+        '''
+        Get a list of all datasets in a group or in the DataCotainer
+
+        Parameters:
+        - group_name (str): The name of the group to get the datasets from. If not specified, all datasets in the DataContainer are returned.
+
+        Returns:
+        - List[str]: A list of all datasets in the specified group or in the DataContainer.
+        '''
+        if group_name == '':
+            return [dataset for _ , dataset in self._datasets.keys()]
+        else:
+            return [dataset for group, dataset in self._datasets.keys() if group == group_name]
+
         
     def get_dataset(self, path: str) -> Tensor:
         """

@@ -28,7 +28,7 @@ class DataContainer:
         # Define the structure of the DataContainer: Datasets
         self.__add_datasets(group_name='GroundTruth', dataset_names='DefectMask')
         self.__add_datasets(group_name='Data', dataset_names='Tdata')
-        self.__add_datasets(group_name='MetaData', dataset_names=['LookUpTable', 'SimulationParameter', 'ExcitationSignal', 'DomainValues'])
+        self.__add_datasets(group_name='MetaData', dataset_names=['LookUpTable', 'ExcitationSignal', 'DomainValues'])
 
     # Override string method for nicer output
     def __str__(self):

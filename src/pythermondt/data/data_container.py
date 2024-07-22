@@ -130,7 +130,7 @@ class DataContainer:
         # Check path
         if group_name not in self._groups:
             raise ValueError(f"The group {group_name} does not exist.")
-        if (group_name, dataset_name) not in self._datasets:
+        if (group_name, dataset_name) not in self._datasets and dataset_name != '':
             raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
         
         # If the path is a group, return the attribute from the group
@@ -252,7 +252,6 @@ class DataContainer:
             for dataset_name, data in self._datasets.items():
                 # Create the dataset
                 # Convert to numpy array before
-                # print(dataset_name, f",Data: {data}", f",Datatype: {type(data)}")
                 if data is None:
                     continue
                 data = data.numpy(force=True) if isinstance(data, Tensor) else data

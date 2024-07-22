@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from numpy import ndarray
 from torch import Tensor
-from typing import List, Dict, Tuple
+from typing import List
 
 class DataContainer:
     """
@@ -52,7 +52,7 @@ class DataContainer:
             self._groups.append(group_name)
             self._attributes[group_name] = attributes
 
-    def __add_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | str | None = None, **attributes):
+    def __add_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | None = None, **attributes):
         """
         Adds an empty dataset to a specified group within the DataContainer. Optionally, initial data and attributes can be provided.
 
@@ -68,7 +68,7 @@ class DataContainer:
         self._datasets[(group_name, dataset_name)] = data
         self._attributes[(group_name, dataset_name)] = attributes
 
-    def __add_datasets(self, group_name, dataset_names, data: Tensor | ndarray | str | None = None):
+    def __add_datasets(self, group_name, dataset_names, data: Tensor | ndarray | None = None):
         """
         Adds a set of emtpy datasets to a specified group within the DataContainer.
 
@@ -88,7 +88,7 @@ class DataContainer:
             self._datasets[(group_name, dataset_name)] = data
             self._attributes[(group_name, dataset_name)] = {}
         
-    def get_dataset(self, path: str) -> Tensor | str:
+    def get_dataset(self, path: str) -> Tensor:
         """
         This method allows for direct access to the underlying data in a controlled manner, ensuring that data retrieval is both predictable and error-resistant. 
         It supports modular access to various datasets for processing and analysis. Retrieves a dataset by specifying its path.
@@ -155,7 +155,7 @@ class DataContainer:
         else:
             raise ValueError(f"The provided path: {path} is not valid.")
 
-    def fill_dataset(self, path: str, data: Tensor | ndarray | str, **attributes):
+    def fill_dataset(self, path: str, data: Tensor | ndarray, **attributes):
         """
         Fills specified dataset with data and updates the attributes.
 

@@ -14,9 +14,13 @@ class SimulationReader(_BaseReader):
         #Load the mat file
         data = mat73.loadmat(file_path, use_attrdict=True)['SimResult']
 
-        # Create a empty Datapoint
-        # Domaintype will always be time in case of the Simulation data
+        # Create an empty DataContainer
         datacontainer = DataContainer()
+
+        # Add source as an attribute
+        datacontainer.update_attributes(path='MetaData', Source='Simulation')
+
+        # Domaintype will always be time in case of the Simulation data
         datacontainer.update_attributes(path='MetaData/DomainValues', DomainType="Time in s")
         
         # Iterate through all keys and save the values in the datapoint ==> 
@@ -26,7 +30,7 @@ class SimulationReader(_BaseReader):
                 case 'Tdata':
                     datacontainer.fill_dataset(path='Data/Tdata', data=data[key])
                 case 'GroundTruth':
-                    # Check if file is old or new format
+                    # Check if file is old or new format for the label ids
                     if isinstance(data[key], mat73.core.AttrDict):
                         datacontainer.update_attributes(path='GroundTruth/DefectMask', LabelIds=data[key].LabelIds)
                         datacontainer.fill_dataset(path='GroundTruth/DefectMask', data=data[key].DefectMask)
@@ -48,18 +52,17 @@ class SimulationReader(_BaseReader):
 
                     # Replace ' with " to make it a valid json string
                     converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
-                    print(converted_comsol_parameters)
 
-                    # Construct json string
+                    # Construct json string and write it 
                     json_string = json.dumps(converted_comsol_parameters, indent=4)
-                    datacontainer.fill_dataset(path='MetaData/SimulationParameter', data=json_string)
+                    datacontainer.update_attributes(path='MetaData', SimulationParameter=json_string)
                     
                 case 'NoiseLevel':
                     datacontainer.update_attributes(path='Data/Tdata', NoiseLevel=data[key])
                 case 'Shapes':
                     # Convert the Shapes into a Python dict first:
                     shapes = {data[key].Names[i] : data[key].Numbers[i] for i in range(len(data[key].Names))}
-                    datacontainer.update_attributes(path='GroundTruth/DefectMask', Shapes=shapes)
+                    datacontainer.update_attributes(path='MetaData', Shapes=shapes)
 
         # Return the constructed datapoint
         return datacontainer

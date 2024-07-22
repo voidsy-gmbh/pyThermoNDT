@@ -169,7 +169,8 @@ class _BaseReader(ABC):
     @abstractmethod
     def _read_data(self, file_path: str) -> DataContainer:
         """
-        Actual implementation of reading data from a given file path and returning it as a DataContainer. Should be implemented by subclasses.
+        Actual implementation of reading data from a given file path and returning it as a DataContainer. Should be implemented by subclasses. Checking if the path is valid 
+        is handled inside the _BaseReader class.
 
         Parameters:
         - file_path (str): The file path from which to load the data.

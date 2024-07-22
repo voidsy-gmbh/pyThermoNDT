@@ -6,6 +6,9 @@ from ._base_reader import _BaseReader
 from ..data import DataContainer
 
 class SimulationReader(_BaseReader):
+    '''
+        A sub-class to read simulation data from a .mat file.
+    '''
     def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', cache_paths: bool = True):
         # Call the constructor of the BaseLoader and set the file extension 
         super().__init__(source, file_extension, cache_paths=cache_paths)

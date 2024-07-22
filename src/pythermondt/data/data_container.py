@@ -196,7 +196,7 @@ class DataContainer:
         # Check path
         if group_name not in self._groups:
             raise ValueError(f"The group {group_name} does not exist.")
-        if (group_name, dataset_name) not in self._datasets:
+        if (group_name, dataset_name) not in self._datasets and dataset_name != "":
             raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
 
         if dataset_name=="":  # Update group attributes

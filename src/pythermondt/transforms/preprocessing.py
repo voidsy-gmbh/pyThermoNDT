@@ -1,3 +1,25 @@
+import torch
+import torch.nn as nn
+from ..data import DataContainer
+from typing import Callable, TypeVar, cast
+
+C = TypeVar('C', bound=Callable)
+
+def proxy(f: C) -> C:
+    return cast(C, lambda self, *args, **kwargs: f(self, *args, **kwargs))
+
+class Compose(nn.Module):
+    def __init__(self, transforms: list):
+        super(Compose, self).__init__()
+        self.transforms = transforms
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        for t in self.transforms:
+            container = t(container)
+        return container
+
+    __call__: Callable[..., DataContainer] = proxy(forward)
+
 class ApplyLUT(nn.Module):
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
@@ -26,4 +48,6 @@ class ApplyLUT(nn.Module):
 
         # Update the container and return it
         container.fill_dataset("Data/Tdata", tdata)
-        return container # type: DataContainer
+        return container # type: DataContainer
+    
+    __call__: Callable[..., DataContainer] = proxy(forward)

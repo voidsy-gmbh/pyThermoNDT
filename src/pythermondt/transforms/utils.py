@@ -1,14 +1,20 @@
 import torch.nn as nn
+from typing import Callable, List
+from abc import ABC, abstractmethod
 from ..data import DataContainer
-from typing import Callable, TypeVar, cast, Any
 
-C = TypeVar('C', bound=Callable[..., DataContainer])
+class ThermoTransform(nn.Module, ABC):
+    def __init__(self):
+        super(ThermoTransform, self).__init__()
 
-def proxy(f: C) -> C:
-    return cast(C, lambda self, *args, **kwargs: f(self, *args, **kwargs))
+    @abstractmethod
+    def forward(self, container: DataContainer) -> DataContainer:
+        raise NotImplementedError("Forward method must be implemented in the sub-class.")
 
-class Compose(nn.Module):
-    def __init__(self, transforms: list):
+    __call__: Callable[..., DataContainer]
+
+class Compose(ThermoTransform):
+    def __init__(self, transforms: List[ThermoTransform]):
         super(Compose, self).__init__()
         self.transforms = transforms
     
@@ -16,5 +22,3 @@ class Compose(nn.Module):
         for t in self.transforms:
             container = t(container)
         return container
-
-    __call__: Callable[..., DataContainer] = proxy(forward)

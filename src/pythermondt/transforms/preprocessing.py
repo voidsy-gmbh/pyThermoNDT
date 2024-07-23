@@ -1,10 +1,8 @@
 import torch
-import torch.nn as nn
-from typing import Callable
 from ..data import DataContainer
-from .utils import proxy
+from .utils import ThermoTransform
 
-class ApplyLUT(nn.Module):
+class ApplyLUT(ThermoTransform):
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         lut = container.get_dataset("MetaData/LookUpTable")
@@ -33,5 +31,3 @@ class ApplyLUT(nn.Module):
         # Update the container and return it
         container.fill_dataset("Data/Tdata", tdata)
         return container # type: DataContainer
-    
-    __call__: Callable[..., DataContainer] = proxy(forward)

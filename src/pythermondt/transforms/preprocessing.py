@@ -35,8 +35,8 @@ class ApplyLUT(ThermoTransform):
             raise IndexError("Index out of bounds. Tdata contains indices that are not available in the LookUpTable.")
 
         # Apply the LUT to Tdata
-        tdata = lut[tdata.int()]
+        tdata = lut[tdata]
 
         # Update the container and return it
         container.fill_dataset("Data/Tdata", tdata)
-        return container # type: DataContainer
+        return container

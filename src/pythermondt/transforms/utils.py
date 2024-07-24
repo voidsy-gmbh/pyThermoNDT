@@ -11,7 +11,7 @@ class ThermoTransform(nn.Module, ABC):
     def forward(self, container: DataContainer) -> DataContainer:
         raise NotImplementedError("Forward method must be implemented in the sub-class.")
 
-    __call__: Callable[..., DataContainer]
+    __call__: Callable[[DataContainer], DataContainer]
 
 class Compose(ThermoTransform):
     def __init__(self, transforms: List[ThermoTransform]):

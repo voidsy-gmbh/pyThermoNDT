@@ -3,6 +3,15 @@ from ..data import DataContainer
 from .utils import ThermoTransform
 
 class ApplyLUT(ThermoTransform):
+    ''' 
+    Applies the LookUpTable of the container to the Temperature data (Tdata) in the container. Therefore Tdata gets converted from uint16 to float64.
+    '''
+    def __init__(self):
+        ''' 
+        Applies the LookUpTable of the container to the Temperature data (Tdata) in the container. Therefore Tdata gets converted from uint16 to float64.
+        '''
+        super().__init__()
+    
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         lut = container.get_dataset("MetaData/LookUpTable")

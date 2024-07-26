@@ -41,3 +41,44 @@ class ApplyLUT(ThermoTransform):
         container.fill_dataset("Data/Tdata", tdata)
         return container
 
+class SubstractFrame(ThermoTransform):
+    ''' 
+    Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
+    '''
+    def __init__(self, frame: int = 0):
+        ''' 
+        Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
+        
+        Parameters:
+        - frame (int): Frame number that should be substracted from the Temperature data. Default is the initial frame (frame 0).
+        '''
+        super().__init__()
+
+        # Check if frame is a positive integer
+        if frame < 0 or not isinstance(frame, int):
+            raise ValueError("Frame must be a positive integer.")
+               
+        self.frame = frame
+    
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract the data
+        tdata = container.get_dataset("Data/Tdata")
+
+        # Check if data is available
+        if tdata is None:
+            raise ValueError("Tdata is not available in the container.")
+        
+        # Check if the data is of the correct type
+        if not isinstance(tdata, torch.Tensor):
+            raise ValueError("Tdata is not a torch.Tensor")
+        
+        # Check for index out of bounds
+        if self.frame >= tdata.shape[2]:
+            raise IndexError("Index out of bounds. Frame number is bigger than the number of frames in the data.")
+    
+        # Substract the frame from Tdata
+        tdata = tdata - tdata[:, :, self.frame].unsqueeze(2)
+
+        # Update the container and return it
+        container.fill_dataset("Data/Tdata", tdata)
+        return container

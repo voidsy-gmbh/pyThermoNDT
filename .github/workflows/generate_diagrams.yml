@@ -7,6 +7,8 @@ jobs:
   generate-diagrams:
     permissions:
       contents: write
+    env:
+      CHANGED: false
     runs-on: ubuntu-latest
 
     steps:
@@ -44,28 +46,28 @@ jobs:
         NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/*.gv | wc -l)
         if [ "$NEW_OR_MODIFIED_FILES" -eq 0 ]; then
           echo "No new or modified .gv files detected."
-          echo "::set-output name=changes::false"
+          echo "changed=false" >> $GITHUB_ENV
         else
           echo "New or modified .gv files detected."
-          echo "::set-output name=changes::true"
+          echo "changed=true" >> $GITHUB_ENV
         fi
       
     - name: Generate diagrams from Graphviz files
-      if: steps.files-check.outputs.changes == 'true'
+      if: env.CHANGED == 'true'
       run: |
         for file in ./docs/pyreverse/*.gv; do
           dot -Tjpg "$file" -o "${file%.gv}.jpg"
         done
     
     - name: Upload diagrams
-      if: steps.files-check.outputs.changes == 'true'
+      if: env.CHANGED == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: diagrams
         path: ./docs/pyreverse/*.jpg
     
     - name: Commit and Push Diagrams back to the repository
-      if: steps.files-check.outputs.changes == 'true'
+      if: env.CHANGED == 'true'
       run: |
         git config --global user.email "action@github.com"
         git config --global user.name "GitHub Action"

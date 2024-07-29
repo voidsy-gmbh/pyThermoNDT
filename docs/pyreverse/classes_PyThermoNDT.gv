@@ -1,0 +1,25 @@
+digraph "classes_PyThermoNDT" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.transforms.preprocessing.ApplyLUT" [color="#BBCC33", fontcolor="black", label=<{ApplyLUT|<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.utils.Compose" [color="#BBCC33", fontcolor="black", label=<{Compose|transforms : List[ThermoTransform]<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.data_container.DataContainer" [color="#99DDFF", fontcolor="black", label=<{DataContainer|<br ALIGN="LEFT"/>|fill_dataset(path: str, data: Tensor \| ndarray)<br ALIGN="LEFT"/>get_attribute(path: str, attribute_name: str): str \| int \| float \| list \| dict<br ALIGN="LEFT"/>get_dataset(path: str): Tensor<br ALIGN="LEFT"/>get_datasets(group_name: str): List[str]<br ALIGN="LEFT"/>get_groups(): List[str]<br ALIGN="LEFT"/>save2hdf5(path)<br ALIGN="LEFT"/>serialize(): io.BytesIO<br ALIGN="LEFT"/>show_frame(frame_number: int, option: str, subtract_tinit: str, cmap: str)<br ALIGN="LEFT"/>show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int, option: str)<br ALIGN="LEFT"/>update_attributes(path: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.readers.hdf5_reader.HDF5Reader" [color="#44BB99", fontcolor="black", label=<{HDF5Reader|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.transforms.normalization.MaxNormalize" [color="#BBCC33", fontcolor="black", label=<{MaxNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.normalization.MinMaxNormalize" [color="#BBCC33", fontcolor="black", label=<{MinMaxNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.readers.simulation_reader.SimulationReader" [color="#44BB99", fontcolor="black", label=<{SimulationReader|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.transforms.preprocessing.SubstractFrame" [color="#BBCC33", fontcolor="black", label=<{SubstractFrame|frame : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.thermo_dataset.ThermoDataset" [color="#99DDFF", fontcolor="black", label=<{ThermoDataset|data_reader<br ALIGN="LEFT"/>input_dataset_path : str<br ALIGN="LEFT"/>label_dataset_path : str<br ALIGN="LEFT"/>transform : NoneType<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.transforms.utils.ThermoTransform" [color="#BBCC33", fontcolor="black", label=<{ThermoTransform|<br ALIGN="LEFT"/>|<I>forward</I>(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.normalization.ZScoreNormalize" [color="#BBCC33", fontcolor="black", label=<{ZScoreNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.readers._base_reader._BaseReader" [color="#44BB99", fontcolor="black", label=<{_BaseReader|cache_paths : bool<br ALIGN="LEFT"/>file_extension : tuple<br ALIGN="LEFT"/>num_files<br ALIGN="LEFT"/>source : str<br ALIGN="LEFT"/>|file_names(): List[str]<br ALIGN="LEFT"/>file_paths(): List[str]<br ALIGN="LEFT"/>read_data(file_path: str): DataContainer<br ALIGN="LEFT"/>read_data_all(): List[DataContainer]<br ALIGN="LEFT"/>read_data_batch(batch_size: int): Generator[List[DataContainer], None, None]<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.readers.hdf5_reader.HDF5Reader" -> "pythermondt.readers._base_reader._BaseReader" [arrowhead="empty", arrowtail="none"];
+"pythermondt.readers.simulation_reader.SimulationReader" -> "pythermondt.readers._base_reader._BaseReader" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.normalization.MaxNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.normalization.MinMaxNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.normalization.ZScoreNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.preprocessing.ApplyLUT" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.preprocessing.SubstractFrame" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.utils.Compose" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.readers._base_reader._BaseReader" -> "pythermondt.data.thermo_dataset.ThermoDataset" [arrowhead="odiamond", arrowtail="none", fontcolor="green", label="data_reader", style="solid"];
+}

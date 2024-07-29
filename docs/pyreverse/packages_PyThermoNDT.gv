@@ -1,0 +1,32 @@
+digraph "packages_PyThermoNDT" {
+rankdir=BT
+charset="utf-8"
+"pythermondt" [color="#77AADD", label=<pythermondt>, shape="box", style="filled"];
+"pythermondt.data" [color="#99DDFF", label=<pythermondt.data>, shape="box", style="filled"];
+"pythermondt.data.data_container" [color="#99DDFF", label=<pythermondt.data.data_container>, shape="box", style="filled"];
+"pythermondt.data.thermo_dataset" [color="#99DDFF", label=<pythermondt.data.thermo_dataset>, shape="box", style="filled"];
+"pythermondt.readers" [color="#44BB99", label=<pythermondt.readers>, shape="box", style="filled"];
+"pythermondt.readers._base_reader" [color="#44BB99", label=<pythermondt.readers._base_reader>, shape="box", style="filled"];
+"pythermondt.readers.hdf5_reader" [color="#44BB99", label=<pythermondt.readers.hdf5_reader>, shape="box", style="filled"];
+"pythermondt.readers.simulation_reader" [color="#44BB99", label=<pythermondt.readers.simulation_reader>, shape="box", style="filled"];
+"pythermondt.transforms" [color="#BBCC33", label=<pythermondt.transforms>, shape="box", style="filled"];
+"pythermondt.transforms.normalization" [color="#BBCC33", label=<pythermondt.transforms.normalization>, shape="box", style="filled"];
+"pythermondt.transforms.preprocessing" [color="#BBCC33", label=<pythermondt.transforms.preprocessing>, shape="box", style="filled"];
+"pythermondt.transforms.utils" [color="#BBCC33", label=<pythermondt.transforms.utils>, shape="box", style="filled"];
+"pythermondt" -> "pythermondt.data" [arrowhead="open", arrowtail="none"];
+"pythermondt" -> "pythermondt.readers" [arrowhead="open", arrowtail="none"];
+"pythermondt" -> "pythermondt.transforms" [arrowhead="open", arrowtail="none"];
+"pythermondt.data" -> "pythermondt.data.data_container" [arrowhead="open", arrowtail="none"];
+"pythermondt.data" -> "pythermondt.data.thermo_dataset" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.thermo_dataset" -> "pythermondt.data.data_container" [arrowhead="open", arrowtail="none"];
+"pythermondt.readers" -> "pythermondt.readers._base_reader" [arrowhead="open", arrowtail="none"];
+"pythermondt.readers" -> "pythermondt.readers.hdf5_reader" [arrowhead="open", arrowtail="none"];
+"pythermondt.readers" -> "pythermondt.readers.simulation_reader" [arrowhead="open", arrowtail="none"];
+"pythermondt.readers.hdf5_reader" -> "pythermondt.readers._base_reader" [arrowhead="open", arrowtail="none"];
+"pythermondt.readers.simulation_reader" -> "pythermondt.readers._base_reader" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms" -> "pythermondt.transforms.normalization" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms" -> "pythermondt.transforms.preprocessing" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms.normalization" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms.preprocessing" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
+}

@@ -1,12 +1,12 @@
 name: Generate Diagrams
 
 on:
-  workflow_dispatch:  # This allows to manually trigger the workflow
+  workflow_dispatch:
 
 jobs:
   generate-diagrams:
     permissions:
-      contents: write # Grant write permissions to the repository in this job only
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -33,20 +33,42 @@ jobs:
       run: |
         mkdir -p ./docs/pyreverse
 
-    - name: Generate diagrams with Pyreverse
+    - name: Generate Graphviz files with Pyreverse
       run: |
-        pyreverse -p PyThermoNDT -o jpg -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src ./src/pythermondt
+        pyreverse -p PyThermoNDT -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src ./src/pythermondt
 
+    - name: Check for New or Modified Files
+      id: files-check
+      run: |
+        # Check if any new .gv files are created or existing .gv files are modified.
+        NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/*.gv | wc -l)
+        if [ "$NEW_OR_MODIFIED_FILES" -eq 0 ]; then
+          echo "No new or modified .gv files detected."
+          echo "::set-output name=changes::false"
+        else
+          echo "New or modified .gv files detected."
+          echo "::set-output name=changes::true"
+        fi
+      
+    - name: Generate diagrams from Graphviz files
+      if: steps.files-check.outputs.changes == 'true'
+      run: |
+        for file in ./docs/pyreverse/*.gv; do
+          dot -Tjpg "$file" -o "${file%.gv}.jpg"
+        done
+    
     - name: Upload diagrams
+      if: steps.files-check.outputs.changes == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: diagrams
         path: ./docs/pyreverse/*.jpg
-
+    
     - name: Commit and Push Diagrams back to the repository
+      if: steps.files-check.outputs.changes == 'true'
       run: |
         git config --global user.email "action@github.com"
         git config --global user.name "GitHub Action"
-        git add ./docs/pyreverse/*.jpg
-        git commit -m "Update pyreverse diagrams" || echo "No changes to commit"
+        git add ./docs/pyreverse/*
+        git commit -m "Update pyreverse diagrams"
         git push

@@ -2,12 +2,13 @@ import os
 import re
 from glob import glob
 from abc import ABC, abstractmethod
-from typing import Generator, List, Tuple
+from typing import Generator, List, Tuple, Callable
 from ..data import DataContainer
+from ..transforms import ThermoTransform
 
 class _BaseReader(ABC):
     @abstractmethod
-    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True):
+    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: ThermoTransform | None = None):
         """
         Initialize the DataReader with a single source.
 
@@ -15,8 +16,9 @@ class _BaseReader(ABC):
         - source (str): Path to the directory containing data files, a single data file or a regex pattern to match multiple files.
         - file_extension (str or Tuple[str]): File extension(s) of the data files to load. Can be a single string or a tuple of strings.
         - filter_files (bool): If True, only files with the specified file extension will be loaded. Default is True.
-        - cache_paths (bool): If True, all file paths in the source directory will be cached. Therefore updates to the source directory 
+        - cache_paths (bool, optional): If True, all file paths in the source directory will be cached. Therefore updates to the source directory 
             will not be reflected at runtime. Default is True.
+        - transform (ThermoTransform, optional): Optional transform to be applied on the data before it is loaded. Default is None.
         """
         # Convert file_extension to a tuple if it is a single string
         extensions = file_extension if isinstance(file_extension, tuple) else (file_extension,)
@@ -39,6 +41,9 @@ class _BaseReader(ABC):
         if not os.path.isfile(source) and not os.path.isdir(source) and not valid_regex:
             raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         self.source = source
+
+        # Transforms to apply
+        self.transform = transform
 
         # Boolean flag to enable caching of file paths
         self.cache_paths = cache_paths
@@ -163,8 +168,14 @@ class _BaseReader(ABC):
         if not any(file_path.endswith(ext) for ext in self.file_extension):
             raise ValueError("Invalid file extension. Must be one of: " + str(self.file_extension))
 
-        # Load the data from the file and return
-        return self._read_data(file_path)
+        # Load the data from the file
+        data = self._read_data(file_path)
+
+        # Apply the transform if it is not None
+        if self.transform is not None:
+            return self.transform(data)
+        else:
+            return data
 
     @abstractmethod
     def _read_data(self, file_path: str) -> DataContainer:

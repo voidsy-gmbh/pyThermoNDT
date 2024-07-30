@@ -4,14 +4,15 @@ import json
 from typing import Tuple
 from ._base_reader import _BaseReader
 from ..data import DataContainer
+from ..transforms import ThermoTransform
 
 class SimulationReader(_BaseReader):
     '''
         A sub-class to read simulation data from a .mat file.
     '''
-    def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', cache_paths: bool = True):
+    def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', cache_paths: bool = True, transform: ThermoTransform | None = None):
         # Call the constructor of the BaseLoader and set the file extension 
-        super().__init__(source, file_extension, cache_paths=cache_paths)
+        super().__init__(source, file_extension, cache_paths, transform)
          
     def _read_data(self, file_path:str) -> DataContainer:
         #Load the mat file

@@ -42,8 +42,8 @@ class ThermoDataset(Dataset):
             NotImplementedError("Applying transforms is not implemented yet")
 
         # Get the input and label data from the DataContainer
-        input_data = datapoint.get_dataset_from_path(self.input_dataset_path)
-        label_data = datapoint.get_dataset_from_path(self.label_dataset_path)
+        input_data = datapoint.get_dataset(self.input_dataset_path)
+        label_data = datapoint.get_dataset(self.label_dataset_path)
 
         # Convert numpy arrays to torch tensors
         input_tensor = torch.from_numpy(input_data)

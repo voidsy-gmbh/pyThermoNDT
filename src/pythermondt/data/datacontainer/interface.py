@@ -8,7 +8,7 @@ class _IDdataContainer(Protocol):
     """
     _groups: List[str] = []
     _datasets: Dict[Tuple[str, str], Tensor | None] = {}
-    _attributes: Dict[Tuple[str, str], str | int | float | list | dict] = {}
+    _attributes: Dict[Tuple[str, str], Dict[str, str | int | float | list | dict]] = {}
 
     def __init__(self):
         raise NotImplementedError

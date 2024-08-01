@@ -26,7 +26,7 @@ class Attributes(_IDdataContainer):
         
         # If the path is a group, return the attribute from the group
         if group_name != '' and dataset_name == '':
-            attributes = self._attributes[group_name]
+            attributes = self._attributes[(group_name, "")]
 
             # Check if the attribute exists
             if attribute_name not in attributes:
@@ -64,6 +64,6 @@ class Attributes(_IDdataContainer):
             raise ValueError(f"The dataset {dataset_name} in group {group_name} does not exist.")
 
         if dataset_name=="":  # Update group attributes
-            self._attributes[group_name].update(attributes)
+            self._attributes[(group_name, "")].update(attributes)
         else: # Else update dataset attributes
             self._attributes[(group_name, dataset_name)].update(attributes)

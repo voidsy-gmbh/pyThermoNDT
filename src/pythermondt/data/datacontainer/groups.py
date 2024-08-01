@@ -15,7 +15,7 @@ class Groups(_IDdataContainer):
         
         for group_name in group_names:
             self._groups.append(group_name)
-            self._attributes[group_name] = attributes
+            self.update_attributes(group_name, **attributes)
 
     def get_groups(self) -> List[str]:
         '''

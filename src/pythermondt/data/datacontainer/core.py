@@ -13,17 +13,14 @@ class DataContainer(Groups, Datasets, Attributes):
         """
         Initializes the DataContainer with predefined groups and datasets.
         """
-        # self._groups = []
-        # self._datasets = {}
-        # self._attributes = {}
-
+        # Initialize an empty DataContainer
         # Define the structure of the DataContainer: Groups
-        self.__add_group(['Data', 'GroundTruth', 'MetaData'])
+        self._add_group(['Data', 'GroundTruth', 'MetaData'])
 
         # Define the structure of the DataContainer: Datasets
-        self.__add_datasets(group_name='GroundTruth', dataset_names='DefectMask')
-        self.__add_datasets(group_name='Data', dataset_names='Tdata')
-        self.__add_datasets(group_name='MetaData', dataset_names=['LookUpTable', 'ExcitationSignal', 'DomainValues'])
+        self._add_datasets(group_name='GroundTruth', dataset_names='DefectMask')
+        self._add_datasets(group_name='Data', dataset_names='Tdata')
+        self._add_datasets(group_name='MetaData', dataset_names=['LookUpTable', 'ExcitationSignal', 'DomainValues'])
 
     # Override string method for nicer output
     def __str__(self):

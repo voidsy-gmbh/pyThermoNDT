@@ -5,7 +5,7 @@ from numpy import ndarray
 from .interface import _IDdataContainer
 
 class Datasets(_IDdataContainer):
-    def __add_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | None = None, **attributes):
+    def _add_dataset(self, group_name: str, dataset_name: str, data: Tensor | ndarray | None = None, **attributes):
         """
         Adds an empty dataset to a specified group within the DataContainer. Optionally, initial data and attributes can be provided.
 
@@ -25,7 +25,7 @@ class Datasets(_IDdataContainer):
         self._datasets[(group_name, dataset_name)] = data
         self._attributes[(group_name, dataset_name)] = attributes
 
-    def __add_datasets(self, group_name, dataset_names, data: Tensor | ndarray | None = None):
+    def _add_datasets(self, group_name, dataset_names, data: Tensor | ndarray | None = None):
         """
         Adds a set of emtpy datasets to a specified group within the DataContainer.
 

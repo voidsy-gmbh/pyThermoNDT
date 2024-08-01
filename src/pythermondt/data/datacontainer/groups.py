@@ -2,7 +2,7 @@ from typing import List
 from .interface import _IDdataContainer
 
 class Groups(_IDdataContainer):
-    def __add_group(self, group_names: str | List[str], **attributes):
+    def _add_group(self, group_names: str | List[str], **attributes):
         """
         Adds a single group or a list of group names to the DataContainer with optional attributes.
 
@@ -15,7 +15,7 @@ class Groups(_IDdataContainer):
         
         for group_name in group_names:
             self._groups.append(group_name)
-            self.update_attributes(group_name, **attributes)
+            self._attributes[(group_name, "")] = attributes
 
     def get_groups(self) -> List[str]:
         '''

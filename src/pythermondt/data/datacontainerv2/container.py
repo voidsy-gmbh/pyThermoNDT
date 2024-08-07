@@ -7,6 +7,7 @@ from numpy import ndarray
 from torch import Tensor
 from typing import List
 from .attributes import _Attributes
+from .groups import _Groups
 
 class DataContainer:
     """
@@ -19,12 +20,11 @@ class DataContainer:
         """
         Initializes the DataContainer with predefined groups and datasets.
         """
-        self._groups = []
-        self._datasets = {}
-        self._attributes = _Attributes()
+        self.__groups = _Groups()
+        # self._datasets = {}
 
         # Define the structure of the DataContainer: Groups
-        self.__add_group(['Data', 'GroundTruth', 'MetaData'])
+        self.__groups._add_group(['Data', 'GroundTruth', 'MetaData'])
 
         # Define the structure of the DataContainer: Datasets
         self.__add_datasets(group_name='GroundTruth', dataset_names='DefectMask')

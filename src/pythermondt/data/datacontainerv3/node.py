@@ -55,7 +55,6 @@ class Node(ABC):
 class GroupNode(Node):
     def __init__(self, name: str):
         super().__init__(name, NodeType.GROUP)
-        self._data_nodes: List[DataNode] = []
     
 class RootNode(Node):
     def __init__(self):

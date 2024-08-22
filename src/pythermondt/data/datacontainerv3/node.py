@@ -31,6 +31,10 @@ class Node(ABC):
         return self._attributes.items()
     
     def add_attribute(self, key: str, value: str | int | float | list | dict):
+        # Root node cannot have attributes
+        if self._type == NodeType.ROOT:
+            raise KeyError(f"Cannot add attribute to root Node. Root Node does not have attributes!")
+          
         if key in self._attributes.keys():
             raise KeyError(f"Attribute with key '{key}' in node '{self._name}' already exists. Use 'update_attribute' to update the value.")
         self._attributes[key] = value
@@ -40,11 +44,19 @@ class Node(ABC):
             self.add_attribute(key, value)
 
     def get_attribute(self, key: str) -> str | int | float | list | dict:
+        # Root node cannot have attributes
+        if self._type == NodeType.ROOT:
+            raise KeyError(f"Cannot get attribute from root Node. Root Node does not have attributes!")
+
         if key not in self._attributes.keys():
             raise KeyError(f"Attribute with key '{key}' in node '{self._name}' does not exist.")
         return self._attributes[key]
     
     def remove_attribute(self, key: str) -> None:
+        # Root node cannot have attributes
+        if self._type == NodeType.ROOT:
+            raise KeyError(f"Cannot remove attribute from root Node. Root Node does not have attributes!")
+
         if key not in self._attributes.keys():
             raise KeyError(f"Attribute with key '{key}' in node '{self._name}' does not exist.")
         del self._attributes[key]

@@ -45,7 +45,7 @@ def validate_paths(paths: List[str]) -> List[str]:
         paths (List[str]): The list of paths to validate and normalize.
 
     Returns:
-        list of normalized valid HDF5 paths.
+        A list of normalized valid HDF5 paths.
 
     Raises:
         ValueError: If any of the paths is not valid.

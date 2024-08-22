@@ -32,24 +32,21 @@ class Node(ABC):
     
     def add_attribute(self, key: str, value: str | int | float | list | dict):
         if key in self._attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' already exists.")
+            raise KeyError(f"Attribute with key '{key}' in node '{self._name}' already exists. Use 'update_attribute' to update the value.")
         self._attributes[key] = value
-
     
     def add_attributes(self, **attributes: Dict[str, str | int | float | list | dict]):
         for key, value in attributes.items():
-            if key in self._attributes.keys():
-                raise KeyError(f"Attribute with key '{key}' already exists.")
             self.add_attribute(key, value)
 
     def get_attribute(self, key: str) -> str | int | float | list | dict:
         if key not in self._attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' does not exist.")
+            raise KeyError(f"Attribute with key '{key}' in node '{self._name}' does not exist.")
         return self._attributes[key]
     
     def remove_attribute(self, key: str) -> None:
         if key not in self._attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' does not exist.")
+            raise KeyError(f"Attribute with key '{key}' in node '{self._name}' does not exist.")
         del self._attributes[key]
 
 class GroupNode(Node):

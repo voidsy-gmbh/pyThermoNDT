@@ -1,4 +1,4 @@
-from .base_ops import BaseOps
+from .base import BaseOps
 from typing import Dict
 
 class AttributeOps(BaseOps):

@@ -1,12 +1,13 @@
-# base_ops.py
+from abc import ABC
 from typing import Dict
-from .node import Node, NodeType
 from .utils import generate_key, split_path
+from .node import Node, NodeType, RootNode
 
-class BaseOps:
-    def __init__(self, nodes: Dict[str, Node]):
-        self._nodes = nodes
+class DataContainerBase(ABC):
+    def __init__(self):
+        self._nodes: Dict[str, Node] = {}
 
+class BaseOps(DataContainerBase):
     def _group_exists(self, key: str) -> bool:
         return key in self._nodes
 

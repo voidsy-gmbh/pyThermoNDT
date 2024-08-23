@@ -1,4 +1,4 @@
-from .base_ops import BaseOps
+from .base import BaseOps
 from .node import GroupNode
 from .utils import generate_key
 

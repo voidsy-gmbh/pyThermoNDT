@@ -1,1 +1,1 @@
-from .container import DataContainer
+from .core import DataContainer

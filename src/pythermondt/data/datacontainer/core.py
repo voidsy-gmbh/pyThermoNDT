@@ -1,30 +1,42 @@
-from .groups import Groups
-from .datasets import Datasets
-from .attributes import Attributes
+from typing import Dict, Any
+from functools import wraps
+from torch import Tensor
+from numpy import ndarray
+from .node import Node, RootNode
+from .dataset_ops import DatasetOps
+from .group_ops import GroupOps
+from .attribute_ops import AttributeOps
 
-class DataContainer(Groups, Datasets, Attributes):
+class DataContainer(GroupOps, DatasetOps, AttributeOps):
     """
     Manages and serializes data into HDF5 format.
 
     This class provides structured handling of groups and datasets read with the reader classes. It allows for easy access to the data and attributes stored in the DataContainer.
-    It also provieds functions for easy serialization and data visualization.
+    It also provides functions for easy serialization and data visualization.
     """
     def __init__(self):
+        """ Initializes the DataContainer with predefined groups and datasets.
         """
-        Initializes the DataContainer with predefined groups and datasets.
-        """
-        # Initialize an empty DataContainer
-        # Define the structure of the DataContainer: Groups
-        self._add_group(['Data', 'GroundTruth', 'MetaData'])
+        super().__init__()
 
-        # Define the structure of the DataContainer: Datasets
-        self._add_datasets(group_name='GroundTruth', dataset_names='DefectMask')
-        self._add_datasets(group_name='Data', dataset_names='Tdata')
-        self._add_datasets(group_name='MetaData', dataset_names=['LookUpTable', 'ExcitationSignal', 'DomainValues'])
+        # Set root node
+        self._nodes["/"] = RootNode()
 
-    # Override string method for nicer output
+        # Set initial groups and datasets
+        self.add_group("/", "Data")
+        self.add_group("/", "GroundTruth")
+        self.add_group("/", "MetaData")
+        self.add_dataset("/Data", "Tdata")
+        self.add_dataset("/GroundTruth", "DefectMask")
+        self.add_dataset("/MetaData", "LookUpTable")
+        self.add_dataset("/MetaData", "ExcitationSignal")
+        self.add_dataset("/MetaData", "DomainValues")
+
+   # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):
-        # This method will return a string representation of the DataContainer
-        groups_info = ", ".join(self._groups)  # A simple string listing all groups
-        datasets_info = ", ".join(f"{group}/{dataset}" for group, dataset in self._datasets.keys())  # List all datasets by group/dataset pair
-        return f"\nDataContainer with:\nGroups: {groups_info}\nDatasets: {datasets_info} \n"
+        returnstring = ""
+        for path, node in self._nodes.items():
+            returnstring = returnstring + f"{path}: ({node.name}: {node.type})" + "\n"
+
+        return returnstring
+

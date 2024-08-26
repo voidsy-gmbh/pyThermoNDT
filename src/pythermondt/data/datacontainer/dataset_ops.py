@@ -1,16 +1,17 @@
-from typing import List
+from typing import List, Dict, Optional
 from torch import Tensor
 from .base import BaseOps
 from .node import DataNode, NodeType
 from .utils import generate_key, split_path
 
 class DatasetOps(BaseOps):
-    def add_dataset(self, path: str, name: str):
+    def add_dataset(self, path: str, name: str, data: Optional[Tensor] = None):
         """Adds a single dataset to a specified path in the DataContainer.
 
         Parameters:
             path (str): The path to the parent group.
             name (str): The name of the dataset to add.
+            data (Tensor, optional): The data to store in the dataset. If None, an empty dataset is created. 
         
         Raises:
             KeyError: If the parent group does not exist.
@@ -21,7 +22,10 @@ class DatasetOps(BaseOps):
         if self._is_datanode(key):
             raise KeyError(f"Dataset with name: '{child}' at the path: '{parent}' already exists.")
         
-        self.nodes[key] = DataNode(name)
+        if not data:
+            self.nodes[key] = DataNode(name)
+        else:
+            self.nodes[key] = DataNode(name, data)
 
     def get_datasets(self) -> List[str]:
         """Get a list of all datasets in the DataContainer.
@@ -56,3 +60,27 @@ class DatasetOps(BaseOps):
             KeyError: If the dataset does not exist.
         """
         del self.nodes[path]
+
+    def update_dataset(self, path: str, data: Tensor):
+        """Updates a single dataset at a specified path in the DataContainer.
+
+        Parameters:
+            path (str): The path to the dataset.
+            data (Tensor): The new data to store in the dataset.
+        
+        Raises:
+            KeyError: If the dataset does not exist.
+        """
+        self.nodes(path, DataNode).data = data
+
+    def update_datasets(self, updates: Dict[str, Tensor]):
+        """Updates multiple datasets in the DataContainer.
+
+        Parameters:
+            updates (Dict[str, Tensor]): A dictionary of paths and new data to store in the datasets.
+        
+        Raises:
+            KeyError: If a dataset does not exist.
+        """
+        for path, data in updates.items():
+            self.update_dataset(path, data)

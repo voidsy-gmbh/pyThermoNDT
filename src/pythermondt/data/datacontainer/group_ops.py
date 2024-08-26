@@ -17,14 +17,10 @@ class GroupOps(BaseOps):
         """
         key, parent, child = generate_key(path, name)
 
-        self.nodes = (key, GroupNode(name))
-
-        if not self._parent_exists(key):
-            raise KeyError(f"Group at the path: '{parent}' does not exist. Cannot add group, without parent group.")
-
-        if self._group_exists(key):
+        if self._is_groupnode(key):
             raise KeyError(f"Group with name: '{child}' at the path: '{parent}' already exists.")
-        self._nodes[key] = GroupNode(name)
+
+        self.nodes[key] = GroupNode(name)
 
     def get_groups(self) -> List[str]:
         """Get a list of all groups in the DataContainer.
@@ -32,21 +28,15 @@ class GroupOps(BaseOps):
         Returns:
             List[str]: A list of all groups in the DataContainer.
         """
-        return [node.name for node in self._nodes.values() if isinstance(node, GroupNode)]
+        return [node.name for node in self.values if isinstance(node, GroupNode)]
     
-    def remove_group(self, path: str, name: str):
+    def remove_group(self, path: str):
         """Removes a single group from a specified path in the DataContainer.
 
         Parameters:
             path (str): The path to the parent group.
-            name (str): The name of the group to remove.
 
         Raises:
             KeyError: If the group does not exist.
         """
-        parent, child = split_path(path, name)
-
-        if not self._group_exists(key):
-            raise KeyError(f"Group with name: '{child}' at the path: '{parent}' does not exist.")
-
-        del self._nodes[key]
+        del self.nodes[path]

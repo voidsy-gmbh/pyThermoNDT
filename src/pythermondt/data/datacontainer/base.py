@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, TypeVar,Optional, Type
+from typing import Dict, TypeVar,Optional, Type, overload
 from .utils import split_path
 from .node import RootNode, GroupNode, DataNode
 
@@ -23,14 +23,20 @@ class DataContainerBase(ABC):
     @property
     def items(self):
         return self.__nodes.items()
-
+    
     # Private methods to get and set nodes
-    def _getnode(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes:
-        # Check if path exists
+    @overload
+    def _getnode(self, key: str) -> NodeTypes: ...
+
+    @overload
+    def _getnode(self, key: str, node_type: Type[T]) -> T: ...
+
+    def _getnode(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
+        # Check if the path exists
         if key not in self.__nodes:
             raise KeyError(f"Node at path '{key}' does not exist.")
         
-        # Optionally check if node is of the correct type
+        # Optionally check if the node is of the correct type
         node = self.__nodes[key]
         if node_type is not None and not isinstance(node, node_type):
             raise TypeError(f"Node at path '{key}' is not of type {node_type.__name__}.")
@@ -75,8 +81,16 @@ class DataContainerBase(ABC):
         def __setitem__(self, key: str, value: NodeTypes):
             DataContainerBase._setnode(self.__outer, key, value)
 
-        def __call__(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes:
-            return DataContainerBase._getnode(self.__outer, key, node_type)   
+        @overload
+        def __call__(self, key: str) -> NodeTypes: ...
+
+        @overload
+        def __call__(self, key: str, node_type: Type[T]) -> T: ...
+
+        def __call__(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
+            if node_type is None:
+                return DataContainerBase._getnode(self.__outer, key)
+            return DataContainerBase._getnode(self.__outer, key, node_type)
     
     @property
     def nodes(self):

@@ -1,5 +1,7 @@
 import re
-from typing import List, Tuple
+import functools
+from typing import List, Tuple, Optional, Callable
+from traceback import extract_stack
 
 def validate_path(path: str, name: str = "") -> str:
     """ Validates and normalizes the given HDF5 path.

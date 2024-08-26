@@ -20,7 +20,7 @@ class DataContainer(GroupOps, DatasetOps, AttributeOps):
         super().__init__()
 
         # Set root node
-        self._nodes["/"] = RootNode()
+        self.nodes["/"] = RootNode()
 
         # Set initial groups and datasets
         self.add_group("/", "Data")
@@ -35,7 +35,7 @@ class DataContainer(GroupOps, DatasetOps, AttributeOps):
    # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):
         returnstring = ""
-        for path, node in self._nodes.items():
+        for path, node in self.items:
             returnstring = returnstring + f"{path}: ({node.name}: {node.type})" + "\n"
 
         return returnstring

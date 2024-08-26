@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, TypeVar,Optional, Type, overload
+from typing import Dict, TypeVar,Optional, Type, KeysView, ValuesView, ItemsView, overload
 from .utils import split_path
 from .node import RootNode, GroupNode, DataNode
 
@@ -8,79 +8,75 @@ NodeTypes = RootNode | GroupNode | DataNode
 T = TypeVar("T", bound=NodeTypes)
 
 class DataContainerBase(ABC):
-    def __init__(self):
-        self.__nodes: Dict[str, NodeTypes] = {}
-
-    # Properties to access keys and values
-    @property
-    def keys(self):
-        return self.__nodes.keys()
-    
-    @property
-    def values(self):
-        return self.__nodes.values()
-    
-    @property
-    def items(self):
-        return self.__nodes.items()
-    
-    # Private methods to get and set nodes
-    @overload
-    def _getnode(self, key: str) -> NodeTypes: ...
-
-    @overload
-    def _getnode(self, key: str, node_type: Type[T]) -> T: ...
-
-    def _getnode(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
-        # Check if the path exists
-        if key not in self.__nodes:
-            raise KeyError(f"Node at path '{key}' does not exist.")
-        
-        # Optionally check if the node is of the correct type
-        node = self.__nodes[key]
-        if node_type is not None and not isinstance(node, node_type):
-            raise TypeError(f"Node at path '{key}' is not of type {node_type.__name__}.")
-        return node
-    
-    def _setnode(self, key: str, value: NodeTypes) -> None:
-        # Split path in parent and child and check if parent exists
-        parent, _ = split_path(key)
-        if parent != "/" and parent not in self.__nodes:
-            raise KeyError(f"Parent node at path '{parent}' does not exist.")
-        
-        # Also check if parent is a RootNode or GroupNode
-        if parent != "/" and not isinstance(self.__nodes[parent], (RootNode, GroupNode)):
-            raise TypeError(f"Parent node at path '{parent}' must be a RootNode or GroupNode.")
-        
-        # Set node at path in dictionary
-        self.__nodes[key] = value
-
-    def _removenode(self, key: str) -> None:
-        if key not in self.__nodes:
-            raise KeyError(f"Node at path '{key}' does not exist.")
-        
-        # If it's a group, remove all child nodes as well to avoid orphaned nodes
-        if isinstance(self.__nodes[key], GroupNode):
-            child_keys = [k for k in self.__nodes.keys() if k.startswith(key + '/')]
-            for child_key in child_keys:
-                del self.__nodes[child_key]
-        
-        del self.__nodes[key]
-
-    # Inner class to make the node property indexable
+    # Inner class to access nodes in the DataContainer ==> Needed to make the node property indexable and callable
     class __NodeAccessor:
-        def __init__(self, outer):
-            self.__outer = outer
+        def __init__(self):
+            self.__nodes: Dict[str, NodeTypes] = {}
 
+        # Functions to get views of the __nodes dictionary
+        def keys(self) -> KeysView[str]:
+            return self.__nodes.keys()
+        
+        def values(self) -> ValuesView[NodeTypes]:
+            return self.__nodes.values()
+        
+        def items(self) -> ItemsView[str, NodeTypes]:
+            return self.__nodes.items()
+        
+        # Private methods to get, set and delete nodes
+        @overload
+        def __get_node(self, key: str) -> NodeTypes: ...
+
+        @overload
+        def __get_node(self, key: str, node_type: Type[T]) -> T: ...
+
+        def __get_node(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
+            # Check if the path exists
+            if key not in self.__nodes:
+                raise KeyError(f"Node at path '{key}' does not exist.")
+            
+            # Optionally check if the node is of the correct type
+            node = self.__nodes[key]
+            if node_type is not None and not isinstance(node, node_type):
+                raise TypeError(f"Node at path '{key}' is not of type {node_type.__name__}.")
+            return node
+        
+        def __set_node(self, key: str, value: NodeTypes) -> None:
+            # Split path in parent and child and check if parent exists
+            parent, _ = split_path(key)
+            if parent != "/" and parent not in self.__nodes:
+                raise KeyError(f"Parent node at path '{parent}' does not exist.")
+            
+            # Also check if parent is a RootNode or GroupNode
+            if parent != "/" and not isinstance(self.__nodes[parent], (RootNode, GroupNode)):
+                raise TypeError(f"Parent node at path '{parent}' must be a RootNode or GroupNode.")
+            
+            # Set node at path in dictionary
+            self.__nodes[key] = value
+
+        def __delete_node(self, key: str) -> None:
+            if key not in self.__nodes:
+                raise KeyError(f"Node at path '{key}' does not exist.")
+            
+            # If it's a group, remove all child nodes as well to avoid orphaned nodes
+            if isinstance(self.__nodes[key], GroupNode):
+                child_keys = [k for k in self.__nodes.keys() if k.startswith(key + '/')]
+                for child_key in child_keys:
+                    del self.__nodes[child_key]
+            
+            del self.__nodes[key]
+
+        # Overriding the getitem, setitem and delitem methods to access nodes ==> Makes the node property indexable
         def __getitem__(self, key: str) -> NodeTypes:
-            return DataContainerBase._getnode(self.__outer,key)
+            return self.__get_node(key)
         
         def __delitem__(self, key: str) -> None:
-            DataContainerBase._removenode(self.__outer, key)
+            self.__delete_node(key)
 
         def __setitem__(self, key: str, value: NodeTypes):
-            DataContainerBase._setnode(self.__outer, key, value)
+            self.__set_node(key, value)
 
+        # Overriding the call method to access nodes ==> Makes the node property callable like a function
         @overload
         def __call__(self, key: str) -> NodeTypes: ...
 
@@ -89,8 +85,11 @@ class DataContainerBase(ABC):
 
         def __call__(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
             if node_type is None:
-                return DataContainerBase._getnode(self.__outer, key)
-            return DataContainerBase._getnode(self.__outer, key, node_type)
+                return self.__get_node(key)
+            return self.__get_node(key, node_type)
+        
+    def __init__(self):
+        self.__node_accessor = self.__NodeAccessor()
     
     @property
     def nodes(self):
@@ -100,7 +99,7 @@ class DataContainerBase(ABC):
         getting and setting nodes. When setting nodes, the parent path is also checked for existence and type (either RootNode or GroupNode). 
         It also allows for deleting nodes by using the del keyword. If a group is deleted, all child nodes are also deleted to avoid orphaned nodes.
         """
-        return self.__NodeAccessor(self)
+        return self.__node_accessor
     
 # Basic operations for the DataContainer
 class BaseOps(DataContainerBase):

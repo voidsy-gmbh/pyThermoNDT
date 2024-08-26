@@ -28,7 +28,7 @@ class GroupOps(BaseOps):
         Returns:
             List[str]: A list of all groups in the DataContainer.
         """
-        return [node.name for node in self.values if isinstance(node, GroupNode)]
+        return [node.name for node in self.nodes.values() if isinstance(node, GroupNode)]
     
     def remove_group(self, path: str):
         """Removes a single group from a specified path in the DataContainer.

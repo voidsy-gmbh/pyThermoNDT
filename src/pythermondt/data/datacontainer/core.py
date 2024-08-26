@@ -35,7 +35,7 @@ class DataContainer(GroupOps, DatasetOps, AttributeOps):
    # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):
         returnstring = ""
-        for path, node in self.items:
+        for path, node in self.nodes.items():
             returnstring = returnstring + f"{path}: ({node.name}: {node.type})" + "\n"
 
         return returnstring

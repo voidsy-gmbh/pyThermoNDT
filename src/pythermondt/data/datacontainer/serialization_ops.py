@@ -74,4 +74,57 @@ class SerializationOps(BaseOps):
         - path (str): The path where the HDF5 file should be saved.
         """
         with open(path, 'wb') as file:
-            file.write(self.serialize_to_hdf5().getvalue())
+            file.write(self.serialize_to_hdf5().getvalue())
+
+class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
+    def deserialize(self, hdf5_bytes: io.BytesIO):
+        """
+        Deserializes an HDF5 file into the DataContainer instance.
+        Parameters:
+        - hdf5_bytes (io.BytesIO): The serialized HDF5 data as a BytesIO object.
+        """
+        with h5py.File(hdf5_bytes, 'r') as f:
+            # Iterate over all groups in the file
+            for group_name, group in f.items():
+                # Add the group to the DataContainer
+                self.add_group("/", group_name)
+                
+                # If the group has attributes, add them to the group in the DataContainer
+                if group.attrs:
+                    self._process_attributes(group_name, dict(group.attrs))
+                
+                # Iterate over all datasets in the group
+                for dataset_name, dataset in group.items():
+                    full_path = f"/{group_name}/{dataset_name}"
+                    
+                    # Convert dataset to PyTorch tensor and add to DataContainer
+                    data = torch.from_numpy(dataset[()])
+                    self.add_dataset(f"/{group_name}", dataset_name, data)
+                    
+                    # Add dataset attributes if they exist
+                    if dataset.attrs:
+                        self._process_attributes(full_path, dict(dataset.attrs))
+
+    def _process_attributes(self, path: str, attributes: Dict[str, AttributeTypes]):
+        """
+        Processes and adds attributes to a node in the DataContainer.
+        Parameters:
+        - path (str): The path to the node.
+        - attributes (Dict[str, Any]): The attributes to process and add.
+        """
+        for key, value in attributes.items():
+            try:
+                value = json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                pass
+            self.add_attribute(path, key, value)
+
+    def load_from_hdf5(self, path: str):
+        """
+        Loads an HDF5 file from the specified path and deserializes it into the DataContainer.
+        Parameters:
+        - path (str): The path of the HDF5 file to load.
+        """
+        with open(path, 'rb') as file:
+            hdf5_bytes = io.BytesIO(file.read())
+        self.deserialize(hdf5_bytes)

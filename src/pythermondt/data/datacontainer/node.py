@@ -1,115 +1,123 @@
-from typing import List, Dict, ItemsView
+import torch
+from typing import Dict, ItemsView
 from enum import Enum
 from torch import Tensor
-from abc import ABC
-import torch
+from abc import ABC, abstractmethod
+
+AttributeTypes = str | int | float | list | dict
 
 class NodeType(Enum):
     ROOT = "root"
     DATASET = "dataset"
     GROUP = "group"
 
-class Node(ABC):
+class BaseNode(ABC):
+    @abstractmethod
     def __init__(self, name: str, type: NodeType) -> None:
-        self._name = name
-        self._type = type
-        self._attributes: Dict[str, str | int | float | list | dict] = {}
+        self.__name: str = name
+        self.__type: NodeType = type
 
     @property
     def name(self) -> str:
-        return self._name
+        return self.__name
+    
     @name.setter
     def name(self, name: str) -> None:
-        self._name = name
+        self.__name = name
 
     @property
     def type(self) -> NodeType:
-        return self._type
+        return self.__type
     
-    @property
-    def attributes(self) -> ItemsView[str, str | int | float | list | dict]:
-        return self._attributes.items()
-    
-    def add_attribute(self, key: str, value: str | int | float | list | dict):
-        # Root node cannot have attributes
-        if self._type == NodeType.ROOT:
-            raise KeyError(f"Cannot add attribute to root Node. Root Node does not have attributes!")
-          
-        if key in self._attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self._name}' already exists. Use 'update_attribute' to update the value.")
-        self._attributes[key] = value
-    
-    def add_attributes(self, **attributes: Dict[str, str | int | float | list | dict]):
-        for key, value in attributes.items():
-            self.add_attribute(key, value)
-
-    def get_attribute(self, key: str) -> str | int | float | list | dict:
-        # Root node cannot have attributes
-        if self._type == NodeType.ROOT:
-            raise KeyError(f"Cannot get attribute from root Node. Root Node does not have attributes!")
-
-        if key not in self._attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self._name}' does not exist.")
-        return self._attributes[key]
-    
-    def remove_attribute(self, key: str) -> None:
-        # Root node cannot have attributes
-        if self._type == NodeType.ROOT:
-            raise KeyError(f"Cannot remove attribute from root Node. Root Node does not have attributes!")
-
-        if key not in self._attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self._name}' does not exist.")
-        del self._attributes[key]
-
-class GroupNode(Node):
-    def __init__(self, name: str):
-        super().__init__(name, NodeType.GROUP)
-    
-class RootNode(Node):
+class RootNode(BaseNode):
     def __init__(self):
         super().__init__("root", NodeType.ROOT)
 
-class DataNode(Node):
-    def __init__(self, name: str, data: Tensor=torch.empty(0)):
+class AttributeNode(BaseNode, ABC):
+    @abstractmethod
+    def __init__(self, name: str, type: NodeType) -> None:
+        super().__init__(name, type)
+        self.__attributes: Dict[str, AttributeTypes] = {}
+    
+    @property
+    def attributes(self) -> ItemsView[str, AttributeTypes]:
+        return self.__attributes.items()
+    
+    def add_attribute(self, key: str, value: AttributeTypes):         
+        if key in self.__attributes.keys():
+            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' already exists. Use 'update_attribute' to update the value.")
+        self.__attributes[key] = value
+    
+    def add_attributes(self, **attributes: Dict[str, AttributeTypes]):
+        for key, value in attributes.items():
+            self.add_attribute(key, value)
+
+    def get_attribute(self, key: str) -> AttributeTypes:
+        if key not in self.__attributes.keys():
+            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist.")
+        return self.__attributes[key]
+    
+    def remove_attribute(self, key: str) -> None:
+        if key not in self.__attributes.keys():
+            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist.")
+        del self.__attributes[key]
+
+    def update_attribute(self, key: str, value: AttributeTypes) -> None:
+        if key not in self.__attributes.keys():
+            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist. Use 'add_attribute' to add a new attribute.")
+        self.__attributes[key] = value
+
+    def update_attributes(self, **attributes: Dict[str, AttributeTypes]):
+        self.__attributes.update(attributes)
+
+    def clear_attributes(self) -> None:
+        self.__attributes.clear()
+
+class GroupNode(AttributeNode):
+    def __init__(self, name: str):
+        super().__init__(name, NodeType.GROUP)
+
+class DataNode(AttributeNode):
+    def __init__(self, name: str, data: Tensor = torch.empty(0)):
         super().__init__(name, NodeType.DATASET)
-        self.__data = data
+        self.__data: Tensor = data
 
     @property
     def data(self) -> Tensor:
-        return self.get_data()
-    
+        return self.__data
+
     @data.setter
-    def data(self, data: Tensor):
-        self.set_data(data)
+    def data(self, value: Tensor) -> None:
+        self.__data = value
 
     @data.deleter
-    def data(self):
-        self.remove_data()
+    def data(self) -> None:
+        self.__data = torch.empty(0)
 
-    def set_data(self, data: Tensor):
-        self.__data = data
-
-    def remove_data(self) -> bool:
-        if self.__data is not torch.empty(0):
-            self.__data = torch.empty(0)
-            return True
-        return False
-
-    def get_data(self) -> Tensor:
-        return self.__data
-        
-
-# Test
+# Test code
 if __name__ == "__main__":
-    test = Node("test", NodeType.ROOT)
+    root = RootNode()
+    group = GroupNode("group1")
+    data = DataNode("data1", torch.randn(5, 5))
 
-    print(test.name)
+    print(f"Root: {root.name}, {root.type}")
+    print(f"Group: {group.name}, {group.type}")
+    print(f"Data: {data.name}, {data.type}")
 
-    test.name = "test2"
+    group.add_attribute("attr1", 10)
+    print(f"Group attribute: {group.get_attribute('attr1')}")
 
-    test.add_attribute("test", 1)
+    data.add_attribute("shape", list(data.data.shape))
+    print(f"Data attribute: {data.get_attribute('shape')}")
 
-    print(test.name)
-    print(test.type)
-    print(test.attributes)  
-    print(test.get_attribute("test1")) 
+    # Check if BaseNode and AttributeNode are abstract
+    for AbstractClass in (BaseNode, AttributeNode):
+        try:
+            test = AbstractClass("test", NodeType.ROOT)  # type: ignore
+            print(f"Warning: Successfully instantiated {AbstractClass.__name__}")
+        except TypeError as e:
+            print(f"Cannot instantiate {AbstractClass.__name__}: {e}")
+
+    print(f"Data tensor: {data.data}")
+    data.data = torch.zeros(3, 3)
+    print(f"Updated data tensor: {data.data}")

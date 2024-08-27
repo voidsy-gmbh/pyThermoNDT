@@ -2,7 +2,7 @@ from typing import Dict, Any
 from functools import wraps
 from torch import Tensor
 from numpy import ndarray
-from .node import Node, RootNode
+from .node import RootNode
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
 from .attribute_ops import AttributeOps

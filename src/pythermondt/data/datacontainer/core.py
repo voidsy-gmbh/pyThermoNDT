@@ -6,8 +6,9 @@ from .node import RootNode
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
 from .attribute_ops import AttributeOps
+from .serialization_ops import SerializationOps
 
-class DataContainer(GroupOps, DatasetOps, AttributeOps):
+class DataContainer(GroupOps, DatasetOps, AttributeOps , SerializationOps):
     """
     Manages and serializes data into HDF5 format.
 

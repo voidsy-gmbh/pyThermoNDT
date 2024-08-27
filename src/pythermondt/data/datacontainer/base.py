@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, TypeVar,Optional, Type, KeysView, ValuesView, ItemsView, overload
+from typing import Dict, TypeVar, Type, KeysView, ValuesView, ItemsView, overload
 from .utils import split_path
 from .node import RootNode, GroupNode, DataNode
 
@@ -28,17 +28,17 @@ class DataContainerBase(ABC):
         def __get_node(self, key: str) -> NodeTypes: ...
 
         @overload
-        def __get_node(self, key: str, node_type: Type[T]) -> T: ...
+        def __get_node(self, key: str, *node_types: Type[T]) -> T: ...
 
-        def __get_node(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
+        def __get_node(self, key: str, *node_types: Type[T]) -> NodeTypes | T:
             # Check if the path exists
             if key not in self.__nodes:
                 raise KeyError(f"Node at path '{key}' does not exist.")
             
             # Optionally check if the node is of the correct type
-            node = self.__nodes[key]
-            if node_type is not None and not isinstance(node, node_type):
-                raise TypeError(f"Node at path '{key}' is not of type {node_type.__name__}.")
+            node = self.__nodes[key]                  
+            if node_types and not any(isinstance(node, t) for t in node_types):
+                raise TypeError(f"Node at path '{key}' is not of type: {", ".join([t.__name__ for t in node_types])}.")
             return node
         
         def __set_node(self, key: str, value: NodeTypes) -> None:
@@ -81,12 +81,12 @@ class DataContainerBase(ABC):
         def __call__(self, key: str) -> NodeTypes: ...
 
         @overload
-        def __call__(self, key: str, node_type: Type[T]) -> T: ...
+        def __call__(self, key: str, *node_types: Type[T]) -> T: ...
 
-        def __call__(self, key: str, node_type: Optional[Type[T]] = None) -> NodeTypes | T:
-            if node_type is None:
+        def __call__(self, key: str, *node_types: Type[T]) -> NodeTypes | T:
+            if not node_types:
                 return self.__get_node(key)
-            return self.__get_node(key, node_type)
+            return self.__get_node(key, *node_types)
         
     def __init__(self):
         self.__node_accessor = self.__NodeAccessor()
@@ -95,9 +95,34 @@ class DataContainerBase(ABC):
     def nodes(self):
         """ Property to access nodes in the DataContainer.
 
-        This property is indexable and callable to get and set nodes. The path is checked for existence. Optionally the nodes is also checked for the correct type for both 
-        getting and setting nodes. When setting nodes, the parent path is also checked for existence and type (either RootNode or GroupNode). 
+        This property is indexable and callable to get and set nodes. The path is checked for existence. 
+        Optionally the nodes is also checked for the correct type (provided as a function argument) while getting a node. Therefore the returned type is ensured to be correct.
+        When setting nodes, the parent path is checked for existence and type (either RootNode or GroupNode). 
         It also allows for deleting nodes by using the del keyword. If a group is deleted, all child nodes are also deleted to avoid orphaned nodes.
+        Use with caution! Some sanity checks are disabled when using the property directly. Only for advanced users!
+
+        Example usage:
+        ```python
+        from pythermondt.data import DataContainer
+        from pythermondt.data.datacontainer.node import GroupNode, DataNode
+
+        # Get nodes
+        # Returns the node at path "/Data"
+        node = data_container.nodes("/Data")
+
+        # Returns the node at path "/Data". Raises TypeError if the node is not a DataNode
+        node = data_container.nodes("/Data", DataNode) 
+
+        # Returns the node at path "/Data". Raises TypeError if the node is not a DataNode or GroupNode
+        node = data_container.nodes("/Data", DataNode, GroupNode)
+
+        # Set nodes
+        data_container.nodes["/Data"] = DataNode("name", data)
+        data_container.nodes["/Data"] = GroupNode("name")
+
+        # Delete a node
+        del data_container.nodes["/Data"]
+        ```
         """
         return self.__node_accessor
     
@@ -173,4 +198,8 @@ class BaseOps(DataContainerBase):
             bool: True if the parent exists and is a GroupNode or RootNode, False otherwise.
         """
         parent, _ = split_path(key)
-        return self._is_groupnode(parent) or self._is_rootnode(parent)
+        try:
+            self.nodes(parent, GroupNode, RootNode)
+            return True
+        except (KeyError, TypeError):
+            return False

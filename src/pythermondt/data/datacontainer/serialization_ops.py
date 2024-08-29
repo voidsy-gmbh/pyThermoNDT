@@ -12,11 +12,10 @@ from .attribute_ops import AttributeOps
 
 class SerializationOps(BaseOps):
     def serialize_to_hdf5(self) -> io.BytesIO:
-        """
-        Serializes the DataContainer instance to an HDF5 file.
+        """ Serializes the DataContainer instance to an HDF5 file.
 
         Returns:
-        - io.BytesIO: The serialized DataContainer instance as a BytesIO object.
+            io.BytesIO: The serialized DataContainer instance as a BytesIO object.
         """
         hdf5_bytes = io.BytesIO()
 
@@ -51,12 +50,11 @@ class SerializationOps(BaseOps):
         return hdf5_bytes
 
     def _add_attributes(self, h5obj: h5py.Dataset | h5py.Group, attributes: ItemsView[str, AttributeTypes]):
-        """
-        Adds attributes to an HDF5 object (group or dataset).
+        """ Adds attributes to an HDF5 object (group or dataset).
 
         Parameters:
-        - h5obj (h5py.Group or h5py.Dataset): The HDF5 object to add attributes to.
-        - attributes (Dict[str, str | int | float | list | dict]): The attributes to add.
+            h5obj (h5py.Group or h5py.Dataset): The HDF5 object to add attributes to.
+            attributes (Dict[str, str | int | float | list | dict]): The attributes to add.
         """
         for key, value in attributes:
             # Convert lists and dictionaries to JSON strings ==> HDF5 does not support these types natively
@@ -67,21 +65,20 @@ class SerializationOps(BaseOps):
             h5obj.attrs[key] = value
 
     def save_to_hdf5(self, path: str):
-        """
-        Saves the serialized DataContainer to an HDF5 file at the specified path.
+        """ Saves the serialized DataContainer to an HDF5 file at the specified path.
 
         Parameters:
-        - path (str): The path where the HDF5 file should be saved.
+            path (str): The path where the HDF5 file should be saved.
         """
         with open(path, 'wb') as file:
             file.write(self.serialize_to_hdf5().getvalue())
 
 class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
     def deserialize(self, hdf5_bytes: io.BytesIO):
-        """
-        Deserializes an HDF5 file into the DataContainer instance.
+        """ Deserializes an HDF5 file into the DataContainer instance.
+        
         Parameters:
-        - hdf5_bytes (io.BytesIO): The serialized HDF5 data as a BytesIO object.
+            hdf5_bytes (io.BytesIO): The serialized HDF5 data as a BytesIO object.
         """
         with h5py.File(hdf5_bytes, 'r') as f:
             # First add the root node to the DataContainer
@@ -99,13 +96,12 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
                     raise TypeError(f"Item type '{type(item)}' is not supported for deserialization.")
 
     def _process_group(self, path: str, name: str, group: h5py.Group):
-        """
-        Processes and adds one group and its subgroups and datasets to the DataContainer.
+        """ Processes and adds one group and its subgroups and datasets to the DataContainer.
 
         Parameters:
-        - path (str): The path to the parent where the group should be added.
-        - name (str): The name of the group.
-        - group (h5py.Group): The group to process.
+            path (str): The path to the parent where the group should be added.
+            name (str): The name of the group.
+            group (h5py.Group): The group to process.
         """
         # Add the group to the DataContainer
         self.add_group(path, name)
@@ -126,13 +122,12 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
                 raise TypeError(f"Item type '{type(item)}' is not supported for deserialization.")
 
     def _process_dataset(self, path: str, name: str, dataset: h5py.Dataset):
-        """
-        Processes and adds a dataset to the DataContainer.
+        """ Processes and adds a dataset to the DataContainer.
 
         Parameters:
-        - path (str): The path to the parent group where the dataset should be added.
-        - name (str): The name of the dataset.
-        - dataset (h5py.Dataset): The dataset to process.
+            path (str): The path to the parent group where the dataset should be added.
+            name (str): The name of the dataset.
+            dataset (h5py.Dataset): The dataset to process.
         """
         # validate the path using the utility function
         path = validate_path(path)
@@ -145,11 +140,11 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             self._process_attributes(f"{path}/{name}", dict(dataset.attrs))     
 
     def _process_attributes(self, path: str, attributes: Dict[str, Any]):
-        """
-        Processes and adds attributes to a node in the DataContainer.
+        """ Processes and adds attributes to a node in the DataContainer.
+
         Parameters:
-        - path (str): The path to the node.
-        - attributes (Dict[str, Any]): The attributes to add to the node.
+            path (str): The path to the node.
+            attributes (Dict[str, Any]): The attributes to add to the node.
         """
         for key, value in attributes.items():
             # Convert JSON strings back to lists and dictionaries
@@ -166,10 +161,10 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             self.add_attribute(path, key, value) 
 
     def load_from_hdf5(self, path: str):
-        """
-        Loads an HDF5 file from the specified path and deserializes it into the DataContainer.
+        """ Loads an HDF5 file from the specified path and deserializes it into the DataContainer.
+
         Parameters:
-        - path (str): The path of the HDF5 file to load.
+            path (str): The path of the HDF5 file to load.
         """
         with open(path, 'rb') as file:
             hdf5_bytes = io.BytesIO(file.read())

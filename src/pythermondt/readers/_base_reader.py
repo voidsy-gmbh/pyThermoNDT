@@ -2,13 +2,13 @@ import os
 import re
 from glob import glob
 from abc import ABC, abstractmethod
-from typing import Generator, List, Tuple, Callable
+from typing import Generator, List, Tuple, Optional
 from ..data import DataContainer
 from ..transforms import ThermoTransform
 
 class _BaseReader(ABC):
     @abstractmethod
-    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: ThermoTransform | None = None):
+    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: Optional[ThermoTransform] = None):
         """
         Initialize the DataReader with a single source.
 

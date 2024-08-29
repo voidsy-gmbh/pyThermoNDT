@@ -1,16 +1,16 @@
 import mat73
 import numpy as np
 import json
-from typing import Tuple
+from typing import Tuple, Optional
 from ._base_reader import _BaseReader
-from ..data import DataContainer
+from ..data import DataContainer, ThermoContainer
 from ..transforms import ThermoTransform
 
 class SimulationReader(_BaseReader):
     '''
         A sub-class to read simulation data from a .mat file.
     '''
-    def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', cache_paths: bool = True, transform: ThermoTransform | None = None):
+    def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', cache_paths: bool = True, transform: Optional[ThermoTransform] = None):
         # Call the constructor of the BaseLoader and set the file extension 
         super().__init__(source, file_extension, cache_paths, transform)
          
@@ -19,34 +19,34 @@ class SimulationReader(_BaseReader):
         data = mat73.loadmat(file_path, use_attrdict=True)['SimResult']
 
         # Create an empty DataContainer
-        datacontainer = DataContainer()
+        datacontainer = ThermoContainer()
 
         # Add source as an attribute
-        datacontainer.update_attributes(path='MetaData', Source='Simulation')
+        datacontainer.add_attributes(path='/MetaData', Source='Simulation')
 
         # Domaintype will always be time in case of the Simulation data
-        datacontainer.update_attributes(path='MetaData/DomainValues', DomainType="Time in s")
+        datacontainer.add_attributes(path='/MetaData/DomainValues', DomainType="Time in s")
         
-        # Iterate through all keys and save the values in the datapoint ==> 
+        # Iterate through all keys and save the values in the datacontainer ==> 
         # If one key does not exist the variable in the datapoint will stay None
         for key in data.keys():
             match key:
                 case 'Tdata':
-                    datacontainer.fill_dataset(path='Data/Tdata', data=data[key])
+                    datacontainer.update_dataset(path='/Data/Tdata', data=data[key])
                 case 'GroundTruth':
                     # Check if file is old or new format for the label ids
                     if isinstance(data[key], mat73.core.AttrDict):
-                        datacontainer.update_attributes(path='GroundTruth/DefectMask', LabelIds=data[key].LabelIds)
-                        datacontainer.fill_dataset(path='GroundTruth/DefectMask', data=data[key].DefectMask)
+                        datacontainer.add_attributes(path='/GroundTruth/DefectMask', LabelIds=data[key].LabelIds)
+                        datacontainer.update_dataset(path='/GroundTruth/DefectMask', data=data[key].DefectMask)
                     else:
-                        datacontainer.update_attributes(path='GroundTruth/DefectMask', LabelIds=None)
-                        datacontainer.fill_dataset(path='GroundTruth/DefectMask', data=data[key])
+                        # datacontainer.update_attributes(path='GroundTruth/DefectMask', LabelIds=None)
+                        datacontainer.update_dataset(path='/GroundTruth/DefectMask', data=data[key])
                 case 'Time':
-                    datacontainer.fill_dataset(path='MetaData/DomainValues', data=data[key])
+                    datacontainer.update_dataset(path='/MetaData/DomainValues', data=data[key])
                 case 'LookUpTable':
-                    datacontainer.fill_dataset(path='MetaData/LookUpTable', data=data[key])
+                    datacontainer.update_dataset(path='/MetaData/LookUpTable', data=data[key])
                 case 'ExcitationSignal':
-                    datacontainer.fill_dataset(path='MetaData/ExcitationSignal', data=data[key])
+                    datacontainer.update_dataset(path='/MetaData/ExcitationSignal', data=data[key])
                 case 'ComsolParameters':
                     # Convert Comsol Parameters to a json string
                     converted_comsol_parameters = [
@@ -59,14 +59,14 @@ class SimulationReader(_BaseReader):
 
                     # Construct json string and write it 
                     json_string = json.dumps(converted_comsol_parameters, indent=4)
-                    datacontainer.update_attributes(path='MetaData', SimulationParameter=json_string)
+                    datacontainer.add_attributes(path='/MetaData', SimulationParameter=json_string)
                     
                 case 'NoiseLevel':
-                    datacontainer.update_attributes(path='Data/Tdata', NoiseLevel=data[key])
+                    datacontainer.add_attributes(path='/Data/Tdata', NoiseLevel=data[key])
                 case 'Shapes':
                     # Convert the Shapes into a Python dict first:
                     shapes = {data[key].Names[i] : data[key].Numbers[i] for i in range(len(data[key].Names))}
-                    datacontainer.update_attributes(path='MetaData', Shapes=shapes)
+                    datacontainer.add_attributes(path='/MetaData', Shapes=shapes)
 
         # Return the constructed datapoint
         return datacontainer

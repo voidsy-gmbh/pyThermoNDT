@@ -22,7 +22,7 @@ class DatasetOps(BaseOps):
         if self._is_datanode(key):
             raise KeyError(f"Dataset with name: '{child}' at the path: '{parent}' already exists.")
         
-        if not data:
+        if data is None:
             self.nodes[key] = DataNode(name)
         else:
             self.nodes[key] = DataNode(name, data)

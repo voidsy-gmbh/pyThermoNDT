@@ -145,6 +145,9 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             path (str): The path to the node.
             attributes (Dict[str, Any]): The attributes to add to the node.
         """
+        # validate the path using the utility function
+        path = validate_path(path)
+
         for key, value in attributes.items():
             # Convert JSON strings back to lists and dictionaries
             # Try to convert the string to a list or dictionary using the JSON format

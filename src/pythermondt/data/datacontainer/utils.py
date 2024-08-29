@@ -27,11 +27,12 @@ def validate_path(path: str, name: str = "") -> str:
     if not normalized_path.startswith('/'):
         normalized_path = '/' + normalized_path
 
-    # Check for double slashes or trailing slash
+    # Check for double slashes or trailing slash ==> remove them
     if '//' in normalized_path:
-        raise ValueError(f"Invalid path: {normalized_path} contains double slashes.")
+        normalized_path = re.sub(r'/+', '/', normalized_path)
+        
     if normalized_path != "/" and normalized_path.endswith('/'):
-        raise ValueError(f"Invalid path: {normalized_path} ends with a slash.")
+        normalized_path = normalized_path[:-1]
 
     # Validate using a regex pattern
     pattern = r'^/[a-zA-Z0-9_/-]+$'

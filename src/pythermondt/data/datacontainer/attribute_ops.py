@@ -3,13 +3,13 @@ from .base import BaseOps
 from .node import DataNode, GroupNode, AttributeTypes
 
 class AttributeOps(BaseOps):
-    def add_attribute(self, path: str, key: str, value: str | int | float | list | dict):
+    def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict):
         """Adds an attribute to the specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
             key (str): The key of the attribute.
-            value (str | int | float | list | dict): The value of the attribute.
+            value (str | int | float | list | tuple | dict): The value of the attribute.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -18,12 +18,12 @@ class AttributeOps(BaseOps):
         
         self.nodes(path, DataNode, GroupNode).add_attribute(key, value)
 
-    def add_attributes(self, path: str, **attributes: Dict[str, str | int | float | list | dict]):
+    def add_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict):
         """Adds multiple attributes to the specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
-            **attributes (Dict[str, str | int | float | list | dict]): The attributes to add.
+            **attributes (Dict[str, str | int | float | list | tuple | dict]): The attributes to add.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -31,7 +31,7 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)
 
-    def get_attribute(self, path: str, key: str) -> str | int | float | list | dict:
+    def get_attribute(self, path: str, key: str) -> str | int | float | list | tuple | dict:
         """Get a single attribute from a specified group or dataset in the DataContainer.
 
         Parameters:
@@ -39,7 +39,7 @@ class AttributeOps(BaseOps):
             key (str): The key of the attribute.
 
         Returns:
-            str | int | float | list | dict: The value of the attribute.
+            str | int | float | list | tuple | dict: The value of the attribute.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -47,14 +47,14 @@ class AttributeOps(BaseOps):
         """
         return self.nodes(path, DataNode, GroupNode).get_attribute(key)
     
-    def get_attributes(self, path: str) -> ItemsView[str, str | int | float | list | dict]:
+    def get_attributes(self, path: str) -> ItemsView[str, str | int | float | list | tuple | dict]:
         """Get all attributes from a specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
 
         Returns:
-            ItemsView[str, str | int | float | list | dict]: A view of all attributes in the group or dataset.
+            ItemsView[str, str | int | float | list | tuple | dict]: A view of all attributes in the group or dataset.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -74,13 +74,13 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).remove_attribute(key)
 
-    def update_attribute(self, path: str, key: str, value: str | int | float | list | dict):
+    def update_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict):
         """Update an attribute in a specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
             key (str): The key of the attribute.
-            value (str | int | float | list | dict): The new value of the attribute.
+            value (str | int | float | list | tuple | dict): The new value of the attribute.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -88,12 +88,12 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).update_attribute(key, value)
 
-    def update_attributes(self, path: str, **attributes: Dict[str, str | int | float | list | dict]):
+    def update_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict):
         """Update multiple attributes in a specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
-            **attributes (Dict[str, str | int | float | list | dict]): The new attributes.
+            **attributes (Dict[str, str | int | float | list | tuple | dict]): The new attributes.
 
         Raises:
             KeyError: If the group or dataset does not exist.

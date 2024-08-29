@@ -4,7 +4,7 @@ from enum import Enum
 from torch import Tensor
 from abc import ABC, abstractmethod
 
-AttributeTypes = str | int | float | list | dict
+AttributeTypes = str | int | float | list | tuple | dict
 
 class NodeType(Enum):
     ROOT = "root"
@@ -48,7 +48,7 @@ class AttributeNode(BaseNode, ABC):
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' already exists. Use 'update_attribute' to update the value.")
         self.__attributes[key] = value
     
-    def add_attributes(self, **attributes: Dict[str, AttributeTypes]):
+    def add_attributes(self, **attributes: AttributeTypes):
         for key, value in attributes.items():
             self.add_attribute(key, value)
 
@@ -70,7 +70,7 @@ class AttributeNode(BaseNode, ABC):
             raise TypeError(f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. Cannot update attribute with value of type '{type(value)}'.")
         self.__attributes[key] = value
 
-    def update_attributes(self, **attributes: Dict[str, AttributeTypes]):
+    def update_attributes(self, **attributes: AttributeTypes):
         for update_key, update_value in attributes.items():
             self.update_attribute(update_key, update_value)
 

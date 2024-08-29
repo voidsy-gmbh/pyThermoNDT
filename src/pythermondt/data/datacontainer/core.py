@@ -1,22 +1,46 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from functools import wraps
 from torch import Tensor
 from numpy import ndarray
+from io import BytesIO
 from .node import RootNode
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
 from .attribute_ops import AttributeOps
-from .serialization_ops import SerializationOps
+from .serialization_ops import SerializationOps, DeserializationOps
 
-class DataContainer(GroupOps, DatasetOps, AttributeOps , SerializationOps):
+class DataContainer(SerializationOps, DeserializationOps, GroupOps, DatasetOps, AttributeOps):
     """
     Manages and serializes data into HDF5 format.
 
-    This class provides structured handling of groups and datasets read with the reader classes. It allows for easy access to the data and attributes stored in the DataContainer.
-    It also provides functions for easy serialization and data visualization.
+    This class manages data in a hierarchical structure, similar to a HDF5 File. It provides methods to add groups, datasets and attributes to the data structure. 
+    The data structure can be serialized to a HDF5 file and deserialized from a HDF5 file using save_to_hdf5 and load_from_hdf5 methods respectively.
+    It also provides methods for visualization of the data structure.
     """
+    def __init__(self, hdf5_bytes: Optional[BytesIO] = None):
+        """ Initializes a DataContainer instance.
+        By default, initializes an empty DataContainer. 
+        If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
+
+        Parameters:
+            hdf5_bytes (BytesIO, optional): The serialized HDF5 data as a BytesIO object.
+        """
+        super().__init__()
+
+        if hdf5_bytes:
+            self.deserialize(hdf5_bytes)
+
+   # Overwrite the __str__ method to provide a string representation of the DataContainer
+    def __str__(self):
+        returnstring = ""
+        for path, node in self.nodes.items():
+            returnstring = returnstring + f"{path}: ({node.name}: {node.type})" + "\n"
+
+        return returnstring
+    
+class ThermoContainer(DataContainer):
     def __init__(self):
-        """ Initializes the DataContainer with predefined groups and datasets.
+        """ Initializes a DataContainer with a predefined structure for thermographic data
         """
         super().__init__()
 
@@ -32,12 +56,4 @@ class DataContainer(GroupOps, DatasetOps, AttributeOps , SerializationOps):
         self.add_dataset("/MetaData", "LookUpTable")
         self.add_dataset("/MetaData", "ExcitationSignal")
         self.add_dataset("/MetaData", "DomainValues")
-
-   # Overwrite the __str__ method to provide a string representation of the DataContainer
-    def __str__(self):
-        returnstring = ""
-        for path, node in self.nodes.items():
-            returnstring = returnstring + f"{path}: ({node.name}: {node.type})" + "\n"
-
-        return returnstring
 

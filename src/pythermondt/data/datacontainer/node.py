@@ -65,10 +65,14 @@ class AttributeNode(BaseNode, ABC):
     def update_attribute(self, key: str, value: AttributeTypes) -> None:
         if key not in self.__attributes.keys():
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist. Use 'add_attribute' to add a new attribute.")
+        
+        if type(self.__attributes[key]) != type(value):
+            raise TypeError(f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. Cannot update attribute with value of type '{type(value)}'.")
         self.__attributes[key] = value
 
     def update_attributes(self, **attributes: Dict[str, AttributeTypes]):
-        self.__attributes.update(attributes)
+        for update_key, update_value in attributes.items():
+            self.update_attribute(update_key, update_value)
 
     def clear_attributes(self) -> None:
         self.__attributes.clear()

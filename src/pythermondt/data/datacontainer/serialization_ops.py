@@ -1,7 +1,6 @@
 import io
 import h5py
 import json
-import torch
 from typing import Any, Dict, ItemsView
 from .base import BaseOps
 from .node import DataNode, GroupNode, RootNode, AttributeTypes
@@ -54,7 +53,7 @@ class SerializationOps(BaseOps):
 
         Parameters:
             h5obj (h5py.Group or h5py.Dataset): The HDF5 object to add attributes to.
-            attributes (Dict[str, str | int | float | list | dict]): The attributes to add.
+            attributes (Dict[str, str | int | float | list | tuple | dict]): The attributes to add.
         """
         for key, value in attributes:
             # Convert lists and dictionaries to JSON strings ==> HDF5 does not support these types natively

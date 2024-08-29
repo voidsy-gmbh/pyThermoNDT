@@ -1,6 +1,6 @@
-from typing import Dict, ItemsView
+from typing import ItemsView
 from .base import BaseOps
-from .node import DataNode, GroupNode, AttributeTypes
+from .node import DataNode, GroupNode
 
 class AttributeOps(BaseOps):
     def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict):

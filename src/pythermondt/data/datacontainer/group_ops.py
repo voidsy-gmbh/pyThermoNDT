@@ -1,7 +1,7 @@
 from typing import List
 from .base import BaseOps
 from .node import GroupNode
-from .utils import generate_key, split_path
+from .utils import generate_key
 
 class GroupOps(BaseOps):
     def add_group(self, path: str, name: str):

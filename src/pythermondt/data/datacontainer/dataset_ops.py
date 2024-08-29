@@ -3,8 +3,8 @@ from typing import List, Dict, Optional
 from torch import Tensor
 from numpy import ndarray
 from .base import BaseOps
-from .node import DataNode, NodeType
-from .utils import generate_key, split_path
+from .node import DataNode
+from .utils import generate_key
 
 class DatasetOps(BaseOps):
     def add_dataset(self, path: str, name: str, data: Optional[Tensor | ndarray]= None):

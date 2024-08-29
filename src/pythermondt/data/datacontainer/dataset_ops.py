@@ -1,11 +1,13 @@
+import torch
 from typing import List, Dict, Optional
 from torch import Tensor
+from numpy import ndarray
 from .base import BaseOps
 from .node import DataNode, NodeType
 from .utils import generate_key, split_path
 
 class DatasetOps(BaseOps):
-    def add_dataset(self, path: str, name: str, data: Optional[Tensor] = None):
+    def add_dataset(self, path: str, name: str, data: Optional[Tensor | ndarray]= None):
         """Adds a single dataset to a specified path in the DataContainer.
 
         Parameters:
@@ -21,6 +23,10 @@ class DatasetOps(BaseOps):
 
         if self._is_datanode(key):
             raise KeyError(f"Dataset with name: '{child}' at the path: '{parent}' already exists.")
+        
+        # Convert the numpy array to a PyTorch tensor ==> internally, the data is stored as a PyTorch tensor
+        if isinstance(data, ndarray):
+            data = torch.from_numpy(data)
         
         if data is None:
             self.nodes[key] = DataNode(name)
@@ -61,7 +67,7 @@ class DatasetOps(BaseOps):
         """
         del self.nodes[path]
 
-    def update_dataset(self, path: str, data: Tensor):
+    def update_dataset(self, path: str, data: Tensor | ndarray):
         """Updates a single dataset at a specified path in the DataContainer.
 
         Parameters:
@@ -71,6 +77,10 @@ class DatasetOps(BaseOps):
         Raises:
             KeyError: If the dataset does not exist.
         """
+        # Convert the numpy array to a PyTorch tensor ==> internally, the data is stored as a PyTorch tensor
+        if isinstance(data, ndarray):
+            data = torch.from_numpy(data)
+
         self.nodes(path, DataNode).data = data
 
     def update_datasets(self, updates: Dict[str, Tensor]):

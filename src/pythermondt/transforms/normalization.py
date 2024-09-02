@@ -12,7 +12,7 @@ class MinMaxNormalize(ThermoTransform):
         Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the min and max values of the data.
 
         Parameters:
-        - eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
+            eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
         '''
         super().__init__()
         if eps > 1e-3:
@@ -21,7 +21,7 @@ class MinMaxNormalize(ThermoTransform):
     
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
-        tdata = container.get_dataset("Data/Tdata")
+        tdata = container.get_dataset("/Data/Tdata")
 
         # Get min and max values of the tensor and normalize the data
         min_val = tdata.min()
@@ -29,7 +29,7 @@ class MinMaxNormalize(ThermoTransform):
         tdata = (tdata - min_val) / (max_val - min_val + self.eps)
 
         # Update the container and return it
-        container.fill_dataset("Data/Tdata", tdata)
+        container.update_dataset("/Data/Tdata", tdata)
         return container
     
 class MaxNormalize(ThermoTransform):
@@ -41,7 +41,7 @@ class MaxNormalize(ThermoTransform):
         ''' Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the max value of the data.
 
         Parameters:
-        - eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
+            eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
         '''
         super().__init__()
         if eps > 1e-3:
@@ -50,14 +50,14 @@ class MaxNormalize(ThermoTransform):
     
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
-        tdata = container.get_dataset("Data/Tdata")
+        tdata = container.get_dataset("/Data/Tdata")
 
         # Get max value of the tensor and normalize the data
         max_val = tdata.max()
         tdata = tdata / (max_val + self.eps)
 
         # Update the container and return it
-        container.fill_dataset("Data/Tdata", tdata)
+        container.update_dataset("/Data/Tdata", tdata)
         return container
     
 class ZScoreNormalize(ThermoTransform):
@@ -69,7 +69,7 @@ class ZScoreNormalize(ThermoTransform):
         ''' Normalizes the Temperature data (Tdata) in the container to have mean 0 and standard deviation 1.
 
         Parameters:
-        - eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
+            eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
         '''
         super().__init__()
         if eps > 1e-3:
@@ -78,7 +78,7 @@ class ZScoreNormalize(ThermoTransform):
     
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
-        tdata = container.get_dataset("Data/Tdata")
+        tdata = container.get_dataset("/Data/Tdata")
 
         # Get mean and standard deviation of the tensor and normalize the data
         mean_val = tdata.mean()
@@ -86,5 +86,5 @@ class ZScoreNormalize(ThermoTransform):
         tdata = (tdata - mean_val) / (std_val + self.eps)
 
         # Update the container and return it
-        container.fill_dataset("Data/Tdata", tdata)
+        container.update_dataset("/Data/Tdata", tdata)
         return container

@@ -1,9 +1,9 @@
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
-from ..readers import _BaseReader
+from ..readers import BaseReader
 
 class ThermoDataset(Dataset):
-    def __init__( self, data_reader: _BaseReader, input_dataset_path: str, label_dataset_path: str):
+    def __init__( self, data_reader: BaseReader, input_dataset_path: str, label_dataset_path: str):
         """
         Initialize the PyTorch dataset with the data reader and the input and label groups and datasets.
 

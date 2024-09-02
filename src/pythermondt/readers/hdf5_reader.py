@@ -1,10 +1,10 @@
 import io
 from typing import Tuple, Optional
-from ._base_reader import _BaseReader
+from .base_reader import BaseReader
 from ..data import DataContainer
 from ..transforms import ThermoTransform
 
-class HDF5Reader(_BaseReader):
+class HDF5Reader(BaseReader):
     '''
     A class for reading DataContainers that have been serialized to HDF5 files.
     '''

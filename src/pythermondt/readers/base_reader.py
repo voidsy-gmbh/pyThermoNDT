@@ -6,7 +6,7 @@ from typing import Generator, List, Tuple, Optional
 from ..data import DataContainer
 from ..transforms import ThermoTransform
 
-class _BaseReader(ABC):
+class BaseReader(ABC):
     @abstractmethod
     def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: Optional[ThermoTransform] = None):
         """Initialize the Reader with a single source.

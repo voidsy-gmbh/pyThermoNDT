@@ -2,11 +2,11 @@ import mat73
 import numpy as np
 import json
 from typing import Tuple, Optional
-from ._base_reader import _BaseReader
+from .base_reader import BaseReader
 from ..data import DataContainer, ThermoContainer
 from ..transforms import ThermoTransform
 
-class SimulationReader(_BaseReader):
+class SimulationReader(BaseReader):
     '''
         A sub-class to read simulation data from a .mat file.
     '''

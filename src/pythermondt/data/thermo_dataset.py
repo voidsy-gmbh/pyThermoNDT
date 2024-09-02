@@ -1,6 +1,5 @@
-import torch
 from torch.utils.data import Dataset
-from .data_container import DataContainer
+from .datacontainer import DataContainer
 from ..readers import _BaseReader
 
 class ThermoDataset(Dataset):
@@ -9,17 +8,14 @@ class ThermoDataset(Dataset):
         Initialize the PyTorch dataset with the data reader and the input and label groups and datasets.
 
         Parameters:
-        - data_reader (BaseReader): The data reader object to use for loading data.
-        - input_dataset_path (str): The path to the input dataset in the DataContainer. Should be in the format 'group/dataset'.
-        - label_dataset_path (str): The path to the label dataset in the DataContainer. Should be in the format 'group/dataset'.
+            data_reader (BaseReader): The data reader object to use for loading data.
+            input_dataset_path (str): The path to the input dataset in the DataContainer.
+            label_dataset_path (str): The path to the label dataset in the DataContainer. 
         """
         # Read Variables
         self.data_reader = data_reader
         self.input_dataset_path = input_dataset_path
         self.label_dataset_path = label_dataset_path
-
-        # Get file paths
-        self._file_paths = self.data_reader.file_paths()
     
     def __len__(self):
         # We use the number of of files that the data_reader can read
@@ -29,16 +25,12 @@ class ThermoDataset(Dataset):
         # Load one datapoint as a DataContainer using the reader
         datapoint = self.data_reader[idx]
 
-        # Check if the DataContainer is valid
+        # Check at runtime if the datapoint is a DataContainer
         if not isinstance(datapoint, DataContainer):
             raise ValueError(f"DataContainer is not valid. Got {type(datapoint)}")
 
         # Get the input and label data from the DataContainer
-        input_data = datapoint.get_dataset(self.input_dataset_path)
-        label_data = datapoint.get_dataset(self.label_dataset_path)
-
-        # Convert numpy arrays to torch tensors
-        input_tensor = torch.from_numpy(input_data)
-        label_tensor = torch.from_numpy(label_data)
+        input_tensor = datapoint.get_dataset(self.input_dataset_path)
+        label_tensor = datapoint.get_dataset(self.label_dataset_path)
 
         return input_tensor, label_tensor

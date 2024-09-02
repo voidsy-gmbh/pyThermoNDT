@@ -14,8 +14,8 @@ class ApplyLUT(ThermoTransform):
     
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
-        lut = container.get_dataset("MetaData/LookUpTable")
-        tdata = container.get_dataset("Data/Tdata")
+        lut = container.get_dataset("/MetaData/LookUpTable")
+        tdata = container.get_dataset("/Data/Tdata")
 
         # Check if data is available
         if lut is None or tdata is None:
@@ -38,7 +38,7 @@ class ApplyLUT(ThermoTransform):
         tdata = lut[tdata]
 
         # Update the container and return it
-        container.fill_dataset("Data/Tdata", tdata)
+        container.update_dataset("/Data/Tdata", tdata)
         return container
 
 class SubstractFrame(ThermoTransform):
@@ -50,7 +50,7 @@ class SubstractFrame(ThermoTransform):
         Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
         
         Parameters:
-        - frame (int): Frame number that should be substracted from the Temperature data. Default is the initial frame (frame 0).
+            frame (int): Frame number that should be substracted from the Temperature data. Default is the initial frame (frame 0).
         '''
         super().__init__()
 
@@ -62,7 +62,7 @@ class SubstractFrame(ThermoTransform):
     
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
-        tdata = container.get_dataset("Data/Tdata")
+        tdata = container.get_dataset("/Data/Tdata")
 
         # Check if data is available
         if tdata is None:
@@ -80,5 +80,5 @@ class SubstractFrame(ThermoTransform):
         tdata = tdata - tdata[:, :, self.frame].unsqueeze(2)
 
         # Update the container and return it
-        container.fill_dataset("Data/Tdata", tdata)
+        container.update_dataset("/Data/Tdata", tdata)
         return container

@@ -2,23 +2,21 @@ import os
 import re
 from glob import glob
 from abc import ABC, abstractmethod
-from typing import Generator, List, Tuple, Callable
+from typing import Generator, List, Tuple, Optional
 from ..data import DataContainer
 from ..transforms import ThermoTransform
 
 class _BaseReader(ABC):
     @abstractmethod
-    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: ThermoTransform | None = None):
-        """
-        Initialize the DataReader with a single source.
+    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: Optional[ThermoTransform] = None):
+        """Initialize the Reader with a single source.
 
         Parameters:
-        - source (str): Path to the directory containing data files, a single data file or a regex pattern to match multiple files.
-        - file_extension (str or Tuple[str]): File extension(s) of the data files to load. Can be a single string or a tuple of strings.
-        - filter_files (bool): If True, only files with the specified file extension will be loaded. Default is True.
-        - cache_paths (bool, optional): If True, all file paths in the source directory will be cached. Therefore updates to the source directory 
-            will not be reflected at runtime. Default is True.
-        - transform (ThermoTransform, optional): Optional transform to be applied on the data before it is loaded. Default is None.
+            source (str): Path to the directory containing data files, a single data file or a regex pattern to match multiple files.
+            file_extension (str or Tuple[str]): File extension(s) of the data files to load. Can be a single string or a tuple of strings.
+            filter_files (bool): If True, only files with the specified file extension will be loaded. Default is True.
+            cache_paths (bool, optional): If True, all file paths in the source directory will be cached. Therefore updates to the source directory will not be reflected at runtime. Default is True.
+            transform (ThermoTransform, optional): Optional transform to be applied on the data before it is loaded. Default is None.
         """
         # Convert file_extension to a tuple if it is a single string
         extensions = file_extension if isinstance(file_extension, tuple) else (file_extension,)
@@ -89,7 +87,7 @@ class _BaseReader(ABC):
         Get the number of files in the source directory
 
         Returns:
-        - int: The number of files in the source directory.
+            int: The number of files in the source directory.
         """
         return len(self.file_paths())
     
@@ -103,7 +101,7 @@ class _BaseReader(ABC):
         Get all the file names in the source directory, specified by the source expression and file extension of the reader.
 
         Returns:
-        - List[str]: A list of file names.
+            List[str]: A list of file names.
         """
         # If caching is on and the file names are already cached, return the cached file names
         if self._cached_file_names is not None and self.cache_paths:
@@ -125,7 +123,7 @@ class _BaseReader(ABC):
         Get all the file paths in the source directory, specified by the source expression and file extension of the reader.
 
         Returns:
-        - List[str]: A list of file paths.
+            List[str]: A list of file paths.
         """
         # If caching is on and the file paths are already cached, return the cached file names
         if self._cached_file_paths is not None and self.cache_paths:
@@ -159,10 +157,10 @@ class _BaseReader(ABC):
         Read data from a given file path and return it as a DataContainer. Also checks if the file extension is valid.
 
         Parameters:
-        - file_path (str): The file path from which to load the data.
+            file_path (str): The file path from which to load the data.
 
         Returns:
-        - DataContainer: A DataContainer instance containing data loaded from the file.
+            DataContainer: A DataContainer instance containing data loaded from the file.
         """
         # Check if the file extension of the file is valid
         if not any(file_path.endswith(ext) for ext in self.file_extension):
@@ -184,10 +182,10 @@ class _BaseReader(ABC):
         is handled inside the _BaseReader class.
 
         Parameters:
-        - file_path (str): The file path from which to load the data.
+            file_path (str): The file path from which to load the data.
 
         Returns:
-        - DataContainer: A DataContainer instance containing data loaded from the file.
+            DataContainer: A DataContainer instance containing data loaded from the file.
         """
         pass
 
@@ -196,10 +194,10 @@ class _BaseReader(ABC):
         Generator to yield batches of data dynamically from the list of files in the source directory. Files are filtered by the file extension specified in the reader.
 
         Parameters:
-        - batch_size (int): Number of files to load per batch.
+            batch_size (int): Number of files to load per batch.
 
         Yields:
-        - List[DataContainer]: A batch of DataContainers loaded from batch_size files.
+            List[DataContainer]: A batch of DataContainers loaded from batch_size files.
         """
         # Check if source is a directory
         if not os.path.isdir(self.source):
@@ -240,9 +238,9 @@ class _BaseReader(ABC):
 
     def read_data_all(self) -> List[DataContainer]:
         """
-        Load all data from the list of files in the source directory. Files are filtered by the file extension specified in the reader. Be care with large datasets!
+        Load all data from the list of files in the source directory. Files are filtered by the file extension specified in the reader. Be careful with large amounts of files. Memory usage can be high!
 
         Returns:
-        - List[DataContainer]: A list containing all DataContainers loaded from the files.
+            List[DataContainer]: A list containing all DataContainers loaded from the files.
         """
         return [self.read_data(f) for f in self.file_paths()]

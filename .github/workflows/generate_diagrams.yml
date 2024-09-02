@@ -42,15 +42,14 @@ jobs:
     - name: Check for New or Modified Files
       id: files-check
       run: |
-        # Check if any new .gv files are created or existing .gv files are modified.
-        NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/*.gv | wc -l)
-        if [ "$NEW_OR_MODIFIED_FILES" -eq 0 ]; then
-          echo "No new or modified .gv files detected."
-          echo "changed=false" >> $GITHUB_ENV
-        else
-          echo "New or modified .gv files detected."
-          echo "changed=true" >> $GITHUB_ENV
-        fi
+          NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/*.gv | wc -l)
+          if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
+            echo "New or modified .gv files detected."
+            echo "CHANGED=true" >> $GITHUB_ENV
+          else
+            echo "No new or modified .gv files detected."
+            echo "CHANGED=false" >> $GITHUB_ENV
+          fi
       
     - name: Generate diagrams from Graphviz files
       if: env.CHANGED == 'true'

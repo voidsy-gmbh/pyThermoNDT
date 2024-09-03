@@ -38,7 +38,7 @@ class DataContainerBase(ABC):
             # Optionally check if the node is of the correct type
             node = self.__nodes[key]                  
             if node_types and not any(isinstance(node, t) for t in node_types):
-                raise TypeError(f"Node at path '{key}' is not of type: {", ".join([t.__name__ for t in node_types])}.")
+                raise TypeError(f"Node at path '{key}' is not of type: {', '.join([t.__name__ for t in node_types])}.")
             return node
         
         def __set_node(self, key: str, value: NodeTypes) -> None:

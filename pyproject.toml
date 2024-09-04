@@ -1,11 +1,22 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pythermondt"
+version = "0.0.1"
+description = "A package to manipulate thermographic data for NDT purposes."
+authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["./src"]
 
 [tool.pytest.ini_options]
 addopts = "-vv"
 testpaths = [
-    "tests",
+    "./tests",
 ]
 pythonpath = [
     "./src",

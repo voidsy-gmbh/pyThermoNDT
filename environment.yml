@@ -9,7 +9,7 @@ dependencies:
   - pytest=8.2.*
   - pylint=3.2.*
 
-  # Data loading
+  # Data loading and visualization
   - mat73=0.63
   - numpy=1.26.*
   - matplotlib=3.8.*
@@ -22,3 +22,4 @@ dependencies:
 
   # AWS upload
   - boto3=1.34.*
+  - sagemaker-python-sdk=2.227.*

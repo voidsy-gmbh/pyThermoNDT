@@ -30,7 +30,6 @@ requirements:
 
     # AWS upload
     - boto3=1.34.*
-    - sagemaker-python-sdk=2.227.*
 
 test:
   requires:

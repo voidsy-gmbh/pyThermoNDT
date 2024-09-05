@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import torch
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
@@ -27,17 +28,15 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         match option:
             case "ShowGroundTruth":
                 plt.subplot(1, 2, 1)
-                plt.imshow(data_to_show, aspect='auto', cmap=cmap)
+                image = plt.imshow(data_to_show, aspect='auto', cmap=cmap)
                 plt.title(f'Frame Number: {frame_number}')
-                plt.colorbar()
                 
                 plt.subplot(1, 2, 2)
                 plt.imshow(groundtruth, aspect='auto')
                 plt.title('Ground Truth')
             
             case "OverlayGroundTruth":
-                plt.imshow(data_to_show, aspect='auto', cmap=cmap)  # Display the original data
-                plt.colorbar()  # Display the colorbar
+                image = plt.imshow(data_to_show, aspect='auto', cmap=cmap)  # Display the original data
                 plt.title(f'Frame Number: {frame_number}')
                 
                 if groundtruth is not None:
@@ -51,11 +50,14 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             # Default case, just show the frame data
             case _:  
-                plt.imshow(data_to_show, aspect='auto', cmap=cmap)
+                image = plt.imshow(data_to_show, aspect='auto', cmap=cmap)
                 plt.title(f'Frame Number: {frame_number}')
-                plt.colorbar()
+        
+        # Custom formatter for the colorbar to ensure that the colorbar ticks are displayed without offset
+        formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
 
         # Show the plot
+        plt.colorbar(image, format=formatter)
         plt.show()
 
     def show_pixel_profile(self, pixel_pos_x: int, pixel_pos_y: int):

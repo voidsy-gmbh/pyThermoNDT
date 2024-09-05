@@ -7,7 +7,7 @@ source:
 
 build:
   noarch: python
-  number: 3
+  number: 4
   # Even though we're using pip here, it's just to install the directory contents directly without a setup.py. 
   # The actual build and dependencies are handled by conda-build and conda due to --no-deps flag.
   script: {{ PYTHON }} -m pip install . --no-deps -vv
@@ -21,15 +21,16 @@ requirements:
     - python>=3.10
 
     # Data loading and visualization
-    - mat73=0.65
-    - numpy=1.26.*
-    - matplotlib=3.9.*
+    - h5py>=3.9, <3.11 # h5py 3.11.0 requires numpy 2.0.0 ==> not tested if this works here
+    - mat73>=0.65
+    - numpy>=1.23.*
+    - matplotlib>=3.7.*
 
     # Machine Learning
     - pytorch::pytorch=2.3.*
 
     # AWS upload
-    - boto3=1.34.*
+    - boto3>=1.33.*
 
 test:
   requires:

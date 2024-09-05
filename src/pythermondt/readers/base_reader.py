@@ -12,9 +12,8 @@ class BaseReader(ABC):
         """Initialize the Reader with a single source.
 
         Parameters:
-            source (str): Path to the directory containing data files, a single data file or a regex pattern to match multiple files.
+            source (str): Source expression to match files. Can either point to a single file, a directory or a regex pattern to match multiple files.
             file_extension (str or Tuple[str]): File extension(s) of the data files to load. Can be a single string or a tuple of strings.
-            filter_files (bool): If True, only files with the specified file extension will be loaded. Default is True.
             cache_paths (bool, optional): If True, all file paths in the source directory will be cached. Therefore updates to the source directory will not be reflected at runtime. Default is True.
             transform (ThermoTransform, optional): Optional transform to be applied on the data before it is loaded. Default is None.
         """
@@ -26,18 +25,9 @@ class BaseReader(ABC):
             raise TypeError("All items in the list must be strings.")
         if not all(ext.startswith('.') for ext in extensions):
             raise ValueError("All file extensions must start with a dot.")
-        self.file_extension = extensions
+        self.file_extensions = extensions
 
-        # Check if source is a valid regex pattern
-        try:
-            re.compile(source)
-            valid_regex = True
-        except re.error:
-            valid_regex = False  
-
-        # Check if the provided source is either a file, a directory or a regex pattern
-        if not os.path.isfile(source) and not os.path.isdir(source) and not valid_regex:
-            raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
+        # Set the source expression
         self.source = source
 
         # Transforms to apply
@@ -49,7 +39,7 @@ class BaseReader(ABC):
         # Index to keep track of the current file being read ==> used for iteration
         self._current_file_index = 0
 
-        # Cached file names and paths
+        # Lists that contain Cached file names and paths
         self._cached_file_names = None
         self._cached_file_paths = None
 
@@ -79,7 +69,42 @@ class BaseReader(ABC):
             raise IndexError("Index out of bounds.")
 
         # Load data from the file at the specified index
-        return self.read_data(files[index]) 
+        return self.read_data(files[index])
+    
+    @property
+    def source(self) -> str:
+        """
+        The source expression used to match files. Can either point to a single file, a directory or a regex pattern to match multiple files.
+
+        Returns:
+            str: The source expression.
+        """
+        return self.__source
+    
+    @source.setter
+    def source(self, source: str):
+        # Check if source is a valid regex pattern
+        try:
+            re.compile(source)
+            valid_regex = True
+        except re.error:
+            valid_regex = False
+
+        # Check if the provided source is either a file, a directory or a regex pattern
+        if os.path.isfile(source):
+            self._source_type = "file"
+
+        elif os.path.isdir(source):
+            self._source_type = "directory"
+
+        elif valid_regex:
+            self._source_type = "regex"
+
+        else:
+            raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
+        
+        # Write the source expression to the private variable
+        self.__source = source
 
     @property
     def num_files(self) -> int:
@@ -90,11 +115,6 @@ class BaseReader(ABC):
             int: The number of files in the source directory.
         """
         return len(self.file_paths())
-    
-    @num_files.setter
-    def num_files(self, value: int):
-        raise AttributeError("The number of files cannot be set directly. Please modify the source directory instead.")
-    
 
     def file_names(self) -> List[str]:
         """
@@ -132,19 +152,24 @@ class BaseReader(ABC):
         elif not self.cache_paths:
             self._cached_file_paths = None
 
-        # Resolve the source pattern using glob
-        file_paths = glob(self.source)
+        # Resolve the source pattern based on the source type
+        match self._source_type:
+            case "file":
+                file_paths = [self.source]
+
+            case "directory":
+                file_paths = glob(os.path.join(self.source, "*"))
+
+            case "regex":
+                file_paths = glob(self.source)
+
+            case _:
+                raise ValueError("Invalid source type.")
 
         # Check if the found files match the specified file extension
-        file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extension)]
+        file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extensions)]
         if not file_paths:
-            raise ValueError("No files found. Please check the source path or pattern.")
-        
-        # Now check if all the matched files are valid directories or files
-        if all(os.path.isfile(f) for f in file_paths) or all(os.path.isdir(f) for f in file_paths):
-            self._file_names = file_paths
-        else:
-            raise ValueError("All matched files must be either directories or files.")
+            raise ValueError("No files found. Please check the source expression and file extensions")
 
         # Cache the file paths if caching is enabled
         if self.cache_paths:
@@ -163,8 +188,8 @@ class BaseReader(ABC):
             DataContainer: A DataContainer instance containing data loaded from the file.
         """
         # Check if the file extension of the file is valid
-        if not any(file_path.endswith(ext) for ext in self.file_extension):
-            raise ValueError("Invalid file extension. Must be one of: " + str(self.file_extension))
+        if not any(file_path.endswith(ext) for ext in self.file_extensions):
+            raise ValueError("Invalid file extension. Must be one of: " + str(self.file_extensions))
 
         # Load the data from the file
         data = self._read_data(file_path)

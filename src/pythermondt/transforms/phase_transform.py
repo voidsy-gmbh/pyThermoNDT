@@ -2,12 +2,12 @@ import torch
 import math
 from torch import Tensor
 from numpy import ndarray
-from typing import List
+from typing import List, Optional
 from pythermondt.data.datacontainer.core import DataContainer
 from .utils import ThermoTransform
 
 class VdsyGoertzel(ThermoTransform):
-    def __init__(self, frame_rate: int, freq_bins: List[int] | Tensor | ndarray):
+    def __init__(self, freq_bins: List[int] | Tensor | ndarray, frame_rate: Optional[int] = None):
         """ Applies DFT to the DataContainer and calculates the phase images for the specified frequencies, using the Goertzel algorithm.
 
         It uses the Temperature Data and the DomnainValues to apply the DFT to the container and calculate the phase images for the specified frequencies. 
@@ -27,6 +27,7 @@ class VdsyGoertzel(ThermoTransform):
         """
         super().__init__()
         self.frame_rate = frame_rate
+        
 
         # Convert freq_bins to a tensor
         if isinstance(freq_bins, list):
@@ -42,6 +43,13 @@ class VdsyGoertzel(ThermoTransform):
         # Get the data from the container
         data = container.get_dataset("/Data/Tdata")
 
+        # Check if frame_rate is given ==> else calculate it from the datacontainer domain values
+        if self.frame_rate:
+            frame_rate = self.frame_rate
+        else:
+            domain_values = container.get_dataset("/MetaData/DomainValues")
+            frame_rate = data.shape[2]/domain_values[-1].item()
+
         # Get shape of the data
         input_shape = data.shape
         nbr_of_pixels = input_shape[0]*input_shape[1]
@@ -56,10 +64,10 @@ class VdsyGoertzel(ThermoTransform):
         
         # Calculate all the DFT bins we have to compute to include the specified frequencies
         for idx in range (0, nbr_of_bins):
-            freq = (self.freq_bins[idx] * (1.0/input_shape[2])) * self.frame_rate # in Hz
-            nbr_of_samples = int(torch.floor(1.0/freq * self.frame_rate)) #Number of samples for a single period of the required frequency
+            freq = (self.freq_bins[idx] * (1.0/input_shape[2])) * frame_rate # in Hz
+            nbr_of_samples = int(torch.floor(1.0/freq * frame_rate)) #Number of samples for a single period of the required frequency
             f = 1.0/nbr_of_samples # Normalized frequency
-            freqs[idx] = f*self.frame_rate
+            freqs[idx] = f*frame_rate
 
             w_real = 2.0 * math.cos(2.0*math.pi*f)
             w_imag = 1.0 * math.sin(2.0*math.pi*f)

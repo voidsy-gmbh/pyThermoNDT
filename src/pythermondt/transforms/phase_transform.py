@@ -87,5 +87,6 @@ class VdsyGoertzel(ThermoTransform):
         # Update the container
         container.add_dataset("/Data", "PhaseImages", phase_imgs)
         container.update_dataset("/MetaData/DomainValues", freqs)
+        container.update_attribute("/MetaData/DomainValues", "DomainType", "Frequency in Hz")
 
         return container

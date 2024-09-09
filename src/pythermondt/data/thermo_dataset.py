@@ -1,36 +1,27 @@
+from typing import List, Optional
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
-from ..readers import BaseReader
+from ..transforms import ThermoTransform
 
 class ThermoDataset(Dataset):
-    def __init__( self, data_reader: BaseReader, input_dataset_path: str, label_dataset_path: str):
+    def __init__( self, data_source: List[str], transform: Optional[ThermoTransform] = None, cache_source: bool = False):
         """
-        Initialize the PyTorch dataset with the data reader and the input and label groups and datasets.
+        Initialize a PyTorch dataset with a list of data sources. The sources are used to read the data and create the dataset.
+        The source can either be a local file path or a cloud storage path. The file path can either be an path to a single file, a directory or a regex pattern.
+        Examples of data sources are:
+            - /path/to/local/file
+            - file:///path/to/local/file
+            - s3://bucket-name/path/to/file
 
         Parameters:
-            data_reader (BaseReader): The data reader object to use for loading data.
-            input_dataset_path (str): The path to the input dataset in the DataContainer.
-            label_dataset_path (str): The path to the label dataset in the DataContainer. 
+            data_source (List[str]): List of data sources to be used in the dataset
+            transform (ThermoTransform, optional): Optional transform to be directly applied to the data when it is read
+            cache_source (bool, optional): If True, all the file paths are cached in memory. Therefore changes to the file sources will not be noticed at runtime. Default is False.
         """
-        # Read Variables
-        self.data_reader = data_reader
-        self.input_dataset_path = input_dataset_path
-        self.label_dataset_path = label_dataset_path
+        pass
     
-    def __len__(self):
-        # We use the number of of files that the data_reader can read
-        return self.data_reader.num_files
+    def __len__(self) -> int:
+        raise NotImplementedError("TBD")
     
-    def __getitem__(self, idx):
-        # Load one datapoint as a DataContainer using the reader
-        datapoint = self.data_reader[idx]
-
-        # Check at runtime if the datapoint is a DataContainer
-        if not isinstance(datapoint, DataContainer):
-            raise ValueError(f"DataContainer is not valid. Got {type(datapoint)}")
-
-        # Get the input and label data from the DataContainer
-        input_tensor = datapoint.get_dataset(self.input_dataset_path)
-        label_tensor = datapoint.get_dataset(self.label_dataset_path)
-
-        return input_tensor, label_tensor
+    def __getitem__(self, idx) -> DataContainer:
+        raise NotImplementedError("TBD")

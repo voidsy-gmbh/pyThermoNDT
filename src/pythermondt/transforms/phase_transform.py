@@ -51,15 +51,8 @@ class VdsyGoertzel(ThermoTransform):
         phase_imgs = torch.zeros(input_shape[0], input_shape[1], nbr_of_bins, dtype=torch.float32)
         freqs = torch.zeros_like(self.freq_bins, dtype=torch.float32)
 
-        print("input_shape: ", input_shape)
-        print("nbr_of_pixels: ", nbr_of_pixels)
-        print("nbr_of_bins: ", nbr_of_bins)
-
         # Reshape the data into a 2D array
         data = torch.reshape(data, shape=(nbr_of_pixels, input_shape[2]))
-
-        d1 = torch.zeros(size=(nbr_of_pixels,1))
-        d2 = torch.zeros(size=(nbr_of_pixels,1))
         
         # Calculate all the DFT bins we have to compute to include the specified frequencies
         for idx in range (0, nbr_of_bins):
@@ -73,8 +66,6 @@ class VdsyGoertzel(ThermoTransform):
 
             d1 = torch.zeros(size=(nbr_of_pixels,1))
             d2 = torch.zeros(size=(nbr_of_pixels,1))
-            # d1.fill(0)
-            # d2.fill(0)
 
             for jdx in range(0,nbr_of_samples):
                 y = torch.unsqueeze(data[:,jdx],1) + w_real*d1-d2

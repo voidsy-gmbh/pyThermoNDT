@@ -6,7 +6,8 @@ from .base_parser import BaseParser
 from ...data import DataContainer, ThermoContainer
 
 class SimulationParser(BaseParser):
-    def parse(self, data_bytes: io.BytesIO) -> DataContainer:
+    @staticmethod
+    def parse(data_bytes: io.BytesIO) -> DataContainer:
         """ Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a DataContainer object.
 
         The BytesIO object must contain a .mat file with simulattion data from COMSOL.

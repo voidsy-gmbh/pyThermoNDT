@@ -4,9 +4,9 @@ from .parsers import BaseParser
 from ..data import DataContainer
 
 
-class AWSReader(BaseReader):
+class S3Reader(BaseReader):
     def __init__(self, parser: BaseParser):
         pass
 
-    def _read(self) -> io.BytesIO:
+    def _read(self, path: str) -> io.BytesIO:
         raise NotImplementedError

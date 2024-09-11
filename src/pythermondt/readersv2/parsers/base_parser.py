@@ -8,6 +8,9 @@ class BaseParser(ABC):
     All Subclasses must implement the parse method, which reads the data from the BytesIO object and returns it as a DataContainer object.
     Integrity checks and error handling should be implemented by the subclasses.
     """
+    def __init__(self) -> None:
+        raise TypeError("This class is static and should not be instantiated.")
+    
     @staticmethod
     @abstractmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:

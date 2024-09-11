@@ -1,4 +1,5 @@
 import io
+import re
 import boto3
 from typing import Type, List
 from .base_reader import BaseReader
@@ -6,7 +7,7 @@ from .parsers import BaseParser
 
 
 class S3Reader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], bucket: str, prefix: str = "", boto3_session: boto3.Session = boto3.Session()):
+    def __init__(self, parser: Type[BaseParser], source: str, boto3_session: boto3.Session = boto3.Session()):
         """ Initialize an instance of the S3Reader class.
 
         This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must cofigure an authentication method
@@ -14,22 +15,28 @@ class S3Reader(BaseReader):
 
         Parameters:
             parser (BaseParser): The parser to be used for parsing the data.
-            bucket (str): The name of the S3 bucket to read the data from.
-            prefix (str): The prefix of the objects in the bucket to read. Limits the objects to read to those that start with the specified prefix.
+            source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix. All files that start with the provided prefix will be read
             boto3_session (boto3.Session): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
         """
         super().__init__(parser)
-        # Create a session with the specified profile name
-        session = boto3_session
 
-        # Create a new s3 client
-        self.__client = session.client('s3')
+        # Create a new s3 client from the give session
+        self.__client = boto3_session.client('s3')
+
+        # Validate the source path
+        if not re.match(r"^s3:\/\/[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](?:\/[\w.-]+)*$", source):
+            raise ValueError("The source must be a valid S3 path, specified in the format: s3://bucket-name/path/to/file")
+        
+        # Extract the bucket and prefix from the source path
+        bucket = source.split('/')[2]
+        prefix = '/'.join(source.split('/')[3:])
 
         # validate that the bucket exists
         if not bucket in [response['Name'] for response in self.__client.list_buckets()['Buckets']]:
-            raise ValueError(f"The specified bucket: {bucket} does not exist for the current session: {session}.")        
-        self.__prefix = prefix
+            raise ValueError(f"The specified bucket: {bucket} does not exist for the current session: {boto3_session}.")
+
         self.__bucket = bucket
+        self.__prefix = prefix      
 
     @property
     def files(self) -> List[str]:
@@ -43,9 +50,13 @@ class S3Reader(BaseReader):
             if page.get('Contents') is not None:
                 files.extend([content['Key'] for content in page.get('Contents')])
 
-        # Filter the files based on the file extensions
-        return [file for file in files if file.endswith(self.file_extensions)]
+        # Filter the files based on the file extensions and append the prefix "s3://bucket-name/" to the file paths
+        return [f"s3://{self.__bucket}/" + file for file in files if file.endswith(self.file_extensions)]
 
     def _read(self, path: str) -> io.BytesIO:
-        response = self.__client.get_object(Bucket=self.__bucket, Key=path)
+        # Extract the bucket and the key from the path
+        bucket = path.split('/')[2]
+        key = '/'.join(path.split('/')[3:])
+
+        response = self.__client.get_object(Bucket=bucket, Key=key)
         return io.BytesIO(response['Body'].read())

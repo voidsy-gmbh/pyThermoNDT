@@ -1,14 +1,12 @@
 import io
 import boto3
 from typing import Type, List
-
-import boto3.session
 from .base_reader import BaseReader
 from .parsers import BaseParser
 
 
 class S3Reader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], bucket: str, prefix: str = "", profile_name: str = "default"):
+    def __init__(self, parser: Type[BaseParser], bucket: str, prefix: str = "", boto3_session: boto3.Session = boto3.Session()):
         """ Initialize an instance of the S3Reader class.
 
         This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must cofigure an authentication method
@@ -18,19 +16,18 @@ class S3Reader(BaseReader):
             parser (BaseParser): The parser to be used for parsing the data.
             bucket (str): The name of the S3 bucket to read the data from.
             prefix (str): The prefix of the objects in the bucket to read. Limits the objects to read to those that start with the specified prefix.
-            profile_name (str): The name of the AWS profile to use. Default is "default".
+            boto3_session (boto3.Session): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
         """
         super().__init__(parser)
         # Create a session with the specified profile name
-        session = boto3.Session(profile_name=profile_name)
+        session = boto3_session
 
-        # Create a new s3 resource
+        # Create a new s3 client
         self.__client = session.client('s3')
 
         # validate that the bucket exists
         if not bucket in [response['Name'] for response in self.__client.list_buckets()['Buckets']]:
-            raise ValueError(f"The specified bucket: {bucket} does not exist in th profile: {profile_name}")
-        
+            raise ValueError(f"The specified bucket: {bucket} does not exist for the current session: {session}.")        
         self.__prefix = prefix
         self.__bucket = bucket
 

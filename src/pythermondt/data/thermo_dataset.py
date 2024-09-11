@@ -54,7 +54,21 @@ class ThermoDataset(Dataset):
         return [file for reader in self.__readers for file in reader.files]
     
     def __len__(self) -> int:
-        raise NotImplementedError("TBD")
+        return sum([len(reader.files) for reader in self.__readers])
     
     def __getitem__(self, idx) -> DataContainer:
-        raise NotImplementedError("TBD")
+        # Every call of self.files would trigger the readers to check for new files ==> get files list once
+        files = self.files
+
+        # Check if the index is valid
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+        
+        # Find the reader that contains the file
+        reader_idx = 0
+        while idx >= len(files):
+            idx -= len(self.__readers[reader_idx].files)
+            reader_idx += 1
+        
+        # Read the file from the reader
+        return self.__readers[reader_idx].read(files[idx])

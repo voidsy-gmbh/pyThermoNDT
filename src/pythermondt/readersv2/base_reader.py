@@ -136,3 +136,7 @@ class BaseReader(ABC):
             DataContainer: The parsed data in a DataContainer
         """
         return self.parser.parse(self._read_file(path))
+    
+    def clear_cache(self):
+        """ Clears the cached file paths. Therefore the reader will check for new files on the next call of the files property."""
+        self.__cached_files = None

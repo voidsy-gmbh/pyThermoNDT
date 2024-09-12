@@ -67,6 +67,11 @@ class BaseReader(ABC):
         if idx < 0 or idx >= len(self):
             raise IndexError(f"Index out of range. Must be between 0 and {len(self)}")
         return self.read(self.files[idx])
+    
+    @ property
+    def source(self) -> str:
+        """ Returns the source of the reader."""
+        return self.__source
 
     @property
     def parser(self) -> Type[BaseParser]:

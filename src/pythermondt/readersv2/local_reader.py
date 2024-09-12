@@ -7,7 +7,7 @@ from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class LocalReader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], source: str):
+    def __init__(self, parser: Type[BaseParser], source: str, cache_paths: bool = True):
         """ Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
@@ -15,13 +15,8 @@ class LocalReader(BaseReader):
         Parameters:
             parser (BaseParser): The parser to be used for parsing the data.
             source (str): The source of the data. This can either be a file path, a directory path, or a regular expression.
+            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.
         """
-        super().__init__(parser)
-        # validate that the source expression does not contain an invalid file extension ==> File extensions are defined by the parser
-        ext = re.search(r'\.[a-zA-Z0-9]+$', source)
-        if ext is not None and ext.group() not in self.file_extensions:
-            raise ValueError(f"The source contains an invalid file extension: {ext.group()}. Use the file extensions defined by the parser: {self.file_extensions}")
-
         # Check if source is a valid regex pattern
         try:
             re.compile(source)
@@ -42,21 +37,20 @@ class LocalReader(BaseReader):
         else:
             raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         
-        # Write the source to the private attribute
-        self.__source = source
+        # Call the constructor of the BaseReader class
+        super().__init__(parser, source, cache_paths)
 
-    @property
-    def files(self) -> List[str]:
+    def _get_file_list(self) -> List[str]:
         # Resolve the source pattern based on the source type
         match self.__source_type:
             case "file":
-                file_paths = [self.__source]
+                file_paths = [self.source]
 
             case "directory":
-                file_paths = glob(os.path.join(self.__source, "*"))
+                file_paths = glob(os.path.join(self.source, "*"))
 
             case "regex":
-                file_paths = glob(self.__source)
+                file_paths = glob(self.source)
 
             case _:
                 raise ValueError("Invalid source type.")
@@ -68,7 +62,10 @@ class LocalReader(BaseReader):
         
         return file_paths
 
-    def _read(self, path: str) -> io.BytesIO:
+    def _read_file(self, path: str) -> io.BytesIO:
         # Open file in binary mode and return it as BytesIO object
         with open(path, 'rb') as file:
             return io.BytesIO(file.read())
+        
+    def _close(self):
+        pass  # No need to close any resources for LocalReader

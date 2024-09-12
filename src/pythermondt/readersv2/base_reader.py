@@ -1,4 +1,6 @@
 import io
+import re
+import sys
 from typing import Tuple, Type, Optional, Dict, List
 from abc import ABC, abstractmethod
 from ..data import DataContainer
@@ -9,6 +11,9 @@ FILE_EXTENSIONS: Dict[Type[BaseParser], Tuple[str, ...]] = {
     SimulationParser: ('.mat',),
     # Add more file extensions for future parsers here
 }
+
+# Lookup table for file extensions ==> for fast validation of file extensions
+FILE_EXTENSIONS_LUT = {ext:parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
 
 class BaseReader(ABC):
     """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
@@ -31,6 +36,15 @@ class BaseReader(ABC):
         except KeyError:
             raise ValueError(f"The specified Parser: {parser.__name__} is not supported by the {self.__class__.__name__} class.")
         
+        # validate that the source expression does not contain an invalid file extension ==> File extensions are defined by the parser
+        ext = re.findall(r'\.[a-zA-Z0-9]+$', source)
+        correct_parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else self.parser
+
+        if correct_parser is None:
+            raise ValueError(f"The source contains an invalid file extension: '({ext[0]})'! Use a file extensions that is supported by the {self.parser.__name__}: {self.file_extensions}")
+        elif correct_parser is not self.parser:
+             raise ValueError(f"Wrong parser selected for the file extension: '({ext[0]})'! Use the {correct_parser.__name__} for this file extension instead")
+             
         # Set the source
         self.__source = source
 

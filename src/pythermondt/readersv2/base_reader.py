@@ -19,13 +19,14 @@ class BaseReader(ABC):
     """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
     """
     @abstractmethod
-    def __init__(self, parser: Type[BaseParser], source: str, cache_paths: bool = True):
+    def __init__(self, parser: Type[BaseParser], source: str, cache_paths: bool = True, download_files: bool = False):
         """ Constructor for the BaseReader class.
 
         Parameters:
             parser (Type[BaseParser]): The parser that the reader uses to parse the data.
             source (str): The source of the data. This can be a file path, a directory path, a regular expression. In case of cloud storage, this can be a URL.
-            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.    
+            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.
+            download_files (bool, optional): If True, the reader will download the files to the current working directory on the first read. Subsequent reads will be faster by using the local files. Default is False to prevent disk space issues.  
         """
         # Set the parser
         self.__parser = parser
@@ -50,7 +51,7 @@ class BaseReader(ABC):
 
         # Set the cache_paths flag and the cached_files attribute
         self.__cache_paths = cache_paths
-        self.__cached_files: Optional[List[str]] = None
+        self.__cached_paths: Optional[List[str]] = None
 
     def __str__(self):
         return "{}(parser={}, source={}, cache_paths={})".format(
@@ -97,17 +98,17 @@ class BaseReader(ABC):
     def files(self) -> List[str]:
         """ Returns a list of all the paths to the files that the reader can read."""
         # If caching is on and files are already cached, return the cached files
-        if self.__cache_paths and self.__cached_files is not None:
-            return self.__cached_files
+        if self.__cache_paths and self.__cached_paths is not None:
+            return self.__cached_paths
         
         # If the caching is off ==> reset cached files and retrieve the file list
         elif not self.__cache_paths:
-            self.__cached_files = None
+            self.__cached_paths = None
             return self._get_file_list()
         
         # Else cache the files and return them
-        self.__cached_files = self._get_file_list()
-        return self.__cached_files
+        self.__cached_paths = self._get_file_list()
+        return self.__cached_paths
 
     @abstractmethod
     def _read_file(self, path: str) -> io.BytesIO:
@@ -139,4 +140,4 @@ class BaseReader(ABC):
     
     def clear_cache(self):
         """ Clears the cached file paths. Therefore the reader will check for new files on the next call of the files property."""
-        self.__cached_files = None
+        self.__cached_paths = None

@@ -6,7 +6,7 @@ from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class S3Reader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], source: str, cache_path: bool = True, boto3_session: boto3.Session = boto3.Session()):
+    def __init__(self, parser: Type[BaseParser], source: str, cache_path: bool = True, download_files: bool = False, boto3_session: boto3.Session = boto3.Session()):
         """ Initialize an instance of the S3Reader class.
 
         This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must cofigure an authentication method
@@ -16,6 +16,7 @@ class S3Reader(BaseReader):
             parser (BaseParser): The parser to be used for parsing the data.
             source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix. All files that start with the provided prefix will be read.
             cache_path (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.
+            download_files (bool, optional): If True, the reader will download the files to the current working directory on the first read. Subsequent reads will be faster by using the local files. Default is False to prevent disk space issues.
             boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
         """
 
@@ -39,7 +40,7 @@ class S3Reader(BaseReader):
         self.__prefix = prefix
         
         # Call the constructor of the BaseReader class
-        super().__init__(parser, source, cache_paths=cache_path)
+        super().__init__(parser, source, cache_path, download_files)
 
     def _read_file(self, path: str) -> io.BytesIO:
         # Extract the bucket and the key from the path

@@ -7,7 +7,7 @@ from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class LocalReader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], source: str, cache_paths: bool = True):
+    def __init__(self, parser: Type[BaseParser], source: str, cache_files: bool = True):
         """ Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
@@ -38,7 +38,11 @@ class LocalReader(BaseReader):
             raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         
         # Call the constructor of the BaseReader class
-        super().__init__(parser, source, cache_paths)
+        super().__init__(parser, source, cache_files)
+
+    @property
+    def remote_source(self) -> bool:
+        return False
 
     def _get_file_list(self) -> List[str]:
         # Resolve the source pattern based on the source type

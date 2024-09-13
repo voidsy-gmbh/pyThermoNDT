@@ -52,8 +52,22 @@ class BaseReader(ABC):
         self.__cache_files = cache_files
         self.__cached_paths: Optional[List[str]] = None
 
-        # Set the download_files flag and local dir
-        self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_data", self._create_safe_folder_name())
+        # If caching is on for a remote source ==> create a local directory for the cached files and download the files
+        if self.remote_source and self.__cache_files:
+            # Create the local directory for the cached files
+            self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_cache", self._create_safe_folder_name())
+            if not os.path.isdir(self.__local_dir):
+                os.makedirs(self.__local_dir)
+
+            # Loop over the file list and download the files
+            for file in self.files:
+                file_path = os.path.join(self.__local_dir, file.split('/')[-1])
+                if not os.path.isfile(file_path):
+                    with open(file_path, 'wb') as f:
+                        f.write(self._read_file(file).getbuffer())
+
+            # Set the cached paths to the local file paths
+            self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in self.file_names]
 
     def __str__(self):
         return "{}(parser={}, source={}, cache_paths={})".format(
@@ -141,6 +155,12 @@ class BaseReader(ABC):
 
         # limit the folder name to 255 characters
         return f"{safe_class_name}_{safe_source_expr}"[:255]
+    
+    @property
+    @abstractmethod
+    def remote_source(self) -> bool:
+        """ Returns True if the reader reads files from a remote source, False otherwise. This property must be implemented by the subclass."""
+        raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
     def _read_file(self, path: str) -> io.BytesIO:
@@ -168,6 +188,12 @@ class BaseReader(ABC):
         Returns:
             DataContainer: The parsed data in a DataContainer
         """
+        # If the reader reads from a remote source and files are cached, read the file from the local directory
+        if self.remote_source and self.__cache_files and self.__cached_paths is not None:
+            with open(path, 'rb') as f:
+                return self.parser.parse(io.BytesIO(f.read()))
+        
+        # Else read the file directly from the source
         return self.parser.parse(self._read_file(path))
     
     def clear_cache(self):

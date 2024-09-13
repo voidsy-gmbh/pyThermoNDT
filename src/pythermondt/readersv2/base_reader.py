@@ -19,14 +19,13 @@ class BaseReader(ABC):
     """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
     """
     @abstractmethod
-    def __init__(self, parser: Type[BaseParser], source: str, cache_paths: bool = True, download_files: bool = False):
+    def __init__(self, parser: Type[BaseParser], source: str, cache_files: bool = True):
         """ Constructor for the BaseReader class.
 
         Parameters:
             parser (Type[BaseParser]): The parser that the reader uses to parse the data.
             source (str): The source of the data. This can be a file path, a directory path, a regular expression. In case of cloud storage, this can be a URL.
-            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.
-            download_files (bool, optional): If True, the reader will download the files to the current working directory on the first read. Subsequent reads will be faster by using the local files. Default is False to prevent disk space issues.  
+            cache_files (bool, optional): If True, the reader caches the file paths. If False, the reader retrieves the file list each time. For cloud storage readers, this flag should also determine if the files are downloaded to a local directory. Default is True.
         """
         # Set the parser
         self.__parser = parser
@@ -49,24 +48,19 @@ class BaseReader(ABC):
         # Set the source
         self.__source = source
 
-        # Set the cache_paths flag and the cached_files attribute
-        self.__cache_paths = cache_paths
+        # Set the cache_files flag and the cached_files attribute
+        self.__cache_files = cache_files
         self.__cached_paths: Optional[List[str]] = None
 
         # Set the download_files flag and local dir
-        self.__download_files = download_files
-        self.local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_data", self._create_safe_folder_name())
-
-        # Create the local directory if download_files is True
-        if self.__download_files:
-            os.makedirs(self.local_dir, exist_ok=True)
+        self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_data", self._create_safe_folder_name())
 
     def __str__(self):
         return "{}(parser={}, source={}, cache_paths={})".format(
             self.__class__.__name__, 
             self.parser.__name__, 
             self.__source,
-            self.__cache_paths
+            self.__cache_files
         )
     
     def __len__(self) -> int:
@@ -106,11 +100,11 @@ class BaseReader(ABC):
     def files(self) -> List[str]:
         """ Returns a list of all the paths to the files that the reader can read."""
         # If caching is on and files are already cached, return the cached files
-        if self.__cache_paths and self.__cached_paths is not None:
+        if self.__cache_files and self.__cached_paths is not None:
             return self.__cached_paths
         
         # If the caching is off ==> reset cached files and retrieve the file list
-        elif not self.__cache_paths:
+        elif not self.__cache_files:
             self.__cached_paths = None
             return self._get_file_list()
         

@@ -1,3 +1,6 @@
+# Ignore pyThermoNDT cache files
+.pyThermoNDT_cache/
+
 # Ignore .mat files in test/testdata
 tests/testdata/*.mat
 

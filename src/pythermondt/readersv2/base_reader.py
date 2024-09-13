@@ -1,7 +1,7 @@
 import io
 import re
 import os
-from typing import Tuple, Type, Optional, Dict, List
+from typing import Tuple, Type, Optional, Iterator, Dict, List
 from abc import ABC, abstractmethod
 from ..data import DataContainer
 from .parsers import BaseParser, HDF5Parser, SimulationParser
@@ -78,13 +78,33 @@ class BaseReader(ABC):
         )
     
     def __len__(self) -> int:
+        """Returns the number of files that the reader can read."""
         return self.num_files
     
     def __getitem__(self, idx: int) -> DataContainer:
+        """ Returns the parsed data in a DataContainer object at file path at the given index."""
         if idx < 0 or idx >= len(self):
             raise IndexError(f"Index out of range. Must be between 0 and {len(self)}")
         return self.read(self.files[idx])
     
+    def __iter__(self) -> Iterator[DataContainer]:
+        """ Creates an iterator that reads and parses all the files in the reader. 
+        
+        In case caching is disabled, a snapshot of the file list is taken to avoid undefined behavior when the file list changes during iteration.
+        For maximum performance, its is recommend to enable caching when iterating over the files.
+
+        Returns:
+            Iterator[DataContainer]: An iterator that yields the parsed data in DataContainer objects.
+        """
+        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration and caching is of
+        file_paths = self.files
+
+        for file in file_paths:
+                yield self.read(file)
+
+    def __next__(self) -> DataContainer:
+        return next(iter(self))
+
     @ property
     def source(self) -> str:
         """ Returns the source of the reader."""
@@ -186,14 +206,28 @@ class BaseReader(ABC):
         Returns:
             DataContainer: The parsed data in a DataContainer
         """
-        # If the reader reads from a remote source and files are cached, read the file from the local directory
-        if self.remote_source and self.__cache_files and self.__cached_paths is not None:
-            with open(path, 'rb') as f:
-                return self.parser.parse(io.BytesIO(f.read()))
+        try:
+            # If the reader reads from a remote source and files are cached, read the file from the local directory
+            if self.remote_source and self.__cache_files and self.__cached_paths is not None:
+                with open(path, 'rb') as f:
+                    return self.parser.parse(io.BytesIO(f.read()))
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File not found in cached files. Clear the cache and try again.")
         
         # Else read the file directly from the source
-        return self.parser.parse(self._read_file(path))
+        try:
+            return self.parser.parse(self._read_file(path))
+        except Exception as e:
+            raise Exception(f"Error reading file: {path} - {e}")
     
     def clear_cache(self):
         """ Clears the cached file paths. Therefore the reader will check for new files on the next call of the files property."""
+        # Clear cached paths
         self.__cached_paths = None
+
+        # Delete the local directory if it exists
+        if self.remote_source and self.__cache_files and os.path.isdir(self.__local_dir):
+            for file in os.listdir(self.__local_dir):
+                os.remove(os.path.join(self.__local_dir, file))
+            os.rmdir(self.__local_dir)
+        

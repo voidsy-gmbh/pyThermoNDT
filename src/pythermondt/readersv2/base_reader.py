@@ -113,17 +113,15 @@ class BaseReader(ABC):
     @property
     def files(self) -> List[str]:
         """ Returns a list of all the paths to the files that the reader can read."""
-        # If caching is on and files are already cached, return the cached files
-        if self.__cache_files and self.__cached_paths is not None:
-            return self.__cached_paths
-        
-        # If the caching is off ==> reset cached files and retrieve the file list
-        elif not self.__cache_files:
-            self.__cached_paths = None
+        # If caching is off, return the file list directly
+        if not self.__cache_files:
             return self._get_file_list()
         
-        # Else cache the files and return them
-        self.__cached_paths = self._get_file_list()
+        # If caching is on and files are not cached, cache the files and return them
+        if self.__cached_paths is None:
+            self.__cached_paths = self._get_file_list()
+        
+        # Else return the cached files
         return self.__cached_paths
     
     def _sanitize_string(self, s: str) -> str:

@@ -1,6 +1,6 @@
 import io
 import re
-import sys
+import os
 from typing import Tuple, Type, Optional, Dict, List
 from abc import ABC, abstractmethod
 from ..data import DataContainer
@@ -52,6 +52,14 @@ class BaseReader(ABC):
         # Set the cache_paths flag and the cached_files attribute
         self.__cache_paths = cache_paths
         self.__cached_paths: Optional[List[str]] = None
+
+        # Set the download_files flag and local dir
+        self.__download_files = download_files
+        self.local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_data", self._create_safe_folder_name())
+
+        # Create the local directory if download_files is True
+        if self.__download_files:
+            os.makedirs(self.local_dir, exist_ok=True)
 
     def __str__(self):
         return "{}(parser={}, source={}, cache_paths={})".format(
@@ -109,6 +117,36 @@ class BaseReader(ABC):
         # Else cache the files and return them
         self.__cached_paths = self._get_file_list()
         return self.__cached_paths
+    
+    def _sanitize_string(self, s: str) -> str:
+        """Sanitizes a string by replacing non-alphanumeric characters with underscores and removing leading/trailing underscores.
+
+        Parameters:
+            s (str): The string to be sanitized.
+        
+        Returns:
+            str: The sanitized string.
+        """
+        # Replace non-alphanumeric characters (except underscores) with underscores
+        s = re.sub(r'[^\w\-_\. ]', '_', s)
+        # Replace multiple underscores with a single underscore
+        s = re.sub(r'_+', '_', s)
+        # Remove leading/trailing underscores
+        return s.strip('_')
+    
+    def _create_safe_folder_name(self) -> str:
+        """Creates a safe folder name for the downloaded files.
+
+        Used to create a folder name for the downloaded files, that is persistend and does not change between runs.
+
+        Returns:
+            str: The safe folder name.   
+        """
+        safe_class_name = self._sanitize_string(self.__class__.__qualname__)
+        safe_source_expr = self._sanitize_string(self.source)
+
+        # limit the folder name to 255 characters
+        return f"{safe_class_name}_{safe_source_expr}"[:255]
 
     @abstractmethod
     def _read_file(self, path: str) -> io.BytesIO:

@@ -1,4 +1,5 @@
 import torch
+import sys
 from typing import Type, Dict, List, Optional
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
@@ -32,6 +33,8 @@ class ThermoDataset(Dataset):
 
         # Build the index map
         self._build_index()
+
+        print("Indexmap Memory: ", (sys.getsizeof(self.__reader_index) + sys.getsizeof(self.__file_index)) / 1024 / 1024, "MB")
 
     def _validate_readers(self, readers: List[BaseReader]):
         """Validate readers and check for duplicates."""
@@ -70,11 +73,15 @@ class ThermoDataset(Dataset):
                     raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
 
     def _build_index(self):
-        """Build an index map using a torch Tensor for fast mapping of reader and file index to the global index of the dataset."""
-        index = []
+        """Build an index map using 2 torch Tensors for fast and memory efficient mapping of reader and file index to the global index of the dataset."""
+        reader_indices = []
+        file_indices = []
         for reader_idx, reader in enumerate(self.__readers):
-            index.extend([(reader_idx, file_idx) for file_idx in range(len(reader.files))])
-        self.__index = torch.tensor(index, dtype=torch.long, requires_grad=False)
+            reader_indices.extend([reader_idx] * len(reader.files))
+            file_indices.extend(range(len(reader.files)))
+        
+        self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
+        self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
 
     @property
     def files(self) -> List[str]:
@@ -89,13 +96,13 @@ class ThermoDataset(Dataset):
             raise IndexError("Index out of range")
         
         # Find the reader that contains the file
-        reader_idx, file_idx = self.__index[idx]
-        reader = self.__readers[reader_idx]
+        reader_idx = int(self.__reader_index[idx].item())
+        file_idx = int(self.__file_index[idx].item())
 
         # Read the file from the reader
-        data = reader.read(reader.files[file_idx])
+        data = self.__readers[reader_idx][file_idx]
 
-        # Apply the transform if it is set
+        # Apply the transform if any is given
         if self.__transform:
             data = self.__transform(data)
         

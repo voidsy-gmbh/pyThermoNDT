@@ -1,6 +1,5 @@
-import io
-import re
-import os
+import io, re, os
+import progressbar
 from typing import Tuple, Type, Optional, Iterator, Dict, List
 from abc import ABC, abstractmethod
 from ..data import DataContainer
@@ -59,12 +58,38 @@ class BaseReader(ABC):
             if not os.path.isdir(self.__local_dir):
                 os.makedirs(self.__local_dir)
 
-            # Loop over the file list and download the files
+            # Collect the list of files that need to be downloaded
+            files_to_download = []
             for file in self.files:
-                file_path = os.path.join(self.__local_dir, file.split('/')[-1])
-                if not os.path.isfile(file_path):
-                    with open(file_path, 'wb') as f:
-                        f.write(self._read_file(file).getbuffer())
+                cached_path = os.path.join(self.__local_dir, os.path.basename(file))
+                if not os.path.isfile(cached_path):
+                    files_to_download.append((cached_path, file))
+
+            # Only proceed if there are files to download
+            if files_to_download:
+                # Define custom widgets and the progress bar
+                widgets = [
+                    f"Downloading Files for {self.__class__.__qualname__}: ", progressbar.Percentage(),
+                    ' ', progressbar.Bar(marker='■', left='|', right='|'),
+                    ' ', progressbar.SimpleProgress(format='(%(value)d/%(max_value)d)'),
+                    ' ', progressbar.ETA(format='ETA: %(eta)s'),
+                ]
+                bar = progressbar.ProgressBar(
+                    max_value=len(files_to_download), 
+                    widgets=widgets,
+                    enable_colors=False
+                )
+                
+                # Download the files
+                with bar:
+                    for i, (cached_path, file) in enumerate(files_to_download, start=1):
+                        try:
+                            with open(cached_path, 'wb') as f:
+                                f.write(self._read_file(file).getbuffer())
+                        except Exception as e:
+                            print(f"Error downloading file: {file} - {e}")  
+                        finally:
+                            bar.update(i)
 
             # Set the cached paths to the local file paths
             self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in self.file_names]
@@ -230,4 +255,3 @@ class BaseReader(ABC):
             for file in os.listdir(self.__local_dir):
                 os.remove(os.path.join(self.__local_dir, file))
             os.rmdir(self.__local_dir)
-        

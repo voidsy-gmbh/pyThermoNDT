@@ -8,6 +8,7 @@ dependencies:
   - python=3.12.*
   - pytest=8.3.*
   - pylint=3.2.*
+  - progressbar2=4.5.*
 
   # Data loading and visualization
   - mat73=0.65

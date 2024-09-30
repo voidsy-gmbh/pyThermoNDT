@@ -1,3 +1,4 @@
+import torch
 from typing import Type, Dict, List, Optional
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
@@ -5,7 +6,7 @@ from ..transforms import ThermoTransform
 from ..readersv2.base_reader import BaseReader
 
 class ThermoDataset(Dataset):
-    def __init__( self, data_source: BaseReader |List[BaseReader], transform: Optional[ThermoTransform] = None, cache_source: bool = False):
+    def __init__( self, data_source: BaseReader |List[BaseReader], transform: Optional[ThermoTransform] = None):
         """ Initialize a PyTorch dataset from a list of readers.
         
         The sources are used to read the data and create the dataset. First the readers are grouped by type.
@@ -14,8 +15,7 @@ class ThermoDataset(Dataset):
         Parameters:
             data_source (List[BaseReader]): List of readers to be used as a data source for the dataset
             transform (ThermoTransform, optional): Optional transform to be directly applied to the data when it is read
-            cache_source (bool, optional): If True, all the file paths are cached in memory. Therefore changes to the file sources will not be noticed at runtime. Default is False.
-
+            
         Raises:
             ValueError: If any of the readers of the same type find duplicate or invalid data
             ValueError: If any of the readers of the same type do not find any files
@@ -23,31 +23,58 @@ class ThermoDataset(Dataset):
         # Convert single reader to list
         data_source = data_source if isinstance(data_source, list) else [data_source]
 
+        # Validate the readers
+        self._validate_readers(data_source)
+
+        # Write the readers and transforms to the private attributes
+        self.__readers = data_source
+        self.__transform = transform
+
+        # Build the index map
+        self._build_index()
+
+    def _validate_readers(self, readers: List[BaseReader]):
+        """Validate readers and check for duplicates."""
         # Check if the readers have found any files and if there are any duplicates
         # Group all the readers by type
         readers_by_type: Dict[Type[BaseReader], List[BaseReader]] = {}  
-        for reader in data_source:
+        for reader in readers:
             readers_by_type[type(reader)] = readers_by_type.get(type(reader), []) + [reader]
 
         # Check if any of the readers that are of the same type find duplicate or invalid data
         for reader_type, readers in readers_by_type.items():
             # When there a multiple readers ==> check for duplicate files
             if len(readers) > 1:
-                # A list of all list of file paths that the readers have found
-                file_lists = [reader.files for reader in readers]
+                all_files = set()
+                duplicate_files = set()
 
-                # Check if any of the found lists intersect with each other ==> If so, there are duplicate files found
-                intersection = set(file_lists[0]).intersection(*file_lists[1:])
-                if len(intersection) > 0:
-                    raise ValueError(f"Duplicate files found for reader of type {reader_type.__qualname__}: \n {intersection}")
+                for reader in readers:
+                    # Check if the reader has found any files
+                    if not reader.files:
+                        raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
+                    
+                    # Check for duplicate files
+                    reader_files = set(reader.files)
+                    new_duplicates = reader_files.intersection(all_files)
+                    if new_duplicates:
+                        duplicate_files.update(new_duplicates)
+                    
+                    all_files.update(reader_files)
+                
+                if duplicate_files:
+                    raise ValueError(f"Duplicate files found for reader of type {reader_type.__qualname__}: \n {duplicate_files}")
                 
             # Else duplicates are not possible ==> Check if the reader has found any files
             else:
                 if len(readers[0].files) == 0:
                     raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
-        
-        # Write the readers to the private attribute
-        self.__readers = data_source
+
+    def _build_index(self):
+        """Build an index map using a torch Tensor for fast mapping of reader and file index to the global index of the dataset."""
+        index = []
+        for reader_idx, reader in enumerate(self.__readers):
+            index.extend([(reader_idx, file_idx) for file_idx in range(len(reader.files))])
+        self.__index = torch.tensor(index, dtype=torch.long, requires_grad=False)
 
     @property
     def files(self) -> List[str]:
@@ -57,18 +84,23 @@ class ThermoDataset(Dataset):
         return sum([len(reader.files) for reader in self.__readers])
     
     def __getitem__(self, idx) -> DataContainer:
-        # Every call of self.files would trigger the readers to check for new files ==> get files list once
-        files = self.files
-
         # Check if the index is valid
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
         
         # Find the reader that contains the file
-        reader_idx = 0
-        while idx >= len(files):
-            idx -= len(self.__readers[reader_idx].files)
-            reader_idx += 1
-        
+        reader_idx, file_idx = self.__index[idx]
+        reader = self.__readers[reader_idx]
+
         # Read the file from the reader
-        return self.__readers[reader_idx].read(files[idx])
+        data = reader.read(reader.files[file_idx])
+
+        # Apply the transform if it is set
+        if self.__transform:
+            data = self.__transform(data)
+        
+        return data
+    
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]

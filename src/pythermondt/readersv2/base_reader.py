@@ -68,8 +68,9 @@ class BaseReader(ABC):
             # Only proceed if there are files to download
             if files_to_download:
                 # Define custom widgets and the progress bar
+                reader_repr = "{}(source={})".format(self.__class__.__name__, self.source)
                 widgets = [
-                    f"Downloading Files for {self.__class__.__qualname__}: ", progressbar.Percentage(),
+                    f"Downloading Files for {reader_repr}: ", progressbar.Percentage(),
                     ' ', progressbar.Bar(marker='■', left='|', right='|'),
                     ' ', progressbar.SimpleProgress(format='(%(value)d/%(max_value)d)'),
                     ' ', progressbar.ETA(format='ETA: %(eta)s'),

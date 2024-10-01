@@ -1,3 +1,3 @@
 from .base_writer import BaseWriter
-from .hdf5_writer import HDF5Writer
+from .local_writer import LocalWriter
 from .s3_writer import S3Writer

@@ -4,7 +4,7 @@ from typing import Type, Dict, List, Optional
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
 from ..transforms import ThermoTransform
-from ..readersv2.base_reader import BaseReader
+from ..readers.base_reader import BaseReader
 
 class ThermoDataset(Dataset):
     def __init__( self, data_source: BaseReader |List[BaseReader], transform: Optional[ThermoTransform] = None):

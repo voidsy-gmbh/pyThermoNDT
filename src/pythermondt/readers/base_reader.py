@@ -1,271 +1,258 @@
-import os
-import re
-from glob import glob
+import io, re, os
+import progressbar
+from typing import Tuple, Type, Optional, Iterator, Dict, List
 from abc import ABC, abstractmethod
-from typing import Generator, List, Tuple, Optional
 from ..data import DataContainer
-from ..transforms import ThermoTransform
+from .parsers import BaseParser, HDF5Parser, SimulationParser
+
+FILE_EXTENSIONS: Dict[Type[BaseParser], Tuple[str, ...]] = {
+    HDF5Parser: ('.hdf5', '.h5'),
+    SimulationParser: ('.mat',),
+    # Add more file extensions for future parsers here
+}
+
+# Lookup table for file extensions ==> for fast validation of file extensions
+FILE_EXTENSIONS_LUT = {ext:parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
 
 class BaseReader(ABC):
+    """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
+    """
     @abstractmethod
-    def __init__(self, source: str, file_extension: str | Tuple[str, ...], cache_paths: bool = True, transform: Optional[ThermoTransform] = None):
-        """Initialize the Reader with a single source.
+    def __init__(self, parser: Type[BaseParser], source: str, cache_files: bool = True):
+        """ Constructor for the BaseReader class.
 
         Parameters:
-            source (str): Source expression to match files. Can either point to a single file, a directory or a regex pattern to match multiple files.
-            file_extension (str or Tuple[str]): File extension(s) of the data files to load. Can be a single string or a tuple of strings.
-            cache_paths (bool, optional): If True, all file paths in the source directory will be cached. Therefore updates to the source directory will not be reflected at runtime. Default is True.
-            transform (ThermoTransform, optional): Optional transform to be applied on the data before it is loaded. Default is None.
+            parser (Type[BaseParser]): The parser that the reader uses to parse the data.
+            source (str): The source of the data. This can be a file path, a directory path, a regular expression. In case of cloud storage, this can be a URL.
+            cache_files (bool, optional): If True, the reader caches the file paths. If False, the reader retrieves the file list each time. For cloud storage readers, this flag should also determine if the files are downloaded to a local directory. Default is True.
         """
-        # Convert file_extension to a tuple if it is a single string
-        extensions = file_extension if isinstance(file_extension, tuple) else (file_extension,)
+        # Set the parser
+        self.__parser = parser
 
-        # Check if file_extension is valid
-        if not all(isinstance(ext, str) for ext in extensions):
-            raise TypeError("All items in the list must be strings.")
-        if not all(ext.startswith('.') for ext in extensions):
-            raise ValueError("All file extensions must start with a dot.")
-        self.file_extensions = extensions
-
-        # Set the source expression
-        self.source = source
-
-        # Transforms to apply
-        self.transform = transform
-
-        # Boolean flag to enable caching of file paths
-        self.cache_paths = cache_paths
-
-        # Index to keep track of the current file being read ==> used for iteration
-        self._current_file_index = 0
-
-        # Lists that contain Cached file names and paths
-        self._cached_file_names = None
-        self._cached_file_paths = None
-
-    def __iter__(self):
-        self._current_file_index = 0
-        return self
-
-    def __next__(self) -> DataContainer:
-        # Get all file paths in the source directory
-        files = self.file_paths()
-
-        # Check if the current file index is out of bounds
-        if self._current_file_index >= len(files):
-            raise StopIteration
-
-        data = self[self._current_file_index]
-        self._current_file_index += 1
-
-        return data
-
-    def __getitem__(self, index: int) -> DataContainer:
-        # Get all file paths in the source directory
-        files = self.file_paths()
-
-        # Check if the index is out of bounds
-        if index < 0 or index >= len(files):
-            raise IndexError("Index out of bounds.")
-
-        # Load data from the file at the specified index
-        return self.read_data(files[index])
-    
-    @property
-    def source(self) -> str:
-        """
-        The source expression used to match files. Can either point to a single file, a directory or a regex pattern to match multiple files.
-
-        Returns:
-            str: The source expression.
-        """
-        return self.__source
-    
-    @source.setter
-    def source(self, source: str):
-        # Check if source is a valid regex pattern
+        # Set the file extensions based on what parser is used
         try:
-            re.compile(source)
-            valid_regex = True
-        except re.error:
-            valid_regex = False
-
-        # Check if the provided source is either a file, a directory or a regex pattern
-        if os.path.isfile(source):
-            self._source_type = "file"
-
-        elif os.path.isdir(source):
-            self._source_type = "directory"
-
-        elif valid_regex:
-            self._source_type = "regex"
-
-        else:
-            raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
+            self.__file_extensions = FILE_EXTENSIONS[self.parser]
+        except KeyError:
+            raise ValueError(f"The specified Parser: {parser.__name__} is not supported by the {self.__class__.__name__} class.")
         
-        # Write the source expression to the private variable
+        # validate that the source expression does not contain an invalid file extension ==> File extensions are defined by the parser
+        ext = re.findall(r'\.[a-zA-Z0-9]+$', source)
+        correct_parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else self.parser
+
+        if correct_parser is None:
+            raise ValueError(f"The source contains an invalid file extension: '({ext[0]})'! Use a file extensions that is supported by the {self.parser.__name__}: {self.file_extensions}")
+        elif correct_parser is not self.parser:
+             raise ValueError(f"Wrong parser selected for the file extension: '({ext[0]})'! Use the {correct_parser.__name__} for this file extension instead")
+             
+        # Set the source
         self.__source = source
 
+        # Set the cache_files flag and the cached_files attribute
+        self.__cache_files = cache_files
+        self.__cached_paths: Optional[List[str]] = None
+
+        # If caching is on for a remote source ==> create a local directory for the cached files and download the files
+        if self.remote_source and self.__cache_files:
+            # Create the local directory for the cached files
+            self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_cache", self._create_safe_folder_name())
+            if not os.path.isdir(self.__local_dir):
+                os.makedirs(self.__local_dir)
+
+            # Collect the list of files that need to be downloaded
+            files_to_download = []
+            for file in self.files:
+                cached_path = os.path.join(self.__local_dir, os.path.basename(file))
+                if not os.path.isfile(cached_path):
+                    files_to_download.append((cached_path, file))
+
+            # Only proceed if there are files to download
+            if files_to_download:
+                # Define custom widgets and the progress bar
+                reader_repr = "{}(source={})".format(self.__class__.__name__, self.source)
+                widgets = [
+                    f"Downloading Files for {reader_repr}: ", progressbar.Percentage(),
+                    ' ', progressbar.Bar(marker='■', left='|', right='|'),
+                    ' ', progressbar.SimpleProgress(format='(%(value)d/%(max_value)d)'),
+                    ' ', progressbar.ETA(format='ETA: %(eta)s'),
+                ]
+                bar = progressbar.ProgressBar(
+                    max_value=len(files_to_download), 
+                    widgets=widgets,
+                    enable_colors=False
+                )
+                
+                # Download the files
+                with bar:
+                    for i, (cached_path, file) in enumerate(files_to_download, start=1):
+                        try:
+                            with open(cached_path, 'wb') as f:
+                                f.write(self._read_file(file).getbuffer())
+                        except Exception as e:
+                            print(f"Error downloading file: {file} - {e}")  
+                        finally:
+                            bar.update(i)
+
+            # Set the cached paths to the local file paths
+            self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in self.file_names]
+
+    def __str__(self):
+        return "{}(parser={}, source={}, cache_paths={})".format(
+            self.__class__.__name__, 
+            self.parser.__name__, 
+            self.__source,
+            self.__cache_files
+        )
+    
+    def __len__(self) -> int:
+        """Returns the number of files that the reader can read."""
+        return self.num_files
+    
+    def __getitem__(self, idx: int) -> DataContainer:
+        """ Returns the parsed data in a DataContainer object at file path at the given index."""
+        if idx < 0 or idx >= len(self):
+            raise IndexError(f"Index out of range. Must be between 0 and {len(self)}")
+        return self.read(self.files[idx])
+    
+    def __iter__(self) -> Iterator[DataContainer]:
+        """ Creates an iterator that reads and parses all the files in the reader. 
+        
+        In case caching is disabled, a snapshot of the file list is taken to avoid undefined behavior when the file list changes during iteration.
+        For maximum performance, its is recommend to enable caching when iterating over the files.
+
+        Returns:
+            Iterator[DataContainer]: An iterator that yields the parsed data in DataContainer objects.
+        """
+        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration and caching is of
+        file_paths = self.files
+
+        for file in file_paths:
+                yield self.read(file)
+
+    def __next__(self) -> DataContainer:
+        return next(iter(self))
+
+    @ property
+    def source(self) -> str:
+        """ Returns the source of the reader."""
+        return self.__source
+
+    @property
+    def parser(self) -> Type[BaseParser]:
+        """ Returns the parser class that the reader uses to parse the data."""
+        return self.__parser
+
+    @property
+    def file_extensions(self) -> Tuple[str, ...]:
+        """ Returns the file extensions that the reader can read."""
+        return self.__file_extensions
+    
+    @property
+    def file_names(self) -> List[str]:
+        """ Returns a list of all the file names that the reader can read."""
+        return [path.split('/')[-1] for path in self.files]
+    
     @property
     def num_files(self) -> int:
-        """
-        Get the number of files in the source directory
-
-        Returns:
-            int: The number of files in the source directory.
-        """
-        return len(self.file_paths())
-
-    def file_names(self) -> List[str]:
-        """
-        Get all the file names in the source directory, specified by the source expression and file extension of the reader.
-
-        Returns:
-            List[str]: A list of file names.
-        """
-        # If caching is on and the file names are already cached, return the cached file names
-        if self._cached_file_names is not None and self.cache_paths:
-            return self._cached_file_names
-        # If caching is off, reset the cached file names
-        elif not self.cache_paths:
-            self._cached_file_names = None
-
-        file_names = [os.path.basename(f) for f in self.file_paths()]
-
-        # Cache the file names if caching is enabled
-        if self.cache_paths:
-            self._cached_file_names = file_names
-
-        return file_names
+        """ Returns the number of files that the reader can read."""
+        return len(self.files)
     
-    def file_paths(self) -> List[str]:
-        """
-        Get all the file paths in the source directory, specified by the source expression and file extension of the reader.
-
-        Returns:
-            List[str]: A list of file paths.
-        """
-        # If caching is on and the file paths are already cached, return the cached file names
-        if self._cached_file_paths is not None and self.cache_paths:
-            return self._cached_file_paths
-        # If caching is off, reset the cached file names
-        elif not self.cache_paths:
-            self._cached_file_paths = None
-
-        # Resolve the source pattern based on the source type
-        match self._source_type:
-            case "file":
-                file_paths = [self.source]
-
-            case "directory":
-                file_paths = glob(os.path.join(self.source, "*"))
-
-            case "regex":
-                file_paths = glob(self.source)
-
-            case _:
-                raise ValueError("Invalid source type.")
-
-        # Check if the found files match the specified file extension
-        file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extensions)]
-        if not file_paths:
-            raise ValueError("No files found. Please check the source expression and file extensions")
-
-        # Cache the file paths if caching is enabled
-        if self.cache_paths:
-            self._cached_file_paths = file_paths
+    @property
+    def files(self) -> List[str]:
+        """ Returns a list of all the paths to the files that the reader can read."""
+        # If caching is off, return the file list directly
+        if not self.__cache_files:
+            return self._get_file_list()
         
-        return file_paths
-
-    def read_data(self, file_path: str) -> DataContainer:
-        """
-        Read data from a given file path and return it as a DataContainer. Also checks if the file extension is valid.
+        # If caching is on and files are not cached, cache the files and return them
+        if self.__cached_paths is None:
+            self.__cached_paths = self._get_file_list()
+        
+        # Else return the cached files
+        return self.__cached_paths
+    
+    def _sanitize_string(self, s: str) -> str:
+        """Sanitizes a string by replacing non-alphanumeric characters with underscores and removing leading/trailing underscores.
 
         Parameters:
-            file_path (str): The file path from which to load the data.
+            s (str): The string to be sanitized.
+        
+        Returns:
+            str: The sanitized string.
+        """
+        # Replace non-alphanumeric characters (except underscores) with underscores
+        s = re.sub(r'[^\w\-_\. ]', '_', s)
+        # Replace multiple underscores with a single underscore
+        s = re.sub(r'_+', '_', s)
+        # Remove leading/trailing underscores
+        return s.strip('_')
+    
+    def _create_safe_folder_name(self) -> str:
+        """Creates a safe folder name for the downloaded files.
+
+        Used to create a folder name for the downloaded files, that is persistend and does not change between runs.
 
         Returns:
-            DataContainer: A DataContainer instance containing data loaded from the file.
+            str: The safe folder name.   
         """
-        # Check if the file extension of the file is valid
-        if not any(file_path.endswith(ext) for ext in self.file_extensions):
-            raise ValueError("Invalid file extension. Must be one of: " + str(self.file_extensions))
+        safe_class_name = self._sanitize_string(self.__class__.__qualname__)
+        safe_source_expr = self._sanitize_string(self.source)
 
-        # Load the data from the file
-        data = self._read_data(file_path)
-
-        # Apply the transform if it is not None
-        if self.transform is not None:
-            return self.transform(data)
-        else:
-            return data
+        # limit the folder name to 255 characters
+        return f"{safe_class_name}_{safe_source_expr}"[:255]
+    
+    @property
+    @abstractmethod
+    def remote_source(self) -> bool:
+        """ Returns True if the reader reads files from a remote source, False otherwise. This property must be implemented by the subclass."""
+        raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
-    def _read_data(self, file_path: str) -> DataContainer:
+    def _read_file(self, path: str) -> io.BytesIO:
+        """ Actual implementation of how a single file is read into memory. This method must be implemented by the subclass."""
+        raise NotImplementedError("Method must be implemented by subclass")
+    
+    @abstractmethod
+    def _get_file_list(self) -> List[str]:
+        """Actual implementation of how the reader gets the list of files. This method must be implemented by the subclass."""
+        raise NotImplementedError("Method must be implemented by subclass")
+    
+    @abstractmethod
+    def _close(self):
+        """ Closes any open connections or resources that the reader might have opened. 
+        If the reader does not open any connections or resources, this method can be passed. Must be implemented by the subclass.
         """
-        Actual implementation of reading data from a given file path and returning it as a DataContainer. Should be implemented by subclasses. Checking if the path is valid 
-        is handled inside the _BaseReader class.
+        raise NotImplementedError("Method must be implemented by subclass")
 
+    def read(self, path: str) -> DataContainer:
+        """Reads and parse the file at the given path into a DataContainer object using the specified parser.
+        
         Parameters:
-            file_path (str): The file path from which to load the data.
+            path (str): The path to the file to be read.
 
         Returns:
-            DataContainer: A DataContainer instance containing data loaded from the file.
+            DataContainer: The parsed data in a DataContainer
         """
-        pass
-
-    def read_data_batch(self, batch_size: int) -> Generator[List[DataContainer], None, None]:
-        """
-        Generator to yield batches of data dynamically from the list of files in the source directory. Files are filtered by the file extension specified in the reader.
-
-        Parameters:
-            batch_size (int): Number of files to load per batch.
-
-        Yields:
-            List[DataContainer]: A batch of DataContainers loaded from batch_size files.
-        """
-        # Check if source is a directory
-        if not os.path.isdir(self.source):
-            raise ValueError("The source must be a directory for batch processing.")
+        try:
+            # If the reader reads from a remote source and files are cached, read the file from the local directory
+            if self.remote_source and self.__cache_files and self.__cached_paths is not None:
+                with open(path, 'rb') as f:
+                    return self.parser.parse(io.BytesIO(f.read()))
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File not found in cached files. Clear the cache and try again.")
         
-        # Get all file names in the source directory
-        files = self.file_paths()
+        # Else read the file directly from the source
+        try:
+            return self.parser.parse(self._read_file(path))
+        except Exception as e:
+            raise Exception(f"Error reading file: {path} - {e}")
+    
+    def clear_cache(self):
+        """ Clears the cached file paths. Therefore the reader will check for new files on the next call of the files property."""
+        # Clear cached paths
+        self.__cached_paths = None
 
-        # Validate arguments
-        if not files:
-            raise ValueError("No files found in the specified directory.")
-
-        if batch_size < 1:
-            raise ValueError("Invalid batch size. Must be at least 1.")
-        
-        if batch_size > len(files):
-            raise ValueError("Batch size is greater than the number of files in the directory.")
-
-        # Load data in batches
-        for i in range(0, len(files), batch_size):
-            # Check if the last batch is smaller than the batch size ==> just take the remaining files
-            if i + batch_size > len(files):
-                batch_files = files[i:]
-
-            # Normal case: Take the next batch_size files
-            else:
-                batch_files = files[i:i + batch_size]
-
-            # Load data from each file in the batch
-            batch_data = [self.read_data(f) for f in batch_files]
-
-            # Type check the loaded data
-            if not all(isinstance(data, DataContainer) for data in batch_data):
-                raise TypeError("All items in the batch must be instances of DataContainer.")
-            
-            # Yield the batch of data
-            yield batch_data
-
-    def read_data_all(self) -> List[DataContainer]:
-        """
-        Load all data from the list of files in the source directory. Files are filtered by the file extension specified in the reader. Be careful with large amounts of files. Memory usage can be high!
-
-        Returns:
-            List[DataContainer]: A list containing all DataContainers loaded from the files.
-        """
-        return [self.read_data(f) for f in self.file_paths()]
+        # Delete the local directory if it exists
+        if self.remote_source and self.__cache_files and os.path.isdir(self.__local_dir):
+            for file in os.listdir(self.__local_dir):
+                os.remove(os.path.join(self.__local_dir, file))
+            os.rmdir(self.__local_dir)

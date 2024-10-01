@@ -1,5 +1,5 @@
 import io, re, os
-import progressbar
+from tqdm.auto import tqdm
 from typing import Tuple, Type, Optional, Iterator, Dict, List
 from abc import ABC, abstractmethod
 from ..data import DataContainer
@@ -84,16 +84,11 @@ class BaseReader(ABC):
             if files_to_download:
                 # Define custom widgets and the progress bar
                 reader_repr = "{}(source={})".format(self.__class__.__name__, self.source)
-                widgets = [
-                    f"Downloading Files for {reader_repr}: ", progressbar.Percentage(),
-                    ' ', progressbar.Bar(marker='■', left='|', right='|'),
-                    ' ', progressbar.SimpleProgress(format='(%(value)d/%(max_value)d)'),
-                    ' ', progressbar.ETA(format='ETA: %(eta)s'),
-                ]
-                bar = progressbar.ProgressBar(
-                    max_value=len(files_to_download), 
-                    widgets=widgets,
-                    enable_colors=False
+                bar = tqdm(
+                    total=len(files_to_download),
+                    desc=f"Downloading Files for {reader_repr}",
+                    unit="file" if len(files_to_download) == 1 else "files",
+                    leave=True,  # Set to False if you don't want the bar to persist after completion
                 )
                 
                 # Download the files
@@ -105,7 +100,7 @@ class BaseReader(ABC):
                         except Exception as e:
                             print(f"Error downloading file: {file} - {e}")  
                         finally:
-                            bar.update(i)
+                            bar.update(1)
 
             # Set the cached paths to the local file paths
             self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in self.file_names]

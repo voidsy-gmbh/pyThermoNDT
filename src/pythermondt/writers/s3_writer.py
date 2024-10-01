@@ -1,5 +1,5 @@
 import boto3
-import progressbar
+from tqdm.auto import tqdm
 from botocore.exceptions import ClientError
 from ..data import DataContainer
 from .base_writer import BaseWriter
@@ -30,35 +30,29 @@ class S3Writer(BaseWriter):
         # Serialize the DataContainer to a HDF5 file
         file_obj = container.serialize_to_hdf5()
 
-        # Progress bar
-        widgets = [
-            f"\033[1mUploading file: {file_name}\033[0m ",  # Bold file name
-            progressbar.Percentage(),
-            ' ', progressbar.Bar(marker='\033[92m■\033[0m', left='|', right='|', fill=' '),
-            ' ', progressbar.DataSize(), ' of ', progressbar.DataSize(variable='max_value'),
-            ' ', progressbar.FileTransferSpeed(),
-            ' ', progressbar.ETA()
-        ]
-        bar = progressbar.ProgressBar(
-            max_value=file_obj.getbuffer().nbytes, 
-            widgets=widgets,
-            enable_colors=False
+        # Progress bar for uploading the file
+        bar = tqdm(
+            total=file_obj.getbuffer().nbytes,
+            desc=f"Uploading file: {file_name}",
+            unit="B",
+            unit_scale=True,  # Scale to MB
+            unit_divisor=1024, # Convert bytes to MB
+            miniters=1, # Update progress bar every 1 iteration
+            leave=True,  # Set to False if you don't want the bar to persist after completion
         )
 
          # Callback for progress bar
         class ProgressCallback:
             def __init__(self, bar):
                 self.bar = bar
-                self._seen_so_far = 0
 
             def __call__(self, bytes_amount):
-                self._seen_so_far += bytes_amount
-                self.bar.update(self._seen_so_far)
+                self.bar.update(bytes_amount)
 
         # Try to upload the file
         try:
             self.__client.upload_fileobj(file_obj, self.bucket, path, Callback=ProgressCallback(bar))
-            bar.finish()
+            bar.close() # Close the progress bar
 
         except ClientError as e:
             error_code = e.response['Error']['Code']

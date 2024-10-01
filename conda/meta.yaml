@@ -19,7 +19,8 @@ requirements:
   run:
     # General
     - python>=3.10
-    - progressbar2>=4.5.*
+    - tqdm>=4.66.*
+    - ipywidgets>=8.0.*
 
     # Data loading and visualization
     - h5py>=3.9, <3.11 # h5py 3.11.0 requires numpy 2.0.0 ==> not tested if this works here

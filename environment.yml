@@ -8,7 +8,8 @@ dependencies:
   - python=3.12.*
   - pytest=8.3.*
   - pylint=3.2.*
-  - progressbar2=4.5.*
+  - tqdm=4.66.*
+  - ipywidgets=8.1.*
 
   # Data loading and visualization
   - mat73=0.65

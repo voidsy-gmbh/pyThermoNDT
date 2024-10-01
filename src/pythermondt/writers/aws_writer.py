@@ -30,4 +30,12 @@ class AWSWriter(BaseWriter):
             self.__client.upload_fileobj(container.serialize_to_hdf5(), self.bucket, path)
             print("Upload successful")
         except ClientError as e:
-            print(e)
+            error_code = e.response['Error']['Code']
+            if error_code in ['InvalidAccessKeyId', 'SignatureDoesNotMatch', 'AuthFailure', 'InvalidSecurity', 'InvalidToken']:
+                raise PermissionError("Invalid AWS credentials") from e
+            elif error_code == 'AccessDenied':
+                raise PermissionError("Access denied. Check your AWS permissions for this resource.") from e
+            elif error_code == 'NoSuchBucket':
+                raise FileNotFoundError(f"The bucket '{self.bucket}' does not exist") from e
+            else:
+                raise RuntimeError(f"Failed to upload file: {e}") from e

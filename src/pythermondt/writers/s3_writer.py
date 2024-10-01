@@ -4,7 +4,7 @@ from botocore.exceptions import ClientError
 from ..data import DataContainer
 from .base_writer import BaseWriter
 
-class AWSWriter(BaseWriter):
+class S3Writer(BaseWriter):
     def __init__(self, bucket: str, destination_folder: str, boto3_session: boto3.Session = boto3.Session()):
         """ Instantiates a new HDF5Writer 
 

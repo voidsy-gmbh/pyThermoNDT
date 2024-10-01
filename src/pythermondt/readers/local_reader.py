@@ -2,20 +2,20 @@ import io
 import re
 import os
 from glob import glob
-from typing import List, Type
+from typing import List, Type, Optional
 from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class LocalReader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], source: str, cache_files: bool = True):
+    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None):
         """ Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
 
         Parameters:
-            parser (BaseParser): The parser to be used for parsing the data.
             source (str): The source of the data. This can either be a file path, a directory path, or a regular expression.
             cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
         """
         # Check if source is a valid regex pattern
         try:
@@ -38,7 +38,7 @@ class LocalReader(BaseReader):
             raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         
         # Call the constructor of the BaseReader class
-        super().__init__(parser, source, cache_files)
+        super().__init__(source, cache_files, parser)
 
     @property
     def remote_source(self) -> bool:

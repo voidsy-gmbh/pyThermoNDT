@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from ..data import DataContainer
 from .parsers import BaseParser, HDF5Parser, SimulationParser
 
+# Define which parser should be used for which file extensions
 FILE_EXTENSIONS: Dict[Type[BaseParser], Tuple[str, ...]] = {
     HDF5Parser: ('.hdf5', '.h5'),
     SimulationParser: ('.mat',),
@@ -18,15 +19,30 @@ class BaseReader(ABC):
     """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
     """
     @abstractmethod
-    def __init__(self, parser: Type[BaseParser], source: str, cache_files: bool = True):
+    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None):
         """ Constructor for the BaseReader class.
 
         Parameters:
-            parser (Type[BaseParser]): The parser that the reader uses to parse the data.
             source (str): The source of the data. This can be a file path, a directory path, a regular expression. In case of cloud storage, this can be a URL.
             cache_files (bool, optional): If True, the reader caches the file paths. If False, the reader retrieves the file list each time. For cloud storage readers, this flag should also determine if the files are downloaded to a local directory. Default is True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
         """
-        # Set the parser
+        # Extract file extension from the source
+        ext = re.findall(r'\.[a-zA-Z0-9]+$', source)
+
+        # Try to auto select the parser based on the file extension if no parser is specified
+        if parser is None:
+            # Auto select the parser based on the file extension
+            parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else None
+
+            # Raise an error if no file extension is found
+            if not ext:
+                raise ValueError(f"Could not auto select a parser for the source: {source}. Source does not contain a file extension.")
+
+            if parser is None:
+                raise ValueError(f"Could not auto select a parser for the source: {source}. Please specify the parser manually.")
+        
+        # Write parser to private attribute
         self.__parser = parser
 
         # Set the file extensions based on what parser is used
@@ -36,7 +52,6 @@ class BaseReader(ABC):
             raise ValueError(f"The specified Parser: {parser.__name__} is not supported by the {self.__class__.__name__} class.")
         
         # validate that the source expression does not contain an invalid file extension ==> File extensions are defined by the parser
-        ext = re.findall(r'\.[a-zA-Z0-9]+$', source)
         correct_parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else self.parser
 
         if correct_parser is None:

@@ -1,21 +1,21 @@
 import io
 import re
 import boto3
-from typing import Type, List
+from typing import Type, List, Optional
 from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class S3Reader(BaseReader):
-    def __init__(self, parser: Type[BaseParser], source: str, cache_files: bool = False, boto3_session: boto3.Session = boto3.Session()):
+    def __init__(self, source: str, cache_files: bool = False, parser: Optional[Type[BaseParser]] = None, boto3_session: boto3.Session = boto3.Session()):
         """ Initialize an instance of the S3Reader class.
 
         This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must cofigure an authentication method
         for boto3, according to the documentation: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration
 
         Parameters:
-            parser (BaseParser): The parser to be used for parsing the data.
-            source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix. All files that start with the provided prefix will be read.
+            source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]. All files that start with the provided prefix will be read. Specifiy the file extension if you want to autoselect a parser based on the file extension.
             cache_files (bool, optional): If True, all the files are downloaded first and the paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is False, to prevent disk space issues.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
             boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
         """
 
@@ -24,11 +24,12 @@ class S3Reader(BaseReader):
 
         # Validate the source path
         if not re.match(r"^s3:\/\/[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](?:\/[\w.-]+)*$", source):
-            raise ValueError("The source must be a valid S3 path, specified in the format: s3://bucket-name/path/to/file")
+            raise ValueError("The source must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]")
         
         # Extract the bucket and prefix from the source path
+        ext = re.findall(r'\.[a-zA-Z0-9]+$', source) 
         bucket = source.split('/')[2]
-        prefix = '/'.join(source.split('/')[3:])
+        prefix = '/'.join(source.split('/')[3:]) if not ext else '/'.join(source.split('/')[3:-1])
 
         # validate that the bucket exists
         if not bucket in [response['Name'] for response in self.__client.list_buckets()['Buckets']]:
@@ -39,7 +40,7 @@ class S3Reader(BaseReader):
         self.__prefix = prefix
         
         # Call the constructor of the BaseReader class
-        super().__init__(parser, source, cache_files)
+        super().__init__(source, cache_files, parser)
 
     @property
     def remote_source(self) -> bool:

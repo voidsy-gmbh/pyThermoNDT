@@ -164,7 +164,7 @@ class BaseReader(ABC):
     @property
     def file_names(self) -> List[str]:
         """ Returns a list of all the file names that the reader can read."""
-        return [path.split('/')[-1] for path in self.files]
+        return [os.path.basename(path) for path in self.files]
     
     @property
     def num_files(self) -> int:

@@ -34,8 +34,6 @@ class ThermoDataset(Dataset):
         # Build the index map
         self._build_index()
 
-        print("Indexmap Memory: ", (sys.getsizeof(self.__reader_index) + sys.getsizeof(self.__file_index)) / 1024 / 1024, "MB")
-
     def _validate_readers(self, readers: List[BaseReader]):
         """Validate readers and check for duplicates."""
         # Check if the readers have found any files and if there are any duplicates

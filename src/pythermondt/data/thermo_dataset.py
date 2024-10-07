@@ -13,6 +13,9 @@ class ThermoDataset(Dataset):
         The sources are used to read the data and create the dataset. First the readers are grouped by type.
         Then all readers of the same type are checked for duplicate files. If any duplicates are found, an error is raised.
 
+        **Note**: When combining readers, it is recommend that all readers enable file caching. The readers accomodate for this by raising an error if a file is not found and
+        taking a snapshot of the files when a iterator is created. However, enabling file caching is still recommended to avoid issues with changing files. A warning is printed if a reader does not have file caching enabled.
+
         Parameters:
             data_source (List[BaseReader]): List of readers to be used as a data source for the dataset
             transform (ThermoTransform, optional): Optional transform to be directly applied to the data when it is read
@@ -37,6 +40,11 @@ class ThermoDataset(Dataset):
     def _validate_readers(self, readers: List[BaseReader]):
         """Validate readers and check for duplicates."""
         # Check if the readers have found any files and if there are any duplicates
+        # Check if all readers have enabled file caching
+        for reader in readers:
+            if not reader.cache_files:
+                print(f"Warning: Reader {reader.__repr__()} does not have file caching enabled. This can lead to issues with changing files. Consider enabling file caching.")
+
         # Group all the readers by type
         readers_by_type: Dict[Type[BaseReader], List[BaseReader]] = {}  
         for reader in readers:

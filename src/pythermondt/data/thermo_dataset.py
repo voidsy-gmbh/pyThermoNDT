@@ -14,7 +14,9 @@ class ThermoDataset(Dataset):
         Then all readers of the same type are checked for duplicate files. If any duplicates are found, an error is raised.
 
         **Note**: When combining readers, it is recommend that all readers enable file caching. The readers accomodate for this by raising an error if a file is not found and
-        taking a snapshot of the files when a iterator is created. However, enabling file caching is still recommended to avoid issues with changing files. A warning is printed if a reader does not have file caching enabled.
+        taking a snapshot of the files when a iterator is created. The Dataset will catch these errors when trying to read the data and return an **empty Datacontainer**
+        
+        However, enabling file caching is still recommended to avoid issues with changing files, especially when using a dataset for model training. A warning is printed if any reader does not have file caching enabled.
 
         Parameters:
             data_source (List[BaseReader]): List of readers to be used as a data source for the dataset
@@ -105,14 +107,25 @@ class ThermoDataset(Dataset):
         reader_idx = int(self.__reader_index[idx].item())
         file_idx = int(self.__file_index[idx].item())
 
-        # Read the file from the reader
-        data = self.__readers[reader_idx][file_idx]
+        # Try to read the file
+        try:
+            # Read the file from the reader
+            data = self.__readers[reader_idx][file_idx]
 
-        # Apply the transform if any is given
-        if self.__transform:
-            data = self.__transform(data)
+            # Apply the transform if any is given
+            if self.__transform:
+                data = self.__transform(data)
+            
+            return data
+
+        except FileNotFoundError:
+            print(f"File not found for reader {self.__readers[reader_idx].__repr__()} at index {file_idx}")
         
-        return data
-    
+        except Exception as e:
+            print(f"Error reading file for reader {self.__readers[reader_idx].__repr__()} at index {file_idx}: {e}")
+
+        # Return an empty DataContainer if the file could not be read
+        return DataContainer()
+
     def __iter__(self) -> Iterator[DataContainer]:
         return chain.from_iterable(self.__readers)

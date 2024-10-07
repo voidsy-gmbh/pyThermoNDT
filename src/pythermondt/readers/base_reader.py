@@ -83,17 +83,16 @@ class BaseReader(ABC):
             # Only proceed if there are files to download
             if files_to_download:
                 # Define custom widgets and the progress bar
-                reader_repr = "{}(source={})".format(self.__class__.__name__, self.source)
                 bar = tqdm(
                     total=len(files_to_download),
-                    desc=f"Downloading Files for {reader_repr}",
+                    desc=f"Downloading Files for {self.__repr__()}",
                     unit="file" if len(files_to_download) == 1 else "files",
                     leave=True,  # Set to False if you don't want the bar to persist after completion
                 )
                 
                 # Download the files
                 with bar:
-                    for i, (cached_path, file) in enumerate(files_to_download, start=1):
+                    for cached_path, file in files_to_download:
                         try:
                             with open(cached_path, 'wb') as f:
                                 f.write(self._read_file(file).getbuffer())
@@ -111,6 +110,12 @@ class BaseReader(ABC):
             self.parser.__name__, 
             self.__source,
             self.__cache_files
+        )
+    
+    def __repr__(self):
+        return "{}(source={})".format(
+            self.__class__.__name__, 
+            self.source
         )
     
     def __len__(self) -> int:

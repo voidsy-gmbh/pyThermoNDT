@@ -12,7 +12,7 @@ FILE_EXTENSIONS: Dict[Type[BaseParser], Tuple[str, ...]] = {
     # Add more file extensions for future parsers here
 }
 
-# Lookup table for file extensions ==> for fast validation of file extensions
+# Lookup table for file extensions ==> for fast validation if the file extension is supported by the parser
 FILE_EXTENSIONS_LUT = {ext:parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
 
 class BaseReader(ABC):
@@ -68,41 +68,48 @@ class BaseReader(ABC):
 
         # If caching is on for a remote source ==> create a local directory for the cached files and download the files
         if self.remote_source and self.__cache_files:
-            # Create the local directory for the cached files
-            self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_cache", self._create_safe_folder_name())
-            if not os.path.isdir(self.__local_dir):
-                os.makedirs(self.__local_dir)
+            # Download the files to the cache
+            self._download_files_to_cache(self.files)
+            
+    def _download_files_to_cache(self, files: List[str]):
+        # Extract the file names from the files provided
+        file_names = [os.path.basename(file) for file in files]
 
-            # Collect the list of files that need to be downloaded
-            files_to_download = []
-            for file in self.files:
-                cached_path = os.path.join(self.__local_dir, os.path.basename(file))
-                if not os.path.isfile(cached_path):
-                    files_to_download.append((cached_path, file))
+        # Create the local directory for the cached files
+        self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_cache", self._create_safe_folder_name())
+        if not os.path.isdir(self.__local_dir):
+            os.makedirs(self.__local_dir)
 
-            # Only proceed if there are files to download
-            if files_to_download:
-                # Define custom widgets and the progress bar
-                bar = tqdm(
-                    total=len(files_to_download),
-                    desc=f"Downloading Files for {self.__repr__()}",
-                    unit="file" if len(files_to_download) == 1 else "files",
-                    leave=True,  # Set to False if you don't want the bar to persist after completion
-                )
-                
-                # Download the files
-                with bar:
-                    for cached_path, file in files_to_download:
-                        try:
-                            with open(cached_path, 'wb') as f:
-                                f.write(self._read_file(file).getbuffer())
-                        except Exception as e:
-                            print(f"Error downloading file: {file} - {e}")  
-                        finally:
-                            bar.update(1)
+        # Collect the list of files that need to be downloaded
+        files_to_download = []
+        for file in files:
+            cached_path = os.path.join(self.__local_dir, os.path.basename(file))
+            if not os.path.isfile(cached_path):
+                files_to_download.append((cached_path, file))
 
-            # Set the cached paths to the local file paths
-            self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in self.file_names]
+        # Only proceed if there are files to download
+        if files_to_download:
+            # Define custom widgets and the progress bar
+            bar = tqdm(
+                total=len(files_to_download),
+                desc=f"Downloading Files for {self.__repr__()}",
+                unit="file" if len(files_to_download) == 1 else "files",
+                leave=True,  # Set to False if you don't want the bar to persist after completion
+            )
+            
+            # Download the files
+            with bar:
+                for cached_path, file in files_to_download:
+                    try:
+                        with open(cached_path, 'wb') as f:
+                            f.write(self._read_file(file).getbuffer())
+                    except Exception as e:
+                        print(f"Error downloading file: {file} - {e}")  
+                    finally:
+                        bar.update(1)
+
+        # Set the cached paths to the local file paths
+        self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in file_names]
 
     def __str__(self):
         return "{}(parser={}, source={}, cache_paths={})".format(
@@ -251,6 +258,10 @@ class BaseReader(ABC):
 
         Returns:
             DataContainer: The parsed data in a DataContainer
+
+        Raises:
+            FileNotFoundError: If the file is not found in the cached files. Clear the cache and try again.
+            Exception: If an error occurs while reading the file.
         """
         try:
             # If the reader reads from a remote source and files are cached, read the file from the local directory
@@ -276,3 +287,13 @@ class BaseReader(ABC):
             for file in os.listdir(self.__local_dir):
                 os.remove(os.path.join(self.__local_dir, file))
             os.rmdir(self.__local_dir)
+
+    def rebuild_cache(self):
+        """ Rebuilds the cache by first clearing the cache and then downloading the files again.
+        """
+        # Clear the cache
+        self.clear_cache()
+
+        # Rebuild the cache
+        if self.remote_source and self.__cache_files:
+            self._download_files_to_cache(self.files)

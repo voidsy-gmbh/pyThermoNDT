@@ -1,6 +1,6 @@
 import torch
-import sys
-from typing import Type, Dict, List, Optional
+from itertools import chain
+from typing import Type, Dict, List, Optional, Iterator
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
 from ..transforms import ThermoTransform
@@ -93,7 +93,7 @@ class ThermoDataset(Dataset):
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
         
-        # Find the reader that contains the file
+        # Extract the reader and file index from the index map
         reader_idx = int(self.__reader_index[idx].item())
         file_idx = int(self.__file_index[idx].item())
 
@@ -106,6 +106,5 @@ class ThermoDataset(Dataset):
         
         return data
     
-    def __iter__(self):
-        for i in range(len(self)):
-            yield self[i]
+    def __iter__(self) -> Iterator[DataContainer]:
+        return chain.from_iterable(self.__readers)

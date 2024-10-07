@@ -150,6 +150,11 @@ class BaseReader(ABC):
     def parser(self) -> Type[BaseParser]:
         """ Returns the parser class that the reader uses to parse the data."""
         return self.__parser
+    
+    @property
+    def cache_files(self) -> bool:
+        """ Returns True if the reader caches the file paths, False otherwise."""
+        return self.__cache_files
 
     @property
     def file_extensions(self) -> Tuple[str, ...]:

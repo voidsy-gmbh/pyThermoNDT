@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pythermondt"
-version = "0.0.1"
+version = "0.0.2"
 description = "A package to manipulate thermographic data for NDT purposes."
 authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
 license = {file = "LICENSE"}

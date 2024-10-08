@@ -55,10 +55,10 @@ jobs:
 
     # Step 7: Create or update GitHub Release and upload built package
     - name: Upload to GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.RELEASE_NAME }}
-        release_name: ${{ env.RELEASE_NAME }}
+        name: pyThermoNDT ${{ env.RELEASE_NAME }}
         files: ${{ env.PACKAGE_PATH }}
         draft: true
       env:

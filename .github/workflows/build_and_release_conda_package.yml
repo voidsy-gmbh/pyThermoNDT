@@ -29,7 +29,7 @@ jobs:
     # Step 3: Install conda-build
     - name: Install dependencies
       run: |
-        conda install conda-build, conda-verify -y
+        conda install conda-build, conda-verify -c conda-forge -y
 
     # Step 4: Build the conda package
     - name: Build conda package

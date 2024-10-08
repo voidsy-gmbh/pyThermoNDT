@@ -2,9 +2,9 @@ name: Build and Release Conda Package
 
 on:
   workflow_dispatch:
-#   push:
-#     branches:
-#       - "release/*"
+  push:
+    branches:
+      - "release/*"
 
 jobs:
   build-linux:
@@ -20,7 +20,6 @@ jobs:
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
-        auto-update-conda: true
         activate-environment: base
         channels: conda-forge, defaults
         python-version: 3.12

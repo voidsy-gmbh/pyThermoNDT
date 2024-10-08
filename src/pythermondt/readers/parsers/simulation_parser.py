@@ -1,23 +1,36 @@
+import io
 import mat73
-import numpy as np
 import json
-from typing import Tuple, Optional
-from .base_reader import BaseReader
-from ..data import DataContainer, ThermoContainer
-from ..transforms import ThermoTransform
+import numpy as np
+from .base_parser import BaseParser
+from ...data import DataContainer, ThermoContainer
 
-class SimulationReader(BaseReader):
-    '''
-        A sub-class to read simulation data from a .mat file.
-    '''
-    def __init__(self, source:str, file_extension: str | Tuple[str, ...] = '.mat', cache_paths: bool = True, transform: Optional[ThermoTransform] = None):
-        # Call the constructor of the BaseLoader and set the file extension 
-        super().__init__(source, file_extension, cache_paths, transform)
-         
-    def _read_data(self, file_path:str) -> DataContainer:
-        #Load the mat file
-        data = mat73.loadmat(file_path, use_attrdict=True)['SimResult']
+class SimulationParser(BaseParser):
+    @staticmethod
+    def parse(data_bytes: io.BytesIO) -> DataContainer:
+        """ Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a DataContainer object.
 
+        The BytesIO object must contain a .mat file with simulattion data from COMSOL.
+
+        Parameters:
+            data_bytes (io.BytesIO): The BytesIO object containing the data to be parsed.
+
+        Returns:
+            DataContainer: The parsed data as a DataContainer object.
+
+        Raises:
+            ValueError: If the given BytesIO object is empty or does not contain a valid .mat file.
+        """
+        # Check if the BytesIO object is empty
+        if data_bytes.getbuffer().nbytes == 0:
+            raise ValueError("The given BytesIO object is empty.")
+        
+        # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
+        try:
+            data = mat73.loadmat(data_bytes, use_attrdict=True)['SimResult']
+        except OSError:
+            raise ValueError("The given BytesIO object does not contain a valid .mat file.")
+        
         # Create an empty DataContainer
         datacontainer = ThermoContainer()
 

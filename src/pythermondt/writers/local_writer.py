@@ -1,7 +1,7 @@
 import os
 from .base_writer import BaseWriter
 
-class HDF5Writer(BaseWriter):
+class LocalWriter(BaseWriter):
     def __init__(self, destination_folder: str):
         """ Instantiates a new HDF5Writer 
 

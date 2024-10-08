@@ -1,3 +1,3 @@
-from .base_reader import BaseReader
-from .simulation_reader import SimulationReader
-from .hdf5_reader import HDF5Reader
+from .local_reader import LocalReader
+from .s3_reader import S3Reader
+from .parsers import HDF5Parser, SimulationParser

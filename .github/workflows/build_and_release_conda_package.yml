@@ -40,7 +40,7 @@ jobs:
     - name: Locate the built package
       id: find_package
       run: |
-        PACKAGE_PATH=$(conda build conda-recipe --output)
+        PACKAGE_PATH=$(conda build conda --output)
         echo "PACKAGE_PATH=$PACKAGE_PATH" >> $GITHUB_ENV
 
     # # Step 6: Create or update GitHub Release and upload built package

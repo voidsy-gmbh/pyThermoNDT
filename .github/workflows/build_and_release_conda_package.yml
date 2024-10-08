@@ -61,5 +61,6 @@ jobs:
         name: pyThermoNDT ${{ env.RELEASE_NAME }}
         files: ${{ env.PACKAGE_PATH }}
         draft: true
+        generate_release_notes : true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -41,15 +41,24 @@ jobs:
       id: find_package
       run: |
         PACKAGE_PATH=$(conda build conda --output)
+        echo "The package is located at $PACKAGE_PATH"
         echo "PACKAGE_PATH=$PACKAGE_PATH" >> $GITHUB_ENV
 
-    # # Step 6: Create or update GitHub Release and upload built package
+    # Step 6: Get release version from branch name
+    - name: Get Release Version
+      id: get_version
+      run: |
+        BRANCH_NAME=${GITHUB_REF##*/}
+        RELEASE_NAME=$(echo $BRANCH_NAME | sed 's/release\///')
+        echo "The release version is $RELEASE_NAME"
+        echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+
+    # # Step 7: Create or update GitHub Release and upload built package
     # - name: Upload to GitHub Release
     #   uses: softprops/action-gh-release@v1
     #   with:
+    #     tag_name: ${{ env.RELEASE_NAME }}
+    #     release_name: ${{ env.RELEASE_NAME }}
     #     files: ${{ env.PACKAGE_PATH }}
     #   env:
     #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-        
-    

@@ -31,7 +31,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        RELEASE_INFO=$(gh release view ${{ env.RELEASE_NAME }} --json draft,published --jq '.draft, .published' || echo "not_found")
+        RELEASE_INFO=$(gh release view ${{ env.RELEASE_NAME }} --json isDraft,publishedAt --jq '.draft, .published' || echo "not_found")
         if [[ "$RELEASE_INFO" == "not_found" ]]; then
           echo "No release with the tag ${{ env.RELEASE_NAME }} found."
           echo "RELEASE_DOES_NOT_EXIST=true" >> $GITHUB_ENV

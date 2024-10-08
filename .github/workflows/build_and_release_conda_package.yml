@@ -73,7 +73,19 @@ jobs:
         conda build conda --output-folder $OUTPUT_DIR
         echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_ENV
 
-    # Step 8: Delete existing draft release if it exists
+    # Step 8: Index the Conda Channel Directory
+    - name: Index Conda Channel Directory
+      run: |
+        conda index ${{ env.OUTPUT_DIR }}
+        echo "Indexed the output directory to make it a valid conda channel."
+
+    # Step 9: Archive the Conda channel directory
+    - name: Archive the Conda Channel
+      run: |
+        tar -czvf conda-channel-${{ env.RELEASE_NAME }}.tar.gz -C ${{ env.OUTPUT_DIR }} .
+        echo "ARCHIVED_CHANNEL=conda-channel-${{ env.RELEASE_NAME }}.tar.gz" >> $GITHUB_ENV
+
+    # Step 10: Delete existing draft release if it exists
     - name: Delete existing draft release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,14 +93,14 @@ jobs:
       run: |
        gh release delete ${{ env.RELEASE_NAME }} --yes
 
-   # Step 9: Create a new draft release
+   # Step 11: Create a new draft release
     - name: Create Draft Release
       if: env.RELEASE_DOES_NOT_EXIST == 'true' || env.IS_DRAFT == 'true'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.RELEASE_NAME }}
         name: pyThermoNDT ${{ env.RELEASE_NAME }}
-        files: ${{ env.OUTPUT_DIR }}/noarch/*.tar.bz2
+        files: ${{ env.ARCHIVED_CHANNEL }}
         generate_release_notes: true
         draft: true
       env:

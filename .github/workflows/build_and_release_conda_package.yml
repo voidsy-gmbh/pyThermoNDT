@@ -88,7 +88,8 @@ jobs:
       with:
         tag_name: ${{ env.RELEASE_NAME }}
         name: pyThermoNDT ${{ env.RELEASE_NAME }}
-        files: ${{ env.OUTPUT_DIR }}/*.tar.bz2
+        files: ${{ env.OUTPUT_DIR }}/noarch/*.tar.bz2
+        generate_release_notes: true
         draft: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

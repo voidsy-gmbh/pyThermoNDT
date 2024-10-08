@@ -66,33 +66,29 @@ jobs:
       run: |
         conda install conda-build conda-verify -c conda-forge -y
 
-    # Step 7: Build the conda package
+    # Step 7: Build the conda package with a specified output folder
     - name: Build conda package
       run: |
-        conda build conda
+        OUTPUT_DIR="./conda-build-output"
+        conda build conda --output-folder $OUTPUT_DIR
+        echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_ENV
 
-    # Step 8: Locate the output package
-    - name: Locate the built package
-      id: find_package
-      run: |
-        PACKAGE_PATH=$(conda build conda --output)
-        echo "The package is located at $PACKAGE_PATH"
-        echo "PACKAGE_PATH=$PACKAGE_PATH" >> $GITHUB_ENV
-
-    # Step 9: Delete existing draft release if it exists
+    # Step 8: Delete existing draft release if it exists
     - name: Delete existing draft release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: env.RELEASE_DOES_NOT_EXIST == 'false' && env.IS_DRAFT == 'true'
       run: |
        gh release delete ${{ env.RELEASE_NAME }} --yes
 
-   # Step 10: Create a new draft release
+   # Step 9: Create a new draft release
     - name: Create Draft Release
       if: env.RELEASE_DOES_NOT_EXIST == 'true' || env.IS_DRAFT == 'true'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.RELEASE_NAME }}
         name: pyThermoNDT ${{ env.RELEASE_NAME }}
-        files: ${{ env.PACKAGE_PATH }}
+        files: ${{ env.OUTPUT_DIR }}/*.tar.bz2
         draft: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

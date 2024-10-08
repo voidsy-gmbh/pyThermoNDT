@@ -1,0 +1,54 @@
+name: Build and Release Conda Package
+
+on:
+  workflow_dispatch:
+#   push:
+#     branches:
+#       - "release/*"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    # Configure steps
+    steps:
+    # Step 1: Checkout code in the current branch
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Step 2: Set up Miniconda
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        activate-environment: base
+        channels: conda-forge, defaults
+        python-version: 3.12
+
+    # Step 3: Install conda-build
+    - name: Install dependencies
+      run: |
+        conda install conda-build, conda-verify
+
+    # Step 4: Build the conda package
+    - name: Build conda package
+      run: |
+        conda build conda
+
+    # Step 5: Locate the output package
+    - name: Locate the built package
+      id: find_package
+      run: |
+        PACKAGE_PATH=$(conda build conda-recipe --output)
+        echo "PACKAGE_PATH=$PACKAGE_PATH" >> $GITHUB_ENV
+
+    # # Step 6: Create or update GitHub Release and upload built package
+    # - name: Upload to GitHub Release
+    #   uses: softprops/action-gh-release@v1
+    #   with:
+    #     files: ${{ env.PACKAGE_PATH }}
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        
+    

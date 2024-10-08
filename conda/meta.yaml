@@ -14,14 +14,15 @@ build:
 
 requirements:
   host:
-    - python >=3.10
+    # Build environment dependencies
+    - python >=3.10, <3.13
     - pip
   run:
     # General
-    - python>=3.10
     - tqdm>=4.66.*
     - ipywidgets>=8.0.*
     - ipykernel>=6.25.*
+    - python>=3.10, <3.13
 
     # Data loading and visualization
     - h5py>=3.9, <3.11 # h5py 3.11.0 requires numpy 2.0.0 ==> not tested if this works here

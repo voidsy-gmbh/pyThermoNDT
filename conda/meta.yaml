@@ -52,10 +52,12 @@ test:
 
 about:
   home: "https://github.com/voidsy-gmbh/pyThermoNDT"
-  license: "TBD"
+  license: "Apache-2.0"
   license_file: "LICENSE"
-  summary: "A package to manipulate thermographic data for NDT purposes."
-  description: "This package provides various methods to load, transform, visualize and write thermographic data. It serves as a tool to make working with thermographic data easier and more efficient."
+  license_family: "APACHE"
+  license_url: "https://github.com/voidsy-gmbh/pyThermoNDT/blob/main/LICENSE"
+  summary: "A Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications."
+  description: "pyThermoNDT is a Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications. It provides various methods to load, transform, visualize, and write thermographic data, making it easier and more efficient to work with thermal imaging in NDT contexts."
 
 extra:
   recipe-maintainers:

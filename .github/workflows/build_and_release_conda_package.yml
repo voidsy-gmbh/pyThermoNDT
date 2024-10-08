@@ -31,7 +31,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        RELEASE_INFO=$(gh release view ${{ env.RELEASE_NAME }} --json isDraft,publishedAt --jq '.draft, .published' || echo "not_found")
+        RELEASE_INFO=$(gh release view ${{ env.RELEASE_NAME }} --json isDraft,publishedAt --jq '.isDraft, .publishedAt' || echo "not_found")
         if [[ "$RELEASE_INFO" == "not_found" ]]; then
           echo "No release with the tag ${{ env.RELEASE_NAME }} found."
           echo "RELEASE_DOES_NOT_EXIST=true" >> $GITHUB_ENV
@@ -42,6 +42,7 @@ jobs:
           IS_PUBLISHED=${RELEASE_STATE[1]}
           echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_ENV
           echo "IS_PUBLISHED=$IS_PUBLISHED" >> $GITHUB_ENV
+        fi
 
     # Step 4: Stop workflow if an official release already exists
     - name: Stop if official release exists

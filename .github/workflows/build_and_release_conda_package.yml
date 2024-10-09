@@ -18,13 +18,20 @@ jobs:
     - name: Get Release Version
       id: get_version
       run: |
-        BRANCH_NAME=${GITHUB_REF##*/}
-        RELEASE_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
-        if [[ $BRANCH_NAME != "release/"* ]]; then
+        # Extract the branch name from GITHUB_REF
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        
+        # Check if the branch starts with 'release/'
+        if [[ $BRANCH_NAME != release/* ]]; then
           echo "This is not a release branch. Stopping workflow."
           exit 1
         fi
+
+        # Extract the release version by removing 'release/'
+        RELEASE_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
         echo "The release version is $RELEASE_VERSION"
+        
+        # Set the output for other steps to use
         echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
     # Step 3: Check if the release already exists

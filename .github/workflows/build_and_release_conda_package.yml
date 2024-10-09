@@ -82,8 +82,9 @@ jobs:
     # Step 9: Archive the Conda channel directory
     - name: Archive the Conda Channel
       run: |
-        tar -czvf conda-channel-${{ env.RELEASE_NAME }}.tar.gz -C ${{ env.OUTPUT_DIR }} .
-        echo "ARCHIVED_CHANNEL=conda-channel-${{ env.RELEASE_NAME }}.tar.gz" >> $GITHUB_ENV
+        sudo apt-get update && sudo apt-get install -y zip  # Ensure zip is available
+        zip -r ${{ env.RELEASE_NAME }} - release-package.zip ${{ env.OUTPUT_DIR }}
+        echo "ARCHIVED_CHANNEL=conda-channel-${{ env.RELEASE_NAME }}.zip" >> $GITHUB_ENV
 
     # Step 10: Delete existing draft release if it exists
     - name: Delete existing draft release

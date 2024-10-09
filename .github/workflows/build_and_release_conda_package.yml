@@ -7,23 +7,25 @@ on:
       - "release/*"
 
 jobs:
-  build-linux:
+  build-and-release:
     runs-on: ubuntu-latest
-
-    # Configure steps
     steps:
     # Step 1: Checkout code in the current branch
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Step 2: Get release version from branch name
+    # Step 2: Get release version from branch name and check if the branch is a release branch
     - name: Get Release Version
       id: get_version
       run: |
         BRANCH_NAME=${GITHUB_REF##*/}
         RELEASE_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+        if [[ $BRANCH_NAME != "release/"* ]]; then
+          echo "This is not a release branch. Stopping workflow."
+          exit 1
+        fi
         echo "The release version is $RELEASE_VERSION"
-        echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+        echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
     # Step 3: Check if the release already exists
     - name: Check if release exists
@@ -31,24 +33,24 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        RELEASE_INFO=$(gh release view ${{ env.RELEASE_VERSION }} --json isDraft,publishedAt --jq '.isDraft, .publishedAt' || echo "not_found")
+        RELEASE_INFO=$(gh release view ${{ steps.get_version.outputs.RELEASE_VERSION }} --json isDraft,publishedAt --jq '.isDraft, .publishedAt' || echo "not_found")
         if [[ "$RELEASE_INFO" == "not_found" ]]; then
-          echo "No release with the tag ${{ env.RELEASE_VERSION }} found."
-          echo "RELEASE_DOES_NOT_EXIST=true" >> $GITHUB_ENV
+          echo "No release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} found."
+          echo "RELEASE_DOES_NOT_EXIST=true" >> $GITHUB_OUTPUT
         else
-          echo "RELEASE_DOES_NOT_EXIST=false" >> $GITHUB_ENV
+          echo "RELEASE_DOES_NOT_EXIST=false" >> $GITHUB_OUTPUT
           RELEASE_STATE=($RELEASE_INFO)
           IS_DRAFT=${RELEASE_STATE[0]}
           IS_PUBLISHED=${RELEASE_STATE[1]}
-          echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_ENV
-          echo "IS_PUBLISHED=$IS_PUBLISHED" >> $GITHUB_ENV
+          echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_OUTPUT
+          echo "IS_PUBLISHED=$IS_PUBLISHED" >> $GITHUB_OUTPUT
         fi
 
     # Step 4: Stop workflow if an official release already exists
     - name: Stop if official release exists
-      if: env.RELEASE_DOES_NOT_EXIST == 'false' && env.IS_PUBLISHED == 'true'
+      if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'false' && steps.check_release.outputs.IS_PUBLISHED == 'true'
       run: |
-        echo "An official release with the tag ${{ env.RELEASE_VERSION }} already exists. Stopping workflow."
+        echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
         exit 1
 
     # Step 5: Set up Miniconda
@@ -68,40 +70,42 @@ jobs:
 
     # Step 7: Build the conda package with a specified output folder
     - name: Build conda package
+      id: build_package
       run: |
         OUTPUT_DIR="./release-package"
         conda build conda --output-folder $OUTPUT_DIR
-        echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_ENV
+        echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
     # Step 8: Index the Conda Channel Directory
     - name: Index Conda Channel Directory
       run: |
-        conda index ${{ env.OUTPUT_DIR }}
+        conda index ${{ steps.build_package.outputs.OUTPUT_DIR }}
         echo "Indexed the output directory to make it a valid conda channel."
 
     # Step 9: Archive the Conda channel directory
     - name: Archive the Conda Channel
+      id: create_zip_archive
       run: |
-        ZIP_NAME="pyThermoNDT_${{ env.RELEASE_VERSION }}_release_package.zip"
-        zip -r "$ZIP_NAME" ${{ env.OUTPUT_DIR }}
-        echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_ENV
+        ZIP_NAME="pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_release_package.zip"
+        zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
+        echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_OUTPUT
 
     # Step 10: Delete existing draft release if it exists
     - name: Delete existing draft release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      if: env.RELEASE_DOES_NOT_EXIST == 'false' && env.IS_DRAFT == 'true'
+      if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'false' && steps.check_release.outputs.IS_DRAFT == 'true'
       run: |
-       gh release delete ${{ env.RELEASE_VERSION }} --yes
+       gh release delete ${{ steps.get_version.outputs.RELEASE_VERSION }} --yes
 
    # Step 11: Create a new draft release
     - name: Create Draft Release
-      if: env.RELEASE_DOES_NOT_EXIST == 'true' || env.IS_DRAFT == 'true'
+      if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'true' || steps.check_release.outputs.IS_DRAFT == 'true'
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ env.RELEASE_VERSION }}
-        name: pyThermoNDT ${{ env.RELEASE_VERSION }}
-        files: ${{ env.ARCHIVED_CHANNEL }}
+        tag_name: ${{ steps.get_version.outputs.RELEASE_VERSION }}
+        name: pyThermoNDT ${{ steps.get_version.outputs.RELEASE_VERSION }}
+        files: ${{ steps.create_zip_archive.outputs.ARCHIVED_CHANNEL }}
         generate_release_notes: true
         draft: true
       env:

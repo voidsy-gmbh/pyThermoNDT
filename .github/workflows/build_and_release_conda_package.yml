@@ -2,53 +2,118 @@ name: Build and Release Conda Package
 
 on:
   workflow_dispatch:
-#   push:
-#     branches:
-#       - "release/*"
+  push:
+    branches:
+      - "release/*"
 
 jobs:
-  build-linux:
+  build-and-release:
     runs-on: ubuntu-latest
-
-    # Configure steps
     steps:
     # Step 1: Checkout code in the current branch
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Step 2: Set up Miniconda
+    # Step 2: Get release version from branch name and check if the branch is a release branch
+    - name: Get Release Version
+      id: get_version
+      run: |
+        # Extract the branch name from GITHUB_REF
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        
+        # Check if the branch starts with 'release/'
+        if [[ $BRANCH_NAME != release/* ]]; then
+          echo "This is not a release branch. Stopping workflow."
+          exit 1
+        fi
+
+        # Extract the release version by removing 'release/'
+        RELEASE_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+        echo "The release version is $RELEASE_VERSION"
+        
+        # Set the output for other steps to use
+        echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+
+    # Step 3: Check if the release already exists
+    - name: Check if release exists
+      id: check_release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        RELEASE_INFO=$(gh release view ${{ steps.get_version.outputs.RELEASE_VERSION }} --json isDraft,publishedAt --jq '.isDraft, .publishedAt' || echo "not_found")
+        if [[ "$RELEASE_INFO" == "not_found" ]]; then
+          echo "No release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} found."
+          echo "RELEASE_DOES_NOT_EXIST=true" >> $GITHUB_OUTPUT
+        else
+          echo "RELEASE_DOES_NOT_EXIST=false" >> $GITHUB_OUTPUT
+          RELEASE_STATE=($RELEASE_INFO)
+          IS_DRAFT=${RELEASE_STATE[0]}
+          IS_PUBLISHED=${RELEASE_STATE[1]}
+          echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_OUTPUT
+          echo "IS_PUBLISHED=$IS_PUBLISHED" >> $GITHUB_OUTPUT
+        fi
+
+    # Step 4: Stop workflow if an official release already exists
+    - name: Stop if official release exists
+      if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'false' && steps.check_release.outputs.IS_PUBLISHED == 'true'
+      run: |
+        echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
+        exit 1
+
+    # Step 5: Set up Miniconda
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
+        activate-environment: true
+        auto-activate-base: true
         auto-update-conda: true
-        activate-environment: base
         channels: conda-forge, defaults
         python-version: 3.12
 
-    # Step 3: Install conda-build
+    # Step 6: Install conda-build
     - name: Install dependencies
       run: |
-        conda install conda-build, conda-verify
+        conda install conda-build conda-verify -c conda-forge -y
 
-    # Step 4: Build the conda package
+    # Step 7: Build the conda package with a specified output folder
     - name: Build conda package
+      id: build_package
       run: |
-        conda build conda
+        OUTPUT_DIR="./release-package"
+        conda build conda --output-folder $OUTPUT_DIR
+        echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
-    # Step 5: Locate the output package
-    - name: Locate the built package
-      id: find_package
+    # Step 8: Index the Conda Channel Directory
+    - name: Index Conda Channel Directory
       run: |
-        PACKAGE_PATH=$(conda build conda-recipe --output)
-        echo "PACKAGE_PATH=$PACKAGE_PATH" >> $GITHUB_ENV
+        conda index ${{ steps.build_package.outputs.OUTPUT_DIR }}
+        echo "Indexed the output directory to make it a valid conda channel."
 
-    # # Step 6: Create or update GitHub Release and upload built package
-    # - name: Upload to GitHub Release
-    #   uses: softprops/action-gh-release@v1
-    #   with:
-    #     files: ${{ env.PACKAGE_PATH }}
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Step 9: Archive the Conda channel directory
+    - name: Archive the Conda Channel
+      id: create_zip_archive
+      run: |
+        ZIP_NAME="pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_release_package.zip"
+        zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
+        echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_OUTPUT
 
-        
-    
+    # Step 10: Delete existing draft release if it exists
+    - name: Delete existing draft release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'false' && steps.check_release.outputs.IS_DRAFT == 'true'
+      run: |
+       gh release delete ${{ steps.get_version.outputs.RELEASE_VERSION }} --yes
+
+   # Step 11: Create a new draft release
+    - name: Create Draft Release
+      if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'true' || steps.check_release.outputs.IS_DRAFT == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.get_version.outputs.RELEASE_VERSION }}
+        name: pyThermoNDT ${{ steps.get_version.outputs.RELEASE_VERSION }}
+        files: ${{ steps.create_zip_archive.outputs.ARCHIVED_CHANNEL }}
+        generate_release_notes: true
+        draft: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

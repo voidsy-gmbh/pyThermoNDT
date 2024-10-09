@@ -69,7 +69,7 @@ jobs:
     # Step 7: Build the conda package with a specified output folder
     - name: Build conda package
       run: |
-        OUTPUT_DIR="./conda-build-output"
+        OUTPUT_DIR="./release-package"
         conda build conda --output-folder $OUTPUT_DIR
         echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_ENV
 
@@ -82,7 +82,7 @@ jobs:
     # Step 9: Archive the Conda channel directory
     - name: Archive the Conda Channel
       run: |
-        ZIP_NAME="pyThermoNDT_${{ env.RELEASE_VERSION }} - release-package.zip"
+        ZIP_NAME="pyThermoNDT_${{ env.RELEASE_VERSION }}_release_package.zip"
         zip -r "$ZIP_NAME" ${{ env.OUTPUT_DIR }}
         echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_ENV
 

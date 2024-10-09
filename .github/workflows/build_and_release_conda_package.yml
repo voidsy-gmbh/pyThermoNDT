@@ -21,9 +21,9 @@ jobs:
       id: get_version
       run: |
         BRANCH_NAME=${GITHUB_REF##*/}
-        RELEASE_NAME=$(echo $BRANCH_NAME | sed 's/release\///')
-        echo "The release version is $RELEASE_NAME"
-        echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+        RELEASE_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+        echo "The release version is $RELEASE_VERSION"
+        echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
     # Step 3: Check if the release already exists
     - name: Check if release exists
@@ -31,9 +31,9 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        RELEASE_INFO=$(gh release view ${{ env.RELEASE_NAME }} --json isDraft,publishedAt --jq '.isDraft, .publishedAt' || echo "not_found")
+        RELEASE_INFO=$(gh release view ${{ env.RELEASE_VERSION }} --json isDraft,publishedAt --jq '.isDraft, .publishedAt' || echo "not_found")
         if [[ "$RELEASE_INFO" == "not_found" ]]; then
-          echo "No release with the tag ${{ env.RELEASE_NAME }} found."
+          echo "No release with the tag ${{ env.RELEASE_VERSION }} found."
           echo "RELEASE_DOES_NOT_EXIST=true" >> $GITHUB_ENV
         else
           echo "RELEASE_DOES_NOT_EXIST=false" >> $GITHUB_ENV
@@ -48,7 +48,7 @@ jobs:
     - name: Stop if official release exists
       if: env.RELEASE_DOES_NOT_EXIST == 'false' && env.IS_PUBLISHED == 'true'
       run: |
-        echo "An official release with the tag ${{ env.RELEASE_NAME }} already exists. Stopping workflow."
+        echo "An official release with the tag ${{ env.RELEASE_VERSION }} already exists. Stopping workflow."
         exit 1
 
     # Step 5: Set up Miniconda
@@ -82,9 +82,9 @@ jobs:
     # Step 9: Archive the Conda channel directory
     - name: Archive the Conda Channel
       run: |
-        sudo apt-get update && sudo apt-get install -y zip  # Ensure zip is available
-        zip -r ${{ env.RELEASE_NAME }} - release-package.zip ${{ env.OUTPUT_DIR }}
-        echo "ARCHIVED_CHANNEL=${{ env.RELEASE_NAME }} - release-package.zip" >> $GITHUB_ENV
+        ZIP_NAME="pyThermoNDT_${{ env.RELEASE_VERSION }} - release-package.zip"
+        zip -r "$ZIP_NAME" ${{ env.OUTPUT_DIR }}
+        echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_ENV
 
     # Step 10: Delete existing draft release if it exists
     - name: Delete existing draft release
@@ -92,15 +92,15 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: env.RELEASE_DOES_NOT_EXIST == 'false' && env.IS_DRAFT == 'true'
       run: |
-       gh release delete ${{ env.RELEASE_NAME }} --yes
+       gh release delete ${{ env.RELEASE_VERSION }} --yes
 
    # Step 11: Create a new draft release
     - name: Create Draft Release
       if: env.RELEASE_DOES_NOT_EXIST == 'true' || env.IS_DRAFT == 'true'
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ env.RELEASE_NAME }}
-        name: pyThermoNDT ${{ env.RELEASE_NAME }}
+        tag_name: ${{ env.RELEASE_VERSION }}
+        name: pyThermoNDT ${{ env.RELEASE_VERSION }}
         files: ${{ env.ARCHIVED_CHANNEL }}
         generate_release_notes: true
         draft: true

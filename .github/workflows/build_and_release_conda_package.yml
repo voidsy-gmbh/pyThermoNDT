@@ -79,7 +79,7 @@ jobs:
     - name: Build conda package
       id: build_package
       run: |
-        OUTPUT_DIR="./release-package"
+        OUTPUT_DIR="./install-package"
         conda build conda --output-folder $OUTPUT_DIR
         echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
@@ -93,7 +93,7 @@ jobs:
     - name: Archive the Conda Channel
       id: create_zip_archive
       run: |
-        ZIP_NAME="pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_release_package.zip"
+        ZIP_NAME="pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_install_package.zip"
         zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
         echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_OUTPUT
 

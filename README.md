@@ -4,17 +4,17 @@ pyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 
 ## Installation
 
-### From Release Package (Recommended)
-The current recommended way to install pythermondt is to use the .zip files provided with the releases:
+### From Install Package (Recommended)
+The current recommended way to install pythermondt is to use the install package, provided as a .zip files with the releases:
 
-1. Download the latest release package from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and unpack it.
+1. Download the latest install package from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).
 
 2. Add conda-forge to your channels. This is recommended so that pip dependencies can be resolved without having to specifiy the channel each time:
     ```
     conda config --add channels conda-forge
     ```
 
-3. Install the package in your current environment using conda:
+3. Unpack the .zip file. Now install pyThermoNDT in your current environment using conda:
     ```
     conda install pythermondt -c /path/to/unpacked/folder
     ```

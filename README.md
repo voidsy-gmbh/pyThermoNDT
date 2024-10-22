@@ -4,10 +4,36 @@ pyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 
 ## Installation
 
-### From Install Package (Recommended)
-The current recommended way to install pythermondt is to use the install package, provided as a .zip files with the releases:
+### Pip
 
-1. Download the latest install package from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).
+#### From Wheel Package (Recommended)
+1. Download the wheel package (`.whl` file) from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases)
+2. Install using pip:
+    ```
+    pip install /path/to/downloaded/file.whl
+    ```
+
+#### From Source
+1. Clone the repository:
+    ```
+    git clone https://github.com/yourusername/pyThermoNDT.git
+    cd pyThermoNDT
+    ```
+2. Install either in development mode:
+    ```
+    pip install -e .
+    ```
+    or just install the package:
+    ```
+    pip install .
+    ```
+
+### Conda
+
+#### From Install Package (Recommended)
+The current recommended way to install pythermondt via conda is to use the install package, provided as a .zip files with the releases:
+
+1. Download the latest conda install package (`.zip` file) from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).
 
 2. Add conda-forge to your channels. This is recommended so that pip dependencies can be resolved without having to specifiy the channel each time:
     ```
@@ -19,7 +45,7 @@ The current recommended way to install pythermondt is to use the install package
     conda install pythermondt -c /path/to/unpacked/folder
     ```
 
-### From Source
+#### From Source
 1. Clone the repository:
     ```
     git clone https://github.com/yourusername/pyThermoNDT.git
@@ -55,7 +81,7 @@ To set up the environment run the following command in the root directory of the
 ```
 conda env create -f environment.yml
 ```
-This will create a new conda environment called `pythermondt-dev` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will automatically be reflected in the environment without having to reinstall the package. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
+This will create a new conda environment called `pythermondt-dev` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will immediately be reflected in the environment without having to reinstall the package every time. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
 
 To activate the environment run:
 ```

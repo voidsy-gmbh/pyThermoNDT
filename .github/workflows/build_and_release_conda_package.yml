@@ -128,7 +128,7 @@ jobs:
         echo "Indexed the output directory to make it a valid conda channel."
         ZIP_NAME="pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_conda_install_package.zip"
         zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
-        echo "ARCHIVED_CHANNEL=$ZIP_NAME" >> $GITHUB_OUTPUT
+        echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
         echo "Zipped the conda channel directory for relase."
 
     # Step 9: Build pip package
@@ -157,8 +157,8 @@ jobs:
         tag_name: ${{ steps.get_version.outputs.RELEASE_VERSION }}
         name: pyThermoNDT ${{ steps.get_version.outputs.RELEASE_VERSION }}
         body: |
-          ## Package Contents
-          - Conda Package: Full conda package with all dependencies (for conda installation)
+          ## Release Contents
+          - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
           - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
           - Source Package (.tar.gz): Source distribution
         files: |

@@ -14,24 +14,45 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Step 2: Get release version from branch name and check if the branch is a release branch
+    # Step 2: Get release version
     - name: Get Release Version
       id: get_version
       run: |
-        # Extract the branch name from GITHUB_REF
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
-        
-        # Check if the branch starts with 'release/'
-        if [[ $BRANCH_NAME != release/* ]]; then
-          echo "This is not a release branch. Stopping workflow."
-          exit 1
+        # Function to get version from _version.py
+        get_version_from_file() {
+          VERSION=$(python -c "exec(open('src/pythermondt/_version.py').read()); print(__version__)")
+          echo $VERSION
+        }
+
+        # If triggered by push, check branch name
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          
+          # Check if it's a release branch
+          if [[ $BRANCH_NAME != release/* ]]; then
+            echo "This is not a release branch. Stopping workflow."
+            exit 1
+          fi
+          
+          # Extract version from branch name
+          BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+          
+          # Get version from file
+          FILE_VERSION=$(get_version_from_file)
+          
+          # Compare versions
+          if [[ "$BRANCH_VERSION" != "$FILE_VERSION" ]]; then
+            echo "Branch version ($BRANCH_VERSION) does not match version in __pkginfo__.py ($FILE_VERSION)"
+            exit 1
+          fi
+          
+          RELEASE_VERSION=$FILE_VERSION
+        else
+          # For manual triggers, just get version from file
+          RELEASE_VERSION=$(get_version_from_file)
         fi
 
-        # Extract the release version by removing 'release/'
-        RELEASE_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
         echo "The release version is $RELEASE_VERSION"
-        
-        # Set the output for other steps to use
         echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
     # Step 3: Check if the release already exists

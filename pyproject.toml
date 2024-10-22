@@ -1,6 +1,6 @@
 [project]
 name = "pythermondt"
-version = "0.0.2"
+dynamic = ["version"]
 description = "A Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications."
 authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
 license = {file = "LICENSE"}
@@ -8,6 +8,9 @@ readme = "README.md"
 
 [tool.setuptools.packages.find]
 where = ["./src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pythermondt._version.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "-vv"

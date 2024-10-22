@@ -1,4 +1,4 @@
-name: Build and Release Conda Package
+name: Test, Build and Release Conda Package
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - "release/*"
 
 jobs:
-  build-and-release:
+  test-build-and-release:
     runs-on: ubuntu-latest
     steps:
     # Step 1: Checkout code in the current branch
@@ -106,21 +106,27 @@ jobs:
         channels: conda-forge, defaults
         python-version: 3.12
 
-    # Step 6: Install conda-build
-    - name: Install dependencies
+    # Step 6: Install dependencies and run tests
+    - name: Install dependencies and run tests
+      run: |
+        pip install -e ".[dev]"
+        pytest
+
+    # Step 7: Install build tools
+    - name: Install build tools
       run: |
         conda install conda-build conda-verify -c conda-forge -y
         python -m pip install build twine
 
-    # Step 7: Build the conda package with a specified output folder
+    # Step 8: Build the conda package with a specified output folder
     - name: Build conda package
       id: build_package
       run: |
         OUTPUT_DIR="./pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_conda_install_package"
-        conda build conda --output-folder $OUTPUT_DIR
+        conda build conda --output-folder $OUTPUT_DIR --no-tests
         echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
-    # Step 8: Archive the Conda channel directory
+    # Step 9: Archive the Conda channel directory
     - name: Process the conda package
       id: process_conda
       run: |
@@ -131,7 +137,7 @@ jobs:
         echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
         echo "Zipped the conda channel directory for relase."
 
-    # Step 9: Build pip package
+    # Step 10: Build pip package
     - name: Build pip package
       id: build_pip
       run: |
@@ -141,7 +147,7 @@ jobs:
         echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
         echo "TAR_FILE=$TAR_FILE" >> $GITHUB_OUTPUT
 
-    # Step 10: Delete existing draft release if it exists
+    # Step 11: Delete existing draft release if it exists
     - name: Delete existing draft release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -149,7 +155,7 @@ jobs:
       run: |
        gh release delete ${{ steps.get_version.outputs.RELEASE_VERSION }} --yes
 
-    # Step 11: Create new draft release with all packages
+    # Step 12: Create new draft release with all packages
     - name: Create Draft Release
       if: steps.check_release.outputs.RELEASE_DOES_NOT_EXIST == 'true' || steps.check_release.outputs.IS_DRAFT == 'true'
       uses: softprops/action-gh-release@v2

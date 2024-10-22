@@ -110,6 +110,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda install conda-build conda-verify -c conda-forge -y
+        python -m pip install build twine
 
     # Step 7: Build the conda package with a specified output folder
     - name: Build conda package

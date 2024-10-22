@@ -110,9 +110,12 @@ jobs:
     - name: Install dependencies and run tests
       shell: bash -l {0}
       run: |
+        echo "Installing package in development mode..."
         conda activate base
         pip install --user -e ".[dev]"
-        pytest
+        
+        echo "\nRunning tests..."
+        pytest -v --capture=tee-sys
 
     # Step 7: Install build tools
     - name: Install build tools

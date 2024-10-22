@@ -6,20 +6,6 @@ channels:
 dependencies:
   # General
   - python=3.12.*
-  - pytest=8.3.*
-  - pylint=3.2.*
-  - tqdm=4.66.*
-  - ipywidgets=8.1.*
-  - ipykernel=6.29.*
-
-  # Data loading and visualization
-  - mat73=0.65
-  - numpy=1.26.*
-  - matplotlib=3.9.*
-
-  # Machine Learning
-  - pytorch=2.4.*
-  - cpuonly
-  
-  # AWS
-  - boto3=1.35.*
+  - pip
+  - pip:
+    - "-e . [dev]" # Install the package in editable mode

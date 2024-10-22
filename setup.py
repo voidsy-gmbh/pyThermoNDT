@@ -3,7 +3,7 @@ from pathlib import Path
 
 def get_version():
     """Get the version number."""
-    pkg_init = Path("src/pythermondt/_version.py").read_text()
+    pkg_init = Path("src/pythermondt/__pkginfo__.py").read_text()
     locals_dict = {}
     exec(pkg_init, {}, locals_dict)
     return locals_dict["__version__"]

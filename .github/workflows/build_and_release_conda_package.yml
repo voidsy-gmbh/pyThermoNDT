@@ -20,7 +20,7 @@ jobs:
       run: |
         # Function to get version from _version.py
         get_version_from_file() {
-          VERSION=$(python -c "exec(open('src/pythermondt/_version.py').read()); print(__version__)")
+          VERSION=$(python -c "exec(open('src/pythermondt/__pkginfo__.py').read()); print(__version__)")
           echo $VERSION
         }
 

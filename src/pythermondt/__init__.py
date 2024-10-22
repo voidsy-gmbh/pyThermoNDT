@@ -1,6 +1,6 @@
 from .data import DataContainer, ThermoDataset
 from .transforms import normalization, utils, preprocessing
-from ._version import __version__
+from .__pkginfo__ import __version__
 
 # TODO: Implement logging instead of print statements
 # TODO: Implement async data loading

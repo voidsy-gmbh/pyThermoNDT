@@ -41,7 +41,7 @@ dev = [
 where = ["./src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pythermondt._version.__version__"}
+version = {attr = "pythermondt.__pkginfo__.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "-vv"

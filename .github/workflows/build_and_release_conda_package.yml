@@ -108,8 +108,10 @@ jobs:
 
     # Step 6: Install dependencies and run tests
     - name: Install dependencies and run tests
+      shell: bash -l {0}
       run: |
-        python -m pip install -e ".[dev]"
+        conda activate base
+        pip install --user -e ".[dev]"
         pytest
 
     # Step 7: Install build tools

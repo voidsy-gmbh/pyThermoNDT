@@ -68,3 +68,10 @@ Tests are written using pytest and are located in [tests](tests/). Tests can be 
 ```
 pytest
 ```
+
+### Versioning
+The package version is defined in [pythermondt/_version.py](src/pythermondt/_version.py). The version number should be updated according to the [Semantic Versioning](https://semver.org/) guidelines.
+
+When releasing a new version:
+1. Update the version number in [pythermondt/_version.py](src/pythermondt/_version.py).
+2. Create a new release branch named 'release/version_number' This will automatically trigger a GitHub action that will build the package and create a release draft on GitHubs [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).

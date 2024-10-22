@@ -1,19 +1,49 @@
+[build-system]
+requires = ["setuptools>=66.0", "wheel>=0.4"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "pythermondt"
-version = "0.0.2"
+dynamic = ["version"]
 description = "A Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications."
 authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
 license = {file = "LICENSE"}
 readme = "README.md"
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    # General dependencies
+    "tqdm>=4.65",
+    "ipywidgets>=8.0",
+    "ipykernel>=6.25",
+
+    # Data loading and visualization
+    "h5py>=3.9",
+    "mat73>=0.65",
+    "numpy>=1.23",
+    "matplotlib>=3.7",
+
+    # Machine learning
+    "torch>=2.0",
+
+    # AWS
+    "boto3>=1.33",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=4.1",
+    "pylint>=3.1",
+    "build>=1.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["./src"]
 
+[tool.setuptools.dynamic]
+version = {attr = "pythermondt.__pkginfo__.__version__"}
+
 [tool.pytest.ini_options]
 addopts = "-vv"
-testpaths = [
-    "./tests",
-]
-pythonpath = [
-    "./src",
-]
+testpaths = ["./tests",]
+pythonpath = ["./src",]

@@ -125,7 +125,7 @@ jobs:
       id: build_package
       run: |
         OUTPUT_DIR="./pyThermoNDT_${{ steps.get_version.outputs.RELEASE_VERSION }}_conda_install_package"
-        conda build conda --output-folder $OUTPUT_DIR --no-tests
+        conda build conda --output-folder $OUTPUT_DIR --no-test
         echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
     # Step 9: Archive the Conda channel directory

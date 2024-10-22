@@ -53,7 +53,12 @@ The dependencies for development are specified in [environment.yml](environment.
 To set up the environment run the following command in the root directory of the repository:
 
 ```
-conda env create
+conda env create -f environment.yml
+```
+This will create a new conda environment called `pythermondt-dev` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will automatically be reflected in the environment without having to reinstall the package. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
+
+To activate the environment run:
+```
 conda activate pythermondt-dev
 ```
 

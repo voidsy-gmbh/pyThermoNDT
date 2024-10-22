@@ -30,9 +30,9 @@ requirements:
     - python>=3.10, <3.13
 
     # Data loading and visualization
-    - h5py>=3.9, <3.11 # h5py 3.11.0 requires numpy 2.0.0 ==> not tested if this works here
+    - h5py>=3.9
     - mat73>=0.65
-    - numpy>=1.23, <2.0 # h5py 3.11.0 requires numpy 2.0.0 ==> not tested if this works here
+    - numpy>=1.23
     - matplotlib>=3.7
 
     # Machine Learning

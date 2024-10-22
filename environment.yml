@@ -1,7 +1,5 @@
 name: pythermondt-dev
 channels:
-  - pytorch
-  - conda-forge
   - defaults
 dependencies:
   # General

@@ -99,5 +99,5 @@ pytest
 The package version is defined in [pythermondt/_version.py](src/pythermondt/_version.py). The version number should be updated according to the [PEP 440 – Version Identification and Dependency Specification](https://setuptools.pypa.io/en/latest/userguide/distribution.html) guidelines.
 
 When releasing a new version:
-1. Update the version number in [pythermondt/_version.py](src/pythermondt/_version.py).
+1. Update the version number in [pythermondt/\__pkginfo\__.py](src/pythermondt/__pkginfo__.py).
 2. Create a new release branch named 'release/version_number' This will automatically trigger a GitHub action that will build the package and create a release draft on GitHubs [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).

@@ -23,7 +23,7 @@ dependencies = [
     "matplotlib>=3.7",
 
     # Machine learning
-    "torch>=2.0; platform_machine == 'cpu'",     # Only pytorch + cpu and no cuda dependencies
+    "torch>=2.0",
 
     # AWS
     "boto3>=1.33",

@@ -6,4 +6,4 @@ dependencies:
   - python=3.12.*
   - pip
   - pip:
-    - "-e . [dev]" # Install the package in editable mode
+    - "-e .[dev]" # Install the package in editable mode

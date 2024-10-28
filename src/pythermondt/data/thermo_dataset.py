@@ -7,14 +7,19 @@ from ..transforms import ThermoTransform
 from ..readers.base_reader import BaseReader
 
 class ThermoDataset(Dataset):
+    """ Custom dataset class used for combining data, read from multiple readers.
+
+    This dataset is used to combine multiple readers into a single dataset. The dataset can be used to read data from multiple sources and apply a transform to the data.
+    Like a normal PyTorch dataset, the dataset can be used to iterate over the data using the __getitem__ method and it is also compatible with PyTorch dataloaders.
+    """
     def __init__( self, data_source: BaseReader |List[BaseReader], transform: Optional[ThermoTransform] = None):
-        """ Initialize a PyTorch dataset from a list of readers.
+        """ Initialize a custom PyTorch dataset from a list of readers.
         
         The sources are used to read the data and create the dataset. First the readers are grouped by type.
         Then all readers of the same type are checked for duplicate files. If any duplicates are found, an error is raised.
 
-        **Note**: When combining readers, it is recommend that all readers enable file caching. The readers accomodate for this by raising an error if a file is not found and
-        taking a snapshot of the files when a iterator is created. The Dataset will catch these errors when trying to read the data and return an **empty Datacontainer**
+        **Note**: When combining readers, it is recommend that all readers enable file caching, especially in cases where files need to be fetched from a remote location and these files are changing at runtime. The readers accomodate for this by raising an error if a file is not found and
+        taking a snapshot of the files list when a iterator is created. The Dataset will catch these errors when trying to read the data and return an **empty Datacontainer**
         
         However, enabling file caching is still recommended to avoid issues with changing files, especially when using a dataset for model training. A warning is printed if any reader does not have file caching enabled.
 

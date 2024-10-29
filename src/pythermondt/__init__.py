@@ -8,3 +8,4 @@ from .__pkginfo__ import __version__
 # TODO: Improve visualization in data container
 # TODO: Add units to thermo container format (update unified format)
 # TODO: Add more tests
+# TODO: Add glob patterns to S3Reader

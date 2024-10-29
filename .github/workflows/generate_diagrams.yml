@@ -27,6 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda env update --file environment.yml --name base
+        pip install git+https://github.com/pylint-dev/pylint.git # Install the latest version of pylint where my fix for source-root is already included
 
     - name: Setup Graphviz
       uses: ts-graphviz/setup-graphviz@v2

@@ -1,0 +1,47 @@
+digraph "classes_pythermondt.data" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.data.datacontainer.node.AttributeNode" [color="#99DDFF", fontcolor="black", label=<{AttributeNode|attributes<br ALIGN="LEFT"/>|add_attribute(key: str, value: AttributeTypes)<br ALIGN="LEFT"/>add_attributes()<br ALIGN="LEFT"/>clear_attributes(): None<br ALIGN="LEFT"/>get_attribute(key: str): AttributeTypes<br ALIGN="LEFT"/>remove_attribute(key: str): None<br ALIGN="LEFT"/>update_attribute(key: str, value: AttributeTypes): None<br ALIGN="LEFT"/>update_attributes()<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.attribute_ops.AttributeOps" [color="#99DDFF", fontcolor="black", label=<{AttributeOps|<br ALIGN="LEFT"/>|add_attribute(path: str, key: str, value: str \| int \| float \| list \| tuple \| dict)<br ALIGN="LEFT"/>add_attributes(path: str)<br ALIGN="LEFT"/>get_attribute(path: str, key: str): str \| int \| float \| list \| tuple \| dict<br ALIGN="LEFT"/>get_attributes(path: str): ItemsView[str, str \| int \| float \| list \| tuple \| dict]<br ALIGN="LEFT"/>remove_attribute(path: str, key: str)<br ALIGN="LEFT"/>update_attribute(path: str, key: str, value: str \| int \| float \| list \| tuple \| dict)<br ALIGN="LEFT"/>update_attributes(path: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.node.BaseNode" [color="#99DDFF", fontcolor="black", label=<{BaseNode|name<br ALIGN="LEFT"/>type<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.base.BaseOps" [color="#99DDFF", fontcolor="black", label=<{BaseOps|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.core.DataContainer" [color="#99DDFF", fontcolor="black", label=<{DataContainer|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.base.DataContainerBase" [color="#99DDFF", fontcolor="black", label=<{DataContainerBase|nodes<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.node.DataNode" [color="#99DDFF", fontcolor="black", label=<{DataNode|data<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.dataset_ops.DatasetOps" [color="#99DDFF", fontcolor="black", label=<{DatasetOps|<br ALIGN="LEFT"/>|add_dataset(path: str, name: str, data: Optional[Tensor \| ndarray])<br ALIGN="LEFT"/>get_dataset(path: str): Tensor<br ALIGN="LEFT"/>get_datasets(): List[str]<br ALIGN="LEFT"/>remove_dataset(path: str)<br ALIGN="LEFT"/>update_dataset(path: str, data: Tensor \| ndarray)<br ALIGN="LEFT"/>update_datasets(updates: Dict[str, Tensor])<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.serialization_ops.DeserializationOps" [color="#99DDFF", fontcolor="black", label=<{DeserializationOps|<br ALIGN="LEFT"/>|deserialize(hdf5_bytes: io.BytesIO)<br ALIGN="LEFT"/>load_from_hdf5(path: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.node.GroupNode" [color="#99DDFF", fontcolor="black", label=<{GroupNode|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.group_ops.GroupOps" [color="#99DDFF", fontcolor="black", label=<{GroupOps|<br ALIGN="LEFT"/>|add_group(path: str, name: str)<br ALIGN="LEFT"/>get_groups(): List[str]<br ALIGN="LEFT"/>remove_group(path: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.node.NodeType" [color="#99DDFF", fontcolor="black", label=<{NodeType|name<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.node.RootNode" [color="#99DDFF", fontcolor="black", label=<{RootNode|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.serialization_ops.SerializationOps" [color="#99DDFF", fontcolor="black", label=<{SerializationOps|<br ALIGN="LEFT"/>|save_to_hdf5(path: str)<br ALIGN="LEFT"/>serialize_to_hdf5(): io.BytesIO<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.core.ThermoContainer" [color="#99DDFF", fontcolor="black", label=<{ThermoContainer|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.thermo_dataset.ThermoDataset" [color="#77AADD", fontcolor="black", label=<{ThermoDataset|files<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.thermo_subset.ThermoSubset" [color="#77AADD", fontcolor="black", label=<{ThermoSubset|transform : Optional[ThermoTransform]<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.visualization_ops.VisualizationOps" [color="#99DDFF", fontcolor="black", label=<{VisualizationOps|<br ALIGN="LEFT"/>|show_frame(frame_number: int, option: str, cmap: str)<br ALIGN="LEFT"/>show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.base.DataContainerBase.__NodeAccessor" [color="#44BB99", fontcolor="black", label=<{__NodeAccessor|<br ALIGN="LEFT"/>|items(): ItemsView[str, NodeTypes]<br ALIGN="LEFT"/>keys(): KeysView[str]<br ALIGN="LEFT"/>values(): ValuesView[NodeTypes]<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.data.datacontainer.attribute_ops.AttributeOps" -> "pythermondt.data.datacontainer.base.BaseOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.base.BaseOps" -> "pythermondt.data.datacontainer.base.DataContainerBase" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.DataContainer" -> "pythermondt.data.datacontainer.attribute_ops.AttributeOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.DataContainer" -> "pythermondt.data.datacontainer.dataset_ops.DatasetOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.DataContainer" -> "pythermondt.data.datacontainer.group_ops.GroupOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.DataContainer" -> "pythermondt.data.datacontainer.serialization_ops.DeserializationOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.DataContainer" -> "pythermondt.data.datacontainer.serialization_ops.SerializationOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.DataContainer" -> "pythermondt.data.datacontainer.visualization_ops.VisualizationOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.core.ThermoContainer" -> "pythermondt.data.datacontainer.core.DataContainer" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.dataset_ops.DatasetOps" -> "pythermondt.data.datacontainer.base.BaseOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.group_ops.GroupOps" -> "pythermondt.data.datacontainer.base.BaseOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.node.AttributeNode" -> "pythermondt.data.datacontainer.node.BaseNode" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.node.DataNode" -> "pythermondt.data.datacontainer.node.AttributeNode" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.node.GroupNode" -> "pythermondt.data.datacontainer.node.AttributeNode" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.node.RootNode" -> "pythermondt.data.datacontainer.node.BaseNode" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops.DeserializationOps" -> "pythermondt.data.datacontainer.attribute_ops.AttributeOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops.DeserializationOps" -> "pythermondt.data.datacontainer.dataset_ops.DatasetOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops.DeserializationOps" -> "pythermondt.data.datacontainer.group_ops.GroupOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops.SerializationOps" -> "pythermondt.data.datacontainer.base.BaseOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.visualization_ops.VisualizationOps" -> "pythermondt.data.datacontainer.attribute_ops.AttributeOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.visualization_ops.VisualizationOps" -> "pythermondt.data.datacontainer.dataset_ops.DatasetOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.visualization_ops.VisualizationOps" -> "pythermondt.data.datacontainer.group_ops.GroupOps" [arrowhead="empty", arrowtail="none"];
+"pythermondt.data.datacontainer.base.DataContainerBase.__NodeAccessor" -> "pythermondt.data.datacontainer.base.DataContainerBase" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__node_accessor", style="solid"];
+"pythermondt.data.datacontainer.node.NodeType" -> "pythermondt.data.datacontainer.node.BaseNode" [arrowhead="odiamond", arrowtail="none", fontcolor="green", label="__type", style="solid"];
+}

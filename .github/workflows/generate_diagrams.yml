@@ -22,7 +22,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install .
         pip install git+https://github.com/pylint-dev/pylint.git # Install the latest version of pylint where my fix for source-root is already included
 
     - name: Setup Graphviz

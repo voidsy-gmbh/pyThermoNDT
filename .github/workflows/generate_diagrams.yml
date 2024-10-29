@@ -36,9 +36,13 @@ jobs:
       run: |
         mkdir -p ./docs/pyreverse
 
-    - name: Generate Graphviz files with Pyreverse
+    - name: Generate Graphviz files for all the major modules with Pyreverse
       run: |
-        pyreverse -p PyThermoNDT -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src ./src/pythermondt
+        pyreverse -p pythermondt -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt
+        pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.data
+        pyreverse -p pythermondt.readers -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.readers
+        pyreverse -p pythermondt.transforms -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.transforms
+        pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.writers
 
     - name: Check for New or Modified Files
       id: files-check

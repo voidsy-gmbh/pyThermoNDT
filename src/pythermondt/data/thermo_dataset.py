@@ -12,7 +12,7 @@ class ThermoDataset(Dataset):
     This dataset is used to combine multiple readers into a single dataset. The dataset can be used to read data from multiple sources and apply a transform to the data.
     Like a normal PyTorch dataset, the dataset can be used to iterate over the data using the __getitem__ method and it is also compatible with PyTorch dataloaders.
     """
-    def __init__( self, data_source: BaseReader |List[BaseReader], transform: Optional[ThermoTransform] = None):
+    def __init__( self, data_source: BaseReader | List[BaseReader], transform: Optional[ThermoTransform] = None):
         """ Initialize a custom PyTorch dataset from a list of readers.
         
         The sources are used to read the data and create the dataset. First the readers are grouped by type.

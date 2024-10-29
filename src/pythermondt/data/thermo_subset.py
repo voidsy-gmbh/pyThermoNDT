@@ -19,7 +19,7 @@ class ThermoSubset(Subset):
             transform (ThermoTransform, optional): Optional transform to be directly applied to the data when it is read
         """
         super().__init__(dataset, indices)
-        self.transform = transform
+        self.__transform = transform
 
     def __getitem__(self, idx) -> DataContainer:
-        return super().__getitem__(idx) if not self.transform else self.transform(super().__getitem__(idx))
+        return super().__getitem__(idx) if not self.__transform else self.__transform(super().__getitem__(idx))

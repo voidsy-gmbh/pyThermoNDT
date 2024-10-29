@@ -8,4 +8,3 @@ from .__pkginfo__ import __version__
 # TODO: Improve visualization in data container
 # TODO: Add units to thermo container format (update unified format)
 # TODO: Add more tests
-# TODO: Add a custom Subset to be able to apply different transforms to training and test sets

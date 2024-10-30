@@ -20,13 +20,9 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Add conda to system path
-      run: |
-        echo $CONDA/bin >> $GITHUB_PATH
-
     - name: Install dependencies
       run: |
-        conda env update --file environment.yml --name base
+        pip install git+https://github.com/pylint-dev/pylint.git # Install the latest version of pylint where my fix for source-root is already included
 
     - name: Setup Graphviz
       uses: ts-graphviz/setup-graphviz@v2
@@ -35,9 +31,14 @@ jobs:
       run: |
         mkdir -p ./docs/pyreverse
 
-    - name: Generate Graphviz files with Pyreverse
+    - name: Generate Graphviz files for all the major modules with Pyreverse
       run: |
-        pyreverse -p PyThermoNDT -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src ./src/pythermondt
+        pyreverse -p pythermondt -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt
+        pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.data
+        pyreverse -p pythermondt.readers -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.readers
+        pyreverse -p pythermondt.transforms -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.transforms
+        pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.writers
+        pyreverse -p pythermondt.data.datacontainer -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.data.datacontainer
 
     - name: Check for New or Modified Files
       id: files-check

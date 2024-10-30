@@ -1,5 +1,7 @@
-from .data import DataContainer, ThermoDataset
+from .data import ThermoContainer, ThermoDataset, ThermoSubset
 from .transforms import normalization, utils, preprocessing
+from .readers import S3Reader, LocalReader
+from .writers import S3Writer, LocalWriter
 from .__pkginfo__ import __version__
 
 # TODO: Implement logging instead of print statements according to this guide: https://docs.python.org/3/howto/logging.html

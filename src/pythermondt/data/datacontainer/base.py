@@ -92,7 +92,7 @@ class DataContainerBase(ABC):
         self.__node_accessor = self.__NodeAccessor()
     
     @property
-    def nodes(self):
+    def nodes(self) -> __NodeAccessor:
         """ Property to access nodes in the DataContainer.
 
         This property is indexable and callable to get and set nodes. The path is checked for existence. 

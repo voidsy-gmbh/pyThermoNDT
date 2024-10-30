@@ -32,7 +32,7 @@ charset="utf-8"
 "pythermondt.transforms.preprocessing.SubstractFrame" [color="#EEDD88", fontcolor="black", label=<{SubstractFrame|frame : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.core.ThermoContainer" [color="#44BB99", fontcolor="black", label=<{ThermoContainer|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.data.thermo_dataset.ThermoDataset" [color="#99DDFF", fontcolor="black", label=<{ThermoDataset|files<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
-"pythermondt.data.thermo_subset.ThermoSubset" [color="#99DDFF", fontcolor="black", label=<{ThermoSubset|transform : Optional[ThermoTransform]<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.thermo_subset.ThermoSubset" [color="#99DDFF", fontcolor="black", label=<{ThermoSubset|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.transforms.utils.ThermoTransform" [color="#EEDD88", fontcolor="black", label=<{ThermoTransform|<br ALIGN="LEFT"/>|<I>forward</I>(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.visualization_ops.VisualizationOps" [color="#44BB99", fontcolor="black", label=<{VisualizationOps|<br ALIGN="LEFT"/>|show_frame(frame_number: int, option: str, cmap: str)<br ALIGN="LEFT"/>show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.normalization.ZScoreNormalize" [color="#EEDD88", fontcolor="black", label=<{ZScoreNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];

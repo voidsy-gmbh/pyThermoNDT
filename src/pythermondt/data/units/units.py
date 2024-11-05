@@ -1,10 +1,4 @@
-from typing import TypedDict
-
-class UnitInfo(TypedDict):
-    '''TypedDict for unit information.'''
-    name: str # The name of the unit (e.g. kelvin, celsius, etc.)
-    quantity: str # The quantity the unit represents (e.g. temperature, time, etc.)
-    symbol: str # The symbol of the unit (e.g. K, °C, etc.)
+from ._unit import UnitInfo, is_unit_info
 
 class Units:
     '''Container for all units inside pythermondt.'''
@@ -22,6 +16,15 @@ class Units:
     millisecond = UnitInfo(name="millisecond", quantity="time", symbol="ms")
     
     # Add more units here as needed
+    
+    @classmethod
+    def print_available_units(cls):
+        '''Print all units in the Units class.'''
+        print("Available units:")
+        print("name: quantity (symbol)\n")    
+        for unit in cls.__dict__.values():
+            if is_unit_info(unit):
+                print(f"{unit['name']}: {unit['quantity']} ({unit['symbol']})")
 
     def __init__(self):
         raise TypeError("This class is static and should not be instantiated.")

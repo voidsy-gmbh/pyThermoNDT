@@ -1,12 +1,12 @@
 from typing import TypedDict, Any, TypeGuard
 
-class UnitInfo(TypedDict):
+class Unit(TypedDict):
     '''TypedDict for unit information.'''
     name: str # The name of the unit (e.g. kelvin, celsius, etc.)
     quantity: str # The quantity the unit represents (e.g. temperature, time, etc.)
     symbol: str # The symbol of the unit (e.g. K, °C, etc.)
 
-def is_unit_info(obj: Any) -> TypeGuard[UnitInfo]:
+def is_unit_info(obj: Any) -> TypeGuard[Unit]:
     '''TypeGuard to check if an object is a valid UnitInfo.
 
     Parameters:

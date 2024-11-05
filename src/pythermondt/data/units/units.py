@@ -1,19 +1,19 @@
-from ._unit import UnitInfo, is_unit_info
+from ._unit import Unit, is_unit_info
 
 class Units:
     '''Container for all units inside pythermondt.'''
     # Special units
-    dimensionless = UnitInfo(name="dimensionless", quantity="dimensionless", symbol="1")
-    arbitrary = UnitInfo(name="arbitrary", quantity="arbitrary", symbol="a. u.") # Special unit for data that is not really dimensionaless but has not been processed yet (e.g. temp without LUT applied)
-    undefined = UnitInfo(name="undefined", quantity="undefined", symbol="N/A") # Return value for datasets without a unit defined
+    dimensionless = Unit(name="dimensionless", quantity="dimensionless", symbol="1")
+    arbitrary = Unit(name="arbitrary", quantity="arbitrary", symbol="a. u.") # Special unit for data that is not really dimensionaless but has not been processed yet (e.g. temp without LUT applied)
+    undefined = Unit(name="undefined", quantity="undefined", symbol="N/A") # Return value for datasets without a unit defined
 
     # Temperature
-    kelvin = UnitInfo(name="kelvin", quantity="temperature", symbol="K")
-    celsius = UnitInfo(name="celsius", quantity="temperature", symbol="°C")
+    kelvin = Unit(name="kelvin", quantity="temperature", symbol="K")
+    celsius = Unit(name="celsius", quantity="temperature", symbol="°C")
     
     # Time 
-    second = UnitInfo(name="second", quantity="time", symbol="s")
-    millisecond = UnitInfo(name="millisecond", quantity="time", symbol="ms")
+    second = Unit(name="second", quantity="time", symbol="s")
+    millisecond = Unit(name="millisecond", quantity="time", symbol="ms")
     
     # Add more units here as needed
     

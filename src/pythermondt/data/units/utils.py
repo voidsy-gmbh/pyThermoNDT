@@ -1,7 +1,7 @@
 from .units import Units
-from ._unit import UnitInfo
+from ._unit import Unit
 
-def generate_label(unit: UnitInfo) -> str:
+def generate_label(unit: Unit) -> str:
     '''Generates a label from a UnitInfo object.
 
     Parameters:

@@ -1,10 +1,10 @@
 from typing import ItemsView
 from .base import BaseOps
 from .node import DataNode, GroupNode
-from ..units import UnitInfo, Units, is_unit_info
+from ..units import Unit, Units, is_unit_info
 
 class AttributeOps(BaseOps):
-    def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | UnitInfo):
+    def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | Unit):
         """Adds an attribute to the specified group or dataset in the DataContainer.
 
         Parameters:
@@ -19,7 +19,7 @@ class AttributeOps(BaseOps):
         
         self.nodes(path, DataNode, GroupNode).add_attribute(key, value)
 
-    def add_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | UnitInfo):
+    def add_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
         """Adds multiple attributes to the specified group or dataset in the DataContainer.
 
         Parameters:
@@ -32,7 +32,7 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)
 
-    def add_unit(self, path: str, unit: UnitInfo):
+    def add_unit(self, path: str, unit: Unit):
         """Adds the unit information to the specified dataset
 
         Parameters:
@@ -45,7 +45,7 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode).add_attribute("Unit", unit)
 
-    def get_attribute(self, path: str, key: str) -> str | int | float | list | tuple | dict | UnitInfo:
+    def get_attribute(self, path: str, key: str) -> str | int | float | list | tuple | dict | Unit:
         """Get a single attribute from a specified group or dataset in the DataContainer.
 
         Parameters:
@@ -61,7 +61,7 @@ class AttributeOps(BaseOps):
         """
         return self.nodes(path, DataNode, GroupNode).get_attribute(key)
     
-    def get_attributes(self, path: str) -> ItemsView[str, str | int | float | list | tuple | dict | UnitInfo]:
+    def get_attributes(self, path: str) -> ItemsView[str, str | int | float | list | tuple | dict | Unit]:
         """Get all attributes from a specified group or dataset in the DataContainer.
 
         Parameters:
@@ -75,7 +75,7 @@ class AttributeOps(BaseOps):
         """
         return self.nodes(path, DataNode, GroupNode).attributes
     
-    def get_unit(self, path: str) -> UnitInfo:
+    def get_unit(self, path: str) -> Unit:
         """Get the unit information from the specified dataset.
 
         Parameters:
@@ -109,7 +109,7 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).remove_attribute(key)
 
-    def update_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | UnitInfo):
+    def update_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | Unit):
         """Update an attribute in a specified group or dataset in the DataContainer.
 
         Parameters:
@@ -123,7 +123,7 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).update_attribute(key, value)
 
-    def update_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | UnitInfo):
+    def update_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
         """Update multiple attributes in a specified group or dataset in the DataContainer.
 
         Parameters:
@@ -136,7 +136,7 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).update_attributes(**attributes)
 
-    def update_unit(self, path: str, unit: UnitInfo):
+    def update_unit(self, path: str, unit: Unit):
         """Update the unit information of the specified dataset.
 
         Parameters:

@@ -24,8 +24,12 @@ def generate_label(unit: UnitInfo) -> str:
     Returns:
         str: The generated label.
     '''
-    # Return empty string for special units
-    if unit is Units.dimensionless or unit is Units.arbitrary or unit is Units.undefined:
+    # Check for special units
+    if unit == Units.dimensionless:
+        return "dimensionless"
+    if unit == Units.arbitrary:
+        return "arbitrary"
+    if unit == Units.undefined:
         return ""
     
-    return f"{unit['name']} in {unit['symbol']}"
+    return f"{unit['quantity']} in {unit['symbol']}"

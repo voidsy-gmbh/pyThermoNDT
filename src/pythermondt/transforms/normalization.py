@@ -1,6 +1,7 @@
 import torch
 from ..data import DataContainer
 from .utils import ThermoTransform
+from ..data.units import Units
 
 class MinMaxNormalize(ThermoTransform):
     ''' 
@@ -30,6 +31,7 @@ class MinMaxNormalize(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
+        container.update_unit("/Data/Tdata", Units.dimensionless)
         return container
     
 class MaxNormalize(ThermoTransform):
@@ -58,6 +60,7 @@ class MaxNormalize(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
+        container.update_unit("/Data/Tdata", Units.dimensionless)
         return container
     
 class ZScoreNormalize(ThermoTransform):
@@ -87,4 +90,5 @@ class ZScoreNormalize(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
+        container.update_unit("/Data/Tdata", Units.dimensionless)
         return container

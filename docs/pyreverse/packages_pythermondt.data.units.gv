@@ -1,0 +1,14 @@
+digraph "packages_pythermondt.data.units" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.data.units" [color="#77AADD", label=<pythermondt.data.units>, shape="box", style="filled"];
+"pythermondt.data.units._unit" [color="#77AADD", label=<pythermondt.data.units._unit>, shape="box", style="filled"];
+"pythermondt.data.units.units" [color="#77AADD", label=<pythermondt.data.units.units>, shape="box", style="filled"];
+"pythermondt.data.units.utils" [color="#77AADD", label=<pythermondt.data.units.utils>, shape="box", style="filled"];
+"pythermondt.data.units" -> "pythermondt.data.units" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.units" -> "pythermondt.data.units._unit" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.units" -> "pythermondt.data.units.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.units.units" -> "pythermondt.data.units._unit" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.units.utils" -> "pythermondt.data.units._unit" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.units.utils" -> "pythermondt.data.units.units" [arrowhead="open", arrowtail="none"];
+}

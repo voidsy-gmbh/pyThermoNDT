@@ -39,6 +39,7 @@ jobs:
         pyreverse -p pythermondt.transforms -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.transforms
         pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.writers
         pyreverse -p pythermondt.data.datacontainer -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.data.datacontainer
+        pyreverse -p pythermondt.data.units -o gv -d ./docs/pyreverse --colorized --max-color-depth 5 --source-roots ./src pythermondt.data.units
 
     - name: Check for New or Modified Files
       id: files-check

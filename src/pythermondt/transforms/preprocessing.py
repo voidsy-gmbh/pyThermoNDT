@@ -1,6 +1,7 @@
 import torch
 from ..data import DataContainer
 from .utils import ThermoTransform
+from ..data.units import Units
 
 class ApplyLUT(ThermoTransform):
     ''' 
@@ -17,10 +18,14 @@ class ApplyLUT(ThermoTransform):
         lut = container.get_dataset("/MetaData/LookUpTable")
         tdata = container.get_dataset("/Data/Tdata")
 
-        # Check if data is available
+        # Check if LUT is available
         if lut is None or tdata is None:
             raise ValueError("LookUpTable or Tdata is not available in the container.")
         
+        # Check if LUT has already been applied
+        if container.get_unit("/Data/Tdata") != Units.arbitrary and torch.is_floating_point(tdata):
+            raise ValueError("LookUpTable has already been applied to the Temperature data.")
+
         # Check if the data is of the correct type
         if not isinstance(lut, torch.Tensor):
             raise ValueError("LookUpTable is not a torch.Tensor")
@@ -39,6 +44,7 @@ class ApplyLUT(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
+        container.update_unit("/Data/Tdata", Units.kelvin)
         return container
 
 class SubstractFrame(ThermoTransform):

@@ -4,6 +4,7 @@ import torch
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
+from ..units import generate_label
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     def show_frame(self, frame_number: int, option: str="", cmap: str = 'plasma'):
@@ -75,14 +76,11 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         # Extract the data from the container
         data = self.get_dataset('/Data/Tdata')
         domainvalues = self.get_dataset('/MetaData/DomainValues')
-        domaintype = self.get_attribute('/MetaData/DomainValues', 'DomainType')
-
-        # Emsure that domaintype is a string
-        if not isinstance(domaintype, str):
-            raise ValueError("DomainType must be of type str.")
+        data_unit = self.get_unit('/Data/Tdata')
+        domain_unit = self.get_unit('/MetaData/DomainValues')
 
         # Validate pixel positions to be within the data dimensions
-        if pixel_pos_x < 0 or pixel_pos_y < 0 or pixel_pos_x >= data.shape[1] or pixel_pos_y >= data.shape[0]:
+        if pixel_pos_x < 0 or pixel_pos_y < 0 or pixel_pos_x >= data.shape[0] or pixel_pos_y >= data.shape[1]:
             raise ValueError("Pixel positions must be within the range of data dimensions.")
         
         # Extract temperature profile of the pixel
@@ -91,6 +89,6 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         # Plot the temperature profile
         plt.plot(domainvalues, temperature_profile)
         plt.title(f'Profile of Pixel: {pixel_pos_x},{pixel_pos_y}')
-        plt.xlabel(domaintype)
-        plt.ylabel('Temperature in K')
+        plt.xlabel(generate_label(domain_unit))
+        plt.ylabel(generate_label(data_unit))   
         plt.show() 

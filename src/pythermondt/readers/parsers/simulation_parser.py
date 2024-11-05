@@ -31,14 +31,11 @@ class SimulationParser(BaseParser):
         except OSError:
             raise ValueError("The given BytesIO object does not contain a valid .mat file.")
         
-        # Create an empty DataContainer
+        # Create an empty Thermocontainer ==> predefined structure
         datacontainer = ThermoContainer()
 
         # Add source as an attribute
         datacontainer.add_attributes(path='/MetaData', Source='Simulation')
-
-        # Domaintype will always be time in case of the Simulation data
-        datacontainer.add_attributes(path='/MetaData/DomainValues', DomainType="Time in s")
         
         # Iterate through all keys and save the values in the datacontainer ==> 
         # If one key does not exist the variable in the datapoint will stay None

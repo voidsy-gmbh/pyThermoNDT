@@ -3,8 +3,9 @@ from typing import Dict, ItemsView
 from enum import Enum
 from torch import Tensor
 from abc import ABC, abstractmethod
+from ..units import UnitInfo
 
-AttributeTypes = str | int | float | list | tuple | dict
+AttributeTypes = str | int | float | list | tuple | dict | UnitInfo
 
 class NodeType(Enum):
     ROOT = "root"

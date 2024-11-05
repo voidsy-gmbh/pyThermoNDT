@@ -9,6 +9,15 @@ class UnitInfo(TypedDict):
 
 class Units:
     '''Container for all units inside pythermondt.'''
+    # Special units
+    dimensionless = UnitInfo(name="dimensionless", quantity="dimensionless", symbol="1")
+    arbitrary = UnitInfo(name="arbitrary", quantity="arbitrary", symbol="a. u.") # Special unit for data that is not really dimensionaless but has not been processed yet (e.g. temp without LUT applied)
+    undefined = UnitInfo(name="undefined", quantity="undefined", symbol="N/A") # Return value for datasets without a unit defined
+
+    # Empty unit
+    empty = UnitInfo(name="", quantity="", symbol="")
+
+
     # Temperature
     kelvin = UnitInfo(name="kelvin", quantity="temperature", symbol="K")
     celsius = UnitInfo(name="celsius", quantity="temperature", symbol="°C")
@@ -17,10 +26,7 @@ class Units:
     second = UnitInfo(name="second", quantity="time", symbol="s")
     millisecond = UnitInfo(name="millisecond", quantity="time", symbol="ms")
 
-    # Generic
-    dimensionless = UnitInfo(name="dimensionless", quantity="dimensionless", symbol="1")
-    arbitrary = UnitInfo(name="arbitrary", quantity="arbitrary", symbol="a. u.")
-
+    
     # Add more units here as needed
 
     def __init__(self):

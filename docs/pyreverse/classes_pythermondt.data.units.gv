@@ -1,0 +1,13 @@
+digraph "classes_pythermondt.data.units" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.data.units.units.UnitInfo" [color="#77AADD", fontcolor="black", label=<{UnitInfo|name : str<br ALIGN="LEFT"/>quantity : str<br ALIGN="LEFT"/>symbol : str<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.units.units.Units" [color="#77AADD", fontcolor="black", label=<{Units|arbitrary<br ALIGN="LEFT"/>celsius<br ALIGN="LEFT"/>dimensionless<br ALIGN="LEFT"/>kelvin<br ALIGN="LEFT"/>millisecond<br ALIGN="LEFT"/>second<br ALIGN="LEFT"/>undefined<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="dimensionless", style="solid"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="arbitrary", style="solid"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="undefined", style="solid"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="kelvin", style="solid"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="celsius", style="solid"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="second", style="solid"];
+"pythermondt.data.units.units.UnitInfo" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="millisecond", style="solid"];
+}

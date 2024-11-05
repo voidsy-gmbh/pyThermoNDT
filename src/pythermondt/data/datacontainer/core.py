@@ -6,6 +6,7 @@ from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
 from .serialization_ops import SerializationOps, DeserializationOps
 from .visualization_ops import VisualizationOps
+from ..units import Units
 
 class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, GroupOps, DatasetOps, AttributeOps):
     """
@@ -45,13 +46,21 @@ class ThermoContainer(DataContainer):
         # Set root node
         self.nodes["/"] = RootNode()
 
-        # Set initial groups and datasets
+        # Set initial groups
         self.add_group("/", "Data")
         self.add_group("/", "GroundTruth")
         self.add_group("/", "MetaData")
+
+        # Set initial datasets
         self.add_dataset("/Data", "Tdata")
         self.add_dataset("/GroundTruth", "DefectMask")
         self.add_dataset("/MetaData", "LookUpTable")
         self.add_dataset("/MetaData", "ExcitationSignal")
         self.add_dataset("/MetaData", "DomainValues")
 
+        # Add units to the initial datasets
+        self.add_attributes("/Data/Tdata", Unit=Units.arbitrary) # Tdata has a arbitrary unit because it is raw data and the LUT has not been applied yet
+        self.add_attributes("/MetaData/DomainValues", Unit=Units.second)
+        self.add_attributes("/MetaData/LookUpTable", Unit=Units.kelvin)
+        self.add_attributes("/MetaData/ExcitationSignal", Unit=Units.dimensionless)
+        self.add_attributes("/GroundTruth/DefectMask", Unit=Units.dimensionless)

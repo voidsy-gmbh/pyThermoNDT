@@ -31,7 +31,7 @@ class SimulationParser(BaseParser):
         except OSError:
             raise ValueError("The given BytesIO object does not contain a valid .mat file.")
         
-        # Create an empty DataContainer
+        # Create an empty Thermocontainer ==> predefined structure
         datacontainer = ThermoContainer()
 
         # Add source as an attribute

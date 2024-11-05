@@ -1,5 +1,3 @@
-from enum import Enum
-from dataclasses import dataclass
 from typing import TypedDict
 
 class UnitInfo(TypedDict):
@@ -10,8 +8,8 @@ class UnitInfo(TypedDict):
 
 UNITS = {
     # Temperature
-    "Kelvin": UnitInfo(name="Kelvin", quantity="Temperature", symbol="K"),
-    "Celsius": UnitInfo(name="Celsius", quantity="Temperature", symbol="°C"),
+    "kelvin": UnitInfo(name="Kelvin", quantity="Temperature", symbol="K"),
+    "celsius": UnitInfo(name="Celsius", quantity="Temperature", symbol="°C"),
 
     # Time units
     "second": UnitInfo(name="second", quantity="Time", symbol="s"),

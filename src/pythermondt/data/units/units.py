@@ -1,5 +1,4 @@
 from typing import TypedDict
-from enum import Enum
 
 class UnitInfo(TypedDict):
     '''TypedDict for unit information.'''

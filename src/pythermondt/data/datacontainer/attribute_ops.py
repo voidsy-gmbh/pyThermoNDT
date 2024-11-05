@@ -1,7 +1,7 @@
 from typing import ItemsView
 from .base import BaseOps
 from .node import DataNode, GroupNode
-from ..units import UnitInfo
+from ..units import UnitInfo, Units, is_unit
 
 class AttributeOps(BaseOps):
     def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | UnitInfo):
@@ -32,6 +32,19 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)
 
+    def add_unit(self, path: str, unit: UnitInfo):
+        """Adds the unit information to the specified dataset
+
+        Parameters:
+            path (str): The path to the dataset.
+            unit (UnitInfo): The unit to add.
+
+        Raises:
+            KeyError: If the group or dataset does not exist.
+            KeyError: If the unit already exists.
+        """
+        self.nodes(path, DataNode).add_attribute("Unit", unit)
+
     def get_attribute(self, path: str, key: str) -> str | int | float | list | tuple | dict | UnitInfo:
         """Get a single attribute from a specified group or dataset in the DataContainer.
 
@@ -61,6 +74,27 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
         """
         return self.nodes(path, DataNode, GroupNode).attributes
+    
+    def get_unit(self, path: str) -> UnitInfo:
+        """Get the unit information from the specified dataset.
+
+        Parameters:
+            path (str): The path to the dataset.
+
+        Returns:
+            UnitInfo: The unit information. If no unit information is available, it returns Units.undefined.
+
+        Raises:
+            KeyError: If the group or dataset does not exist.
+        """
+        # Try to get the unit information from the specified dataset
+        try:
+            unit = self.nodes(path, DataNode).get_attribute("Unit")
+        except KeyError:
+            unit = Units.undefined
+        
+        # Verify that unit is valid and return it ==> otherwise return undefined
+        return unit if is_unit(unit) else Units.undefined
     
     def remove_attribute(self, path: str, key: str):
         """Remove an attribute from a specified group or dataset in the DataContainer.
@@ -101,3 +135,16 @@ class AttributeOps(BaseOps):
             KeyError: If any of the attributes do not exist.
         """
         self.nodes(path, DataNode, GroupNode).update_attributes(**attributes)
+
+    def update_unit(self, path: str, unit: UnitInfo):
+        """Update the unit information of the specified dataset.
+
+        Parameters:
+            path (str): The path to the dataset.
+            unit (UnitInfo): The new unit information.
+
+        Raises:
+            KeyError: If the group or dataset does not exist.
+            KeyError: If the unit does not exist.
+        """
+        self.nodes(path, DataNode).update_attribute("Unit", unit)

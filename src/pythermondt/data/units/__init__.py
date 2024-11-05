@@ -1,2 +1,3 @@
-from .units import UnitInfo, Units
-from .utils import is_unit, generate_label
+from .units import Units
+from .utils import generate_label
+from ._unit import is_unit_info, UnitInfo

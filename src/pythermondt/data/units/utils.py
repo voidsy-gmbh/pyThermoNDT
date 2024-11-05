@@ -1,19 +1,5 @@
-from typing import TypeGuard, Any
-from .units import UnitInfo, Units
-
-def is_unit(obj: Any) -> TypeGuard[UnitInfo]:
-    '''TypeGuard to check if an object is a valid UnitInfo.
-
-    Parameters:
-        obj (Any): The object to check.
-
-    Returns:
-        TypeGuard[UnitInfo]: True if the object is a valid UnitInfo, False otherwise.
-    '''
-    return (isinstance(obj, dict) and 
-            "name" in obj and isinstance(obj["name"], str) and
-            "quantity" in obj and isinstance(obj["quantity"], str) and
-            "symbol" in obj and isinstance(obj["symbol"], str))
+from .units import Units
+from ._unit import UnitInfo
 
 def generate_label(unit: UnitInfo) -> str:
     '''Generates a label from a UnitInfo object.

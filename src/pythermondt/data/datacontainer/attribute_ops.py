@@ -1,7 +1,7 @@
 from typing import ItemsView
 from .base import BaseOps
 from .node import DataNode, GroupNode
-from ..units import UnitInfo, Units, is_unit
+from ..units import UnitInfo, Units, is_unit_info
 
 class AttributeOps(BaseOps):
     def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | UnitInfo):
@@ -94,7 +94,7 @@ class AttributeOps(BaseOps):
             unit = Units.undefined
         
         # Verify that unit is valid and return it ==> otherwise return undefined
-        return unit if is_unit(unit) else Units.undefined
+        return unit if is_unit_info(unit) else Units.undefined
     
     def remove_attribute(self, path: str, key: str):
         """Remove an attribute from a specified group or dataset in the DataContainer.

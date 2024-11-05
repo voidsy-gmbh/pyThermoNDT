@@ -2,9 +2,9 @@ from typing import TypedDict
 
 class UnitInfo(TypedDict):
     '''TypedDict for unit information.'''
-    name: str
-    quantity: str
-    symbol: str
+    name: str # The name of the unit (e.g. kelvin, celsius, etc.)
+    quantity: str # The quantity the unit represents (e.g. temperature, time, etc.)
+    symbol: str # The symbol of the unit (e.g. K, °C, etc.)
 
 class Units:
     '''Container for all units inside pythermondt.'''

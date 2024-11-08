@@ -67,9 +67,16 @@ class SimulationParser(BaseParser):
                     # Replace ' with " to make it a valid json string
                     converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
 
-                    # Construct json string and write it 
-                    json_string = json.dumps(converted_comsol_parameters, indent=4)
-                    datacontainer.add_attributes(path='/MetaData', SimulationParameter=json_string)
+                    # Replace nan with NaN to make it a valid json string
+                    converted_comsol_parameters = converted_comsol_parameters.replace('nan', 'NaN')
+
+                    # Try to load the json string into a python list
+                    try:
+                        sim_par = json.loads(converted_comsol_parameters)
+                    # If it fails just save the raw string
+                    except json.JSONDecodeError:
+                        sim_par = converted_comsol_parameters
+                    datacontainer.add_attributes(path='/MetaData', SimulationParameter=sim_par)
                     
                 case 'NoiseLevel':
                     datacontainer.add_attributes(path='/Data/Tdata', NoiseLevel=data[key])

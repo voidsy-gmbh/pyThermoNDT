@@ -64,6 +64,7 @@ class SimulationParser(BaseParser):
                         for sublist in data[key]
                     ]
 
+                    #TODO: Actually this is a list of lists. Should be improved in the future (maybe with a pandas dataframe ==> needs more work!) 
                     # Replace ' with " to make it a valid json string
                     converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
 

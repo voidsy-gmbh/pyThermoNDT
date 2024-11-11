@@ -153,7 +153,11 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             # Try to convert the string to a list or dictionary using the JSON format
             try:
                 if isinstance(value, str):
-                    value = json.loads(value)
+                    value_decoded = json.loads(value)
+
+                    # Use the JSON-decoded value only if it successfully decodes to a list or dictionary
+                    if isinstance(value_decoded, (list, dict)):
+                        value = value_decoded
 
             # If it fails, the value is not a JSON object or a string ==> keep it as it is
             except (json.JSONDecodeError, TypeError):

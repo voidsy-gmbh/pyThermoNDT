@@ -1,8 +1,18 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sized
+from multiprocessing.pool import ThreadPool
+from typing import Protocol, TypeVar
 
+from ..config import settings
 from ..data import DataContainer
 from ..data.datacontainer.serialization_ops import CompressionType
 from ..io.backends import BaseBackend
+
+T = TypeVar("T", covariant=True)
+
+
+class SizedIterable(Iterable[T], Sized, Protocol):
+    pass
 
 
 class BaseWriter(ABC):
@@ -47,3 +57,16 @@ class BaseWriter(ABC):
         recreate their backend when needed or after unpickling.
         """
         raise NotImplementedError("Subclasses must implement this method")
+
+    def process_parallel(self, containers: SizedIterable[DataContainer], num_workers: int | None = None):
+        """Process multiple DataContainers in parallel.
+
+        Args:
+            containers (Collection[DataContainer]): The containers to process.
+            num_workers (int, optional): Number of workers to use for processing the files. If None, the global
+                configuration of PyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
+        """
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        file_names = (f"test_{i}" for i in range(len(containers)))
+        with ThreadPool(processes=workers) as pool:
+            pool.starmap(self.write, zip(containers, file_names, strict=True))

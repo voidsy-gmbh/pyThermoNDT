@@ -113,14 +113,14 @@ class DatasetOps(BaseOps):
 
         self.nodes(path, DataNode).data = data
 
-    def update_datasets(self, updates: Dict[str, Tensor]):
-        """Updates multiple datasets in the DataContainer.
+    def update_datasets(self, *updates: Tuple[str, Tensor | ndarray]):
+        """Update multiple datasets in the DataContainer.
 
         Parameters:
-            updates (Dict[str, Tensor]): A dictionary of paths and new data to store in the datasets.
+            *updates (Tuple[str, Tensor | ndarray]): Variable number of (path, data) tuples. Can be provided as separate tuples or unpacked from a list.
         
         Raises:
             KeyError: If a dataset does not exist.
         """
-        for path, data in updates.items():
+        for path, data in updates:
             self.update_dataset(path, data)

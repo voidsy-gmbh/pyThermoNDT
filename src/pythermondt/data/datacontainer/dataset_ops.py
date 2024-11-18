@@ -63,11 +63,11 @@ class DatasetOps(BaseOps):
         """
         return tuple(self.get_dataset(path) for path in paths)
 
-    def get_all_datasets(self) -> List[str]:
-        """Get a list of all datasets in the DataContainer.
+    def get_all_dataset_names(self) -> List[str]:
+        """Get a list of all dataset names in the DataContainer.
 
         Returns:
-            List[str]: A list of all datasets in the DataContainer.
+            List[str]: A list of names of all datasets in the DataContainer, without their full paths.
         """
         return [node.name for node in self.nodes.values() if isinstance(node, DataNode)]
     

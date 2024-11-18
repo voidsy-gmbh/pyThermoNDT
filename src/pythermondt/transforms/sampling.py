@@ -17,6 +17,10 @@ class IndexFrameSelection(ThermoTransform):
         # Extract Datasets
         tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
 
+        # Check if frame_indices are valid
+        if any(idx < 0 or idx >= tdata.shape[-1] for idx in self.frame_indices):
+            raise ValueError(f"Invalid frame index. Frame indices must be in the range [0, {tdata.shape[-1] - 1}].")
+
         # Select Frames
         tdata = tdata[..., self.frame_indices]
         domain_values = domain_values[..., self.frame_indices]

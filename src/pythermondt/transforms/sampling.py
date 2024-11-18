@@ -1,30 +1,26 @@
 from .utils import ThermoTransform
 from ..data import DataContainer
-from typing import Union, List
+from typing import Sequence
 
 class IndexFrameSelection(ThermoTransform):
-    """Select a subset of frames from the data container based on index or slice notation."""
-    def __init__(self, frame_indices: Union[int, slice, List[int]]):
-        """Select a subset of frames from the data container based on index or slice notation.
+    """Select a subset of frames from the data container specified by a single index or a list of indices."""
+    def __init__(self, frame_indices: int | Sequence[int]):
+        """Select a subset of frames from the data container specified by a single index or a list of indices.
 
         Parameters:
-            frame_indices (Union[int, slice, List[int]]): The indices of the frames to select.
+            frame_indices (int | Sequence[int]): Single index or list of indices to select frames.
         """
         super().__init__()
-        self.frame_indices = frame_indices
+        self.frame_indices = frame_indices if isinstance(frame_indices, Sequence) else [frame_indices]
 
     def forward(self, container: DataContainer) -> DataContainer:
+        # Extract Datasets
         tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
 
-        # Handle different index types
-        if isinstance(self.frame_indices, int):
-            tdata = tdata[..., self.frame_indices:self.frame_indices+1]  # Keep dimension
-            domain_values = domain_values[self.frame_indices:self.frame_indices+1]
-            excitation_signal = excitation_signal[self.frame_indices:self.frame_indices+1]
-        else:
-            tdata = tdata[..., self.frame_indices]
-            domain_values = domain_values[self.frame_indices]
-            excitation_signal = excitation_signal[self.frame_indices]
+        # Select Frames
+        tdata = tdata[..., self.frame_indices]
+        domain_values = domain_values[..., self.frame_indices]
+        excitation_signal = excitation_signal[..., self.frame_indices]
 
         # Update Container and return
         container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))

@@ -1,4 +1,4 @@
-from typing import ItemsView
+from typing import Dict, Tuple, List
 from .base import BaseOps
 from .node import DataNode, GroupNode
 from ..units import Unit, Units, is_unit_info
@@ -61,19 +61,35 @@ class AttributeOps(BaseOps):
         """
         return self.nodes(path, DataNode, GroupNode).get_attribute(key)
     
-    def get_attributes(self, path: str) -> ItemsView[str, str | int | float | list | tuple | dict | Unit]:
+    def get_attributes(self, path: str, *keys: str) -> Tuple[str | int | float | list | tuple | dict | Unit, ...]:
+        """Get multiple attributes from a specified group or dataset in the DataContainer.
+    
+        Parameters:
+            path (str): The path to the group or dataset.
+            *keys (str): Variable number of attribute keys. Can be provided as separate arguments or unpacked from a list.
+        
+        Returns:
+            Tuple[str | int | float | list | tuple | dict | Unit, ...]: The values of the attributes, in the same order as the input keys.
+        
+        Raises:
+            KeyError: If the group or dataset does not exist.
+            KeyError: If any attribute does not exist.
+        """
+        return tuple(self.get_attribute(path, key) for key in keys) 
+    
+    def get_all_attributes(self, path: str) -> Dict[str, str | int | float | list | tuple | dict | Unit]:
         """Get all attributes from a specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
 
         Returns:
-            ItemsView[str, str | int | float | list | tuple | dict | UnitInfo]: A view of all attributes in the group or dataset.
+            Dict[str, str | int | float | list | tuple | dict | UnitInfo]: A dictionary of all attributes in the group or dataset.
 
         Raises:
             KeyError: If the group or dataset does not exist.
         """
-        return self.nodes(path, DataNode, GroupNode).attributes
+        return dict(self.nodes(path, DataNode, GroupNode).attributes)
     
     def get_unit(self, path: str) -> Unit:
         """Get the unit information from the specified dataset.

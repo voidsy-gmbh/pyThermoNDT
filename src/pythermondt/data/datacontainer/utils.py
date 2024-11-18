@@ -39,7 +39,7 @@ def validate_path(path: str, name: str = "") -> str:
 
     return normalized_path
 
-def validate_paths(paths: List[str]) -> List[str]:
+def validate_paths(paths: List[str]) -> Tuple[str, ...]:
     """ Validates and normalizes the given list of HDF5 paths.
     
     Parameters:
@@ -51,7 +51,7 @@ def validate_paths(paths: List[str]) -> List[str]:
     Raises:
         ValueError: If any of the paths is not valid.
     """
-    return [validate_path(path) for path in paths]
+    return tuple(validate_path(path) for path in paths)
 
 def split_path(path: str) -> Tuple[str, str]:
     """ Splits the given HDF5 path into the parent path and the name of the group or dataset.

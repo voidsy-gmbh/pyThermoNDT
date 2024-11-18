@@ -2,7 +2,7 @@ from .utils import ThermoTransform
 from ..data import DataContainer
 from typing import Sequence
 
-class IndexFrameSelection(ThermoTransform):
+class SelectFrames(ThermoTransform):
     """Select a subset of frames from the data container specified by a single index or a list of indices."""
     def __init__(self, frame_indices: int | Sequence[int]):
         """Select a subset of frames from the data container specified by a single index or a list of indices.

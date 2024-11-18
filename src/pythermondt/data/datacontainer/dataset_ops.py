@@ -48,14 +48,14 @@ class DatasetOps(BaseOps):
         """       
         return self.nodes(path, DataNode).data
     
-    def get_datasets(self, paths: List[str]) -> Tuple[Tensor,...]:
+    def get_datasets(self, *paths: str) -> Tuple[Tensor,...]:
         """Get multiple datasets from specified paths in the DataContainer.
 
         Parameters:
-            paths (List[str]): A list of paths to the datasets.
+            *paths (str): Variable number of paths to the datasets. Can be provided as separate arguments or unpacked from a list.
         
         Returns:
-            Tuple[Tensor]: The data stored in the datasets.
+            Tuple[Tensor, ...]: The tensors stored in the datasets, in the same order as the input paths.
         
         Raises:
             KeyError: If a dataset does not exist.

@@ -33,6 +33,20 @@ class DatasetOps(BaseOps):
         else:
             self.nodes[key] = DataNode(name, data)
 
+    def add_datasets(self, path: str, **datasets: Optional[Tensor | ndarray]):
+        """Adds multiple datasets to a specified path in the DataContainer.
+
+        Parameters:
+            path (str): The path to the parent group.
+            **datasets (Dict[str, Optional[Tensor | ndarray]]): The datasets to add, with the key being the name of the dataset.
+        
+        Raises:
+            KeyError: If the parent group does not exist.
+            KeyError: If any of the datasets already exist.
+        """
+        for name, data in datasets.items():
+            self.add_dataset(path, name, data)
+
     def get_dataset(self, path: str) -> Tensor:
         """Get a single dataset from a specified path in the DataContainer.
 

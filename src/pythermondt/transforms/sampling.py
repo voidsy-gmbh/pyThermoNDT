@@ -14,7 +14,7 @@ class IndexFrameSelection(ThermoTransform):
         self.frame_indices = frame_indices
 
     def forward(self, container: DataContainer) -> DataContainer:
-        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/Data/DomainValues", "/Data/ExcitationSignal")
+        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
 
         # Handle different index types
         if isinstance(self.frame_indices, int):
@@ -27,5 +27,5 @@ class IndexFrameSelection(ThermoTransform):
             excitation_signal = excitation_signal[self.frame_indices]
 
         # Update Container and return
-        container.update_datasets(("/Data/Tdata", tdata), ("/Data/DomainValues", domain_values), ("/Data/ExcitationSignal", excitation_signal))
+        container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
         return container

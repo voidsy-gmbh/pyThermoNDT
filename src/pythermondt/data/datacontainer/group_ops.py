@@ -22,7 +22,7 @@ class GroupOps(BaseOps):
 
         self.nodes[key] = GroupNode(name)
 
-    def get_groups(self) -> List[str]:
+    def get_all_groups(self) -> List[str]:
         """Get a list of all groups in the DataContainer.
 
         Returns:

@@ -33,14 +33,6 @@ class DatasetOps(BaseOps):
         else:
             self.nodes[key] = DataNode(name, data)
 
-    def get_datasets(self) -> List[str]:
-        """Get a list of all datasets in the DataContainer.
-
-        Returns:
-            List[str]: A list of all datasets in the DataContainer.
-        """
-        return [node.name for node in self.nodes.values() if isinstance(node, DataNode)]
-    
     def get_dataset(self, path: str) -> Tensor:
         """Get a single dataset from a specified path in the DataContainer.
 
@@ -55,6 +47,15 @@ class DatasetOps(BaseOps):
             KeyError: If the node is not a dataset.
         """       
         return self.nodes(path, DataNode).data
+    
+    def get_all_datasets(self) -> List[str]:
+        """Get a list of all datasets in the DataContainer.
+
+        Returns:
+            List[str]: A list of all datasets in the DataContainer.
+        """
+        return [node.name for node in self.nodes.values() if isinstance(node, DataNode)]
+    
     
     def remove_dataset(self, path: str):
         """Removes a single dataset from a specified path in the DataContainer.

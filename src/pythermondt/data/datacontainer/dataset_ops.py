@@ -1,5 +1,5 @@
 import torch
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 from torch import Tensor
 from numpy import ndarray
 from .base import BaseOps
@@ -48,6 +48,21 @@ class DatasetOps(BaseOps):
         """       
         return self.nodes(path, DataNode).data
     
+    def get_datasets(self, paths: List[str]) -> Tuple[Tensor,...]:
+        """Get multiple datasets from specified paths in the DataContainer.
+
+        Parameters:
+            paths (List[str]): A list of paths to the datasets.
+        
+        Returns:
+            Tuple[Tensor]: The data stored in the datasets.
+        
+        Raises:
+            KeyError: If a dataset does not exist.
+            KeyError: If the node is not a dataset.
+        """
+        return tuple(self.get_dataset(path) for path in paths)
+
     def get_all_datasets(self) -> List[str]:
         """Get a list of all datasets in the DataContainer.
 

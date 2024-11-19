@@ -30,7 +30,7 @@ class SelectFrames(ThermoTransform):
         container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
         return container
 
-class SelectFrameRange():
+class SelectFrameRange(ThermoTransform):
     """Select a range of frames from the data container."""
     def __init__(self, start: Optional[int] = None, end: Optional[int] = None):
         """Select a range of frames from the data container.

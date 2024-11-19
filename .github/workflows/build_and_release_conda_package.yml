@@ -107,31 +107,22 @@ jobs:
         with:
           init-shell: bash
           environment-name: ${{ env.MAMBA_ENV_NAME }}
+          cache-environment: true
+          cache-environment-key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
           condarc: |
             channels:
               - conda-forge
               - pytorch
           create-args: >-
             python=3.12
-            pytest
-            pytest-cov
             conda-build
 
-      # Step 6: Cache the Micromamba environment
-      - name: Cache Micromamba env
-        uses: actions/cache@v3
-        with:
-          path: |
-            /home/runner/micromamba/envs/${{ env.MAMBA_ENV_NAME }}
-            ~/.cache/pip
-          key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
-
-      # Step 7: Install package and run tests
+      # Step 6: Install package and run tests
       - name: Install package
         shell: micromamba-shell {0}
         run: pip install -e ".[dev, build]"
 
-      # Step 8: Run tests
+      # Step 7: Run tests
       - name: Run tests
         shell: micromamba-shell {0}
         run: pytest

@@ -11,7 +11,7 @@ env:
   MAMBA_ENV_NAME: build-env
 
 jobs:
-  # Job 1: Setup + cache the environment, run tests and check if release exists
+  # Job 1: Setup pip env + cache the environment, run tests and check if release exists
   validate:
     runs-on: ubuntu-latest
     outputs:
@@ -100,41 +100,23 @@ jobs:
         run: |
           echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
           exit 1
-      
-      # Step 5: Set up Micromamba and install conda build tools
-      - name: Set up Micromamba
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          init-shell: bash
-          environment-name: ${{ env.MAMBA_ENV_NAME }}
-          cache-environment: true
-          cache-environment-key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
-          condarc: |
-            channels:
-              - conda-forge
-              - pytorch
-          create-args: >-
-            python=3.12
-            conda-build
 
-      # Step 6: Cache pip packages
+      # Step 5: Cache pip packages
       - name: Set up Python for pip caching
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
           cache: pip
 
-      # Step 7: Install package and run tests
+      # Step 6: Install package + dev dependencies
       - name: Install package
-        shell: micromamba-shell {0}
         run: pip install -e ".[dev, build]"
 
-      # Step 8: Run tests
+      # Step 7: Run tests
       - name: Run tests
-        shell: micromamba-shell {0}
         run: pytest
 
-  # Job 2: Build and release the package 
+  # Job 2: Build conda
   build-and-release:
     needs: validate
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'

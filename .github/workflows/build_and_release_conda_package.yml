@@ -107,9 +107,8 @@ jobs:
             - conda-forge
             - pytorch
         create-args: >-
-          python=3.12.*
+          python=3.12
           conda-build 
-          conda-verify
 
     # Step 6: Install pip build tools
     - name: Install build tools

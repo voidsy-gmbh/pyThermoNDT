@@ -149,7 +149,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      
+      - run: pip install build, setuptools, wheel
+
       # Step 4: Build conda package
       - name: Build conda package
         if: matrix.build_type == 'conda'
@@ -168,7 +169,6 @@ jobs:
         if: matrix.build_type == 'pip'
         id: build_pip
         run: |
-          pip install build twine
           python -m build
           echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
           echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT

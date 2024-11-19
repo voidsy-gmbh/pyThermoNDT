@@ -10,6 +10,7 @@ env:
   MAMBA_ENV_NAME: build-env
 
 jobs:
+  # Job 1: Setup pip env + cache the environment, run tests and check if release exists
   validate:
     runs-on: ubuntu-latest
     outputs:
@@ -18,43 +19,96 @@ jobs:
       is_draft: ${{ steps.check_release.outputs.IS_DRAFT }}
       is_published: ${{ steps.check_release.outputs.IS_PUBLISHED }}
     steps:
-      - uses: actions/checkout@v4
+      # Step 1: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Get release version
       - name: Get Release Version
         id: get_version
         run: |
-          # Your existing version check logic
+          # Function to get version from _version.py
           get_version_from_file() {
             VERSION=$(python -c "exec(open('src/pythermondt/__pkginfo__.py').read()); print(__version__)")
             echo $VERSION
           }
-          RELEASE_VERSION=$(get_version_from_file)
+
+          # If triggered by push, check branch name
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            
+            # Check if it's a release branch
+            if [[ $BRANCH_NAME != release/* ]]; then
+              echo "This is not a release branch. Stopping workflow."
+              exit 1
+            fi
+            
+            # Extract version from branch name
+            BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+            
+            # Get version from file
+            FILE_VERSION=$(get_version_from_file)
+            
+            # Compare versions
+            if [[ "$BRANCH_VERSION" != "$FILE_VERSION" ]]; then
+              echo "Branch version ($BRANCH_VERSION) does not match version in __pkginfo__.py ($FILE_VERSION)"
+              exit 1
+            fi
+            
+            RELEASE_VERSION=$FILE_VERSION
+          else
+            # For manual triggers, just get version from file
+            RELEASE_VERSION=$(get_version_from_file)
+          fi
+
+          echo "The release version is $RELEASE_VERSION"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
+      # Step 3: Check if an official release already exists
       - name: Check if release exists
         id: check_release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Your existing release check logic
+          # Get release info and debug output
           RELEASE_INFO=$(gh release view ${{ steps.get_version.outputs.RELEASE_VERSION }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
+          echo "Debug - Release Info: $RELEASE_INFO"
           
           if [[ "$RELEASE_INFO" == *"not_found"* ]]; then
             echo "RELEASE_DOES_EXIST=false" >> $GITHUB_OUTPUT
           else
             echo "RELEASE_DOES_EXIST=true" >> $GITHUB_OUTPUT
+            
+            # Parse the JSON array properly
             IS_DRAFT=$(echo $RELEASE_INFO | jq -r '.[0]')
-            IS_PUBLISHED=$([ "$IS_DRAFT" == "false" ] && echo "true" || echo "false")
+            IS_PRERELEASE=$(echo $RELEASE_INFO | jq -r '.[1]')
+            PUBLISHED_AT=$(echo $RELEASE_INFO | jq -r '.[2]')
+            
+            if [[ "$IS_DRAFT" == "false" && "$PUBLISHED_AT" != "null" ]]; then
+              echo "IS_PUBLISHED=true" >> $GITHUB_OUTPUT
+            else
+              echo "IS_PUBLISHED=false" >> $GITHUB_OUTPUT
+            fi
+            
             echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_OUTPUT
-            echo "IS_PUBLISHED=$IS_PUBLISHED" >> $GITHUB_OUTPUT
           fi
+      
+      # Step 4: Stop workflow if an official release already exists
+      - name: Stop if official release exists
+        if: steps.check_release.outputs.IS_PUBLISHED == 'true'
+        run: |
+          echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
+          exit 1
 
-      - name: Set up Python
+      # Step 5: Setup python and install dependencies
+      - name: Set up Python for pip caching
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
           cache: pip
-      - run: pip install -e ".[dev,test]"
+      - run: pip install -e ".[dev, build]"
 
+      # Step 6: Run tests
       - name: Run tests
         run: pytest
 
@@ -125,24 +179,28 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
 
+  # Job 3: Release the package
   release:
     needs: [validate, build]
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
+      # Step 1: Download artifacts from previous job
+      - name: Download artifacts from build job
         uses: actions/download-artifact@v3
         with:
           path: artifacts
 
+      # Step 2: Create new draft release with all packages
       - name: Create Draft Release
+        if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.validate.outputs.release_version }}
           name: pyThermoNDT ${{ needs.validate.outputs.release_version }}
           body: |
             ## Release Contents
-            - Conda Package (.zip): Full conda package with all dependencies
-            - Wheel Package (.whl): Python wheel distribution
+            - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
+            - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
             - Source Package (.tar.gz): Source distribution
           files: |
             artifacts/**/*

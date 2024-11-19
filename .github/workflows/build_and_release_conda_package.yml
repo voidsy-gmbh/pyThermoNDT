@@ -111,7 +111,8 @@ jobs:
       # Step 6: Run tests
       - name: Run tests
         run: pytest
-
+  
+  # Job 2: Build the package (conda or pip) and upload artifacts using a matrix job
   build:
     needs: validate
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
@@ -124,9 +125,12 @@ jobs:
       wheel_file: ${{ steps.build_pip.outputs.WHEEL_FILE }}
       tar_file: ${{ steps.build_pip.outputs.TAR_FILE }}
     steps:
-      - uses: actions/checkout@v4
+      # Step 1: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup build environment
+      # Step 2: Setup build environment for conda
+      - name: Setup build environment for conda
         if: matrix.build_type == 'conda'
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -142,13 +146,15 @@ jobs:
             python=3.12
             conda-build
 
-      - name: Setup Python
+      # Step 3: Setup build environment for pip
+      - name: Setup build environment for pip
         if: matrix.build_type == 'pip'
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
           cache: pip
       
+      # Step 4: Build conda package
       - name: Build conda package
         if: matrix.build_type == 'conda'
         id: build_conda
@@ -161,6 +167,7 @@ jobs:
           zip -r "$ZIP_NAME" $OUTPUT_DIR
           echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
 
+      # Step 5: Build pip package
       - name: Build pip package
         if: matrix.build_type == 'pip'
         id: build_pip
@@ -170,6 +177,7 @@ jobs:
           echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
           echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
 
+      # Step 6: Upload artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

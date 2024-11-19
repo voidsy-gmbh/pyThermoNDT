@@ -184,13 +184,25 @@ jobs:
     needs: [validate, build]
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Download artifacts from previous job
+      # Step 1: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Delete existing draft release if it exists
+      - name: Delete existing draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: needs.validate.outputs.release_exists == 'true' && needs.validate.outputs.is_draft == 'true'
+        run: |
+          gh release delete ${{ needs.validate.outputs.release_version }} --yes
+
+      # Step 3: Download artifacts from previous job
       - name: Download artifacts from build job
         uses: actions/download-artifact@v3
         with:
           path: artifacts
 
-      # Step 2: Create new draft release with all packages
+      # Step 4: Create new draft release with all packages
       - name: Create Draft Release
         if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2

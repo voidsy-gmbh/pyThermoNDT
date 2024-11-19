@@ -102,9 +102,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-          cache: pip
       - run: | 
-          pip install torch>=2.0+cpu 
           pip install ".[dev, build]"
 
       # Step 6: Run tests
@@ -151,7 +149,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-          cache: pip
       
       # Step 4: Build conda package
       - name: Build conda package

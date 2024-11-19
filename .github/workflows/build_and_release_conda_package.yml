@@ -6,9 +6,6 @@ on:
     branches:
       - "release/*"
 
-env:
-  MAMBA_ENV_NAME: build-env
-
 jobs:
   # Job 1: Setup pip env + cache the environment, run tests and check if release exists
   validate:
@@ -135,7 +132,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           init-shell: bash
-          environment-name: ${{ env.MAMBA_ENV_NAME }}
+          environment-name: build-env
           cache-environment: true
           cache-environment-key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
           condarc: |

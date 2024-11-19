@@ -117,12 +117,19 @@ jobs:
             python=3.12
             conda-build
 
-      # Step 6: Install package and run tests
+      # Step 6: Cache pip packages
+      - name: Set up Python for pip caching
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: pip
+
+      # Step 7: Install package and run tests
       - name: Install package
         shell: micromamba-shell {0}
         run: pip install -e ".[dev, build]"
 
-      # Step 7: Run tests
+      # Step 8: Run tests
       - name: Run tests
         shell: micromamba-shell {0}
         run: pytest

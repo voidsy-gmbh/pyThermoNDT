@@ -37,7 +37,7 @@ class SelectFrameRange(ThermoTransform):
 
         Parameters:
             start (Optional[int]): Start index of the frame range. Default is None, which means the start index is 0.
-            end (Optional[int]): End index of the frame range. Default is None, which means the end index is the last frame.
+            end (Optional[int]): End index of the frame range, which is inclusiv. Default is None, which means the end index is the last frame.
         """
         super().__init__()
         self.start = start
@@ -54,9 +54,9 @@ class SelectFrameRange(ThermoTransform):
         if self.end is not None and (self.end < 0 or self.end >= tdata.shape[-1]):
             raise ValueError(f"Invalid end index. End index must be in the range [0, {tdata.shape[-1] - 1}].")
 
-        # Select Frames
+        # Select Frames (end index is inclusive)
         start = self.start if self.start is not None else 0
-        end = self.end if self.end is not None else tdata.shape[-1]
+        end = self.end + 1 if self.end is not None else tdata.shape[-1]
         tdata = tdata[..., start:end]
         domain_values = domain_values[..., start:end]
         excitation_signal = excitation_signal[..., start:end]

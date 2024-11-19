@@ -133,62 +133,82 @@ jobs:
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
     runs-on: ubuntu-latest
     steps:
-    # Step 7: Build the conda package with a specified output folder
-    - name: Build conda package
-      shell: micromamba-shell {0}
-      id: build_package
-      run: |
-        OUTPUT_DIR="./pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package"
-        conda build conda --output-folder $OUTPUT_DIR
-        echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
+      # Step 1: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Step 8: Archive the Conda channel directory
-    - name: Process the conda package
-      shell: micromamba-shell {0}
-      id: process_conda
-      run: |
-        conda index ${{ steps.build_package.outputs.OUTPUT_DIR }}
-        echo "Indexed the output directory to make it a valid conda channel."
-        ZIP_NAME="pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package.zip"
-        zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
-        echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
-        echo "Zipped the conda channel directory for relase."
+      # Step 2: Set up Micromamba and install conda build tools
+      - name: Set up Micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          init-shell: bash
+          environment-name: ${{ env.MAMBA_ENV_NAME }}
+          cache-environment: true
+          cache-environment-key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
+          condarc: |
+            channels:
+              - conda-forge
+              - pytorch
+          create-args: >-
+            python=3.12
+            conda-build
+      
+      # Step 3: Build the conda package with a specified output folder
+      - name: Build conda package
+        shell: micromamba-shell {0}
+        id: build_package
+        run: |
+          OUTPUT_DIR="./pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package"
+          conda build conda --output-folder $OUTPUT_DIR
+          echo "OUTPUT_DIR=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
-    # Step 9: Build pip package
-    - name: Build pip package
-      id: build_pip
-      run: |
-        python -m build
-        WHEEL_FILE=$(ls dist/*.whl)
-        TAR_FILE=$(ls dist/*.tar.gz)
-        echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
-        echo "TAR_FILE=$TAR_FILE" >> $GITHUB_OUTPUT
+      # Step 4: Archive the Conda channel directory
+      - name: Process the conda package
+        shell: micromamba-shell {0}
+        id: process_conda
+        run: |
+          conda index ${{ steps.build_package.outputs.OUTPUT_DIR }}
+          echo "Indexed the output directory to make it a valid conda channel."
+          ZIP_NAME="pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package.zip"
+          zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
+          echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "Zipped the conda channel directory for relase."
 
-    # Step 10: Delete existing draft release if it exists
-    - name: Delete existing draft release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      if: needs.validate.outputs.release_exists == 'true' && needs.validate.outputs.is_draft == 'true'
-      run: |
-       gh release delete ${{ needs.validate.outputs.release_version }} --yes
+      # Step 5: Build pip package
+      - name: Build pip package
+        id: build_pip
+        run: |
+          python -m build
+          WHEEL_FILE=$(ls dist/*.whl)
+          TAR_FILE=$(ls dist/*.tar.gz)
+          echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
+          echo "TAR_FILE=$TAR_FILE" >> $GITHUB_OUTPUT
 
-    # Step 11: Create new draft release with all packages
-    - name: Create Draft Release
-      if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ needs.validate.outputs.release_version }}
-        name: pyThermoNDT ${{ needs.validate.outputs.release_version }}
-        body: |
-          ## Release Contents
-          - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
-          - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
-          - Source Package (.tar.gz): Source distribution
-        files: |
-          ${{ steps.process_conda.outputs.CONDA_ARCHIVE }}
-          ${{ steps.build_pip.outputs.WHEEL_FILE }}
-          ${{ steps.build_pip.outputs.TAR_FILE }}
-        generate_release_notes: true
-        draft: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Step 6: Delete existing draft release if it exists
+      - name: Delete existing draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: needs.validate.outputs.release_exists == 'true' && needs.validate.outputs.is_draft == 'true'
+        run: |
+          gh release delete ${{ needs.validate.outputs.release_version }} --yes
+
+      # Step 7: Create new draft release with all packages
+      - name: Create Draft Release
+        if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.release_version }}
+          name: pyThermoNDT ${{ needs.validate.outputs.release_version }}
+          body: |
+            ## Release Contents
+            - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
+            - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
+            - Source Package (.tar.gz): Source distribution
+          files: |
+            ${{ steps.process_conda.outputs.CONDA_ARCHIVE }}
+            ${{ steps.build_pip.outputs.WHEEL_FILE }}
+            ${{ steps.build_pip.outputs.TAR_FILE }}
+          generate_release_notes: true
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

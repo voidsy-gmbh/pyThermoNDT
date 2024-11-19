@@ -96,20 +96,18 @@ jobs:
         echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
         exit 1
 
-    # Step 5: Set up Miniconda
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v2
+    # Step 5: Set up Micromamba and install conda build tools
+    - name: Set up Micromamba
+      uses: mamba-org/setup-micromamba@v1
       with:
-        activate-environment: true
-        auto-activate-base: true
-        auto-update-conda: true
-        channels: conda-forge, defaults
-        python-version: 3.12
+        init-shell: bash
+        environment-file: false
+        create-args: >-
+          python=3.12 conda-build conda-verify -c conda-forge
 
-    # Step 6: Install build tools
+    # Step 6: Install pip build tools
     - name: Install build tools
       run: |
-        conda install conda-build conda-verify -c conda-forge -y
         python -m pip install build twine
 
     # Step 7: Build the conda package with a specified output folder

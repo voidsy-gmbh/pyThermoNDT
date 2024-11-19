@@ -103,7 +103,9 @@ jobs:
         with:
           python-version: 3.12
           cache: pip
-      - run: pip install ".[dev, build]" --config-settings torch_cpu=1
+      - run: | 
+          pip install torch>=2.0+cpu 
+          pip install ".[dev, build]"
 
       # Step 6: Run tests
       - name: Run tests

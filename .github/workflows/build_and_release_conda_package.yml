@@ -103,7 +103,7 @@ jobs:
         with:
           python-version: 3.12
       - run: | 
-          pip install ".[dev, build]"
+          pip install ".[dev]"
 
       # Step 6: Run tests
       - name: Run tests
@@ -149,7 +149,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - run: pip install build, setuptools, wheel
+      - run: pip install build
 
       # Step 4: Build conda package
       - name: Build conda package

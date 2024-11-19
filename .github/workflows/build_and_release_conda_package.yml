@@ -117,7 +117,7 @@ jobs:
         run: pytest
 
   # Job 2: Build conda
-  build-and-release:
+  build-conda:
     needs: validate
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
     runs-on: ubuntu-latest
@@ -162,8 +162,25 @@ jobs:
           zip -r "$ZIP_NAME" ${{ steps.build_package.outputs.OUTPUT_DIR }}
           echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
           echo "Zipped the conda channel directory for relase."
+    
+    # Job 3: Build pip package
+  build-pip:
+    needs: validate
+    if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Step 5: Build pip package
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+          cache: pip
+      
+      # Step 3: Build pip package
       - name: Build pip package
         id: build_pip
         run: |
@@ -173,7 +190,12 @@ jobs:
           echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
           echo "TAR_FILE=$TAR_FILE" >> $GITHUB_OUTPUT
 
-      # Step 6: Delete existing draft release if it exists
+  # Job 4: Release the package
+  release:
+    needs: [validate, build-conda, build-pip]
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Delete existing draft release if it exists
       - name: Delete existing draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -181,7 +203,7 @@ jobs:
         run: |
           gh release delete ${{ needs.validate.outputs.release_version }} --yes
 
-      # Step 7: Create new draft release with all packages
+      # Step 2: Create new draft release with all packages
       - name: Create Draft Release
         if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2

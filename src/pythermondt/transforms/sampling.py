@@ -31,9 +31,9 @@ class SelectFrames(ThermoTransform):
         return container
 
 class SelectFrameRange(ThermoTransform):
-    """Select a range of frames from the data container."""
+    """Select a range of frames from the data container, by specifying their start and end index."""
     def __init__(self, start: Optional[int] = None, end: Optional[int] = None):
-        """Select a range of frames from the data container.
+        """Select a range of frames from the data container, by specifying their start and end index.
 
         Parameters:
             start (Optional[int]): Start index of the frame range. Default is None, which means the start index is 0.

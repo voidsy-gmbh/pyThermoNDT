@@ -102,7 +102,6 @@ jobs:
       with:
         init-shell: bash
         environment-name: build-env
-        environment-file: false
         create-args: >-
           python=3.12 conda-build conda-verify -c conda-forge
 

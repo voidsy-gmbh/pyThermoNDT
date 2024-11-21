@@ -7,7 +7,7 @@ on:
       - "release/*"
 
 jobs:
-  # Job 1: Setup pip env + cache the environment, run tests and check if release exists
+  # Job 1: Setup pip env for running tests and check if release exists
   validate:
     runs-on: ubuntu-latest
     outputs:

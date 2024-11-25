@@ -1,3 +1,4 @@
+import torch
 from .utils import ThermoTransform
 from ..data import DataContainer
 from typing import Sequence, Optional
@@ -74,6 +75,52 @@ class SelectFrameRange(ThermoTransform):
 
         # Fix time shift in domain values by substracting the first time step
         domain_values = domain_values - domain_values[0]
+
+        # Update Container and return
+        container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
+        return container
+    
+class NonUniformSampling(ThermoTransform):
+    """Implement a non-uniform sampling strategy for the data container.
+    
+    Efficient defect reconstruction from temporal non-uniform pulsed
+    thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
+    """
+
+    def __init__(self, n_samples: int, tau: float):
+        """Implement a non-uniform sampling strategy for the data container.
+
+        Parameters:
+            n_samples (int): Number of samples to select from the original data.
+            tau (float): Sampling rate parameter.
+        """
+        super().__init__()
+        self.n_samples = n_samples
+        self.tau = tau
+    
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract Datasets
+        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
+
+        # Check if we are in time domain
+        if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
+            raise ValueError("NonUniformSampling transform can only be applied to time domain data.")
+        
+        # Check if number of samples is valid
+        if self.n_samples <= 0 or self.n_samples > len(domain_values):
+            raise ValueError(f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}].")
+        
+        # Calculate time steps according to equation (6) in the paper
+        t_end = domain_values[-1]
+        t_k = [self.tau * ((t_end/self.tau + 1)**(k/(self.n_samples - 1)) - 1) for k in range(self.n_samples)]
+
+        # Find the indices of the closest time steps in the domain values
+        indices = torch.searchsorted(domain_values, torch.tensor(t_k))
+
+        # Select the frames according to the indices
+        tdata = tdata[..., indices]
+        domain_values = domain_values[indices]
+        excitation_signal = excitation_signal[indices]
 
         # Update Container and return
         container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))

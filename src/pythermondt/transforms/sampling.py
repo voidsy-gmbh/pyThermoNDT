@@ -81,14 +81,17 @@ class SelectFrameRange(ThermoTransform):
         return container
     
 class NonUniformSampling(ThermoTransform):
-    """Implement a non-uniform sampling strategy for the data container.
+    """Implement a non-uniform sampling strategy for the data container according to this paper:
     
     Efficient defect reconstruction from temporal non-uniform pulsed
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
     def __init__(self, n_samples: int, tau: float):
-        """Implement a non-uniform sampling strategy for the data container.
+        """Implement a non-uniform sampling strategy for the data container according to this paper:
+    
+        Efficient defect reconstruction from temporal non-uniform pulsed
+        thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
 
         Parameters:
             n_samples (int): Number of samples to select from the original data.
@@ -111,11 +114,15 @@ class NonUniformSampling(ThermoTransform):
             raise ValueError(f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}].")
         
         # Calculate time steps according to equation (6) in the paper
+        n_samples_original = len(domain_values)
         t_end = domain_values[-1]
         t_k = [self.tau * ((t_end/self.tau + 1)**(k/(self.n_samples - 1)) - 1) for k in range(self.n_samples)]
 
         # Find the indices of the closest time steps in the domain values
         indices = torch.searchsorted(domain_values, torch.tensor(t_k))
+
+        # Clamp indices to the valid range
+        indices = torch.clamp(indices, 0, n_samples_original - 1)
 
         # Select the frames according to the indices
         tdata = tdata[..., indices]

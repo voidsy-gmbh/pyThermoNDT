@@ -1,4 +1,6 @@
 import torch
+import math
+import timeit
 from .utils import ThermoTransform
 from ..data import DataContainer
 from typing import Sequence, Optional
@@ -87,7 +89,7 @@ class NonUniformSampling(ThermoTransform):
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
-    def __init__(self, n_samples: int, tau: float):
+    def __init__(self, n_samples: int, tau: Optional[float] = None):
         """Implement a non-uniform sampling strategy for the data container according to this paper:
     
         Efficient defect reconstruction from temporal non-uniform pulsed
@@ -95,12 +97,52 @@ class NonUniformSampling(ThermoTransform):
 
         Parameters:
             n_samples (int): Number of samples to select from the original data.
-            tau (float): Sampling rate parameter.
+            tau (float, optional): Sampling parameter tau. If not provided, it will be calculated automatically to satisfy the minimum time step constraint 
+                                in Equation (25) of the paper. Default is None.
         """
         super().__init__()
         self.n_samples = n_samples
         self.tau = tau
-    
+
+    def calculate_tau(self, t_end: float, dt_min: float) -> float:
+        """Calculate minimum tau according to equation (25).
+       
+        t1 - t0 = tau * ((t_end/tau + 1)^(1/(N-1)) - 1) >= dt_min
+        """
+        # Start with a small tau and increase until condition is met
+        tau = dt_min * math.sqrt(1000) # Initial guess
+        steps = 0
+        while True:
+            # Calculate t1 - t0 using equation (24)
+            t_diff = tau * ((t_end/tau + 1)**(1/(self.n_samples-1)) - 1)
+            if t_diff >= dt_min:
+                print(f"Calculated tau in {steps} steps. tdiff - dt_min = {t_diff - dt_min}")
+                return tau
+            tau += dt_min/10  # Increment tau and try again
+            steps += 1
+
+    def _calculate_tau(self, t_end: float, dt_min: float, n_samples_original: int) -> float:
+        """Calculate minimum tau according to equation (25) using binary search."""
+        low = dt_min # use dt_min as lower bound
+        high = t_end # use t_end as a upper bond because tau >= t_end makes no sense
+        precision = 1e-2 
+        steps = 0
+        
+        # 1.) Binary search
+        while high - low > precision:
+            tau = (low + high) / 2
+            t_diff = tau * ((t_end/tau + 1)**(1/(n_samples_original-1)) - 1)
+            
+            # Update bounds
+            if t_diff > dt_min:
+                high = tau  # Narrow down to lower half
+            else: 
+                low = tau # Narrow down to upper half
+            steps += 1
+
+        # return the calculated tau
+        return (low + high) / 2
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
         tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
@@ -113,11 +155,17 @@ class NonUniformSampling(ThermoTransform):
         if self.n_samples <= 0 or self.n_samples > len(domain_values):
             raise ValueError(f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}].")
         
-        # Calculate time steps according to equation (6) in the paper
+        # Calculate tau using binary search if not provided
         n_samples_original = len(domain_values)
         t_end = domain_values[-1]
+        if not self.tau:
+            tau = self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), n_samples_original)
+        else:
+            tau = torch.tensor(self.tau)
+
+        # Calculate time steps according to equation (6) in the paper
         k = torch.arange(self.n_samples)
-        t_k = self.tau * ((t_end/self.tau + 1)**(k/(self.n_samples - 1)) - 1)
+        t_k = tau * ((t_end/tau + 1)**(k/(self.n_samples - 1)) - 1)
 
         # Find the indices of the closest time steps in the domain values
         indices = torch.searchsorted(domain_values, t_k)

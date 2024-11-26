@@ -63,7 +63,7 @@ def test_data_node_attributes(data_node: DataNode):
     data_node.add_attribute("shape", list(data_node.data.shape))
     assert data_node.get_attribute("shape") == list(data_node.data.shape)
 
-def test_data_node_update_attribute(data_node: DataNode, sample_list: list):
+def test_data_node_update_attribute(data_node: DataNode):
     """Test updating attributes of DataNode."""
     # Test DataNode update attribute
     data_node.add_attribute("shape", list(data_node.data.shape))

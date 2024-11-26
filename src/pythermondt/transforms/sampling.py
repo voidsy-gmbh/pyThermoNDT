@@ -104,23 +104,6 @@ class NonUniformSampling(ThermoTransform):
         self.n_samples = n_samples
         self.tau = tau
 
-    def calculate_tau(self, t_end: float, dt_min: float) -> float:
-        """Calculate minimum tau that fulfills the condition in equation (25).
-       
-        t1 - t0 = tau * ((t_end/tau + 1)^(1/(N-1)) - 1) >= dt_min
-        """
-        # Start with a small tau and increase until condition is met
-        tau = dt_min * math.sqrt(1000) # Initial guess
-        steps = 0
-        while True:
-            # Calculate t1 - t0 using equation (24)
-            t_diff = tau * ((t_end/tau + 1)**(1/(self.n_samples-1)) - 1)
-            if t_diff >= dt_min:
-                print(f"Calculated tau in {steps} steps. tdiff - dt_min = {t_diff - dt_min}")
-                return tau
-            tau += dt_min/10  # Increment tau and try again
-            steps += 1
-
     def _calculate_tau(self, t_end: float, dt_min: float, n_samples_original: int) -> float:
         """Calculate minimum tau according to equation (25) using binary search."""
         low = dt_min # use dt_min as lower bound

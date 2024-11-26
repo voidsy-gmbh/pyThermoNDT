@@ -19,6 +19,6 @@ def data_node(sample_tensor: Tensor):
     return DataNode("test_data", sample_tensor)
 
 @pytest.fixture
-def empty_data_container():
+def empty_container():
     """Fixture for DataContainer."""
     return DataContainer()

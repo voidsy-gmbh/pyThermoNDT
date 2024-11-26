@@ -1,5 +1,5 @@
 import pytest
-import torch
+from torch import Tensor
 from pythermondt.data.datacontainer.node import RootNode, GroupNode, DataNode, NodeType
 
 @pytest.fixture
@@ -13,7 +13,6 @@ def group_node():
     return GroupNode("test_group")
 
 @pytest.fixture
-def data_node():
+def data_node(sample_tensor: Tensor):
     """Fixture for DataNode."""
-    data = torch.eye(3)
-    return DataNode("test_data", data)
+    return DataNode("test_data", sample_tensor)

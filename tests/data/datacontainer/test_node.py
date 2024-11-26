@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch import Tensor
 from pythermondt.data.datacontainer.node import NodeType, RootNode, GroupNode, DataNode
 
 # Root Node tests
@@ -44,26 +45,25 @@ def test_group_node_remove_attribute(group_node: GroupNode):
         group_node.get_attribute("test_attr")
 
 # Data Node tests
-def test_data_node(data_node: DataNode):
+def test_data_node(data_node: DataNode, sample_tensor: Tensor):
     """Test DataNode initialization."""
     assert data_node.name == "test_data"
     assert data_node.type == NodeType.DATASET
-    assert torch.equal(data_node.data, torch.eye(3))
+    assert torch.equal(data_node.data, sample_tensor)
 
-def test_data_node_data_update(data_node: DataNode):
+def test_data_node_data_update(data_node: DataNode, sample_eye_tensor: Tensor):
     """Test updating data of DataNode."""
     # Test DataNode update data
-    new_data = torch.eye(3) * 2
-    data_node.data = new_data
-    assert torch.equal(data_node.data, new_data)
+    data_node.data = sample_eye_tensor
+    assert torch.equal(data_node.data, sample_eye_tensor)
 
 def test_data_node_attributes(data_node: DataNode):
     """Test adding and getting attributes of DataNode."""
     # Test DataNode attributes
     data_node.add_attribute("shape", list(data_node.data.shape))
-    assert data_node.get_attribute("shape") == [3, 3]
+    assert data_node.get_attribute("shape") == list(data_node.data.shape)
 
-def test_data_node_update_attribute(data_node: DataNode):
+def test_data_node_update_attribute(data_node: DataNode, sample_list: list):
     """Test updating attributes of DataNode."""
     # Test DataNode update attribute
     data_node.add_attribute("shape", list(data_node.data.shape))

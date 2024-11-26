@@ -105,7 +105,7 @@ class NonUniformSampling(ThermoTransform):
         self.tau = tau
 
     def calculate_tau(self, t_end: float, dt_min: float) -> float:
-        """Calculate minimum tau according to equation (25).
+        """Calculate minimum tau that fulfills the condition in equation (25).
        
         t1 - t0 = tau * ((t_end/tau + 1)^(1/(N-1)) - 1) >= dt_min
         """

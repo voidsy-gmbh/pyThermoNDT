@@ -158,7 +158,7 @@ jobs:
         shell: micromamba-shell {0}
         run: |
           OUTPUT_DIR="./pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package"
-          conda build conda --output-folder $OUTPUT_DIR --no-test
+          conda build conda --output-folder $OUTPUT_DIR
           conda index $OUTPUT_DIR
           ZIP_NAME="pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package.zip"
           zip -r "$ZIP_NAME" $OUTPUT_DIR

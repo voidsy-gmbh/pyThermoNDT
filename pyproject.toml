@@ -48,5 +48,4 @@ version = {attr = "pythermondt.__pkginfo__.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "-vv"
-testpaths = ["./tests",]
-pythonpath = ["./src",]
+testpaths = ["tests"]

@@ -97,8 +97,9 @@ class NonUniformSampling(ThermoTransform):
 
         Parameters:
             n_samples (int): Number of samples to select from the original data.
-            tau (float, optional): Sampling parameter tau. If not provided, it will be calculated automatically to satisfy the minimum time step constraint 
-                                in Equation (25) of the paper. Default is None.
+            tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution. 
+                          If None, will be approxmated automatically using binary search to satisfy 
+                          the minimum time step constraint from Equation (25) of the paper. Default is None.
         """
         super().__init__()
         self.n_samples = n_samples

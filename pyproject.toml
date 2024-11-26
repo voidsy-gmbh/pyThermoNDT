@@ -48,7 +48,7 @@ version = {attr = "pythermondt.__pkginfo__.__version__"}
 
 [tool.pytest.ini_options]
 addopts = [
-    "-v",
+    "-vv",
     "--import-mode=importlib",
 ]
 testpaths = ["tests"]

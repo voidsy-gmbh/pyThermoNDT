@@ -103,7 +103,6 @@ jobs:
         with:
           python-version: 3.12
       - run: |
-          pip install torch>=2.0+cpu # Manually install torch+cpu because pyproject.toml does not support that ==> should prevent large cuda packages from being installed
           pip install ".[dev]"
 
       # Step 6: Run tests

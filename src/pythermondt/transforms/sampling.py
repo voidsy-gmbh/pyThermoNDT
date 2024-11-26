@@ -1,3 +1,6 @@
+import torch
+import math
+import timeit
 from .utils import ThermoTransform
 from ..data import DataContainer
 from typing import Sequence, Optional
@@ -74,6 +77,88 @@ class SelectFrameRange(ThermoTransform):
 
         # Fix time shift in domain values by substracting the first time step
         domain_values = domain_values - domain_values[0]
+
+        # Update Container and return
+        container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
+        return container
+    
+class NonUniformSampling(ThermoTransform):
+    """Implement a non-uniform sampling strategy for the data container according to this paper:
+    
+    Efficient defect reconstruction from temporal non-uniform pulsed
+    thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
+    """
+
+    def __init__(self, n_samples: int, tau: Optional[float] = None):
+        """Implement a non-uniform sampling strategy for the data container according to this paper:
+    
+        Efficient defect reconstruction from temporal non-uniform pulsed
+        thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
+
+        Parameters:
+            n_samples (int): Number of samples to select from the original data.
+            tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution. 
+                          If None, will be approxmated automatically using binary search to satisfy 
+                          the minimum time step constraint from Equation (25) of the paper. Default is None.
+        """
+        super().__init__()
+        self.n_samples = n_samples
+        self.tau = tau
+
+    def _calculate_tau(self, t_end: float, dt_min: float, n_samples_original: int) -> float:
+        """Calculate minimum tau according to equation (25) using binary search."""
+        low = dt_min # use dt_min as lower bound
+        high = t_end # use t_end as a upper bond because tau >= t_end makes no sense
+        precision = 1e-2 
+        
+        # 1.) Binary search
+        while high - low > precision:
+            tau = (low + high) / 2
+            t_diff = tau * ((t_end/tau + 1)**(1/(n_samples_original-1)) - 1)
+            
+            # Update bounds
+            if t_diff > dt_min:
+                high = tau  # Narrow down to lower half
+            else: 
+                low = tau # Narrow down to upper half
+
+        # return the calculated tau
+        return (low + high) / 2
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract Datasets
+        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
+
+        # Check if we are in time domain
+        if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
+            raise ValueError("NonUniformSampling transform can only be applied to time domain data.")
+        
+        # Check if number of samples is valid
+        if self.n_samples <= 0 or self.n_samples > len(domain_values):
+            raise ValueError(f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}].")
+        
+        # Calculate tau using binary search if not provided
+        n_samples_original = len(domain_values)
+        t_end = domain_values[-1]
+        if not self.tau:
+            tau = self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), n_samples_original)
+        else:
+            tau = torch.tensor(self.tau)
+
+        # Calculate time steps according to equation (6) in the paper
+        k = torch.arange(self.n_samples)
+        t_k = tau * ((t_end/tau + 1)**(k/(self.n_samples - 1)) - 1)
+
+        # Find the indices of the closest time steps in the domain values
+        indices = torch.searchsorted(domain_values, t_k)
+
+        # Clamp indices to the valid range
+        indices = torch.clamp(indices, 0, n_samples_original - 1)
+
+        # Select the frames according to the indices
+        tdata = tdata[..., indices]
+        domain_values = domain_values[indices]
+        excitation_signal = excitation_signal[indices]
 
         # Update Container and return
         container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))

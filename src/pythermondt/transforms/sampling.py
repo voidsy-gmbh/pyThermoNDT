@@ -109,7 +109,6 @@ class NonUniformSampling(ThermoTransform):
         low = dt_min # use dt_min as lower bound
         high = t_end # use t_end as a upper bond because tau >= t_end makes no sense
         precision = 1e-2 
-        steps = 0
         
         # 1.) Binary search
         while high - low > precision:
@@ -121,7 +120,6 @@ class NonUniformSampling(ThermoTransform):
                 high = tau  # Narrow down to lower half
             else: 
                 low = tau # Narrow down to upper half
-            steps += 1
 
         # return the calculated tau
         return (low + high) / 2

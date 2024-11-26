@@ -88,4 +88,3 @@ def test_node_type_enum():
 # Only run the tests in this file if it is run directly
 if __name__ == '__main__':
     pytest.main(["-v", __file__])
-

@@ -79,10 +79,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         Parameters:
             hdf5_bytes (io.BytesIO): The serialized HDF5 data as a BytesIO object.
         """
-        with h5py.File(hdf5_bytes, 'r') as f:
-            # First add the root node to the DataContainer
-            self.nodes["/"] = RootNode()
-            
+        with h5py.File(hdf5_bytes, 'r') as f:           
             # Iterate over all items in the HDF5 file
             for item_name, item in f.items():
                 if isinstance(item, h5py.Group):

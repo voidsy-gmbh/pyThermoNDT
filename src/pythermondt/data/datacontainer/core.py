@@ -1,5 +1,6 @@
 from typing import Optional
 from io import BytesIO
+from .node import RootNode
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
@@ -24,8 +25,12 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         """
         super().__init__()
 
+        # If provided, initialize from a serialized HDF5 file. Else just initialize with a root node.
         if hdf5_bytes:
             self.deserialize(hdf5_bytes)
+
+        else:
+            self.nodes["/"] = RootNode()
 
    # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):

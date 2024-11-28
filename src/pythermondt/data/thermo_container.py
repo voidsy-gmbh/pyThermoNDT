@@ -8,9 +8,6 @@ class ThermoContainer(DataContainer):
         """
         super().__init__()
 
-        # Set root node
-        self.nodes["/"] = RootNode()
-
         # Set initial groups
         self.add_group("/", "Data")
         self.add_group("/", "GroundTruth")

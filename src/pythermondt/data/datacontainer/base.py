@@ -204,7 +204,7 @@ class BaseOps(DataContainerBase):
             return False
 
     def _parent_exists(self, key: str) -> bool:
-        """Check if the parent of the given path exists and is a GroupNode or RootNode.
+        """Check if the parent of the given path exists and is a GroupNode or RootNode. If the path itself is the root path, it returns False.
 
         Parameters:
             key (str): The path to check.
@@ -212,6 +212,10 @@ class BaseOps(DataContainerBase):
         Returns:
             bool: True if the parent exists and is a GroupNode or RootNode, False otherwise.
         """
+        # Return false if the actual path is the root path
+        if self._is_rootnode(key):
+            return False
+        
         parent, _ = split_path(key)
         try:
             self.nodes(parent, GroupNode, RootNode)

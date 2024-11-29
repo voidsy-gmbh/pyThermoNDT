@@ -9,8 +9,14 @@ from pythermondt.data.datacontainer.node import DataNode
 
 @pytest.fixture
 def dataset_container(empty_container:DataContainer):
+    # Add the testgroups
     empty_container.add_group("/", "testgroup")
     empty_container.add_group("/testgroup", "nestedgroup")
+
+    # Add test datasets
+    empty_container.add_dataset("/", "test_dataset0") # directly to root
+    empty_container.add_dataset("/testgroup", "test_dataset1") # to a group
+    empty_container.add_dataset("/testgroup/nestedgroup", "test_dataset2") # to a nested group
     return empty_container
 
 # Test adding a dataset to the container
@@ -25,6 +31,9 @@ def dataset_container(empty_container:DataContainer):
     ("/", "dataset0"), # add directly to root
     ("/testgroup", "dataset1"), # add to a group
     ("/testgroup/nestedgroup", "dataset2"), # add to a nested group
+    pytest.param("/", "test_dataset0", marks=pytest.mark.xfail(raises=KeyError)), # add to an existing dataset in root
+    pytest.param("/testgroup", "test_dataset1", marks=pytest.mark.xfail(raises=KeyError)), # add to an existing dataset in a group
+    pytest.param("/testgroup/nestedgroup", "test_dataset2", marks=pytest.mark.xfail(raises=KeyError)), # add to an existing dataset in a nested group
 ])
 def test_add_dataset(dataset_container:DataContainer, data:str | None, path:str, name:str, request:pytest.FixtureRequest):
     # Request testdata from the fixtures

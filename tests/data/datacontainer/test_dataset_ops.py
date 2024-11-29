@@ -116,6 +116,9 @@ def test_add_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
     ("/", "dataset0"), # get directly from root
     ("/testgroup", "dataset1"), # get from a group
     ("/testgroup/nestedgroup", "dataset2"), # get from a nested group
+    pytest.param("/", "non_existent_dataset0", marks=pytest.mark.xfail(raises=KeyError)), # get a non-existent dataset from root
+    pytest.param("/testgroup", "non_existent_dataset1", marks=pytest.mark.xfail(raises=KeyError)), # get a non-existent dataset from a group
+    pytest.param("/testgroup/nestedgroup", "non_existent_dataset2", marks=pytest.mark.xfail(raises=KeyError)), # get a non-existent dataset from a nested group
 ])
 def test_get_dataset(dataset_container:DataContainer, data:str, path:str, name:str, request:pytest.FixtureRequest):
     # Request testdata from the fixtures

@@ -55,6 +55,47 @@ def test_add_dataset(dataset_container:DataContainer, data:str | None, path:str,
     else:
         assert False
 
+# Test adding multiple datasets to the container
+@pytest.mark.parametrize("datasets", [
+    pytest.param({"dataset0": "sample_tensor", "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
+    pytest.param({"dataset0": "sample_empty_ndarray", "dataset1": "sample_empty_tensor", "dataset2": None}),
+    pytest.param({"dataset0": None, "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
+    pytest.param({"dataset0": "sample_tensor", "dataset1": None, "dataset2": "sample_empty_ndarray"}),
+])
+@pytest.mark.parametrize("path", [
+    ("/"), # add directly to root
+    ("/testgroup"), # add to a group
+    ("/testgroup/nestedgroup"), # add to a nested group
+])
+def test_add_datasets(dataset_container:DataContainer, datasets:dict[str, str | None], path:str, request:pytest.FixtureRequest):
+    # Request testdata from the fixtures
+    test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in datasets.items()}
+
+    # Add multiple datasets
+    dataset_container.add_datasets(path, **test_data)
+
+    # Assertions
+    for name, data in test_data.items():
+        key = f"{path}/{name}" if path != "/" else f"{path}{name}"
+        assert key in dataset_container.nodes.keys()
+        assert isinstance(dataset_container.nodes[key], DataNode)
+
+        # Empty dataset ==> default value in container is a torch.empty(0) tensor
+        if data is None:
+            assert torch.equal(dataset_container.nodes[key].data, torch.empty(0)) #type: ignore
+        
+        # Ndarray
+        elif isinstance(data, ndarray):
+            assert torch.equal(dataset_container.nodes[key].data, torch.from_numpy(data)) #type: ignore
+
+        # Tensor
+        elif isinstance(data, Tensor):
+            assert torch.equal(dataset_container.nodes[key].data, data) # type:ignore
+        
+        # Error case
+        else:
+            assert False
+
 # Only run the tests in this file if it is run directly
 if __name__ == '__main__':
     pytest.main(["-v", __file__])

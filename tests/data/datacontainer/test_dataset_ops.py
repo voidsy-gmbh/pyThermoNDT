@@ -15,6 +15,7 @@ def dataset_container(empty_container:DataContainer):
     empty_container.add_group("/testgroup", "nestedgroup")
     return empty_container
 
+
 # Test adding a dataset to the container
 @pytest.mark.parametrize("data", [
     pytest.param("sample_tensor"),
@@ -81,6 +82,7 @@ def test_add_dataset_existing(dataset_container:DataContainer, data:str, path:st
     with pytest.raises(KeyError):
         dataset_container.add_dataset(path, name, test_data)
 
+
 # Test adding multiple datasets to the container
 @pytest.mark.parametrize("datasets", [
     pytest.param({"dataset0": "sample_tensor", "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
@@ -121,6 +123,7 @@ def test_add_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
         # Error case
         else:
             assert False
+
 
 # Test getting a dataset from the container
 @pytest.mark.parametrize("data", [
@@ -174,6 +177,7 @@ def test_get_dataset_non_existing(dataset_container:DataContainer, path:str, exp
     # Get a non-existent dataset
     with pytest.raises(expected_exception=expected_error):
         dataset_container.get_dataset(path)
+
 
 # Test getting multiple datasets from the container
 @pytest.mark.parametrize("datasets", [
@@ -231,6 +235,7 @@ def test_get_datasets_non_existing(dataset_container:DataContainer, paths:list[s
     with pytest.raises(expected_exception=expected_error):
         dataset_container.get_datasets(*paths)
 
+
 # Test getting all dataset names from the container
 @pytest.mark.parametrize("datasets", [
     pytest.param({"dataset0": "sample_tensor", "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
@@ -257,6 +262,7 @@ def test_get_all_dataset_names(dataset_container:DataContainer, datasets:dict[st
     # Assertions
     expected_names = set(datasets.keys())
     assert dataset_names == expected_names
+
 
 # Test removing a dataset from the container
 @pytest.mark.parametrize("data", [
@@ -295,6 +301,71 @@ def test_remove_dataset_non_existing(dataset_container:DataContainer, path:str):
     # Remove a non-existent dataset
     with pytest.raises(KeyError):
         dataset_container.remove_dataset(path)
+
+
+# Test updating a dataset in the container
+@pytest.mark.parametrize("initial_data, updated_data", [
+    ("sample_tensor", "sample_tensor2"),
+    ("sample_ndarray", "sample_ndarray2"),
+    ("sample_empty_tensor", "sample_tensor"),
+    ("sample_empty_ndarray", "sample_ndarray"),
+    (None, "sample_tensor"),
+    (None, "sample_ndarray"),
+])
+@pytest.mark.parametrize("path, name", [
+    ("/", "dataset0"), # update directly in root
+    ("/testgroup", "dataset1"), # update in a group
+    ("/testgroup/nestedgroup", "dataset2"), # update in a nested group
+])
+def test_update_dataset(dataset_container:DataContainer, initial_data:str | None, updated_data:str, path:str, name:str, request:pytest.FixtureRequest):
+    # Request initial test data from the fixtures
+    initial_test_data = request.getfixturevalue(initial_data) if initial_data is not None else None
+
+    # Add a dataset
+    dataset_container.add_dataset(path, name, initial_test_data)
+
+    # Request updated test data from the fixtures
+    updated_test_data = request.getfixturevalue(updated_data)
+
+    # Update the dataset
+    key = validate_path(path, name)
+    dataset_container.update_dataset(key, updated_test_data)
+
+    # Assertions
+    retrieved_data = dataset_container.get_dataset(key)
+
+    # Ndarray
+    if isinstance(updated_test_data, ndarray):
+        assert torch.equal(retrieved_data, torch.from_numpy(updated_test_data)) #type: ignore
+
+    # Tensor
+    elif isinstance(updated_test_data, Tensor):
+        assert torch.equal(retrieved_data, updated_test_data) # type:ignore
+
+    # Error case
+    else:
+        assert False
+
+# Test updating a dataset that does not exist in the container
+@pytest.mark.parametrize("data", [
+    pytest.param("sample_tensor"),
+    pytest.param("sample_ndarray"),
+    pytest.param("sample_empty_tensor"),
+    pytest.param("sample_empty_ndarray"),
+])
+@pytest.mark.parametrize("path", [
+    ("/non_existent_dataset0"), # update a non-existent dataset in root
+    ("/testgroup/non_existent_dataset1"), # update a non-existent dataset in a group
+    ("/testgroup/nestedgroup/non_existent_dataset2"), # update a non-existent dataset in a nested group
+])
+def test_update_dataset_non_existing(dataset_container:DataContainer, data:str, path:str, request:pytest.FixtureRequest):
+    # Request test data from the fixtures
+    test_data = request.getfixturevalue(data)
+
+    # Update a non-existent dataset
+    with pytest.raises(KeyError):
+        dataset_container.update_dataset(path, test_data)
+
 
 # Only run the tests in this file if it is run directly
 if __name__ == '__main__':

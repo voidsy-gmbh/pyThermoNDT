@@ -231,11 +231,32 @@ def test_get_datasets_non_existing(dataset_container:DataContainer, paths:list[s
     with pytest.raises(expected_exception=expected_error):
         dataset_container.get_datasets(*paths)
 
+# Test getting all dataset names from the container
+@pytest.mark.parametrize("datasets", [
+    pytest.param({"dataset0": "sample_tensor", "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
+    pytest.param({"dataset0": "sample_empty_ndarray", "dataset1": "sample_empty_tensor", "dataset2": None}),
+    pytest.param({"dataset0": None, "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
+    pytest.param({"dataset0": "sample_tensor", "dataset1": None, "dataset2": "sample_empty_ndarray"}),
+])
+@pytest.mark.parametrize("path", [
+    ("/"), # add directly to root
+    ("/testgroup"), # add to a group
+    ("/testgroup/nestedgroup"), # add to a nested group
+])
+def test_get_all_dataset_names(dataset_container:DataContainer, datasets:dict[str, str | None], path:str, request:pytest.FixtureRequest):
+    # Request testdata from the fixtures
+    test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in datasets.items()}
 
+    # Add multiple datasets
+    dataset_container.add_datasets(path, **test_data)
 
+    # Get all dataset names
+    dataset_names = dataset_container.get_all_dataset_names()
+    dataset_names = set(dataset_names)  # convert to set for comparison
 
-
-
+    # Assertions
+    expected_names = set(datasets.keys())
+    assert dataset_names == expected_names
 
 
 # Only run the tests in this file if it is run directly

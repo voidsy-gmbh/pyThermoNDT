@@ -12,11 +12,6 @@ def dataset_container(empty_container:DataContainer):
     # Add the testgroups
     empty_container.add_group("/", "testgroup")
     empty_container.add_group("/testgroup", "nestedgroup")
-
-    # Add test datasets
-    empty_container.add_dataset("/", "test_dataset0") # directly to root
-    empty_container.add_dataset("/testgroup", "test_dataset1") # to a group
-    empty_container.add_dataset("/testgroup/nestedgroup", "test_dataset2") # to a nested group
     return empty_container
 
 # Test adding a dataset to the container

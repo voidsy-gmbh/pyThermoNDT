@@ -175,6 +175,69 @@ def test_get_dataset_non_existing(dataset_container:DataContainer, path:str, exp
     with pytest.raises(expected_exception=expected_error):
         dataset_container.get_dataset(path)
 
+# Test getting multiple datasets from the container
+@pytest.mark.parametrize("datasets", [
+    pytest.param({"dataset0": "sample_tensor", "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
+    pytest.param({"dataset0": "sample_empty_ndarray", "dataset1": "sample_empty_tensor", "dataset2": None}),
+    pytest.param({"dataset0": None, "dataset1": "sample_ndarray", "dataset2": "sample_empty_tensor"}),
+    pytest.param({"dataset0": "sample_tensor", "dataset1": None, "dataset2": "sample_empty_ndarray"}),
+])
+@pytest.mark.parametrize("path", [
+    ("/"), # add directly to root
+    ("/testgroup"), # add to a group
+    ("/testgroup/nestedgroup"), # add to a nested group
+])
+def test_get_datasets(dataset_container:DataContainer, datasets:dict[str, str | None], path:str, request:pytest.FixtureRequest):
+    # Request testdata from the fixtures
+    test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in datasets.items()}
+
+    # Add multiple datasets
+    dataset_container.add_datasets(path, **test_data)
+
+    # Get the datasets
+    keys = [validate_path(path, name) for name in test_data.keys()]
+    retrieved_data = dataset_container.get_datasets(*keys)
+
+    # Assertions
+    for data, retrieved in zip(test_data.values(), retrieved_data):
+        # Empty dataset ==> default value in container is a torch.empty(0) tensor
+        if data is None:
+            assert torch.equal(retrieved, torch.empty(0)) #type: ignore
+        
+        # Ndarray
+        elif isinstance(data, ndarray):
+            assert torch.equal(retrieved, torch.from_numpy(data)) #type: ignore
+
+        # Tensor
+        elif isinstance(data, Tensor):
+            assert torch.equal(retrieved, data) # type:ignore
+        
+        # Error case
+        else:
+            assert False
+
+# Test getting multiple datasets where one or more do not exist in the container
+@pytest.mark.parametrize("paths, expected_error", [
+    (["/non_existent_dataset0", "/testgroup/dataset1"], KeyError), # one non-existent dataset
+    (["/testgroup/non_existent_dataset1", "/testgroup/nestedgroup/dataset2"], KeyError), # one non-existent dataset
+    (["/testgroup", "/testgroup/nestedgroup/dataset2"], TypeError), # one path is a group
+    (["/", "/testgroup/nestedgroup/dataset2"], TypeError), # one path is the root group
+])
+def test_get_datasets_non_existing(dataset_container:DataContainer, paths:list[str], expected_error:type[Exception], sample_tensor:Tensor):
+    # Add a valid dataset
+    dataset_container.add_dataset("/testgroup/nestedgroup", "dataset2", sample_tensor)
+
+    # Get multiple datasets with one or more non-existent paths
+    with pytest.raises(expected_exception=expected_error):
+        dataset_container.get_datasets(*paths)
+
+
+
+
+
+
+
+
 # Only run the tests in this file if it is run directly
 if __name__ == '__main__':
     pytest.main(["-v", __file__])

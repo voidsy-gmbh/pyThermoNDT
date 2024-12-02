@@ -6,6 +6,7 @@ from numpy import ndarray
 from typing import Optional
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import DataNode
+from pythermondt.data.datacontainer.utils import validate_path
 
 @pytest.fixture
 def dataset_container(empty_container:DataContainer):
@@ -32,10 +33,10 @@ def test_add_dataset(dataset_container:DataContainer, data:str | None, path:str,
     test_data = request.getfixturevalue(data) if data is not None else None
 
     # Add a dataset
-    key = f"{path}/{name}" if path != "/" else f"{path}{name}"
     dataset_container.add_dataset(path, name, test_data)
 
     # Assertions
+    key = validate_path(path, name)
     assert key in dataset_container.nodes.keys()
     assert isinstance(dataset_container.nodes[key], DataNode)
 
@@ -101,7 +102,7 @@ def test_add_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
 
     # Assertions
     for name, data in test_data.items():
-        key = f"{path}/{name}" if path != "/" else f"{path}{name}"
+        key = validate_path(path, name)
         assert key in dataset_container.nodes.keys()
         assert isinstance(dataset_container.nodes[key], DataNode)
 
@@ -138,10 +139,10 @@ def test_get_dataset(dataset_container:DataContainer, data:str, path:str, name:s
     test_data = request.getfixturevalue(data)
 
     # Add a dataset
-    key = f"{path}/{name}" if path != "/" else f"{path}{name}"
     dataset_container.add_dataset(path, name, test_data)
 
     # Get the dataset
+    key = validate_path(path, name)
     retrieved_data = dataset_container.get_dataset(key)
 
     # Assertions

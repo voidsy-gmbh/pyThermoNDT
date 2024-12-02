@@ -367,6 +367,75 @@ def test_update_dataset_non_existing(dataset_container:DataContainer, data:str, 
         dataset_container.update_dataset(path, test_data)
 
 
+# Test updating multiple datasets in the container
+@pytest.mark.parametrize("initial_datasets, updated_datasets", [
+    ({"dataset0": "sample_tensor", "dataset1": "sample_ndarray"}, [("/dataset0", "sample_tensor2"), ("/dataset1", "sample_ndarray2")]),
+    ({"dataset0": "sample_empty_tensor", "dataset1": "sample_empty_ndarray"}, [("/dataset0", "sample_tensor"), ("/dataset1", "sample_ndarray")]),
+    ({"dataset0": None, "dataset1": "sample_ndarray"}, [("/dataset0", "sample_tensor"), ("/dataset1", "sample_ndarray2")]),
+    ({"dataset0": "sample_tensor", "dataset1": None}, [("/dataset0", "sample_tensor2"), ("/dataset1", "sample_empty_ndarray")]),
+])
+@pytest.mark.parametrize("path", [
+    ("/"), # update directly in root
+    ("/testgroup"), # update in a group
+    ("/testgroup/nestedgroup"), # update in a nested group
+])
+def test_update_datasets(dataset_container:DataContainer, initial_datasets:dict[str, str | None], updated_datasets:list[tuple[str, str]], path:str, request:pytest.FixtureRequest):
+    # Request initial test data from the fixtures
+    initial_test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in initial_datasets.items()}
+
+    # Add initial datasets
+    dataset_container.add_datasets(path, **initial_test_data)
+
+    # Request updated test data from the fixtures
+    updated_test_data = [(validate_path(path, name), request.getfixturevalue(data)) for name, data in updated_datasets]
+    print(updated_test_data)
+
+    # Update the datasets
+    dataset_container.update_datasets(*updated_test_data)
+
+    # Assertions
+    for (key, _), (_, updated_data) in zip(updated_test_data, updated_datasets):
+        retrieved_data = dataset_container.get_dataset(key)
+
+        # Ndarray
+        if isinstance(updated_data, ndarray):
+            assert torch.equal(retrieved_data, torch.from_numpy(updated_data)) #type: ignore
+
+        # Tensor
+        elif isinstance(updated_data, Tensor):
+            assert torch.equal(retrieved_data, updated_data) # type:ignore
+
+        # Error case
+        else:
+            assert False
+
+# Test updating multiple datasets where one or more do not exist in the container
+@pytest.mark.parametrize("initial_datasets, updated_datasets, expected_error", [
+    ({"dataset0": "sample_tensor"}, [("/non_existent_dataset0", "sample_tensor2"), ("/dataset0", "sample_tensor2")], KeyError), # one non-existent dataset
+    ({"dataset0": "sample_ndarray"}, [("/dataset0", "sample_ndarray2"), ("/non_existent_dataset1", "sample_ndarray2")], KeyError), # one non-existent dataset
+    ({"dataset0": "sample_empty_tensor"}, [("/dataset0", "sample_tensor"), ("/testgroup", "sample_tensor")], TypeError), # one path is a group
+    ({"dataset0": "sample_empty_ndarray"}, [("/dataset0", "sample_ndarray"), ("/", "sample_ndarray")], TypeError), # one path is the root group
+])
+@pytest.mark.parametrize("path", [
+    ("/"), # update directly in root
+    ("/testgroup"), # update in a group
+    ("/testgroup/nestedgroup"), # update in a nested group
+])
+def test_update_datasets_non_existing(dataset_container:DataContainer, initial_datasets:dict[str, str | None], updated_datasets:list[tuple[str, str]], path:str, expected_error:type[Exception], request:pytest.FixtureRequest):
+    # Request initial test data from the fixtures
+    initial_test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in initial_datasets.items()}
+
+    # Add initial datasets
+    dataset_container.add_datasets(path, **initial_test_data)
+
+    # Request updated test data from the fixtures
+    updated_test_data = [(validate_path(path, name), request.getfixturevalue(data)) for name, data in updated_datasets]
+
+    # Update multiple datasets with one or more non-existent paths
+    with pytest.raises(expected_exception=expected_error):
+        dataset_container.update_datasets(*updated_test_data)
+
+
 # Only run the tests in this file if it is run directly
 if __name__ == '__main__':
     pytest.main(["-v", __file__])

@@ -258,6 +258,43 @@ def test_get_all_dataset_names(dataset_container:DataContainer, datasets:dict[st
     expected_names = set(datasets.keys())
     assert dataset_names == expected_names
 
+# Test removing a dataset from the container
+@pytest.mark.parametrize("data", [
+    pytest.param("sample_tensor"),
+    pytest.param("sample_ndarray"),
+    pytest.param("sample_empty_tensor"),
+    pytest.param("sample_empty_ndarray"),
+    pytest.param(None)
+])
+@pytest.mark.parametrize("path, name", [
+    ("/", "dataset0"), # remove directly from root
+    ("/testgroup", "dataset1"), # remove from a group
+    ("/testgroup/nestedgroup", "dataset2"), # remove from a nested group
+])
+def test_remove_dataset(dataset_container:DataContainer, data:str | None, path:str, name:str, request:pytest.FixtureRequest):
+    # Request testdata from the fixtures
+    test_data = request.getfixturevalue(data) if data is not None else None
+
+    # Add a dataset
+    dataset_container.add_dataset(path, name, test_data)
+
+    # Remove the dataset
+    key = validate_path(path, name)
+    dataset_container.remove_dataset(key)
+
+    # Assertions
+    assert key not in dataset_container.nodes.keys()
+
+# Test removing a dataset that does not exist in the container
+@pytest.mark.parametrize("path", [
+    ("/non_existent_dataset0"), # remove a non-existent dataset from root
+    ("/testgroup/non_existent_dataset1"), # remove a non-existent dataset from a group
+    ("/testgroup/nestedgroup/non_existent_dataset2"), # remove a non-existent dataset from a nested group
+])
+def test_remove_dataset_non_existing(dataset_container:DataContainer, path:str):
+    # Remove a non-existent dataset
+    with pytest.raises(KeyError):
+        dataset_container.remove_dataset(path)
 
 # Only run the tests in this file if it is run directly
 if __name__ == '__main__':

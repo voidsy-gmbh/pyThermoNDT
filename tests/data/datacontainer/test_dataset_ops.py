@@ -162,15 +162,17 @@ def test_get_dataset(dataset_container:DataContainer, data:str, path:str, name:s
     else:
         assert False
 
-# Test getting a dataset that does not exist in the container
-@pytest.mark.parametrize("path", [
-    "/non_existent_dataset0", # get a non-existent dataset from root
-    "/testgroup/non_existent_dataset1", # get a non-existent dataset from a group
-    "/testgroup/nestedgroup/non_existent_dataset2", # get a non-existent dataset from a nested group
+# Test getting a dataset that does not exist in the container or refer to something else
+@pytest.mark.parametrize("path, expected_error", [
+    ("/non_existent_dataset0", KeyError), # get a non-existent dataset from root
+    ("/testgroup/non_existent_dataset1", KeyError), # get a non-existent dataset from a group
+    ("/testgroup/nestedgroup/non_existent_dataset2", KeyError), # get a non-existent dataset from a nested group
+    ("/testgroup", TypeError), # get a group instead of a dataset
+    ("/", TypeError), # get the root group
 ])
-def test_get_dataset_non_existing(dataset_container:DataContainer, path:str):
+def test_get_dataset_non_existing(dataset_container:DataContainer, path:str, expected_error:type[Exception]):
     # Get a non-existent dataset
-    with pytest.raises(KeyError):
+    with pytest.raises(expected_exception=expected_error):
         dataset_container.get_dataset(path)
 
 # Only run the tests in this file if it is run directly

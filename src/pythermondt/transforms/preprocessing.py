@@ -131,6 +131,10 @@ class RemoveFlash(ThermoTransform):
             case _:
                 raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__["method"])}.")
         
+        # Check if the flash end is valid
+        if flash_end_idx < 0 or flash_end_idx >= len(domain_values):
+            raise IndexError(f"Flash end index {flash_end_idx} is out of bounds. Valid range is {[0, len(domain_values) - 1]}.")
+        
         # Keep only the frames after the flash
         tdata = tdata[..., flash_end_idx:]
         domain_values = domain_values[flash_end_idx:]

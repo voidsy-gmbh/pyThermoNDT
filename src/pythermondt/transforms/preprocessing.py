@@ -2,6 +2,7 @@ import torch
 from ..data import DataContainer
 from .utils import ThermoTransform
 from ..data.units import Units
+from typing import Literal, get_args
 
 class ApplyLUT(ThermoTransform):
     ''' 
@@ -87,4 +88,61 @@ class SubstractFrame(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
+        return container
+
+class RemoveFlash(ThermoTransform):
+    """ Automatically detect the flash and remove all the frames before it. """
+    def __init__(self, method: Literal["excitation_signal", "max_temp"] = "excitation_signal", offset: int = 0):
+        """ Automatically detect the flash and remove all the frames before it.
+
+        2 methods are available:
+        - "excitation_signal": Detect the flash by finding the frame where the excitation signal goes from 1 back to 0.
+        - "max_temp": Detect the flash by finding the frame with the maximum temperature value in it. May not work if the flash is not the hottest frame.
+
+        Parameters:
+            method (Literal["excitation_signal", "max_temp"]): Method to detect the flash. Default is "excitation_signal".
+            offset (int): Offset in frames to add to the detected flash end. Default is 0.
+        """
+        super().__init__()
+        self.offset = offset
+        self.method = method
+    
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract tdata and domain values
+        tdata, excitation_signal, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/ExcitationSignal", "/MetaData/DomainValues")
+
+        # Detect the flash frame based on the method
+        match self.method:
+            case "excitation_signal":
+                # Find frame where excitation signal goes from 1 back to 0 (flash end)
+                flash_end_idx = None
+                for i in range(len(excitation_signal)):
+                    if excitation_signal[i - 1] == 1 and excitation_signal[i] == 0:
+                        flash_end_idx = i + self.offset
+                        break
+        
+                if flash_end_idx is None:
+                    raise ValueError("Flash could not be detected in the excitation signal.")
+            
+            case "max_temp":
+                # Find frame with maximum temperature value (flash end)
+                flash_end_idx = tdata.argmax(dim=2).max().item() + self.offset
+            
+            case _:
+                raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__["method"])}.")
+        
+        # Check if the flash end is valid
+        if flash_end_idx < 0 or flash_end_idx >= len(domain_values):
+            raise IndexError(f"Flash end index {flash_end_idx} is out of bounds. Valid range is {[0, len(domain_values) - 1]}.")
+        
+        # Keep only the frames after the flash
+        tdata = tdata[..., flash_end_idx:]
+        domain_values = domain_values[flash_end_idx:]
+        excitation_signal = excitation_signal[flash_end_idx:]
+
+        # Fix time shift in domain values by substracting the first time step
+        domain_values = domain_values - domain_values[0]
+
+        # Update the container and return it
+        container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
         return container

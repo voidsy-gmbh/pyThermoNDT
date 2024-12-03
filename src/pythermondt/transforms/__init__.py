@@ -1,4 +1,4 @@
-from .preprocessing import ApplyLUT, SubstractFrame
+from .preprocessing import ApplyLUT, SubstractFrame, RemoveFlash
 from .normalization import MinMaxNormalize, MaxNormalize, ZScoreNormalize
 from .utils import Compose, ThermoTransform
 from .sampling import SelectFrames, SelectFrameRange, NonUniformSampling

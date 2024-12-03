@@ -1,0 +1,9 @@
+name: Pull Request Validation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  test:
+    uses: ./.github/workflows/run_tests.yml

@@ -99,7 +99,7 @@ jobs:
 
       # Step 5: Run tests
       - name: Run tests
-        uses: ./.github/actions/run_tests.yml
+        uses: ./.github/workflows/run_tests.yml
 
   
   # Job 2: Build the package (conda or pip) and upload artifacts using a matrix job

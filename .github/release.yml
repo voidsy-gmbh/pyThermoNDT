@@ -1,0 +1,36 @@
+changelog:
+  # Exclude some labels
+  exclude:
+  labels:
+    - skip-news
+  
+  # Categories the PRs based on the label
+  categories:
+    - title: "🚀 New Features"
+      labels:
+        - new feature
+
+    - title: "💥 Breaking Changes"
+      labels:
+        - breaking
+        - breaking change
+    
+    - title: "✨ Enhancements"
+      labels:
+        - enhancements
+    
+    - title: "🐛 Bug Fixes"
+      labels:
+        - bug
+        - bug fix
+
+    - title: "🔨 Maintenance"
+      labels:
+        - maintenance
+        - refactor
+        - documentation
+        - tests
+
+    - title: "Other Changes"
+      labels:
+        - "*"

@@ -7,7 +7,7 @@ on:
       - "release/*"
 
 jobs:
-  # Job 1: Setup pip env for running tests and check if release exists
+  # Job 1: Validate the release branch and check if an official release already exists
   validate:
     runs-on: ubuntu-latest
     outputs:
@@ -97,12 +97,11 @@ jobs:
           echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
           exit 1
 
-      # Step 5: Run tests
-      - name: Run tests
-        uses: ./.github/workflows/run_tests.yml
+  # Job 2: Run test using pytest
+  test:
+    uses: ./.github/workflows/run_tests.yml
 
-  
-  # Job 2: Build the package (conda or pip) and upload artifacts using a matrix job
+  # Job 3: Build the package (conda or pip) and upload artifacts using a matrix job
   build:
     needs: validate
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
@@ -176,7 +175,7 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
 
-  # Job 3: Release the package
+  # Job 4: Release the package
   release:
     needs: [validate, build]
     runs-on: ubuntu-latest

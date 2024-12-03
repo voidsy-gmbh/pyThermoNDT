@@ -12,7 +12,12 @@ jobs:
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:
-        # Step 1: Setup python and install dependencies
+        # Step 1: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+        # Step 2: Setup python and install dependencies
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
@@ -20,7 +25,7 @@ jobs:
           pip install torch>=2.0+cpu
           pip install ".[dev]"
 
-        # Step 2: Run tests
+        # Step 3: Run tests
       - run: pytest
       - id: set_output
         if: success()

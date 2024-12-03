@@ -1,0 +1,27 @@
+name: Run Tests
+on:
+  workflow_call:
+    outputs:
+      test_success:
+        description: "Whether tests succeeded"
+        value: ${{ jobs.test.outputs.success }}
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.set_output.outputs.success }}
+    steps:
+        # Step 1: Setup python and install dependencies
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - run: |
+          pip install torch>=2.0+cpu
+          pip install ".[dev]"
+
+        # Step 2: Run tests
+      - run: pytest
+      - id: set_output
+        if: success()
+        run: echo "success=true" >> $GITHUB_OUTPUT

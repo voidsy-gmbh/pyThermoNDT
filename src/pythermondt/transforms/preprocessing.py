@@ -88,3 +88,36 @@ class SubstractFrame(ThermoTransform):
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
         return container
+    
+class RemoveFlash(ThermoTransform):
+    """ Automatically detect the flash and removes the frames before.
+    """
+    def __init__(self, offset: int = 0):
+        super().__init__()
+        self.offset = offset
+    
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract the data
+        tdata, excitation_signal, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/ExcitationSignal", "/MetaData/DomainValues")
+
+        # Detect the flash ==> find frame where excitation signal goes from 1 back to 0 (flash end)
+        flash_end_idx = None
+        for i in range(len(excitation_signal)):
+            if excitation_signal[i - 1] == 1 and excitation_signal[i] == 0:
+                flash_end_idx = i + self.offset
+                break
+        
+        if flash_end_idx is None:
+            raise ValueError("Flash could not be detected in the excitation signal.")
+        
+        # Keep only the frames after the flash
+        tdata = tdata[..., flash_end_idx:]
+        domain_values = domain_values[flash_end_idx:]
+        excitation_signal = excitation_signal[flash_end_idx:]
+
+        # Fix time shift in domain values by substracting the first time step
+        domain_values = domain_values - domain_values[0]
+
+        # Update the container and return it
+        container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
+        return container

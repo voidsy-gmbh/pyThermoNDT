@@ -29,6 +29,7 @@ changelog:
         - maintenance
         - refactor
         - documentation
+        - tests
 
     - title: "Other Changes"
       labels:

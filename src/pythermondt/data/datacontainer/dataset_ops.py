@@ -95,6 +95,9 @@ class DatasetOps(BaseOps):
         Raises:
             KeyError: If the dataset does not exist.
         """
+        # Remove the dataset only if it is a DataNode
+        if not self._is_datanode(path):
+            raise KeyError(f"Dataset at path: '{path}' does not exist or is not a dataset.")
         del self.nodes[path]
 
     def update_dataset(self, path: str, data: Tensor | ndarray):

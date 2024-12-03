@@ -42,19 +42,34 @@ class DataContainerBase(ABC):
             return node
         
         def __set_node(self, key: str, value: NodeTypes) -> None:
+            # Special handling for root nodes
+            if isinstance(value, RootNode):
+                if key != "/":
+                    raise ValueError("RootNode must be placed at the root path '/'.")
+                
+                if "/" in self.__nodes:
+                    raise ValueError("RootNode already exists in the DataContainer. RootNode must be unique for each DataContainer.")
+
+                self.__nodes[key] = value
+                return
+
             # Split path in parent and child and check if parent exists
             parent, _ = split_path(key)
-            if parent != "/" and parent not in self.__nodes:
-                raise KeyError(f"Parent node at path '{parent}' does not exist.")
+            if parent not in self.__nodes:
+                if parent == "/" and parent not in self.__nodes:
+                    raise KeyError("RootNode does not exist in this container. Check container initialization and ensure that a RootNode exists!")
+                else:
+                    raise KeyError(f"Parent node at path '{parent}' does not exist.")
             
             # Also check if parent is a RootNode or GroupNode
-            if parent != "/" and not isinstance(self.__nodes[parent], (RootNode, GroupNode)):
+            if not isinstance(self.__nodes[parent], (RootNode, GroupNode)):
                 raise TypeError(f"Parent node at path '{parent}' must be a RootNode or GroupNode.")
             
             # Set node at path in dictionary
             self.__nodes[key] = value
 
         def __delete_node(self, key: str) -> None:
+            # Check if the path exists
             if key not in self.__nodes:
                 raise KeyError(f"Node at path '{key}' does not exist.")
             
@@ -189,7 +204,7 @@ class BaseOps(DataContainerBase):
             return False
 
     def _parent_exists(self, key: str) -> bool:
-        """Check if the parent of the given path exists and is a GroupNode or RootNode.
+        """Check if the parent of the given path exists and is a GroupNode or RootNode. If the path itself is the root path, it returns False.
 
         Parameters:
             key (str): The path to check.
@@ -197,6 +212,10 @@ class BaseOps(DataContainerBase):
         Returns:
             bool: True if the parent exists and is a GroupNode or RootNode, False otherwise.
         """
+        # Return false if the actual path is the root path
+        if self._is_rootnode(key):
+            return False
+        
         parent, _ = split_path(key)
         try:
             self.nodes(parent, GroupNode, RootNode)

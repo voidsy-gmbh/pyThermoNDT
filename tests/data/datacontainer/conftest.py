@@ -1,6 +1,7 @@
 import pytest
 from torch import Tensor
-from pythermondt.data.datacontainer.node import RootNode, GroupNode, DataNode, NodeType
+from pythermondt.data import DataContainer
+from pythermondt.data.datacontainer.node import RootNode, GroupNode, DataNode
 
 @pytest.fixture
 def root_node():
@@ -16,3 +17,8 @@ def group_node():
 def data_node(sample_tensor: Tensor):
     """Fixture for DataNode."""
     return DataNode("test_data", sample_tensor)
+
+@pytest.fixture
+def empty_container():
+    """Fixture for DataContainer."""
+    return DataContainer()

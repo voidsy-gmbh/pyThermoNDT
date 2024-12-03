@@ -39,4 +39,7 @@ class GroupOps(BaseOps):
         Raises:
             KeyError: If the group does not exist.
         """
+        # Only remove the group if it is a GroupNode
+        if not self._is_groupnode(path):
+            raise KeyError(f"Group with path: '{path}' does not exist or is not a group.")
         del self.nodes[path]

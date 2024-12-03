@@ -99,6 +99,7 @@ jobs:
 
   # Job 2: Run test using pytest
   test:
+    needs: validate
     uses: ./.github/workflows/run_tests.yml
 
   # Job 3: Build the package (conda or pip) and upload artifacts using a matrix job
@@ -177,7 +178,7 @@ jobs:
 
   # Job 4: Release the package
   release:
-    needs: [validate, build]
+    needs: [validate, build, test]
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout code in the current branch

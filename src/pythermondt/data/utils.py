@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from typing import Optional
 from torch import Generator, default_generator
 from .thermo_dataset import ThermoDataset, IndexedThermoDataset
-from .thermo_subset import ThermoSubset
 from ..transforms import ThermoTransform
 
 def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[Sequence[Optional[ThermoTransform]]] = None, generator: Generator = default_generator) -> list[IndexedThermoDataset]:

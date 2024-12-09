@@ -92,9 +92,7 @@ def test_add_dataset_existing(dataset_container:DataContainer, data:str, path:st
 def test_add_dataset_invalid_path(dataset_container:DataContainer, path:str, name:str, sample_tensor:Tensor):
     # Try to add a dataset to a non-existent path
     with pytest.raises(KeyError):
-        print(dataset_container)
         dataset_container.add_dataset(path, name, sample_tensor)
-        print(dataset_container)
 
 
 # Test adding multiple datasets to the container

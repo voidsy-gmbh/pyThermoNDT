@@ -1,6 +1,6 @@
 import torch
 from itertools import chain
-from typing import Type, Dict, List, Optional, Iterator
+from typing import Type, Dict, List, Optional, Iterator, Sequence
 from torch.utils.data import Dataset
 from .datacontainer import DataContainer
 from ..transforms import ThermoTransform
@@ -134,3 +134,55 @@ class ThermoDataset(Dataset):
 
     def __iter__(self) -> Iterator[DataContainer]:
         return chain.from_iterable(self.__readers)
+
+class IndexedThermoDataset(ThermoDataset):
+    """Extension of ThermoDataset that supports indexing with optional additional transforms.
+
+    The IndexedThermoDataset maintains a subset of the parent dataset and allows for an additional transform to be applied to the data. 
+    This can be useful when a subset of the data needs to be selected and a different transform needs to be applied to the subset, e.g. for random splits of 
+    train, validation and test data. The IndexedThermoDataset maintains the transform chain of the parent dataset and appends the additional transform to it.
+    """
+    
+    def __init__(self, dataset: ThermoDataset, indices: Sequence[int], transform: Optional[ThermoTransform] = None):
+        """Initialize an indexed dataset with optional additional transform.
+
+        Parameters:
+            dataset (ThermoDataset): Parent dataset to index into
+            indices (Sequence[int]): Sequence of indices to select from parent
+            transform (Optional[ThermoTransform]): Optional transform to apply after parent's transform
+        """
+        # Store parent dataset and indices
+        self.__dataset = dataset  # Original dataset
+        self.__indices = indices  # Indices for subset
+        self.__transform = transform  # Additional transform
+
+    def __len__(self) -> int:
+        """Return length of indexed dataset."""
+        return len(self.__indices)
+
+    def __getitem__(self, idx: int) -> DataContainer:
+        """Get an item with proper transform chain.
+        
+        Args:
+            idx (int): Index into the subset
+            
+        Returns:
+            DataContainer: Transformed data container
+        """
+        # Validate index
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+            
+        # Get data using parent dataset's underlying logic ==> Apply parent transform
+        data = self.__dataset[self.__indices[idx]]
+        
+        # Apply additional transform if specified
+        if self.__transform:
+            data = self.__transform(data)
+            
+        return data
+
+    @property
+    def files(self) -> List[str]:
+        """Return list of files corresponding to indexed subset."""
+        return [self.__dataset.files[i] for i in self.__indices]

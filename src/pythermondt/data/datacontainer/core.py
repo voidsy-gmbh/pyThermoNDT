@@ -25,12 +25,12 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         """
         super().__init__()
 
-        # If provided, initialize from a serialized HDF5 file. Else just initialize with a root node.
+        # Add the root node to the data structure
+        self.nodes["/"] = RootNode()
+
+        # If provided, initialize from a serialized HDF5 file.
         if hdf5_bytes:
             self.deserialize(hdf5_bytes)
-
-        else:
-            self.nodes["/"] = RootNode()
 
    # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):

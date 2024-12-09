@@ -15,11 +15,7 @@ class GroupOps(BaseOps):
             KeyError: If the parent group does not exist.
             KeyError: If the group already exists.
         """
-        key, parent, child = generate_key(path, name)
-
-        if self._is_groupnode(key):
-            raise KeyError(f"Group with name: '{child}' at the path: '{parent}' already exists.")
-
+        key, _, _ = generate_key(path, name)
         self.nodes[key] = GroupNode(name)
 
     def get_all_groups(self) -> List[str]:

@@ -67,9 +67,9 @@ def test_add_dataset(dataset_container:DataContainer, data:str | None, path:str,
     pytest.param(None)
 ])
 @pytest.mark.parametrize("path, name", [
-    pytest.param("/", "test_dataset0",), # add to an existing dataset in root
-    pytest.param("/testgroup", "test_dataset1"), # add to an existing dataset in a group
-    pytest.param("/testgroup/nestedgroup", "test_dataset2"), # add to an existing dataset in a nested group
+    pytest.param("/", "test_dataset0",), # In root
+    pytest.param("/testgroup", "test_dataset1"), # In group
+    pytest.param("/testgroup/nestedgroup", "test_dataset2"), # In nested group
 ])
 def test_add_dataset_existing(dataset_container:DataContainer, data:str, path:str, name:str, request:pytest.FixtureRequest):
     # Request testdata from the fixtures
@@ -92,9 +92,8 @@ def test_add_dataset_existing(dataset_container:DataContainer, data:str, path:st
 def test_add_dataset_invalid_path(dataset_container:DataContainer, path:str, name:str, sample_tensor:Tensor):
     # Try to add a dataset to a non-existent path
     with pytest.raises(KeyError):
-        print(dataset_container)
         dataset_container.add_dataset(path, name, sample_tensor)
-        print(dataset_container)
+
 
 # Test adding multiple datasets to the container
 @pytest.mark.parametrize("datasets", [

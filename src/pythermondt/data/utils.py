@@ -4,11 +4,11 @@ import itertools
 from collections.abc import Sequence
 from typing import Optional
 from torch import Generator, default_generator
-from .thermo_dataset import ThermoDataset
+from .thermo_dataset import ThermoDataset, IndexedThermoDataset
 from .thermo_subset import ThermoSubset
 from ..transforms import ThermoTransform
 
-def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[Sequence[Optional[ThermoTransform]]] = None, generator: Generator = default_generator) -> list[ThermoSubset]:
+def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[Sequence[Optional[ThermoTransform]]] = None, generator: Generator = default_generator) -> list[IndexedThermoDataset]:
     """ Split a dataset into random non-overlapping subsets of given lengths with optional transforms beeing applied.
 
     If a list of fractions that sum up to 1 is given, the lengths will be computed automatically as floor(frac * len(dataset)) for each fraction provided.
@@ -73,6 +73,6 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[
     # Create the subsets and return
     transforms = transforms if transforms else [None] * len(lengths)
     return [
-        ThermoSubset(dataset, indices[offset - length:offset], transform)
+        IndexedThermoDataset(dataset, indices[offset - length:offset], transform)
         for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths))
     ]

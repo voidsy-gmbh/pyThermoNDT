@@ -20,9 +20,6 @@ class DatasetOps(BaseOps):
             KeyError: If the dataset already exists.
         """
         key, parent, child = generate_key(path, name)
-
-        if self._is_datanode(key):
-            raise KeyError(f"Dataset with name: '{child}' at the path: '{parent}' already exists.")
         
         # Convert the numpy array to a PyTorch tensor ==> internally, the data is stored as a PyTorch tensor
         if isinstance(data, ndarray):

@@ -5,8 +5,135 @@ from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
 from ..units import generate_label
+from matplotlib.widgets import Slider, Button
+from typing import List, Tuple, Dict
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
+    class InteractiveAnalyzer:
+        def __init__(self, parent: 'VisualizationOps'):
+            """Initialize the interactive analyzer for thermographic data visualization.
+            
+            Args:
+                container: DataContainer with thermographic data
+            """
+            self.container = parent
+            self.tdata = parent.get_dataset('/Data/Tdata')
+            self.domain_values = parent.get_dataset('/MetaData/DomainValues')
+            self.data_unit = parent.get_unit('/Data/Tdata')
+            self.domain_unit = parent.get_unit('/MetaData/DomainValues')
+            
+            # Store selected points and their profiles
+            self.selected_points: List[Tuple[int, int]] = []
+            self.colors = ['red', 'blue', 'green', 'purple']  # Colors for up to 4 points
+            
+            # Create the main figure with two subplots
+            self.fig = plt.figure(figsize=(15, 6))
+            self.frame_ax = plt.subplot2grid((1, 2), (0, 0))
+            self.profile_ax = plt.subplot2grid((1, 2), (0, 1))
+            
+            # Initialize the frame display
+            self.current_frame = 0
+            self.frame_img = self.frame_ax.imshow(
+                self.tdata[..., self.current_frame],
+                aspect='auto',
+                cmap='plasma'
+            )
+            self.frame_ax.set_title(f'Frame {self.current_frame}')
+            
+            # Add colorbar
+            plt.colorbar(self.frame_img, ax=self.frame_ax)
+            
+            # Setup the slider
+            slider_ax = plt.axes((0.2, 0.02, 0.6, 0.03))
+            self.frame_slider = Slider(
+                ax=slider_ax,
+                label='Frame',
+                valmin=0,
+                valmax=self.tdata.shape[-1]-1,
+                valinit=0,
+                valstep=1
+            )
+            
+            # Setup the clear button
+            clear_ax = plt.axes((0.85, 0.02, 0.1, 0.03))
+            self.clear_button = Button(clear_ax, 'Clear Points')
+            
+            # Connect events
+            self.frame_slider.on_changed(self.update_frame)
+            self.clear_button.on_clicked(self.clear_points)
+            self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+            
+            # Setup the profile plot
+            self.profile_ax.set_xlabel(generate_label(self.domain_unit))
+            self.profile_ax.set_ylabel(generate_label(self.data_unit))
+            self.profile_ax.grid(True)
+            
+            plt.tight_layout()
+            
+        def update_frame(self, frame_idx: float):
+            """Update the displayed frame."""
+            # Extract frame data
+            self.current_frame = int(frame_idx)
+            frame_data = self.tdata[..., self.current_frame]
+
+            # Update data in the frame
+            self.frame_img.set_data(frame_data.numpy(force=True))
+            self.frame_ax.set_title(f'Frame {self.current_frame}')
+            self.frame_img.set_clim(frame_data.min().item(), frame_data.max().item()) # Update color limits
+                    
+            # Redraw points on the new frame
+            for idx, (x, y) in enumerate(self.selected_points):
+                self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
+                
+            self.fig.canvas.draw_idle()
+            
+        def on_click(self, event):
+            """Handle click events on the frame plot."""
+            if event.inaxes != self.frame_ax:
+                return
+                
+            if len(self.selected_points) >= 4:
+                print("Maximum number of points (4) reached. Clear points to add more.")
+                return
+                
+            x, y = int(event.xdata), int(event.ydata)
+            if x < 0 or y < 0 or x >= self.tdata.shape[1] or y >= self.tdata.shape[0]:
+                return
+                
+            # Add point and plot profile
+            color = self.colors[len(self.selected_points)]
+            self.selected_points.append((x, y))
+            
+            # Plot point on frame
+            self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
+            
+            # Plot temperature profile
+            profile = self.tdata[y, x, :]
+            self.profile_ax.plot(self.domain_values, profile, color=color, 
+                            label=f'Point ({x}, {y})')
+            self.profile_ax.legend()
+            
+            self.fig.canvas.draw_idle()
+            
+        def clear_points(self, event):
+            """Clear all selected points and profiles."""
+            self.selected_points.clear()
+            self.profile_ax.clear()
+            
+            # Reset profile plot
+            self.profile_ax.set_xlabel(generate_label(self.domain_unit))
+            self.profile_ax.set_ylabel(generate_label(self.data_unit))
+            self.profile_ax.grid(True)
+
+            # Remove points from frame plot
+            for artist in self.frame_ax.lines:
+                artist.remove()
+            
+            # Redraw frame without points
+            self.frame_img.set_data(self.tdata[..., self.current_frame])
+            
+            self.fig.canvas.draw_idle()
+
     def show_frame(self, frame_number: int, option: str="", cmap: str = 'plasma'):
         """ Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
@@ -91,4 +218,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         plt.title(f'Profile of Pixel: {pixel_pos_x},{pixel_pos_y}')
         plt.xlabel(generate_label(domain_unit))
         plt.ylabel(generate_label(data_unit))   
-        plt.show() 
+        plt.show()
+
+    def analyse_interactive(self):
+        """Launch interactive analysis session for thermographic data visualization."""
+        self.InteractiveAnalyzer(self)
+        plt.show()

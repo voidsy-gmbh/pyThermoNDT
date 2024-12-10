@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import torch
+from matplotlib.widgets import Slider, Button
+from matplotlib.colors import Normalize
+from typing import List, Tuple
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
 from ..units import generate_label
-from matplotlib.widgets import Slider, Button
-from typing import List, Tuple, Dict
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     class InteractiveAnalyzer:
@@ -33,15 +34,19 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             
             # Initialize the frame display
             self.current_frame = 0
+            self.current_frame_data = self.tdata[..., self.current_frame].squeeze()
             self.frame_img = self.frame_ax.imshow(
-                self.tdata[..., self.current_frame],
+                self.current_frame_data,
                 aspect='auto',
-                cmap='plasma'
+                cmap='plasma',
+                vmin=self.tdata.min(),
+                vmax=self.tdata.max()
             )
             self.frame_ax.set_title(f'Frame {self.current_frame}')
             
-            # Add colorbar
-            plt.colorbar(self.frame_img, ax=self.frame_ax)
+            # Add colorbar with formatter to avoid offset
+            formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
+            self.colorbar = plt.colorbar(self.frame_img, ax=self.frame_ax, format=formatter)
             
             # Setup the slider
             slider_ax = plt.axes((0.2, 0.02, 0.6, 0.03))
@@ -74,18 +79,21 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             """Update the displayed frame."""
             # Extract frame data
             self.current_frame = int(frame_idx)
-            frame_data = self.tdata[..., self.current_frame]
+            self.current_frame_data = self.tdata[..., self.current_frame].squeeze()
 
-            # Update data in the frame
-            self.frame_img.set_data(frame_data)
-            self.frame_ax.set_title(f'Frame {self.current_frame}')
+            # Update image data
+            self.frame_img.set_data(self.current_frame_data)
+
+            # Get the colorbar limits according to min/max of the current frame
+            vmin = round(self.current_frame_data.min(), 8)
+            vmax = round(self.current_frame_data.max(), 8)
+
+            # Directly set the image norm, because set_clim does call color sanitazion inside, which can lead to wrong updates
+            self.frame_img.norm = Normalize(vmin, vmax)
                     
             # Redraw points on the new frame
             for idx, (x, y) in enumerate(self.selected_points):
                 self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
-
-            # Update color limits
-            self.frame_img.set_clim(frame_data.min().item(), frame_data.max().item())
                 
             self.fig.canvas.draw_idle()
             

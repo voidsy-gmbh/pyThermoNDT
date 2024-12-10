@@ -4,7 +4,6 @@ import torch
 from matplotlib.widgets import Slider, Button, CheckButtons
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 from typing import List, Tuple
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
@@ -12,6 +11,9 @@ from .attribute_ops import AttributeOps
 from ..units import generate_label
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
+    import matplotlib
+    matplotlib.use('TkAgg')  # Use TkAgg backend for interactive plotting
+    
     class InteractiveAnalyzer:
         def __init__(self, parent: 'VisualizationOps'):
             """Initialize the interactive analyzer for thermographic data visualization.

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import torch
-from matplotlib.widgets import Slider, Button, Cursor
+from matplotlib.widgets import Slider, Button
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from typing import List, Tuple
@@ -18,21 +18,19 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             Args:
                 container: DataContainer with thermographic data
             """
+            # 1.) Retrieve data from the container
             self.container = parent
             self.tdata = parent.get_dataset('/Data/Tdata').numpy(force=True)
             self.domain_values = parent.get_dataset('/MetaData/DomainValues').numpy(force=True)
             self.data_unit = parent.get_unit('/Data/Tdata')
             self.domain_unit = parent.get_unit('/MetaData/DomainValues')
             
-            # Store selected points and their profiles
-            self.selected_points: List[Tuple[int, int]] = []
-            self.colors = ['red', 'blue', 'green', 'purple']  # Colors for up to 4 points
-            
+            #2.) Setup the figure, axes and colorbar
             # Create the main figure with two subplots
             self.fig = plt.figure(figsize=(15, 6))
             self.frame_ax = plt.subplot2grid((1, 2), (0, 0))
             self.profile_ax = plt.subplot2grid((1, 2), (0, 1))
-            
+
             # Initialize the frame display
             self.current_frame = 0
             self.current_frame_data = self.tdata[..., self.current_frame].squeeze()
@@ -44,11 +42,17 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 vmax=self.tdata.max()
             )
             self.frame_ax.set_title(f'Frame {self.current_frame}')
-            
+
+            # Setup the profile plot
+            self.profile_ax.set_xlabel(generate_label(self.domain_unit))
+            self.profile_ax.set_ylabel(generate_label(self.data_unit))
+            self.profile_ax.grid(True)
+
             # Add colorbar with formatter to avoid offset
             formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
             self.colorbar = plt.colorbar(self.frame_img, ax=self.frame_ax, format=formatter)
-            
+
+            # 3.) Setup the interactive elements
             # Setup the slider
             slider_ax = plt.axes((0.2, 0.02, 0.6, 0.03))
             self.frame_slider = Slider(
@@ -63,25 +67,19 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Setup the clear button
             clear_ax = plt.axes((0.85, 0.02, 0.1, 0.03))
             self.clear_button = Button(clear_ax, 'Clear Points')
+
+            # 4.) Initialize state variables
+            # Store selected points and their profiles
+            self.selected_points: List[Tuple[int, int]] = []
+            self.colors = ['red', 'blue', 'green', 'purple']  # Colors for up to 4 points
+            self.cursor_annotation = None # Create mouse annotiation
             
-            # Connect events
+            # 5.) Connect events
             self.frame_slider.on_changed(self.update_frame)
             self.clear_button.on_clicked(self.clear_points)
             self.fig.canvas.mpl_connect('button_press_event', self.on_click)
-            
-            # Setup the profile plot
-            self.profile_ax.set_xlabel(generate_label(self.domain_unit))
-            self.profile_ax.set_ylabel(generate_label(self.data_unit))
-            self.profile_ax.grid(True)
-
-            # Create annotated cursor
-            self.cursor_annotation = None
-            # self.cursor = Cursor(self.frame_ax, useblit=True, color='white', linewidth=1)
-            
-            # Connect mouse motion event
             self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
-                    
-            plt.tight_layout()
+
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""

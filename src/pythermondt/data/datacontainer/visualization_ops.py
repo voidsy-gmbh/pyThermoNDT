@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import torch
-from matplotlib.widgets import Slider, Button
+from matplotlib.widgets import Slider, Button, CheckButtons
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -69,6 +69,14 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             clear_ax = plt.axes((0.85, 0.02, 0.1, 0.03))
             self.clear_button = Button(clear_ax, 'Clear Points')
 
+            # Create checkbox for annotation toggle
+            check_ax = plt.axes((0.85, 0.07, 0.1, 0.03))  # Position below clear button
+            self.annotation_toggle = CheckButtons(
+                check_ax, 
+                ['Show Value'], 
+                [True]  # Initially checked
+            )
+
             # 4.) Initialize state variables
             # Store selected points and their profiles
             self.selected_points: List[Tuple[int, int]] = []
@@ -91,6 +99,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.clear_button.on_clicked(self.clear_points)
             self.fig.canvas.mpl_connect('button_press_event', self.on_click)
             self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+            self.annotation_toggle.on_clicked(self.toggle_annotation)
 
             # 6.) Initialze blitting for faster rendering (if possible)
             self.fig.canvas.draw()
@@ -101,24 +110,44 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             else:
                 self.background = None
 
+        def toggle_annotation(self, event):
+            """Toggle cursor annotation on/off."""
+            # Store visibility state
+            self.show_annotation = self.annotation_toggle.get_status()[0]
+            
+            # Hide annotation if disabled
+            if not self.show_annotation:
+                self.cursor_annotation_box.set_visible(False)
+                self.fig.canvas.draw_idle()
+
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
             if event.inaxes != self.frame_ax:
                 self.cursor_annotation_box.set_visible(False)
-                self.fig.canvas.draw_idle()
+                if self.background is not None and isinstance(self.fig.canvas, FigureCanvasAgg):
+                    self.fig.canvas.restore_region(self.background)
+                    self.fig.canvas.blit(self.frame_ax.bbox)
                 return
 
+            # Get mouse coordinates
             x, y = int(round(event.xdata)), int(round(event.ydata))
             
             if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
                 # Get current value
                 val = self.current_frame_data[y, x]
                 
-                # Update existing annotation
-                self.cursor_annotation_box.xy = (x, y)
-                self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
-                self.cursor_annotation_box.set_visible(True)
-                self.fig.canvas.draw_idle()
+                if self.background is not None and isinstance(self.fig.canvas, FigureCanvasAgg):
+                    # Restore background
+                    self.fig.canvas.restore_region(self.background)
+                    
+                    # Update annotation
+                    self.cursor_annotation_box.xy = (x, y)
+                    self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
+                    self.cursor_annotation_box.set_visible(True)
+                    
+                    # Draw annotation and blit
+                    self.frame_ax.draw_artist(self.cursor_annotation_box)
+                    self.fig.canvas.blit(self.frame_ax.bbox)
             
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""

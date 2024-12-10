@@ -105,17 +105,18 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.fig.canvas.draw_idle()
 
         def toggle_annotation(self, event):
-            """Toggle cursor annotation on/off."""
-            # Store visibility state
-            self.show_annotation = self.annotation_toggle.get_status()[0]
-            
+            """Toggle cursor annotation on/off."""           
             # Hide annotation if disabled
-            if not self.show_annotation:
+            if not self.annotation_toggle.get_status()[0]:
                 self.cursor_annotation_box.set_visible(False)
                 self.fig.canvas.draw_idle()
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
+            # Check if annotation is enabled
+            if not self.annotation_toggle.get_status()[0]:
+                return
+
             if event.inaxes != self.frame_ax:
                 self.cursor_annotation_box.set_visible(False)
                 self.fig.canvas.draw_idle()

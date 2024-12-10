@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import torch
-from matplotlib.widgets import Slider, Button
+from matplotlib.widgets import Slider, Button, Cursor
 from matplotlib.colors import Normalize
+from matplotlib.offsetbox import AnnotationBbox, TextArea
 from typing import List, Tuple
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
@@ -72,8 +73,50 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.profile_ax.set_xlabel(generate_label(self.domain_unit))
             self.profile_ax.set_ylabel(generate_label(self.data_unit))
             self.profile_ax.grid(True)
+
+            # Create annotated cursor
+            self.cursor_annotation = None
+            # self.cursor = Cursor(self.frame_ax, useblit=True, color='white', linewidth=1)
             
+            # Connect mouse motion event
+            self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+                    
             plt.tight_layout()
+
+        def on_mouse_move(self, event):
+            """Update annotation when mouse moves over the image."""
+            if event.inaxes != self.frame_ax:
+                if self.cursor_annotation:
+                    self.cursor_annotation.remove()
+                    self.cursor_annotation = None
+                return
+
+            x, y = int(event.xdata), int(event.ydata)
+            
+            # Check bounds
+            if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
+                # Get value at cursor position
+                val = self.current_frame_data[y, x]
+                
+                # Create or update annotation
+                if self.cursor_annotation:
+                    self.cursor_annotation.remove()
+                
+                # Create text with value
+                text = f'({x}, {y})\n{val:.4f}'
+                offsetbox = TextArea(text, textprops={'color': 'white', 'backgroundcolor': 'black'})
+                
+                # Position annotation near cursor
+                self.cursor_annotation = AnnotationBbox(
+                    offsetbox, 
+                    (x, y),
+                    xybox=(10, 10),  # offset from cursor
+                    boxcoords="offset points",
+                    frameon=False
+                )
+                
+                self.frame_ax.add_artist(self.cursor_annotation)
+                self.fig.canvas.draw_idle()
             
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
@@ -140,7 +183,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 artist.remove()
             
             # Redraw frame without points
-            self.frame_img.set_data(self.tdata[..., self.current_frame])
+            self.frame_img.set_data(self.current_frame_data)
             
             self.fig.canvas.draw_idle()
 

@@ -4,6 +4,7 @@ import torch
 from matplotlib.widgets import Slider, Button
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from typing import List, Tuple
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
@@ -72,7 +73,18 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Store selected points and their profiles
             self.selected_points: List[Tuple[int, int]] = []
             self.colors = ['red', 'blue', 'green', 'purple']  # Colors for up to 4 points
-            self.cursor_annotation = None # Create mouse annotiation
+
+            # Initialize annotation box once
+            self.cursor_annotation_text = TextArea('', textprops={'color': 'white', 'backgroundcolor': 'black'})
+            self.cursor_annotation_box = AnnotationBbox(
+                self.cursor_annotation_text,
+                (0, 0),  # Initial position
+                xybox=(10, 10),
+                boxcoords="offset points",
+                frameon=False
+            )
+            self.cursor_annotation_box.set_visible(False)  # Hide initially
+            self.frame_ax.add_artist(self.cursor_annotation_box)
             
             # 5.) Connect events
             self.frame_slider.on_changed(self.update_frame)
@@ -80,40 +92,32 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.fig.canvas.mpl_connect('button_press_event', self.on_click)
             self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
 
+            # 6.) Initialze blitting for faster rendering (if possible)
+            self.fig.canvas.draw()
+            if isinstance(self.fig.canvas, FigureCanvasAgg):
+                self.cursor_annotation_box.set_visible(False)
+                self.background = self.fig.canvas.copy_from_bbox(self.frame_ax.bbox)
+                self.cursor_annotation_box.set_visible(True)
+            else:
+                self.background = None
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
             if event.inaxes != self.frame_ax:
-                if self.cursor_annotation:
-                    self.cursor_annotation.remove()
-                    self.cursor_annotation = None
+                self.cursor_annotation_box.set_visible(False)
+                self.fig.canvas.draw_idle()
                 return
 
-            x, y = int(event.xdata), int(event.ydata)
+            x, y = int(round(event.xdata)), int(round(event.ydata))
             
-            # Check bounds
             if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
-                # Get value at cursor position
+                # Get current value
                 val = self.current_frame_data[y, x]
                 
-                # Create or update annotation
-                if self.cursor_annotation:
-                    self.cursor_annotation.remove()
-                
-                # Create text with value
-                text = f'({x}, {y})\n{val:.4f}'
-                offsetbox = TextArea(text, textprops={'color': 'white', 'backgroundcolor': 'black'})
-                
-                # Position annotation near cursor
-                self.cursor_annotation = AnnotationBbox(
-                    offsetbox, 
-                    (x, y),
-                    xybox=(10, 10),  # offset from cursor
-                    boxcoords="offset points",
-                    frameon=False
-                )
-                
-                self.frame_ax.add_artist(self.cursor_annotation)
+                # Update existing annotation
+                self.cursor_annotation_box.xy = (x, y)
+                self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
+                self.cursor_annotation_box.set_visible(True)
                 self.fig.canvas.draw_idle()
             
         def update_frame(self, frame_idx: float):

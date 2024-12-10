@@ -102,13 +102,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.annotation_toggle.on_clicked(self.toggle_annotation)
 
             # 6.) Initialze blitting for faster rendering (if possible)
-            self.fig.canvas.draw()
-            if isinstance(self.fig.canvas, FigureCanvasAgg):
-                self.cursor_annotation_box.set_visible(False)
-                self.background = self.fig.canvas.copy_from_bbox(self.frame_ax.bbox)
-                self.cursor_annotation_box.set_visible(True)
-            else:
-                self.background = None
+            self.fig.canvas.draw_idle()
 
         def toggle_annotation(self, event):
             """Toggle cursor annotation on/off."""
@@ -124,9 +118,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             """Update annotation when mouse moves over the image."""
             if event.inaxes != self.frame_ax:
                 self.cursor_annotation_box.set_visible(False)
-                if self.background is not None and isinstance(self.fig.canvas, FigureCanvasAgg):
-                    self.fig.canvas.restore_region(self.background)
-                    self.fig.canvas.blit(self.frame_ax.bbox)
+                self.fig.canvas.draw_idle()
                 return
 
             # Get mouse coordinates
@@ -135,19 +127,13 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
                 # Get current value
                 val = self.current_frame_data[y, x]
-                
-                if self.background is not None and isinstance(self.fig.canvas, FigureCanvasAgg):
-                    # Restore background
-                    self.fig.canvas.restore_region(self.background)
-                    
-                    # Update annotation
-                    self.cursor_annotation_box.xy = (x, y)
-                    self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
-                    self.cursor_annotation_box.set_visible(True)
-                    
-                    # Draw annotation and blit
-                    self.frame_ax.draw_artist(self.cursor_annotation_box)
-                    self.fig.canvas.blit(self.frame_ax.bbox)
+
+                # Update annotation
+                self.cursor_annotation_box.xy = (x, y)
+                self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
+                self.cursor_annotation_box.set_visible(True)
+            
+                self.fig.canvas.draw_idle()
             
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
@@ -169,6 +155,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             for idx, (x, y) in enumerate(self.selected_points):
                 self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
                 
+            # Redraw
             self.fig.canvas.draw_idle()
             
         def on_click(self, event):

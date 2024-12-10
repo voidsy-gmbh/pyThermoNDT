@@ -17,8 +17,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 container: DataContainer with thermographic data
             """
             self.container = parent
-            self.tdata = parent.get_dataset('/Data/Tdata')
-            self.domain_values = parent.get_dataset('/MetaData/DomainValues')
+            self.tdata = parent.get_dataset('/Data/Tdata').numpy(force=True)
+            self.domain_values = parent.get_dataset('/MetaData/DomainValues').numpy(force=True)
             self.data_unit = parent.get_unit('/Data/Tdata')
             self.domain_unit = parent.get_unit('/MetaData/DomainValues')
             
@@ -77,13 +77,15 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             frame_data = self.tdata[..., self.current_frame]
 
             # Update data in the frame
-            self.frame_img.set_data(frame_data.numpy(force=True))
+            self.frame_img.set_data(frame_data)
             self.frame_ax.set_title(f'Frame {self.current_frame}')
-            self.frame_img.set_clim(frame_data.min().item(), frame_data.max().item()) # Update color limits
                     
             # Redraw points on the new frame
             for idx, (x, y) in enumerate(self.selected_points):
                 self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
+
+            # Update color limits
+            self.frame_img.set_clim(frame_data.min().item(), frame_data.max().item())
                 
             self.fig.canvas.draw_idle()
             

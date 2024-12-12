@@ -180,7 +180,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Hide annotation if disabled
             if not self.annotation_toggle.get_status()[0]:
                 self.cursor_annotation_box.set_visible(False)
-                self.fig.canvas.draw_idle()
+                self.blit_manager.update()
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
@@ -190,7 +190,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             if event.inaxes != self.frame_ax:
                 self.cursor_annotation_box.set_visible(False)
-                self.fig.canvas.draw_idle()
+                self.blit_manager.update()
                 return
 
             # Get mouse coordinates
@@ -205,7 +205,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
                 self.cursor_annotation_box.set_visible(True)
             
-                self.fig.canvas.draw_idle()
+                self.blit_manager.update()
             
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
@@ -223,12 +223,13 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Directly set the image norm, because set_clim does call color sanitazion inside, which can lead to wrong updates
             self.frame_img.norm = Normalize(vmin, vmax)
                     
-            # Redraw points on the new frame
+            # Add points back to the frame plot using blitting
             for idx, (x, y) in enumerate(self.selected_points):
-                self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
+                point = self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
+                self.blit_manager.add_artist(point[0])
                 
-            # Redraw
-            self.fig.canvas.draw_idle()
+            # Redraw using blitting
+            self.blit_manager.update()
             
         def on_click(self, event):
             """Handle click events on the frame plot."""
@@ -256,7 +257,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                             label=f'Point ({x}, {y})')
             self.profile_ax.legend()
             
-            self.fig.canvas.draw_idle()
+            self.blit_manager.update()
             
         def clear_points(self, event):
             """Clear all selected points and profiles."""
@@ -268,14 +269,16 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.profile_ax.set_ylabel(generate_label(self.data_unit))
             self.profile_ax.grid(True)
 
-            # Remove points from frame plot
-            for artist in self.frame_ax.lines:
-                artist.remove()
+            # Remove points from frame plot and reset blit manager
+            # self.frame_ax.lines = []
+            self.blit_manager = VisualizationOps.BlitManager(
+                self.fig.canvas,
+                [self.frame_img, self.cursor_annotation_box]
+            )
             
             # Redraw frame without points
             self.frame_img.set_data(self.current_frame_data)
-            
-            self.fig.canvas.draw_idle()
+            self.blit_manager.update()
 
     def show_frame(self, frame_number: int, option: str="", cmap: str = 'plasma'):
         """ Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.

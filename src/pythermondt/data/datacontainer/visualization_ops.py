@@ -80,7 +80,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         def __init__(self, parent: 'VisualizationOps'):
             """Initialize the interactive analyzer for thermographic data visualization.
             
-            Args:
+            Parameters:
                 container: DataContainer with thermographic data
             """
             # 1.) Retrieve data from the container
@@ -157,6 +157,16 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             )
             self.cursor_annotation_box.set_visible(False)  # Hide initially
             self.frame_ax.add_artist(self.cursor_annotation_box)
+
+            # 5.) Initialize blitting
+            self.blit_manager = VisualizationOps.BlitManager(
+                self.fig.canvas,
+                [self.frame_img, self.cursor_annotation_box]
+            )
+            
+            # Make sure our window is on the screen and drawn
+            plt.show(block=False)
+            plt.pause(0.1)
             
             # 6.) Connect events
             self.frame_slider.on_changed(self.update_frame)
@@ -164,9 +174,6 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.fig.canvas.mpl_connect('button_press_event', self.on_click)
             self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
             self.annotation_toggle.on_clicked(self.toggle_annotation)
-
-            # 6.) Initialze blitting for faster rendering (if possible)
-            self.fig.canvas.draw_idle()
 
         def toggle_annotation(self, event):
             """Toggle cursor annotation on/off."""           

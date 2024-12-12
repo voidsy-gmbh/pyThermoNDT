@@ -249,7 +249,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.selected_points.append((x, y))
             
             # Plot point on frame
-            self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
+            point = self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
+            self.blit_manager.add_artist(point[0])
             
             # Plot temperature profile
             profile = self.tdata[y, x, :]
@@ -257,26 +258,36 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                             label=f'Point ({x}, {y})')
             self.profile_ax.legend()
             
+            # Update using blitting
             self.blit_manager.update()
             
         def clear_points(self, event):
             """Clear all selected points and profiles."""
+            # Clear the selected points list
             self.selected_points.clear()
+            
+            # Clear the profile plot
             self.profile_ax.clear()
             
-            # Reset profile plot
+            # Reset profile plot appearance
             self.profile_ax.set_xlabel(generate_label(self.domain_unit))
             self.profile_ax.set_ylabel(generate_label(self.data_unit))
             self.profile_ax.grid(True)
 
-            # Remove points from frame plot and reset blit manager
-            # self.frame_ax.lines = []
+            # Remove all line artists from frame plot
+            for line in self.frame_ax.lines:
+                line.remove()
+
+            # Create a new blit manager with just the base animated artists
             self.blit_manager = VisualizationOps.BlitManager(
                 self.fig.canvas,
                 [self.frame_img, self.cursor_annotation_box]
             )
             
-            # Redraw frame without points
+            # Force a complete redraw to clear any remaining artifacts
+            self.fig.canvas.draw()
+            
+            # Update the frame display
             self.frame_img.set_data(self.current_frame_data)
             self.blit_manager.update()
 

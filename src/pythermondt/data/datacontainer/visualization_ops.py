@@ -4,7 +4,8 @@ import torch
 from matplotlib.widgets import Slider, Button, CheckButtons
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
-from typing import List, Tuple
+from matplotlib.artist import Artist
+from typing import List, Tuple, Iterable
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
@@ -13,6 +14,67 @@ from ..units import generate_label
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     import matplotlib
     matplotlib.use('TkAgg')  # Use TkAgg backend for interactive plotting
+
+    class BlitManager:
+        """ Inner class to manage efficient rendering of animated artists in a matplotlib canvas."""
+        def __init__(self, canvas, animated_artists: Iterable[Artist] = ()):
+            """Manage the rendering of animated artists for efficient updates.
+            
+            Parameters:
+                canvas (matplotlib.backend_bases.FigureCanvasBase): The canvas to manage.
+                animated_artists (Iterable[Artist]): A collection of artists to manage.
+            """
+            self.canvas = canvas
+            self._bg = None
+            self._artists = []
+
+            # Add initial artists
+            for a in animated_artists:
+                self.add_artist(a)
+            
+            # Grab the background on every draw
+            self.cid = canvas.mpl_connect("draw_event", self.on_draw)
+
+        def on_draw(self, event):
+            """Callback to register with 'draw_event'."""
+            cv = self.canvas
+            if event is not None:
+                if event.canvas != cv:
+                    raise RuntimeError
+            self._bg = cv.copy_from_bbox(cv.figure.bbox)
+            self._draw_animated()
+
+        def add_artist(self, art: Artist):
+            """Add an artist to be managed."""
+            if art.figure != self.canvas.figure:
+                raise RuntimeError
+            art.set_animated(True)
+            self._artists.append(art)
+
+        def _draw_animated(self):
+            """Draw all of the animated artists."""
+            fig = self.canvas.figure
+            for a in self._artists:
+                fig.draw_artist(a)
+
+        def update(self):
+            """Update the screen with animated artists."""
+            cv = self.canvas
+            fig = cv.figure
+            
+            # Paranoia in case we missed the draw event
+            if self._bg is None:
+                self.on_draw(None)
+            else:
+                # Restore the background
+                cv.restore_region(self._bg)
+                # Draw all of the animated artists
+                self._draw_animated()
+                # Update the GUI state
+                cv.blit(fig.bbox)
+            
+            # Let the GUI event loop process anything it has to do
+            cv.flush_events()
     
     class InteractiveAnalyzer:
         def __init__(self, parent: 'VisualizationOps'):
@@ -96,7 +158,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.cursor_annotation_box.set_visible(False)  # Hide initially
             self.frame_ax.add_artist(self.cursor_annotation_box)
             
-            # 5.) Connect events
+            # 6.) Connect events
             self.frame_slider.on_changed(self.update_frame)
             self.clear_button.on_clicked(self.clear_points)
             self.fig.canvas.mpl_connect('button_press_event', self.on_click)

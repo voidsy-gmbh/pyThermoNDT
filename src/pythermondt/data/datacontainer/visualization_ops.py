@@ -1,12 +1,214 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import torch
+import numpy as np
+from matplotlib.widgets import Slider, Button, CheckButtons
+from matplotlib.colors import Normalize
+from matplotlib.offsetbox import AnnotationBbox, TextArea
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from typing import List, Tuple
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
 from ..units import generate_label
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
+    class InteractiveAnalyzer:
+        def __init__(self, parent: 'VisualizationOps'):
+            """Initialize the interactive analyzer for thermographic data visualization.
+            
+            Args:
+                container: DataContainer with thermographic data
+            """
+            # 1.) Retrieve data from the container
+            self.container = parent
+            # Transpose to (frame, y, x) for faster access - this avoids the need to squeeze the data
+            self.tdata = parent.get_dataset('/Data/Tdata').numpy(force=True).transpose(2, 0, 1)
+            self.domain_values = parent.get_dataset('/MetaData/DomainValues').numpy(force=True)
+            self.data_unit = parent.get_unit('/Data/Tdata')
+            self.domain_unit = parent.get_unit('/MetaData/DomainValues')
+            
+            #2.) Setup the figure, axes and colorbar
+            # Create the main figure with two subplots
+            self.fig = plt.figure(figsize=(15, 6))
+            self.frame_ax = plt.subplot2grid((1, 2), (0, 0))
+            self.profile_ax = plt.subplot2grid((1, 2), (0, 1))
+
+            # Initialize the frame display
+            self.current_frame = 0 #type: int
+            self.current_frame_data = self.tdata[self.current_frame] #type: np.ndarray
+            self.frame_img = self.frame_ax.imshow(
+                self.current_frame_data,
+                aspect='auto',
+                cmap='plasma',
+                vmin=self.tdata.min(),
+                vmax=self.tdata.max()
+            )
+            self.frame_ax.set_title(f'Frame {self.current_frame}')
+
+            # Setup the profile plot
+            self.profile_ax.set_xlabel(generate_label(self.domain_unit))
+            self.profile_ax.set_ylabel(generate_label(self.data_unit))
+            self.profile_ax.grid(True)
+
+            # Add colorbar with formatter to avoid offset
+            formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
+            self.colorbar = plt.colorbar(self.frame_img, ax=self.frame_ax, format=formatter)
+
+            # 3.) Setup the interactive elements
+            # Setup the slider
+            slider_ax = plt.axes((0.2, 0.02, 0.6, 0.03))
+            self.frame_slider = Slider(
+                ax=slider_ax,
+                label='Frame',
+                valmin=0,
+                valmax=self.tdata.shape[0]-1,
+                valinit=0,
+                valstep=1
+            )
+            
+            # Setup the clear button
+            clear_ax = plt.axes((0.85, 0.02, 0.1, 0.03))
+            self.clear_button = Button(clear_ax, 'Clear Points')
+
+            # Create checkbox for annotation toggle
+            check_ax = plt.axes((0.85, 0.07, 0.1, 0.03))  # Position below clear button
+            self.annotation_toggle = CheckButtons(
+                check_ax, 
+                ['Show Value'], 
+                [True]  # Initially checked
+            )
+
+            # 4.) Initialize state variables
+            # Store selected points and their profiles
+            self.selected_points: List[Tuple[int, int]] = []
+            self.colors = ['red', 'blue', 'green', 'purple']  # Colors for up to 4 points
+
+            # Initialize annotation box once
+            self.cursor_annotation_text = TextArea('', textprops={'color': 'white', 'backgroundcolor': 'black'})
+            self.cursor_annotation_box = AnnotationBbox(
+                self.cursor_annotation_text,
+                (0, 0),  # Initial position
+                xybox=(10, 10),
+                boxcoords="offset points",
+                frameon=False
+            )
+            self.cursor_annotation_box.set_visible(False)  # Hide initially
+            self.frame_ax.add_artist(self.cursor_annotation_box)
+            
+            # 5.) Connect events
+            self.frame_slider.on_changed(self.update_frame)
+            self.clear_button.on_clicked(self.clear_points)
+            self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+            self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+            self.annotation_toggle.on_clicked(self.toggle_annotation)
+
+            # 6.) Initialze blitting for faster rendering (if possible)
+            self.fig.canvas.draw_idle()
+
+        def toggle_annotation(self, event):
+            """Toggle cursor annotation on/off."""           
+            # Hide annotation if disabled
+            if not self.annotation_toggle.get_status()[0]:
+                self.cursor_annotation_box.set_visible(False)
+                self.fig.canvas.draw_idle()
+
+        def on_mouse_move(self, event):
+            """Update annotation when mouse moves over the image."""
+            # Check if annotation is enabled
+            if not self.annotation_toggle.get_status()[0]:
+                return
+
+            if event.inaxes != self.frame_ax:
+                self.cursor_annotation_box.set_visible(False)
+                self.fig.canvas.draw_idle()
+                return
+
+            # Get mouse coordinates
+            x, y = int(round(event.xdata)), int(round(event.ydata))
+            
+            if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
+                # Get current value
+                val = self.current_frame_data[y, x]
+
+                # Update annotation
+                self.cursor_annotation_box.xy = (x, y)
+                self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
+                self.cursor_annotation_box.set_visible(True)
+            
+                self.fig.canvas.draw_idle()
+            
+        def update_frame(self, frame_idx: float):
+            """Update the displayed frame."""
+            # Extract frame data
+            self.current_frame = int(frame_idx)
+            self.current_frame_data = self.tdata[self.current_frame].squeeze()
+
+            # Update image data
+            self.frame_img.set_data(self.current_frame_data)
+
+            # Get the colorbar limits according to min/max of the current frame
+            vmin = round(self.current_frame_data.min(), 8)
+            vmax = round(self.current_frame_data.max(), 8)
+
+            # Directly set the image norm, because set_clim does call color sanitazion inside, which can lead to wrong updates
+            self.frame_img.norm = Normalize(vmin, vmax)
+                    
+            # Redraw points on the new frame
+            for idx, (x, y) in enumerate(self.selected_points):
+                self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
+                
+            # Redraw
+            self.fig.canvas.draw_idle()
+            
+        def on_click(self, event):
+            """Handle click events on the frame plot."""
+            if event.inaxes != self.frame_ax:
+                return
+                
+            if len(self.selected_points) >= 4:
+                print("Maximum number of points (4) reached. Clear points to add more.")
+                return
+            
+            # Check if click is within frame boundaries
+            x, y = int(event.xdata), int(event.ydata)
+            if not 0 <= y < self.current_frame_data.shape[0] or not 0 <= x < self.current_frame_data.shape[1]:
+                return
+                
+            # Add point and plot profile
+            color = self.colors[len(self.selected_points)]
+            self.selected_points.append((x, y))
+            
+            # Plot point on frame
+            self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
+            
+            # Plot temperature profile
+            profile = self.tdata[:, y, x]
+            self.profile_ax.plot(self.domain_values, profile, color=color, 
+                            label=f'Point ({x}, {y})')
+            self.profile_ax.legend()
+            
+            self.fig.canvas.draw_idle()
+            
+        def clear_points(self, event):
+            """Clear all selected points and profiles."""
+            self.selected_points.clear()
+            self.profile_ax.clear()
+            
+            # Reset profile plot
+            self.profile_ax.set_xlabel(generate_label(self.domain_unit))
+            self.profile_ax.set_ylabel(generate_label(self.data_unit))
+            self.profile_ax.grid(True)
+
+            # Remove points from frame plot
+            for artist in self.frame_ax.lines:
+                artist.remove()
+            
+            # Redraw frame without points
+            self.frame_img.set_data(self.current_frame_data)
+            
+            self.fig.canvas.draw_idle()
+
     def show_frame(self, frame_number: int, option: str="", cmap: str = 'plasma'):
         """ Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
@@ -91,4 +293,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         plt.title(f'Profile of Pixel: {pixel_pos_x},{pixel_pos_y}')
         plt.xlabel(generate_label(domain_unit))
         plt.ylabel(generate_label(data_unit))   
-        plt.show() 
+        plt.show()
+
+    def analyse_interactive(self):
+        """Launch interactive analysis session for thermographic data visualization."""
+        self.InteractiveAnalyzer(self)
+        plt.show()

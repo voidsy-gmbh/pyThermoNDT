@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import torch
+import numpy as np
 from matplotlib.widgets import Slider, Button, CheckButtons
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
@@ -33,8 +34,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.profile_ax = plt.subplot2grid((1, 2), (0, 1))
 
             # Initialize the frame display
-            self.current_frame = 0
-            self.current_frame_data = self.tdata[..., self.current_frame].squeeze()
+            self.current_frame = 0 #type: int
+            self.current_frame_data = self.tdata[..., self.current_frame].squeeze() #type: np.ndarray
             self.frame_img = self.frame_ax.imshow(
                 self.current_frame_data,
                 aspect='auto',

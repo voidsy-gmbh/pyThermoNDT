@@ -4,83 +4,19 @@ import torch
 from matplotlib.widgets import Slider, Button, CheckButtons
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
-from matplotlib.artist import Artist
-from typing import List, Tuple, Iterable
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from typing import List, Tuple
 from .group_ops import GroupOps
 from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
 from ..units import generate_label
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
-    import matplotlib
-    matplotlib.use('TkAgg')  # Use TkAgg backend for interactive plotting
-
-    class BlitManager:
-        """ Inner class to manage efficient rendering of animated artists in a matplotlib canvas."""
-        def __init__(self, canvas, animated_artists: Iterable[Artist] = ()):
-            """Manage the rendering of animated artists for efficient updates.
-            
-            Parameters:
-                canvas (matplotlib.backend_bases.FigureCanvasBase): The canvas to manage.
-                animated_artists (Iterable[Artist]): A collection of artists to manage.
-            """
-            self.canvas = canvas
-            self._bg = None
-            self._artists = []
-
-            # Add initial artists
-            for a in animated_artists:
-                self.add_artist(a)
-            
-            # Grab the background on every draw
-            self.cid = canvas.mpl_connect("draw_event", self.on_draw)
-
-        def on_draw(self, event):
-            """Callback to register with 'draw_event'."""
-            cv = self.canvas
-            if event is not None:
-                if event.canvas != cv:
-                    raise RuntimeError
-            self._bg = cv.copy_from_bbox(cv.figure.bbox)
-            self._draw_animated()
-
-        def add_artist(self, art: Artist):
-            """Add an artist to be managed."""
-            if art.figure != self.canvas.figure:
-                raise RuntimeError
-            art.set_animated(True)
-            self._artists.append(art)
-
-        def _draw_animated(self):
-            """Draw all of the animated artists."""
-            fig = self.canvas.figure
-            for a in self._artists:
-                fig.draw_artist(a)
-
-        def update(self):
-            """Update the screen with animated artists."""
-            cv = self.canvas
-            fig = cv.figure
-            
-            # Paranoia in case we missed the draw event
-            if self._bg is None:
-                self.on_draw(None)
-            else:
-                # Restore the background
-                cv.restore_region(self._bg)
-                # Draw all of the animated artists
-                self._draw_animated()
-                # Update the GUI state
-                cv.blit(fig.bbox)
-            
-            # Let the GUI event loop process anything it has to do
-            cv.flush_events()
-    
     class InteractiveAnalyzer:
         def __init__(self, parent: 'VisualizationOps'):
             """Initialize the interactive analyzer for thermographic data visualization.
             
-            Parameters:
+            Args:
                 container: DataContainer with thermographic data
             """
             # 1.) Retrieve data from the container
@@ -157,30 +93,23 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             )
             self.cursor_annotation_box.set_visible(False)  # Hide initially
             self.frame_ax.add_artist(self.cursor_annotation_box)
-
-            # 5.) Initialize blitting
-            self.blit_manager = VisualizationOps.BlitManager(
-                self.fig.canvas,
-                [self.frame_img, self.cursor_annotation_box]
-            )
             
-            # Make sure our window is on the screen and drawn
-            plt.show(block=False)
-            plt.pause(0.1)
-            
-            # 6.) Connect events
+            # 5.) Connect events
             self.frame_slider.on_changed(self.update_frame)
             self.clear_button.on_clicked(self.clear_points)
             self.fig.canvas.mpl_connect('button_press_event', self.on_click)
             self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
             self.annotation_toggle.on_clicked(self.toggle_annotation)
 
+            # 6.) Initialze blitting for faster rendering (if possible)
+            self.fig.canvas.draw_idle()
+
         def toggle_annotation(self, event):
             """Toggle cursor annotation on/off."""           
             # Hide annotation if disabled
             if not self.annotation_toggle.get_status()[0]:
                 self.cursor_annotation_box.set_visible(False)
-                self.blit_manager.update()
+                self.fig.canvas.draw_idle()
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
@@ -190,7 +119,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             if event.inaxes != self.frame_ax:
                 self.cursor_annotation_box.set_visible(False)
-                self.blit_manager.update()
+                self.fig.canvas.draw_idle()
                 return
 
             # Get mouse coordinates
@@ -205,7 +134,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 self.cursor_annotation_text.set_text(f'({x}, {y})\n{val:.5f}')
                 self.cursor_annotation_box.set_visible(True)
             
-                self.blit_manager.update()
+                self.fig.canvas.draw_idle()
             
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
@@ -223,13 +152,12 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Directly set the image norm, because set_clim does call color sanitazion inside, which can lead to wrong updates
             self.frame_img.norm = Normalize(vmin, vmax)
                     
-            # Add points back to the frame plot using blitting
+            # Redraw points on the new frame
             for idx, (x, y) in enumerate(self.selected_points):
-                point = self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
-                self.blit_manager.add_artist(point[0])
+                self.frame_ax.plot(x, y, 'x', color=self.colors[idx], markersize=10)
                 
-            # Redraw using blitting
-            self.blit_manager.update()
+            # Redraw
+            self.fig.canvas.draw_idle()
             
         def on_click(self, event):
             """Handle click events on the frame plot."""
@@ -249,8 +177,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.selected_points.append((x, y))
             
             # Plot point on frame
-            point = self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
-            self.blit_manager.add_artist(point[0])
+            self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
             
             # Plot temperature profile
             profile = self.tdata[y, x, :]
@@ -258,38 +185,26 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                             label=f'Point ({x}, {y})')
             self.profile_ax.legend()
             
-            # Update using blitting
-            self.blit_manager.update()
+            self.fig.canvas.draw_idle()
             
         def clear_points(self, event):
             """Clear all selected points and profiles."""
-            # Clear the selected points list
             self.selected_points.clear()
-            
-            # Clear the profile plot
             self.profile_ax.clear()
             
-            # Reset profile plot appearance
+            # Reset profile plot
             self.profile_ax.set_xlabel(generate_label(self.domain_unit))
             self.profile_ax.set_ylabel(generate_label(self.data_unit))
             self.profile_ax.grid(True)
 
-            # Remove all line artists from frame plot
-            for line in self.frame_ax.lines:
-                line.remove()
-
-            # Create a new blit manager with just the base animated artists
-            self.blit_manager = VisualizationOps.BlitManager(
-                self.fig.canvas,
-                [self.frame_img, self.cursor_annotation_box]
-            )
+            # Remove points from frame plot
+            for artist in self.frame_ax.lines:
+                artist.remove()
             
-            # Force a complete redraw to clear any remaining artifacts
-            self.fig.canvas.draw()
-            
-            # Update the frame display
+            # Redraw frame without points
             self.frame_img.set_data(self.current_frame_data)
-            self.blit_manager.update()
+            
+            self.fig.canvas.draw_idle()
 
     def show_frame(self, frame_number: int, option: str="", cmap: str = 'plasma'):
         """ Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.

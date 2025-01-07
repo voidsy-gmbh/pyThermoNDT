@@ -22,7 +22,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             """
             # 1.) Retrieve data from the container
             self.container = parent
-            self.tdata = parent.get_dataset('/Data/Tdata').numpy(force=True)
+            # Transpose to (frame, y, x) for faster access - this avoids the need to squeeze the data
+            self.tdata = parent.get_dataset('/Data/Tdata').numpy(force=True).transpose(2, 0, 1)
             self.domain_values = parent.get_dataset('/MetaData/DomainValues').numpy(force=True)
             self.data_unit = parent.get_unit('/Data/Tdata')
             self.domain_unit = parent.get_unit('/MetaData/DomainValues')
@@ -35,7 +36,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             # Initialize the frame display
             self.current_frame = 0 #type: int
-            self.current_frame_data = self.tdata[..., self.current_frame].squeeze() #type: np.ndarray
+            self.current_frame_data = self.tdata[self.current_frame] #type: np.ndarray
             self.frame_img = self.frame_ax.imshow(
                 self.current_frame_data,
                 aspect='auto',
@@ -61,7 +62,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 ax=slider_ax,
                 label='Frame',
                 valmin=0,
-                valmax=self.tdata.shape[-1]-1,
+                valmax=self.tdata.shape[0]-1,
                 valinit=0,
                 valstep=1
             )
@@ -141,7 +142,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             """Update the displayed frame."""
             # Extract frame data
             self.current_frame = int(frame_idx)
-            self.current_frame_data = self.tdata[..., self.current_frame].squeeze()
+            self.current_frame_data = self.tdata[self.current_frame].squeeze()
 
             # Update image data
             self.frame_img.set_data(self.current_frame_data)
@@ -168,9 +169,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             if len(self.selected_points) >= 4:
                 print("Maximum number of points (4) reached. Clear points to add more.")
                 return
-                
+            
+            # Check if click is within frame boundaries
             x, y = int(event.xdata), int(event.ydata)
-            if x < 0 or y < 0 or x >= self.tdata.shape[1] or y >= self.tdata.shape[0]:
+            if not 0 <= y < self.current_frame_data.shape[0] or not 0 <= x < self.current_frame_data.shape[1]:
                 return
                 
             # Add point and plot profile
@@ -181,7 +183,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.frame_ax.plot(x, y, 'x', color=color, markersize=10)
             
             # Plot temperature profile
-            profile = self.tdata[y, x, :]
+            profile = self.tdata[:, y, x]
             self.profile_ax.plot(self.domain_values, profile, color=color, 
                             label=f'Point ({x}, {y})')
             self.profile_ax.legend()

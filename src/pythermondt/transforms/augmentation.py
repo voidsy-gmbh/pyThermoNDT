@@ -42,5 +42,5 @@ class RandomFlip(ThermoTransform):
             mask = torch.flip(mask, [0])
 
         # Update the container and return it
-        container.update_dataset("/Data/Tdata", tdata)
+        container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
         return container

@@ -68,6 +68,12 @@ class GaussianNoise(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         tdata = container.get_dataset("/Data/Tdata")
-        noise = torch.normal(mean=self.mean, std=self.std, size=tdata.size())
+        noise = torch.normal(
+            mean=self.mean,
+            std=self.std, 
+            size=tdata.size(),
+            device=tdata.device,
+            dtype=tdata.dtype
+        )
         container.update_dataset("/Data/Tdata", tdata + noise)
         return container

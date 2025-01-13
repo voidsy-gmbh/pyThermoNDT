@@ -53,8 +53,16 @@ class GaussianNoise(ThermoTransform):
         Parameters:
             mean (float): Mean of the Gaussian noise. Default is 0.0.
             std (float): Standard deviation of the Gaussian noise. Default is 1.0.
+
+        Raises:
+            ValueError: If std is negative.
         """
         super().__init__()
+
+        # Ensure std is positive
+        if std < 0:
+            raise ValueError("std must be non-negative")
+
         self.mean = mean
         self.std = std
 

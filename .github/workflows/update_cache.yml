@@ -31,6 +31,8 @@ jobs:
           path: ${{ env.pythonLocation }}
           key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
           lookup-only: true
+        env:
+          pythonLocation: ${{ env.pythonLocation }}
 
       # Step 4: Install dependencies if cache miss
       - if: steps.cache-pip.outputs.cache-hit != 'true'

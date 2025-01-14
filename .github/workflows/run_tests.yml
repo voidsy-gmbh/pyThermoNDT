@@ -33,6 +33,8 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
+        env:
+          pythonLocation: ${{ env.pythonLocation }}
 
       # Step 4: Install Dependencies
       - if: steps.cache-pip.outputs.cache-hit != 'true'

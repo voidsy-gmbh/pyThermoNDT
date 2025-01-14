@@ -36,7 +36,7 @@ jobs:
         name: Install dependencies
         run: |
           pip install torch>=2.0+cpu
-          pip install ".[dev]"
+          pip install .[dev]
 
       # Step 4: Run tests
       - name: Run Tests

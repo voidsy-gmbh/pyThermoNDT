@@ -1,8 +1,8 @@
 changelog:
   # Exclude some labels
   exclude:
-  labels:
-    - skip-news
+    labels:
+      - skip-news
   
   # Categories the PRs based on the label
   categories:

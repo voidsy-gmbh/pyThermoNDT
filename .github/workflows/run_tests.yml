@@ -1,7 +1,7 @@
+# Reusbale workflow to run tests for pyThermoNDT
 name: Run Tests
 
 on:
-  workflow_dispatch:
   workflow_call:
     outputs:
       test_success:

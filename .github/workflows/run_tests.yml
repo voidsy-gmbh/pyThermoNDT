@@ -16,36 +16,33 @@ jobs:
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:
-      # Step 1: Setup Python
-      - name: Setup Python
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Python and cache pip
+      - name: Set up Python 3.12
+        id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+          cache: 'pip'
+          cache-dependency-path: |
+            setup.py
+            pyproject.toml
 
-      # Step 2: Checkout code in the current branch
-      - name: Checkout code
-        uses: actions/checkout@v4   
-
-      # Step 3: Restore pip cache
-      - name: Cache pip
-        id: cache-pip
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.pythonLocation }}
-          key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
-
-      # Step 4: Install Dependencies
-      - if: steps.cache-pip.outputs.cache-hit != 'true'
-        name: Install Dependencies
+      # Step 3: Install dependencies if cache miss
+      - if: steps.setup-python.outputs.cache-hit != 'true'
+        name: Install dependencies
         run: |
           pip install torch>=2.0+cpu
           pip install ".[dev]"
 
-      # Step 5: Run tests
+      # Step 4: Run tests
       - name: Run Tests
         run: pytest
 
-      # Step 6: Set Output Based on Test Success
+      # Step 5: Set Output Based on Test Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

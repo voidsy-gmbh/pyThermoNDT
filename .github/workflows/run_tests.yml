@@ -2,6 +2,7 @@
 name: Run Tests
 
 on:
+  workflow_dispatch:
   workflow_call:
     outputs:
       test_success:
@@ -15,15 +16,15 @@ jobs:
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:
-      # Step 1: Checkout code in the current branch
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Setup Python
+      # Step 1: Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+
+      # Step 2: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4   
 
       # Step 3: Restore pip cache
       - name: Cache pip

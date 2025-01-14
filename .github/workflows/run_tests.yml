@@ -1,10 +1,14 @@
+# Reusbale workflow to run tests for pyThermoNDT
 name: Run Tests
+
 on:
+  workflow_dispatch:
   workflow_call:
     outputs:
       test_success:
         description: "Whether tests succeeded"
         value: ${{ jobs.test.outputs.success }}
+
 jobs:
   test:
     name: Run Tests
@@ -12,21 +16,36 @@ jobs:
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:
-        # Step 1: Checkout code in the current branch
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-
-        # Step 2: Setup python and install dependencies
-      - uses: actions/setup-python@v5
+      # Step 1: Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - run: |
+
+      # Step 2: Checkout code in the current branch
+      - name: Checkout code
+        uses: actions/checkout@v4   
+
+      # Step 3: Restore pip cache
+      - name: Cache pip
+        id: cache-pip
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
+
+      # Step 4: Install Dependencies
+      - if: steps.cache-pip.outputs.cache-hit != 'true'
+        name: Install Dependencies
+        run: |
           pip install torch>=2.0+cpu
           pip install ".[dev]"
 
-        # Step 3: Run tests
-      - run: pytest
+      # Step 5: Run tests
+      - name: Run Tests
+        run: pytest
+
+      # Step 6: Set Output Based on Test Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

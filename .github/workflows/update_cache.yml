@@ -1,0 +1,40 @@
+# Updates the cache in main branch, because only caches from default branch are available in other branches. ==> allows for faster CI in other branches
+name: update-cache
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main" # Update cache on main branch
+
+jobs:
+  build-cache:
+    name: Build Cache
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Setup Python
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      # Step 2: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 3: Restore pip cache
+      - name: Cache pip
+        id: cache-pip
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
+
+      # Step 4: Install dependencies if cache miss
+      - if: steps.cache-pip.outputs.cache-hit != 'true'
+        name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-ml.txt

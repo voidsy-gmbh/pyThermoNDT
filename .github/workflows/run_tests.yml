@@ -28,15 +28,15 @@ jobs:
 
       # Step 3: Restore pip cache
       - name: Cache pip
+        id: cache-pip
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-python3.12-${{ hashFiles('**/setup.py', '**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-python-
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
 
       # Step 4: Install Dependencies
-      - name: Install Dependencies
+      - if: steps.cache-pip.outputs.cache-hit != 'true'
+        name: Install Dependencies
         run: |
           pip install torch>=2.0+cpu
           pip install ".[dev]"

@@ -44,3 +44,36 @@ class RandomFlip(ThermoTransform):
         # Update the container and return it
         container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
         return container
+    
+class GaussianNoise(ThermoTransform):
+    """Add Gaussian noise to the Temperature data in the container based on specified mean and standard deviation."""
+    def __init__(self, mean: float = 0.0, std: float = 0.1):
+        """Initializes the GaussianNoise transformation with specified mean and standard deviation.
+        
+        Parameters:
+            mean (float): Mean of the Gaussian noise. Default is 0.0.
+            std (float): Standard deviation of the Gaussian noise. Default is 1.0.
+
+        Raises:
+            ValueError: If std is negative.
+        """
+        super().__init__()
+
+        # Ensure std is positive
+        if std < 0:
+            raise ValueError("std must be non-negative")
+
+        self.mean = mean
+        self.std = std
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        tdata = container.get_dataset("/Data/Tdata")
+        noise = torch.normal(
+            mean=self.mean,
+            std=self.std, 
+            size=tdata.size(),
+            device=tdata.device,
+            dtype=tdata.dtype
+        )
+        container.update_dataset("/Data/Tdata", tdata + noise)
+        return container

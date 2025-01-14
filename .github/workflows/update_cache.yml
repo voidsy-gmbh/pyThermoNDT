@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Setup Python and cache pip
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Python and cache pip
       - name: Set up Python 3.12
         id: setup-python
         uses: actions/setup-python@v5
@@ -23,10 +27,6 @@ jobs:
           cache-dependency-path: |
             setup.py
             pyproject.toml
-
-      # Step 2: Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       # Step 3: Install dependencies if cache miss
       - if: steps.setup-python.outputs.cache-hit != 'true'

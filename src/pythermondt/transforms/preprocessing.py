@@ -129,7 +129,7 @@ class RemoveFlash(ThermoTransform):
                 flash_end_idx = tdata.argmax(dim=2).max().item() + self.offset
             
             case _:
-                raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__["method"])}.")
+                raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__['method'])}.")
         
         # Check if the flash end is valid
         if flash_end_idx < 0 or flash_end_idx >= len(domain_values):

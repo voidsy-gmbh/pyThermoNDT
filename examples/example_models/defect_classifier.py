@@ -67,6 +67,6 @@ class DefectClassifier3DCNN(nn.Module):
         # Pass through fully connected layers
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        logits = self.fc3(x)
         
-        return x
+        return logits

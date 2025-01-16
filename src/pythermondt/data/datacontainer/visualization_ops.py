@@ -144,8 +144,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.current_frame = int(frame_idx)
             self.current_frame_data = self.tdata[self.current_frame].squeeze()
 
-            # Update image data
+            # Update image data and title
             self.frame_img.set_data(self.current_frame_data)
+            self.frame_ax.set_title(f'Frame {self.current_frame}')
 
             # Get the colorbar limits according to min/max of the current frame
             vmin = round(self.current_frame_data.min(), 8)

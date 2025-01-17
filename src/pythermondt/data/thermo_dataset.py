@@ -150,7 +150,14 @@ class IndexedThermoDataset(ThermoDataset):
             dataset (ThermoDataset): Parent dataset to index into
             indices (Sequence[int]): Sequence of indices to select from parent
             transform (Optional[ThermoTransform]): Optional transform to apply after parent's transform
+
+        Raises:
+            IndexError: If any of the provided indices are out of range
         """
+        # Validate the indices
+        if not all(0 <= i < len(dataset) for i in indices):
+            raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset)-1}]")
+
         # Store parent dataset and indices
         self.__dataset = dataset  # Original dataset
         self.__indices = indices  # Indices for subset

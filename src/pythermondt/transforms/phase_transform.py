@@ -41,13 +41,12 @@ class VdsyGoertzel(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Get the data from the container
-        data = container.get_dataset("/Data/Tdata")
+        data, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues")
 
         # Check if frame_rate is given ==> else calculate it from the datacontainer domain values
         if self.frame_rate:
             frame_rate = self.frame_rate
         else:
-            domain_values = container.get_dataset("/MetaData/DomainValues")
             frame_rate = data.shape[2]/domain_values[-1].item()
 
         # Get shape of the data
@@ -84,7 +83,7 @@ class VdsyGoertzel(ThermoTransform):
             phase_imgs[:,:,idx] = torch.reshape(phase_im,shape=(input_shape[0], input_shape[1]))
 
         # Update the container
-        container.add_dataset("/Data", "PhaseImages", phase_imgs)
+        container.update_dataset("/DataTdata", phase_imgs)
         container.update_dataset("/MetaData/DomainValues", freqs)
         container.update_attribute("/MetaData/DomainValues", "DomainType", "Frequency in Hz")
 

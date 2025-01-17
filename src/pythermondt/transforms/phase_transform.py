@@ -2,13 +2,13 @@ import torch
 import math
 from torch import Tensor
 from numpy import ndarray
-from typing import List, Optional
+from typing import Optional, Sequence
 from pythermondt.data.datacontainer.core import DataContainer
 from .utils import ThermoTransform
 from ..data.units import Units
 
 class PulsePhaseTransform(ThermoTransform):
-    def __init__(self, freq_bins: List[float] | Tensor | ndarray, frame_rate: Optional[int] = None):
+    def __init__(self, freq_bins: Sequence[float] | Tensor | ndarray, frame_rate: Optional[int] = None):
         """ Applies DFT to the DataContainer and calculates the phase images for the specified frequencies, using the Goertzel algorithm.
 
         It uses the Temperature Data and the DomainValues to apply the DFT to the container and calculate the phase images for the specified frequencies. 

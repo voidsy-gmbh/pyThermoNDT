@@ -10,8 +10,8 @@ class VdsyGoertzel(ThermoTransform):
     def __init__(self, freq_bins: List[int] | Tensor | ndarray, frame_rate: Optional[int] = None):
         """ Applies DFT to the DataContainer and calculates the phase images for the specified frequencies, using the Goertzel algorithm.
 
-        It uses the Temperature Data and the DomnainValues to apply the DFT to the container and calculate the phase images for the specified frequencies. 
-        The phase images are stored in the container as a new dataset under the path "/Data/PhaseImages" and the frequency bins are stored as new DomainValues.
+        It uses the Temperature Data and the DomainValues to apply the DFT to the container and calculate the phase images for the specified frequencies. 
+        The phase images are stored as new Temperature Data under "/Data/Tdata" and the frequency bins are stored as new DomainValues.
         The Temperatue data is deleted from the container.
 
         Note: This DFT differs from a conventional fourier transform because the signal length that is used to calculate the phase image is always reduced to match a single period at the respective frequency!

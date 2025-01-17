@@ -8,7 +8,7 @@ from .utils import ThermoTransform
 from ..data.units import Units
 
 class PulsePhaseTransform(ThermoTransform):
-    def __init__(self, freq_bins: List[int] | Tensor | ndarray, frame_rate: Optional[int] = None):
+    def __init__(self, freq_bins: List[float] | Tensor | ndarray, frame_rate: Optional[int] = None):
         """ Applies DFT to the DataContainer and calculates the phase images for the specified frequencies, using the Goertzel algorithm.
 
         It uses the Temperature Data and the DomainValues to apply the DFT to the container and calculate the phase images for the specified frequencies. 
@@ -41,50 +41,50 @@ class PulsePhaseTransform(ThermoTransform):
             self.freq_bins = freq_bins
 
     def forward(self, container: DataContainer) -> DataContainer:
-        # Get the data from the container
+        # 1. Data preparation
         data, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues")
-
-        # Check if frame_rate is given ==> else calculate it from the datacontainer domain values
-        if self.frame_rate:
-            frame_rate = self.frame_rate
-        else:
-            frame_rate = data.shape[2]/domain_values[-1].item()
-
-        # Get shape of the data
-        input_shape = data.shape
-        nbr_of_pixels = input_shape[0]*input_shape[1]
-        nbr_of_bins = len(self.freq_bins)
-
-        # Initialize the phase images and the frequency bins
-        phase_imgs = torch.zeros(input_shape[0], input_shape[1], nbr_of_bins, dtype=torch.float32)
-        freqs = torch.zeros_like(self.freq_bins, dtype=torch.float32)
-
-        # Reshape the data into a 2D array
-        data = torch.reshape(data, shape=(nbr_of_pixels, input_shape[2]))
+        frame_rate = self.frame_rate or (data.shape[2]/domain_values[-1].item())
         
-        # Calculate all the DFT bins we have to compute to include the specified frequencies
-        for idx in range (0, nbr_of_bins):
-            freq = (self.freq_bins[idx] * (1.0/input_shape[2])) * frame_rate # in Hz
-            nbr_of_samples = int(torch.floor(1.0/freq * frame_rate)) #Number of samples for a single period of the required frequency
-            f = 1.0/nbr_of_samples # Normalized frequency
-            freqs[idx] = f*frame_rate
+        # 2. Setup dimensions
+        height, width, n_samples = data.shape
+        n_pixels = height * width
+        n_freqs = len(self.freq_bins)
+        
+        # 3. Reshape for processing ==> HxWxT -> (H*W)xT
+        data = data.reshape(n_pixels, n_samples)  # (H*W)xT
 
-            w_real = 2.0 * math.cos(2.0*math.pi*f)
-            w_imag = 1.0 * math.sin(2.0*math.pi*f)
-
-            d1 = torch.zeros(size=(nbr_of_pixels,1))
-            d2 = torch.zeros(size=(nbr_of_pixels,1))
-
-            for jdx in range(0,nbr_of_samples):
-                y = torch.unsqueeze(data[:,jdx],1) + w_real*d1-d2
-                d2 = d1[:]
-                d1 = y[:]
+        # 4 Create the container for the phase images and actual frequencies ==> for results
+        phase_imgs = torch.zeros(height, width, n_freqs, dtype=torch.float32)
+        actual_freqs = torch.zeros(n_freqs, dtype=torch.float32) # Store actual frequencies
+        
+        # 4. Process each frequency
+        for idx, freq in enumerate(self.freq_bins):
+            # Calculate normalized frequency
+            samples_per_period = int(frame_rate / freq)  # Direct calculation
+            f = freq / frame_rate  # Normalized frequency
             
-            phase_im = torch.arctan2(w_imag*d1, 0.5*w_real*d1-d2)
-            phase_imgs[:,:,idx] = torch.reshape(phase_im,shape=(input_shape[0], input_shape[1]))
+            # Goertzel coefficients
+            w_real = 2.0 * math.cos(2.0 * math.pi * f)
+            w_imag = math.sin(2.0 * math.pi * f)
+            
+            # Process all pixels for this frequency
+            d1 = torch.zeros(n_pixels, 1)
+            d2 = torch.zeros(n_pixels, 1)
+            
+            # Use minimum between period samples and available samples
+            n_process = min(samples_per_period, n_samples)
+            for j in range(n_process):
+                y = data[:, j:j+1] + w_real * d1 - d2
+                d2 = d1.clone()
+                d1 = y.clone()
+            
+            # Extract phase and actual frequency
+            phase = torch.arctan2(w_imag * d1, 0.5 * w_real * d1 - d2)
+            phase_imgs[:, :, idx] = phase.reshape(height, width)
+            actual_freqs[idx] = freq
 
         # Update the container
         container.update_dataset("/Data/Tdata", phase_imgs)
-        container.update_dataset("/MetaData/DomainValues", freqs)
+        container.update_dataset("/MetaData/DomainValues", actual_freqs)
         container.update_unit("/MetaData/DomainValues", Units.hertz)
         return container

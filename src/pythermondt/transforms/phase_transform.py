@@ -84,7 +84,7 @@ class VdsyGoertzel(ThermoTransform):
             phase_imgs[:,:,idx] = torch.reshape(phase_im,shape=(input_shape[0], input_shape[1]))
 
         # Update the container
-        container.update_dataset("/DataTdata", phase_imgs)
+        container.update_dataset("/Data/Tdata", phase_imgs)
         container.update_dataset("/MetaData/DomainValues", freqs)
         container.update_unit("/MetaData/DomainValues", Units.hertz)
         return container

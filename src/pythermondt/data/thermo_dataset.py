@@ -150,7 +150,14 @@ class IndexedThermoDataset(ThermoDataset):
             dataset (ThermoDataset): Parent dataset to index into
             indices (Sequence[int]): Sequence of indices to select from parent
             transform (Optional[ThermoTransform]): Optional transform to apply after parent's transform
+
+        Raises:
+            IndexError: If any of the provided indices are out of range
         """
+        # Validate the indices
+        if not all(0 <= i < len(dataset) for i in indices):
+            raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset)-1}]")
+
         # Store parent dataset and indices
         self.__dataset = dataset  # Original dataset
         self.__indices = indices  # Indices for subset
@@ -159,6 +166,10 @@ class IndexedThermoDataset(ThermoDataset):
     def __len__(self) -> int:
         """Return length of indexed dataset."""
         return len(self.__indices)
+    
+    def __iter__(self) -> Iterator[DataContainer]:
+        """Return iterator over indexed subset."""
+        return (self[i] for i in range(len(self.__indices)))
 
     def __getitem__(self, idx: int) -> DataContainer:
         """Get an item with proper transform chain.

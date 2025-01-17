@@ -22,7 +22,7 @@ class Units:
 
     # Frequency
     hertz = Unit(name="hertz", quantity="frequency", symbol="Hz")
-
+    
     # Add more units here as needed
 
     @classmethod

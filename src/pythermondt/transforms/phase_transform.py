@@ -7,7 +7,7 @@ from pythermondt.data.datacontainer.core import DataContainer
 from .utils import ThermoTransform
 from ..data.units import Units
 
-class VdsyGoertzel(ThermoTransform):
+class PulsePhaseTransform(ThermoTransform):
     def __init__(self, freq_bins: List[int] | Tensor | ndarray, frame_rate: Optional[int] = None):
         """ Applies DFT to the DataContainer and calculates the phase images for the specified frequencies, using the Goertzel algorithm.
 

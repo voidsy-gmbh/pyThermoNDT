@@ -166,6 +166,10 @@ class IndexedThermoDataset(ThermoDataset):
     def __len__(self) -> int:
         """Return length of indexed dataset."""
         return len(self.__indices)
+    
+    def __iter__(self) -> Iterator[DataContainer]:
+        """Return iterator over indexed subset."""
+        return (self[i] for i in range(len(self.__indices)))
 
     def __getitem__(self, idx: int) -> DataContainer:
         """Get an item with proper transform chain.

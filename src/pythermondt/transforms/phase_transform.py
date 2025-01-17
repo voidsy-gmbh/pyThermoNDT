@@ -5,6 +5,7 @@ from numpy import ndarray
 from typing import List, Optional
 from pythermondt.data.datacontainer.core import DataContainer
 from .utils import ThermoTransform
+from ..data.units import Units
 
 class VdsyGoertzel(ThermoTransform):
     def __init__(self, freq_bins: List[int] | Tensor | ndarray, frame_rate: Optional[int] = None):
@@ -85,6 +86,5 @@ class VdsyGoertzel(ThermoTransform):
         # Update the container
         container.update_dataset("/DataTdata", phase_imgs)
         container.update_dataset("/MetaData/DomainValues", freqs)
-        container.update_attribute("/MetaData/DomainValues", "DomainType", "Frequency in Hz")
-
+        container.update_unit("/MetaData/DomainValues", Units.hertz)
         return container

@@ -24,7 +24,7 @@ def empty_container():
     return DataContainer()
 
 @pytest.fixture
-def base_container(empty_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):  
+def filled_container(empty_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):  
     """Container with basic structure for testing BaseOps"""
     # Add a testgroup
     empty_container.add_group("/", "TestGroup")

@@ -1,9 +1,7 @@
 import pytest
 from typing import Any
 from torch import Tensor
-from pythermondt.data import DataContainer
-from pythermondt.data.units import Units, Unit
-from pythermondt.data.datacontainer.utils import validate_path
+from pythermondt.data import DataContainer, Units
 
 @pytest.fixture
 def attr_container(empty_container: DataContainer, sample_tensor: Tensor):

@@ -1,9 +1,7 @@
 import pytest
 import torch
 from torch import Tensor
-import numpy as np
 from numpy import ndarray
-from typing import Optional
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import DataNode
 from pythermondt.data.datacontainer.utils import validate_path

@@ -34,3 +34,26 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
     
     # Check if the deserialized container is equal to the original container
     assert deserialized_container == original_container
+
+@pytest.mark.parametrize("container_fixture", [
+    "empty_container",
+    "filled_container", 
+    "complex_container"
+])
+def test_serialize_file_operations(container_fixture: str, request: pytest.FixtureRequest, tmp_path):
+    """Test save_to_hdf5 and load_from_hdf5 file operations."""
+    # Create temporary file path
+    file_path = tmp_path / "test.hdf5"
+
+    # Get the container from the fixture
+    original_container = request.getfixturevalue(container_fixture) #type: DataContainer
+    
+    # Save container to file
+    original_container.save_to_hdf5(str(file_path))
+    
+    # Load into new container
+    loaded_container = DataContainer()
+    loaded_container.load_from_hdf5(str(file_path))
+    
+    # Verify equality
+    assert loaded_container == original_container

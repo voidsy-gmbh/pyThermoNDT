@@ -130,9 +130,6 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             name (str): The name of the dataset.
             dataset (h5py.Dataset): The dataset to process.
         """
-        # validate the path using the utility function
-        path = validate_path(path)
-
         # Add data to dataset
         self.add_dataset(path, name, dataset[()])
 
@@ -150,6 +147,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         # validate the path using the utility function
         path = validate_path(path)
 
+        # Iterate over all attributes
         for key, value in attributes.items():
             # Convert JSON strings back to lists and dictionaries
             # Try to convert the string to a list or dictionary using the JSON format

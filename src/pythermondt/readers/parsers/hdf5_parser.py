@@ -19,18 +19,5 @@ class HDF5Parser(BaseParser):
         Raises:
             ValueError: If the given BytesIO object is empty or does not contain a valid HDF5 file.
         """
-        # Check if the BytesIO object is empty
-        if data_bytes.getbuffer().nbytes == 0:
-            raise ValueError("The given BytesIO object is empty.")
-
-        # Check if the BytesIO object is a HDF5 file
-        try:
-            h5py.File(data_bytes)
-        except OSError:
-            raise ValueError("The given BytesIO object does not contain a valid HDF5 file.")
-        
-        # Reset the position of the BytesIO object to the beginning (in case the pointer was moved by the h5py.File function)
-        data_bytes.seek(0)
-
         # Create a new DataContainer from the BytesIO object and return it
         return DataContainer(data_bytes)

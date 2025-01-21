@@ -21,17 +21,17 @@ def test_identical_structure_equality(filled_container: DataContainer, sample_te
     identical_container.add_group("/", "TestGroup")
     identical_container.add_group("/TestGroup", "NestedGroup")
     identical_container.add_dataset("/", "TestDataset", sample_tensor)
-    identical_container.add_dataset("/TestGroup", "TestDataset", sample_tensor)
+    identical_container.add_dataset("/TestGroup", "TestDataset1", sample_tensor)
     identical_container.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_eye_tensor)
 
-    assert filled_container.__eq__(identical_container)
+    assert filled_container == identical_container
 
 def test_different_data_inequality(filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
     """Test inequality of containers with same structure but different data."""
     different_data = DataContainer()
     different_data.add_group("/", "TestGroup")
     different_data.add_group("/TestGroup", "NestedGroup")
-    different_data.add_dataset("/TestGroup", "TestDataset", sample_eye_tensor)  # Swapped tensors
+    different_data.add_dataset("/TestGroup", "TestDataset1", sample_eye_tensor)  # Swapped tensors
     different_data.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_tensor)
     
     assert filled_container != different_data

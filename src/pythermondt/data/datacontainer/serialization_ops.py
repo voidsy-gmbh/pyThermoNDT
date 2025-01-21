@@ -79,6 +79,19 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         Parameters:
             hdf5_bytes (io.BytesIO): The serialized HDF5 data as a BytesIO object.
         """
+        # Check if the BytesIO object is empty
+        if hdf5_bytes.getbuffer().nbytes == 0:
+            raise ValueError("The given BytesIO object is empty.")
+
+        # Check if the BytesIO object is a HDF5 file
+        try:
+            h5py.File(hdf5_bytes)
+        except OSError:
+            raise ValueError("The given BytesIO object does not contain a valid HDF5 file.")
+        
+        # Reset the position of the BytesIO object to the beginning (in case the pointer was moved by the h5py.File function)
+        hdf5_bytes.seek(0)
+
         # Check if a root node exists in the DataContainer ==> if not, add it
         if not self._is_rootnode("/"):
             self.nodes["/"] = RootNode()

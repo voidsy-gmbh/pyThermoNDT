@@ -27,7 +27,7 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
 
     # Check if the serialized data is a bytes object and is not empty
     assert isinstance(hdf5_bytes, io.BytesIO)
-    assert hdf5_bytes.getvalue() != b""
+    assert hdf5_bytes.getbuffer().nbytes > 0
     
     # Deserialize into a new container
     deserialized_container = DataContainer(hdf5_bytes)

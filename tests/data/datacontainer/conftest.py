@@ -24,24 +24,30 @@ def empty_container():
     return DataContainer()
 
 @pytest.fixture
-def filled_container(empty_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):  
+def filled_container(sample_tensor: Tensor, sample_eye_tensor: Tensor):  
     """Container with basic structure for testing BaseOps"""
+    # Initialize an empty container
+    container = DataContainer()
+
     # Add a testgroup
-    empty_container.add_group("/", "TestGroup")
+    container.add_group("/", "TestGroup")
 
     # Add a nested group 
-    empty_container.add_group("/TestGroup", "NestedGroup")
+    container.add_group("/TestGroup", "NestedGroup")
 
     # Add datasets
-    empty_container.add_dataset("/", "TestDataset", sample_tensor)
-    empty_container.add_dataset("/TestGroup", "TestDataset1", sample_tensor)
-    empty_container.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_eye_tensor)
+    container.add_dataset("/", "TestDataset", sample_tensor)
+    container.add_dataset("/TestGroup", "TestDataset1", sample_tensor)
+    container.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_eye_tensor)
 
-    return empty_container
+    return container
 
 @pytest.fixture
-def complex_container(filled_container: DataContainer):
+def complex_container():
     """Fixture for DataContainer with complex structure. Based on filled_container, with additional atttributes added"""
+    # Initialize an empty container
+    container = DataContainer()
+
     # Define attributes to be added
     attrs = {
         "str_attr": "test_string",
@@ -53,12 +59,12 @@ def complex_container(filled_container: DataContainer):
     }
 
     # Add various types of attributes to the TestGroup
-    filled_container.add_attributes("/TestGroup", **attrs)
+    container.add_attributes("/TestGroup", **attrs)
 
     # Add various types of attributes to the NestedGroup
-    filled_container.add_attributes("/TestGroup/NestedGroup", **attrs)
+    container.add_attributes("/TestGroup/NestedGroup", **attrs)
 
     # Add various types of attributes to the TestDataset
-    filled_container.add_attributes("/TestGroup/TestDataset", **attrs)
+    container.add_attributes("/TestGroup/TestDataset", **attrs)
 
-    return filled_container
+    return container

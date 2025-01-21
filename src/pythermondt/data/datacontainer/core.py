@@ -7,7 +7,7 @@ from .dataset_ops import DatasetOps
 from .attribute_ops import AttributeOps
 from .serialization_ops import SerializationOps, DeserializationOps
 from .visualization_ops import VisualizationOps
-from .utils import is_rootnode, is_groupnode, is_datanode
+from .utils import is_groupnode, is_datanode
 
 class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, GroupOps, DatasetOps, AttributeOps):
     """

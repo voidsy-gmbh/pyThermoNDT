@@ -33,7 +33,8 @@ def filled_container(empty_container: DataContainer, sample_tensor: Tensor, samp
     empty_container.add_group("/TestGroup", "NestedGroup")
 
     # Add datasets
-    empty_container.add_dataset("/TestGroup", "TestDataset", sample_tensor)
+    empty_container.add_dataset("/", "TestDataset", sample_tensor)
+    empty_container.add_dataset("/TestGroup", "TestDataset1", sample_tensor)
     empty_container.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_eye_tensor)
 
     return empty_container

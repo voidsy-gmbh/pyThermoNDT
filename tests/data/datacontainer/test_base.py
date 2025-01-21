@@ -6,8 +6,9 @@ from pythermondt.data.datacontainer.utils import split_path
 def test_path_exists(filled_container: DataContainer):
     # Test existing paths
     assert filled_container._path_exists("/TestGroup") == True
+    assert filled_container._path_exists("/TestDataset") == True
     assert filled_container._path_exists("/TestGroup/NestedGroup") == True
-    assert filled_container._path_exists("/TestGroup/TestDataset") == True
+    assert filled_container._path_exists("/TestGroup/TestDataset1") == True
     assert filled_container._path_exists("/TestGroup/NestedGroup/TestDataset2") == True
 
     # Test non-existing paths
@@ -17,7 +18,8 @@ def test_path_exists(filled_container: DataContainer):
 
 def test_is_datanode(filled_container: DataContainer):
     # Test existing DataNode paths
-    assert filled_container._is_datanode("/TestGroup/TestDataset") == True
+    assert filled_container._path_exists("/TestDataset") == True
+    assert filled_container._is_datanode("/TestGroup/TestDataset1") == True
     assert filled_container._is_datanode("/TestGroup/NestedGroup/TestDataset2") == True
 
     # Test non-existing DataNode paths

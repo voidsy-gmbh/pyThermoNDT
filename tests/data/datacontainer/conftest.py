@@ -65,7 +65,9 @@ def complex_container(filled_container: DataContainer):
     # Add various types of attributes to the NestedGroup
     container.add_attributes("/TestGroup/NestedGroup", **attrs)
 
-    # Add various types of attributes to the TestDataset
+    # Add various types of attributes to the TestDatasets
+    container.add_attributes("/TestDataset", **attrs)
     container.add_attributes("/TestGroup/TestDataset1", **attrs)
+    container.add_attributes("/TestGroup/NestedGroup/TestDataset2", **attrs)
 
     return container

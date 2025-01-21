@@ -1,5 +1,39 @@
 import re
-from typing import List, Tuple
+from typing import List, Tuple, TypeGuard
+from .node import BaseNode, RootNode, GroupNode, DataNode, NodeType
+
+def is_rootnode(node: BaseNode) -> "TypeGuard[RootNode]":
+    """ Checks if the given node is a RootNode.
+
+    Parameters:
+        node (BaseNode): The node to check.
+    
+    Returns:
+        bool: True if the node is a RootNode, False otherwise.
+    """
+    return isinstance(node, RootNode) and node.type == NodeType.ROOT
+
+def is_groupnode(node: BaseNode) -> "TypeGuard[GroupNode]":
+    """ Checks if the given node is a GroupNode.
+
+    Parameters:
+        node (BaseNode): The node to check.
+    
+    Returns:
+        bool: True if the node is a GroupNode, False otherwise.
+    """
+    return isinstance(node, GroupNode) and node.type == NodeType.GROUP
+
+def is_datanode(node: BaseNode) -> "TypeGuard[DataNode]":
+    """ Checks if the given node is a DataNode.
+
+    Parameters:
+        node (BaseNode): The node to check.
+    
+    Returns:
+        bool: True if the node is a DataNode, False otherwise.
+    """
+    return isinstance(node, DataNode) and node.type == NodeType.DATASET
 
 def validate_path(path: str, name: str = "") -> str:
     """ Validates and normalizes the given HDF5 path.

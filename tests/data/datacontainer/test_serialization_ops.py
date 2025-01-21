@@ -1,5 +1,5 @@
 import pytest
-from io import BytesIO
+import io
 from pythermondt.data import DataContainer
 
 @pytest.mark.parametrize("container_fixture", [
@@ -26,7 +26,7 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
     hdf5_bytes = original_container.serialize_to_hdf5()
 
     # Check if the serialized data is a bytes object and is not empty
-    assert isinstance(hdf5_bytes, BytesIO)
+    assert isinstance(hdf5_bytes, io.BytesIO)
     assert hdf5_bytes.getvalue() != b""
     
     # Deserialize into a new container
@@ -57,3 +57,15 @@ def test_serialize_file_operations(container_fixture: str, request: pytest.Fixtu
     
     # Verify equality
     assert loaded_container == original_container
+
+def test_serialize_empty_bytes():
+    """Test that deserializing empty bytes raises appropriate error."""
+    empty_bytes = io.BytesIO()
+    with pytest.raises(ValueError, match="The given BytesIO object is empty."):
+        DataContainer(empty_bytes)
+
+def test_serialize_invalid_hdf5():
+    """Test that deserializing invalid HDF5 data raises appropriate error."""
+    invalid_bytes = io.BytesIO(b"not an hdf5 file")
+    with pytest.raises(ValueError, match="The given BytesIO object does not contain a valid HDF5 file."):
+        DataContainer(invalid_bytes)

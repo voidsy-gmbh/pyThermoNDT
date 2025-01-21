@@ -1,4 +1,5 @@
 import pytest
+import copy
 from torch import Tensor
 from pythermondt.data import DataContainer, Units
 from pythermondt.data.datacontainer.node import RootNode, GroupNode, DataNode
@@ -24,10 +25,10 @@ def empty_container():
     return DataContainer()
 
 @pytest.fixture
-def filled_container(sample_tensor: Tensor, sample_eye_tensor: Tensor):  
+def filled_container(empty_container:DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):  
     """Container with basic structure for testing BaseOps"""
-    # Initialize an empty container
-    container = DataContainer()
+    # Initialize an empty container using deepcopy to avoid modifying the previous fixture
+    container = copy.deepcopy(empty_container)
 
     # Add a testgroup
     container.add_group("/", "TestGroup")
@@ -45,8 +46,8 @@ def filled_container(sample_tensor: Tensor, sample_eye_tensor: Tensor):
 @pytest.fixture
 def complex_container(filled_container: DataContainer):
     """Fixture for DataContainer with complex structure. Based on filled_container, with additional atttributes added"""
-    # Initialize an empty container
-    container = filled_container
+    # Initialize an empty container using deepcopy to avoid modifying the previous fixture
+    container = copy.deepcopy(filled_container)
 
     # Define attributes to be added
     attrs = {

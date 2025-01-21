@@ -1,4 +1,5 @@
 import pytest
+from io import BytesIO
 from pythermondt.data import DataContainer
 
 @pytest.mark.parametrize("container_fixture", [
@@ -23,6 +24,10 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
     
     # Serialize the DataContainer
     hdf5_bytes = original_container.serialize_to_hdf5()
+
+    # Check if the serialized data is a bytes object and is not empty
+    assert isinstance(hdf5_bytes, BytesIO)
+    assert hdf5_bytes.getvalue() != b""
     
     # Deserialize into a new container
     deserialized_container = DataContainer(hdf5_bytes)

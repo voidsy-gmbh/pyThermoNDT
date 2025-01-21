@@ -43,10 +43,10 @@ def filled_container(sample_tensor: Tensor, sample_eye_tensor: Tensor):
     return container
 
 @pytest.fixture
-def complex_container():
+def complex_container(filled_container: DataContainer):
     """Fixture for DataContainer with complex structure. Based on filled_container, with additional atttributes added"""
     # Initialize an empty container
-    container = DataContainer()
+    container = filled_container
 
     # Define attributes to be added
     attrs = {
@@ -65,6 +65,6 @@ def complex_container():
     container.add_attributes("/TestGroup/NestedGroup", **attrs)
 
     # Add various types of attributes to the TestDataset
-    container.add_attributes("/TestGroup/TestDataset", **attrs)
+    container.add_attributes("/TestGroup/TestDataset1", **attrs)
 
     return container

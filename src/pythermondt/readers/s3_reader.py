@@ -23,7 +23,7 @@ class S3Reader(BaseReader):
         self.__client = boto3_session.client('s3')
 
         # Validate the source path
-        if not re.match(r"^s3:\/\/[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](?:\/[\w.-]+)*$", source):
+        if not re.match(r"^s3:\/\/[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](?:\/[\w\s.-]+)*$", source):
             raise ValueError("The source must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]")
         
         # Extract the bucket and prefix from the source path

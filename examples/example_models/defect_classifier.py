@@ -47,3 +47,31 @@ class DefectClassifier3DCNN(nn.Module):
         x = x.view(x.size(0), -1)
         logits = self.classifier(x)
         return logits
+
+class Small3DCNN(nn.Module):
+    def __init__(self, time_dim=32, n_classes=2):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv3d(1, 3, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool3d(kernel_size=(2, 2, 2)),
+
+            nn.Conv3d(3, 6, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool3d(kernel_size=(2, 2, 2)),
+
+            nn.Conv3d(6, 12, kernel_size=3, padding=1),
+            nn.ReLU(),
+            # This will force the final dimension to (2,2,2)
+            nn.AdaptiveAvgPool3d((2,2,2))
+        )
+        
+        self.classifier = nn.Sequential(
+            nn.Linear(12*2*2*2 , n_classes),  # compute correct shape
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        return self.classifier(x)
+

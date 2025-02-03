@@ -19,13 +19,14 @@ class BaseReader(ABC):
     """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
     """
     @abstractmethod
-    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None):
+    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None):
         """ Constructor for the BaseReader class.
 
         Parameters:
             source (str): The source of the data. This can be a file path, a directory path, a regular expression. In case of cloud storage, this can be a URL.
             cache_files (bool, optional): If True, the reader caches the file paths. If False, the reader retrieves the file list each time. For cloud storage readers, this flag should also determine if the files are downloaded to a local directory. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
+            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads all files. Default is None.
         """
         # Extract file extension from the source
         ext = re.findall(r'\.[a-zA-Z0-9]+$', source)
@@ -59,8 +60,9 @@ class BaseReader(ABC):
         elif correct_parser is not self.parser:
              raise ValueError(f"Wrong parser selected for the file extension: '({ext[0]})'! Use the {correct_parser.__name__} for this file extension instead")
              
-        # Set the source
+        # Set args
         self.__source = source
+        self.__num_files = num_files
 
         # Set the cache_files flag and the cached_files attribute
         self.__cache_files = cache_files
@@ -188,11 +190,11 @@ class BaseReader(ABC):
         """ Returns a list of all the paths to the files that the reader can read."""
         # If caching is off, return the file list directly
         if not self.__cache_files:
-            return self._get_file_list()
+            return self._get_file_list(num_files=self.__num_files)
         
         # If caching is on and files are not cached, cache the files and return them
         if self.__cached_paths is None:
-            self.__cached_paths = self._get_file_list()
+            self.__cached_paths = self._get_file_list(num_files=self.__num_files)
         
         # Else return the cached files
         return self.__cached_paths
@@ -239,7 +241,7 @@ class BaseReader(ABC):
         raise NotImplementedError("Method must be implemented by subclass")
     
     @abstractmethod
-    def _get_file_list(self) -> List[str]:
+    def _get_file_list(self, num_files: Optional[int] = None) -> List[str]:
         """Actual implementation of how the reader gets the list of files. This method must be implemented by the subclass."""
         raise NotImplementedError("Method must be implemented by subclass")
     

@@ -6,7 +6,7 @@ from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class S3Reader(BaseReader):
-    def __init__(self, source: str, cache_files: bool = False, parser: Optional[Type[BaseParser]] = None, boto3_session: boto3.Session = boto3.Session()):
+    def __init__(self, source: str, cache_files: bool = False, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None, boto3_session: boto3.Session = boto3.Session()):
         """ Initialize an instance of the S3Reader class.
 
         This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must cofigure an authentication method
@@ -16,6 +16,7 @@ class S3Reader(BaseReader):
             source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]. All files that start with the provided prefix will be read. Specifiy the file extension if you want to autoselect a parser based on the file extension.
             cache_files (bool, optional): If True, all the files are downloaded first and the paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is False, to prevent disk space issues.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
+            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads all files. Default is None.
             boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
         """
 
@@ -40,7 +41,7 @@ class S3Reader(BaseReader):
         self.__prefix = prefix
         
         # Call the constructor of the BaseReader class
-        super().__init__(source, cache_files, parser)
+        super().__init__(source, cache_files, parser, num_files)
 
     @property
     def remote_source(self) -> bool:
@@ -54,7 +55,7 @@ class S3Reader(BaseReader):
         response = self.__client.get_object(Bucket=bucket, Key=key)
         return io.BytesIO(response['Body'].read())
 
-    def _get_file_list(self) -> List[str]:
+    def _get_file_list(self, num_files: Optional[int] = None) -> List[str]:
         # Create a paginator for the list_objects_v2 method ==> The amout of objects to get with list_objects_v2 is limited to 1000 
         # ==> In that case the requests are split into multiple pages which the paginator can iterate over
         paginator = self.__client.get_paginator('list_objects_v2')
@@ -66,7 +67,10 @@ class S3Reader(BaseReader):
                 files.extend([content['Key'] for content in page.get('Contents')])
 
         # Filter the files based on the file extensions and append the prefix "s3://bucket-name/" to the file paths
-        return [f"s3://{self.__bucket}/" + file for file in files if file.endswith(self.file_extensions)]
+        files = [f"s3://{self.__bucket}/" + file for file in files if file.endswith(self.file_extensions)]
+
+        # Limit to the first num_files if specified
+        return files[:num_files] if num_files else files
     
     def _close(self):
         # Close the underlying endpoint connections of the client

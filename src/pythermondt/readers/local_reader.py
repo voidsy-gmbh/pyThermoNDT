@@ -7,7 +7,7 @@ from .base_reader import BaseReader
 from .parsers import BaseParser
 
 class LocalReader(BaseReader):
-    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None):
+    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None):
         """ Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
@@ -38,13 +38,13 @@ class LocalReader(BaseReader):
             raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         
         # Call the constructor of the BaseReader class
-        super().__init__(source, cache_files, parser)
+        super().__init__(source, cache_files, parser, num_files)
 
     @property
     def remote_source(self) -> bool:
         return False
 
-    def _get_file_list(self) -> List[str]:
+    def _get_file_list(self, num_files: Optional[int] = None) -> List[str]:
         # Resolve the source pattern based on the source type
         match self.__source_type:
             case "file":
@@ -63,6 +63,10 @@ class LocalReader(BaseReader):
         file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extensions)]
         if not file_paths:
             raise ValueError("No files found. Please check the source expression and file extensions")
+        
+        # Limit the number of files to the specified number
+        if num_files:
+            file_paths = file_paths[:num_files]
         
         return file_paths
 

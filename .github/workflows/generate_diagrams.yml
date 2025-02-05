@@ -34,7 +34,7 @@ jobs:
     - name: Generate Graphviz files for all the major modules with Pyreverse
       run: |
         # Define color palette for the diagrams
-        COLOR_PALETTE="#1E3A5F,#4A6572,#F0A202,#D95D39,#9E9E9E,#15616D,#1B9AAA,#522546,#F8F1F1"
+        COLOR_PALETTE="#2F80ED,#56CCF2,#F2994A,#EB5757,#E0E0E0,#27AE60,#6FCF97,#BB6BD9,#FFFFFF"
 
         # Generate diagrams
         pyreverse -p pythermondt -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --max-depth 1 --source-roots ./src pythermondt

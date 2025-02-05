@@ -2,12 +2,18 @@ digraph "packages_pythermondt.transforms" {
 rankdir=BT
 charset="utf-8"
 "pythermondt.transforms" [color="#77AADD", label=<pythermondt.transforms>, shape="box", style="filled"];
+"pythermondt.transforms.augmentation" [color="#77AADD", label=<pythermondt.transforms.augmentation>, shape="box", style="filled"];
 "pythermondt.transforms.normalization" [color="#77AADD", label=<pythermondt.transforms.normalization>, shape="box", style="filled"];
 "pythermondt.transforms.preprocessing" [color="#77AADD", label=<pythermondt.transforms.preprocessing>, shape="box", style="filled"];
+"pythermondt.transforms.sampling" [color="#77AADD", label=<pythermondt.transforms.sampling>, shape="box", style="filled"];
 "pythermondt.transforms.utils" [color="#77AADD", label=<pythermondt.transforms.utils>, shape="box", style="filled"];
+"pythermondt.transforms" -> "pythermondt.transforms.augmentation" [arrowhead="open", arrowtail="none"];
 "pythermondt.transforms" -> "pythermondt.transforms.normalization" [arrowhead="open", arrowtail="none"];
 "pythermondt.transforms" -> "pythermondt.transforms.preprocessing" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms" -> "pythermondt.transforms.sampling" [arrowhead="open", arrowtail="none"];
 "pythermondt.transforms" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms.augmentation" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
 "pythermondt.transforms.normalization" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
 "pythermondt.transforms.preprocessing" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.transforms.sampling" -> "pythermondt.transforms.utils" [arrowhead="open", arrowtail="none"];
 }

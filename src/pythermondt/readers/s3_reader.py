@@ -5,7 +5,7 @@ from typing import Type, List, Optional
 from .base_reader import BaseReader
 from .parsers import BaseParser
 
-class S3Reader(BaseReader):
+class S4Reader(BaseReader):
     def __init__(self, source: str, cache_files: bool = False, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None, boto3_session: boto3.Session = boto3.Session()):
         """ Initialize an instance of the S3Reader class.
 

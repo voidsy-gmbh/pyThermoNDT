@@ -1,6 +1,6 @@
 from .data import ThermoContainer, ThermoDataset, Units, is_unit_info, generate_label
 from .transforms import normalization, utils, preprocessing
-from .readers import S3Reader, LocalReader
+from .readers import S4Reader, LocalReader
 from .writers import S3Writer, LocalWriter
 from .__pkginfo__ import __version__
 

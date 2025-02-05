@@ -22,46 +22,47 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/pylint-dev/pylint.git # Install the latest version of pylint where my fix for source-root is already included
+        pip install git+https://github.com/pylint-dev/pylint.git # Install latest pylint version which also contains --max-depth option
 
     - name: Setup Graphviz
       uses: ts-graphviz/setup-graphviz@v2
 
-    - name: Create directory for diagrams
+    - name: Create directories for diagrams
       run: |
-        mkdir -p ./docs/pyreverse
+        mkdir -p ./docs/pyreverse/graphviz
+        mkdir -p ./docs/pyreverse/images
 
-    - name: Generate Graphviz files for all the major modules with Pyreverse
+    - name: Generate Graphviz files for all major modules with Pyreverse
       run: |
         # Define color palette for the diagrams
-        COLOR_PALETTE="#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED,#FFFFFF"
-
+        COLOR_PALETTE="#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED"
+        
         # Generate diagrams
-        pyreverse -p pythermondt -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --max-depth 1 --source-roots ./src pythermondt
-        pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --source-roots ./src pythermondt.data
-        pyreverse -p pythermondt.readers -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --source-roots ./src pythermondt.readers
-        pyreverse -p pythermondt.transforms -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --source-roots ./src pythermondt.transforms
-        pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --source-roots ./src pythermondt.writers
-        pyreverse -p pythermondt.data.datacontainer -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --source-roots ./src pythermondt.data.datacontainer
-        pyreverse -p pythermondt.data.units -o gv -d ./docs/pyreverse --colorized --max-color-depth 9 --color-palette="$COLOR_PALETTE" --source-roots ./src pythermondt.data.units
+        pyreverse -p pythermondt -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt
+        pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data
+        pyreverse -p pythermondt.readers -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.readers
+        pyreverse -p pythermondt.transforms -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.transforms
+        pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.writers
+        pyreverse -p pythermondt.data.datacontainer -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data.datacontainer
+        pyreverse -p pythermondt.data.units -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data.units
 
-    - name: Check for New or Modified Files
+    - name: Check for New or Modified Graphviz Files
       id: files-check
       run: |
-          NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/*.gv | wc -l)
-          if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
-            echo "New or modified .gv files detected."
-            echo "CHANGED=true" >> $GITHUB_ENV
-          else
-            echo "No new or modified .gv files detected."
-            echo "CHANGED=false" >> $GITHUB_ENV
-          fi
-      
+        NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/graphviz/*.gv | wc -l)
+        if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
+          echo "New or modified .gv files detected."
+          echo "CHANGED=true" >> $GITHUB_ENV
+        else
+          echo "No new or modified .gv files detected."
+          echo "CHANGED=false" >> $GITHUB_ENV
+        fi
+
     - name: Generate diagrams from Graphviz files
       if: env.CHANGED == 'true'
       run: |
-        for file in ./docs/pyreverse/*.gv; do
-          dot -Tjpg "$file" -o "${file%.gv}.jpg"
+        for file in ./docs/pyreverse/graphviz/*.gv; do
+          dot -Tjpg "$file" -o "./docs/pyreverse/images/$(basename ${file%.gv}.jpg)"
         done
     
     - name: Upload diagrams
@@ -69,7 +70,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: diagrams
-        path: ./docs/pyreverse/*.jpg
+        path: ./docs/pyreverse/images/*.jpg
     
     - name: Commit and Push Diagrams back to the repository
       if: env.CHANGED == 'true'

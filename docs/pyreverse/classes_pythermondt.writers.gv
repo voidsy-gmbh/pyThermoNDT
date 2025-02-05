@@ -1,10 +1,10 @@
 digraph "classes_pythermondt.writers" {
 rankdir=BT
 charset="utf-8"
-"pythermondt.writers.base_writer.BaseWriter" [color="#77AADD", fontcolor="black", label=<{BaseWriter|<br ALIGN="LEFT"/>|<I>write</I>(container: DataContainer, file_name: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.writers.local_writer.LocalWriter" [color="#77AADD", fontcolor="black", label=<{LocalWriter|destination_folder : str<br ALIGN="LEFT"/>|write(container, file_name)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.writers.s3_writer.S3Writer.write.ProgressCallback" [color="#99DDFF", fontcolor="black", label=<{ProgressCallback|bar<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
-"pythermondt.writers.s3_writer.S3Writer" [color="#77AADD", fontcolor="black", label=<{S3Writer|bucket : str<br ALIGN="LEFT"/>destination_folder : str<br ALIGN="LEFT"/>|write(container: DataContainer, file_name: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.writers.base_writer.BaseWriter" [color="#1E3A5F", fontcolor="black", label=<{BaseWriter|<br ALIGN="LEFT"/>|<I>write</I>(container: DataContainer, file_name: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.writers.local_writer.LocalWriter" [color="#1E3A5F", fontcolor="black", label=<{LocalWriter|destination_folder : str<br ALIGN="LEFT"/>|write(container, file_name)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.writers.s3_writer.S3Writer.write.ProgressCallback" [color="#4A6572", fontcolor="black", label=<{ProgressCallback|bar<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.writers.s3_writer.S3Writer" [color="#1E3A5F", fontcolor="black", label=<{S3Writer|bucket : str<br ALIGN="LEFT"/>destination_folder : str<br ALIGN="LEFT"/>|write(container: DataContainer, file_name: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.writers.local_writer.LocalWriter" -> "pythermondt.writers.base_writer.BaseWriter" [arrowhead="empty", arrowtail="none"];
 "pythermondt.writers.s3_writer.S3Writer" -> "pythermondt.writers.base_writer.BaseWriter" [arrowhead="empty", arrowtail="none"];
 }

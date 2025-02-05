@@ -1,14 +1,14 @@
 digraph "packages_pythermondt.readers" {
 rankdir=BT
 charset="utf-8"
-"pythermondt.readers" [color="#1E3A5F", label=<pythermondt.readers>, shape="box", style="filled"];
-"pythermondt.readers.base_reader" [color="#1E3A5F", label=<pythermondt.readers.base_reader>, shape="box", style="filled"];
-"pythermondt.readers.local_reader" [color="#1E3A5F", label=<pythermondt.readers.local_reader>, shape="box", style="filled"];
-"pythermondt.readers.parsers" [color="#4A6572", label=<pythermondt.readers.parsers>, shape="box", style="filled"];
-"pythermondt.readers.parsers.base_parser" [color="#4A6572", label=<pythermondt.readers.parsers.base_parser>, shape="box", style="filled"];
-"pythermondt.readers.parsers.hdf5_parser" [color="#4A6572", label=<pythermondt.readers.parsers.hdf5_parser>, shape="box", style="filled"];
-"pythermondt.readers.parsers.simulation_parser" [color="#4A6572", label=<pythermondt.readers.parsers.simulation_parser>, shape="box", style="filled"];
-"pythermondt.readers.s3_reader" [color="#1E3A5F", label=<pythermondt.readers.s3_reader>, shape="box", style="filled"];
+"pythermondt.readers" [color="#2F80ED", label=<pythermondt.readers>, shape="box", style="filled"];
+"pythermondt.readers.base_reader" [color="#2F80ED", label=<pythermondt.readers.base_reader>, shape="box", style="filled"];
+"pythermondt.readers.local_reader" [color="#2F80ED", label=<pythermondt.readers.local_reader>, shape="box", style="filled"];
+"pythermondt.readers.parsers" [color="#56CCF2", label=<pythermondt.readers.parsers>, shape="box", style="filled"];
+"pythermondt.readers.parsers.base_parser" [color="#56CCF2", label=<pythermondt.readers.parsers.base_parser>, shape="box", style="filled"];
+"pythermondt.readers.parsers.hdf5_parser" [color="#56CCF2", label=<pythermondt.readers.parsers.hdf5_parser>, shape="box", style="filled"];
+"pythermondt.readers.parsers.simulation_parser" [color="#56CCF2", label=<pythermondt.readers.parsers.simulation_parser>, shape="box", style="filled"];
+"pythermondt.readers.s3_reader" [color="#2F80ED", label=<pythermondt.readers.s3_reader>, shape="box", style="filled"];
 "pythermondt.readers" -> "pythermondt.readers.local_reader" [arrowhead="open", arrowtail="none"];
 "pythermondt.readers" -> "pythermondt.readers.parsers" [arrowhead="open", arrowtail="none"];
 "pythermondt.readers" -> "pythermondt.readers.s3_reader" [arrowhead="open", arrowtail="none"];

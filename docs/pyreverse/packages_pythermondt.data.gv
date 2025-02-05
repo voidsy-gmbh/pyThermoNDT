@@ -1,24 +1,24 @@
 digraph "packages_pythermondt.data" {
 rankdir=BT
 charset="utf-8"
-"pythermondt.data" [color="#1E3A5F", label=<pythermondt.data>, shape="box", style="filled"];
-"pythermondt.data.datacontainer" [color="#4A6572", label=<pythermondt.data.datacontainer>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.attribute_ops" [color="#4A6572", label=<pythermondt.data.datacontainer.attribute_ops>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.base" [color="#4A6572", label=<pythermondt.data.datacontainer.base>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.core" [color="#4A6572", label=<pythermondt.data.datacontainer.core>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.dataset_ops" [color="#4A6572", label=<pythermondt.data.datacontainer.dataset_ops>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.group_ops" [color="#4A6572", label=<pythermondt.data.datacontainer.group_ops>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.node" [color="#4A6572", label=<pythermondt.data.datacontainer.node>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.serialization_ops" [color="#4A6572", label=<pythermondt.data.datacontainer.serialization_ops>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.utils" [color="#4A6572", label=<pythermondt.data.datacontainer.utils>, shape="box", style="filled"];
-"pythermondt.data.datacontainer.visualization_ops" [color="#4A6572", label=<pythermondt.data.datacontainer.visualization_ops>, shape="box", style="filled"];
-"pythermondt.data.thermo_container" [color="#1E3A5F", label=<pythermondt.data.thermo_container>, shape="box", style="filled"];
-"pythermondt.data.thermo_dataset" [color="#1E3A5F", label=<pythermondt.data.thermo_dataset>, shape="box", style="filled"];
-"pythermondt.data.units" [color="#F0A202", label=<pythermondt.data.units>, shape="box", style="filled"];
-"pythermondt.data.units._unit" [color="#F0A202", label=<pythermondt.data.units._unit>, shape="box", style="filled"];
-"pythermondt.data.units.units" [color="#F0A202", label=<pythermondt.data.units.units>, shape="box", style="filled"];
-"pythermondt.data.units.utils" [color="#F0A202", label=<pythermondt.data.units.utils>, shape="box", style="filled"];
-"pythermondt.data.utils" [color="#1E3A5F", label=<pythermondt.data.utils>, shape="box", style="filled"];
+"pythermondt.data" [color="#2F80ED", label=<pythermondt.data>, shape="box", style="filled"];
+"pythermondt.data.datacontainer" [color="#56CCF2", label=<pythermondt.data.datacontainer>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.attribute_ops" [color="#56CCF2", label=<pythermondt.data.datacontainer.attribute_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.base" [color="#56CCF2", label=<pythermondt.data.datacontainer.base>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.core" [color="#56CCF2", label=<pythermondt.data.datacontainer.core>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.dataset_ops" [color="#56CCF2", label=<pythermondt.data.datacontainer.dataset_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.group_ops" [color="#56CCF2", label=<pythermondt.data.datacontainer.group_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.node" [color="#56CCF2", label=<pythermondt.data.datacontainer.node>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.serialization_ops" [color="#56CCF2", label=<pythermondt.data.datacontainer.serialization_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.utils" [color="#56CCF2", label=<pythermondt.data.datacontainer.utils>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.visualization_ops" [color="#56CCF2", label=<pythermondt.data.datacontainer.visualization_ops>, shape="box", style="filled"];
+"pythermondt.data.thermo_container" [color="#2F80ED", label=<pythermondt.data.thermo_container>, shape="box", style="filled"];
+"pythermondt.data.thermo_dataset" [color="#2F80ED", label=<pythermondt.data.thermo_dataset>, shape="box", style="filled"];
+"pythermondt.data.units" [color="#F2994A", label=<pythermondt.data.units>, shape="box", style="filled"];
+"pythermondt.data.units._unit" [color="#F2994A", label=<pythermondt.data.units._unit>, shape="box", style="filled"];
+"pythermondt.data.units.units" [color="#F2994A", label=<pythermondt.data.units.units>, shape="box", style="filled"];
+"pythermondt.data.units.utils" [color="#F2994A", label=<pythermondt.data.units.utils>, shape="box", style="filled"];
+"pythermondt.data.utils" [color="#2F80ED", label=<pythermondt.data.utils>, shape="box", style="filled"];
 "pythermondt.data" -> "pythermondt.data.datacontainer" [arrowhead="open", arrowtail="none"];
 "pythermondt.data" -> "pythermondt.data.thermo_container" [arrowhead="open", arrowtail="none"];
 "pythermondt.data" -> "pythermondt.data.thermo_dataset" [arrowhead="open", arrowtail="none"];

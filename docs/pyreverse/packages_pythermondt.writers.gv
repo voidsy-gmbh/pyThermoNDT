@@ -1,10 +1,10 @@
 digraph "packages_pythermondt.writers" {
 rankdir=BT
 charset="utf-8"
-"pythermondt.writers" [color="#1E3A5F", label=<pythermondt.writers>, shape="box", style="filled"];
-"pythermondt.writers.base_writer" [color="#1E3A5F", label=<pythermondt.writers.base_writer>, shape="box", style="filled"];
-"pythermondt.writers.local_writer" [color="#1E3A5F", label=<pythermondt.writers.local_writer>, shape="box", style="filled"];
-"pythermondt.writers.s3_writer" [color="#1E3A5F", label=<pythermondt.writers.s3_writer>, shape="box", style="filled"];
+"pythermondt.writers" [color="#2F80ED", label=<pythermondt.writers>, shape="box", style="filled"];
+"pythermondt.writers.base_writer" [color="#2F80ED", label=<pythermondt.writers.base_writer>, shape="box", style="filled"];
+"pythermondt.writers.local_writer" [color="#2F80ED", label=<pythermondt.writers.local_writer>, shape="box", style="filled"];
+"pythermondt.writers.s3_writer" [color="#2F80ED", label=<pythermondt.writers.s3_writer>, shape="box", style="filled"];
 "pythermondt.writers" -> "pythermondt.writers.base_writer" [arrowhead="open", arrowtail="none"];
 "pythermondt.writers" -> "pythermondt.writers.local_writer" [arrowhead="open", arrowtail="none"];
 "pythermondt.writers" -> "pythermondt.writers.s3_writer" [arrowhead="open", arrowtail="none"];

@@ -1,12 +1,12 @@
 digraph "packages_pythermondt" {
 rankdir=BT
 charset="utf-8"
-"pythermondt" [color="#1E3A5F", label=<pythermondt>, shape="box", style="filled"];
-"pythermondt.__pkginfo__" [color="#1E3A5F", label=<pythermondt.__pkginfo__>, shape="box", style="filled"];
-"pythermondt.data" [color="#4A6572", label=<pythermondt.data>, shape="box", style="filled"];
-"pythermondt.readers" [color="#F0A202", label=<pythermondt.readers>, shape="box", style="filled"];
-"pythermondt.transforms" [color="#D95D39", label=<pythermondt.transforms>, shape="box", style="filled"];
-"pythermondt.writers" [color="#9E9E9E", label=<pythermondt.writers>, shape="box", style="filled"];
+"pythermondt" [color="#2F80ED", label=<pythermondt>, shape="box", style="filled"];
+"pythermondt.__pkginfo__" [color="#2F80ED", label=<pythermondt.__pkginfo__>, shape="box", style="filled"];
+"pythermondt.data" [color="#56CCF2", label=<pythermondt.data>, shape="box", style="filled"];
+"pythermondt.readers" [color="#F2994A", label=<pythermondt.readers>, shape="box", style="filled"];
+"pythermondt.transforms" [color="#EB5757", label=<pythermondt.transforms>, shape="box", style="filled"];
+"pythermondt.writers" [color="#E0E0E0", label=<pythermondt.writers>, shape="box", style="filled"];
 "pythermondt" -> "pythermondt.__pkginfo__" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.data" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.readers" [arrowhead="open", arrowtail="none"];

@@ -22,7 +22,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/pylint-dev/pylint.git # Install latest pylint with source-root fix
+        pip install git+https://github.com/pylint-dev/pylint.git # Install latest pylint version which also contains --max-depth option
 
     - name: Setup Graphviz
       uses: ts-graphviz/setup-graphviz@v2
@@ -34,8 +34,10 @@ jobs:
 
     - name: Generate Graphviz files for all major modules with Pyreverse
       run: |
+        # Define color palette for the diagrams
         COLOR_PALETTE="#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED"
-
+        
+        # Generate diagrams
         pyreverse -p pythermondt -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt
         pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data
         pyreverse -p pythermondt.readers -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.readers

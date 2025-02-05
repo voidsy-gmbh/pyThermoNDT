@@ -1,0 +1,43 @@
+digraph "packages_pythermondt.data.datacontainer" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.data.datacontainer" [color="#F2994A", label=<pythermondt.data.datacontainer>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.attribute_ops" [color="#F2994A", label=<pythermondt.data.datacontainer.attribute_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.base" [color="#F2994A", label=<pythermondt.data.datacontainer.base>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.core" [color="#F2994A", label=<pythermondt.data.datacontainer.core>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.dataset_ops" [color="#F2994A", label=<pythermondt.data.datacontainer.dataset_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.group_ops" [color="#F2994A", label=<pythermondt.data.datacontainer.group_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.node" [color="#F2994A", label=<pythermondt.data.datacontainer.node>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.serialization_ops" [color="#F2994A", label=<pythermondt.data.datacontainer.serialization_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.utils" [color="#F2994A", label=<pythermondt.data.datacontainer.utils>, shape="box", style="filled"];
+"pythermondt.data.datacontainer.visualization_ops" [color="#F2994A", label=<pythermondt.data.datacontainer.visualization_ops>, shape="box", style="filled"];
+"pythermondt.data.datacontainer" -> "pythermondt.data.datacontainer.core" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.attribute_ops" -> "pythermondt.data.datacontainer.base" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.attribute_ops" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.base" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.base" -> "pythermondt.data.datacontainer.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.attribute_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.dataset_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.group_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.serialization_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.core" -> "pythermondt.data.datacontainer.visualization_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.dataset_ops" -> "pythermondt.data.datacontainer.base" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.dataset_ops" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.dataset_ops" -> "pythermondt.data.datacontainer.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.group_ops" -> "pythermondt.data.datacontainer.base" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.group_ops" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.group_ops" -> "pythermondt.data.datacontainer.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops" -> "pythermondt.data.datacontainer.attribute_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops" -> "pythermondt.data.datacontainer.base" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops" -> "pythermondt.data.datacontainer.dataset_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops" -> "pythermondt.data.datacontainer.group_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.serialization_ops" -> "pythermondt.data.datacontainer.utils" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.utils" -> "pythermondt.data.datacontainer.node" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.visualization_ops" -> "pythermondt.data.datacontainer.attribute_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.visualization_ops" -> "pythermondt.data.datacontainer.dataset_ops" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.datacontainer.visualization_ops" -> "pythermondt.data.datacontainer.group_ops" [arrowhead="open", arrowtail="none"];
+}

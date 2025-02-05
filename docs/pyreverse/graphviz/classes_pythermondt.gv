@@ -31,8 +31,8 @@ charset="utf-8"
 "pythermondt.transforms.augmentation.RandomFlip" [color="#FFFFFF", fontcolor="black", label=<{RandomFlip|p_height : float<br ALIGN="LEFT"/>p_width : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.preprocessing.RemoveFlash" [color="#FFFFFF", fontcolor="black", label=<{RemoveFlash|method : Literal['excitation_signal', 'max_temp']<br ALIGN="LEFT"/>offset : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.node.RootNode" [color="#27AE60", fontcolor="black", label=<{RootNode|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
-"pythermondt.readers.s3_reader.S3Reader" [color="#BB6BD9", fontcolor="black", label=<{S3Reader|remote_source<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.writers.s3_writer.S3Writer" [color="#F2994A", fontcolor="black", label=<{S3Writer|bucket : str<br ALIGN="LEFT"/>destination_folder : str<br ALIGN="LEFT"/>|write(container: DataContainer, file_name: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.readers.s3_reader.S4Reader" [color="#BB6BD9", fontcolor="black", label=<{S4Reader|remote_source<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.transforms.sampling.SelectFrameRange" [color="#FFFFFF", fontcolor="black", label=<{SelectFrameRange|end : Optional[int]<br ALIGN="LEFT"/>start : Optional[int]<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.sampling.SelectFrames" [color="#FFFFFF", fontcolor="black", label=<{SelectFrames|frame_indices : list<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.serialization_ops.SerializationOps" [color="#27AE60", fontcolor="black", label=<{SerializationOps|<br ALIGN="LEFT"/>|save_to_hdf5(path: str)<br ALIGN="LEFT"/>serialize_to_hdf5(): io.BytesIO<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
@@ -72,7 +72,7 @@ charset="utf-8"
 "pythermondt.readers.local_reader.LocalReader" -> "pythermondt.readers.base_reader.BaseReader" [arrowhead="empty", arrowtail="none"];
 "pythermondt.readers.parsers.hdf5_parser.HDF5Parser" -> "pythermondt.readers.parsers.base_parser.BaseParser" [arrowhead="empty", arrowtail="none"];
 "pythermondt.readers.parsers.simulation_parser.SimulationParser" -> "pythermondt.readers.parsers.base_parser.BaseParser" [arrowhead="empty", arrowtail="none"];
-"pythermondt.readers.s3_reader.S3Reader" -> "pythermondt.readers.base_reader.BaseReader" [arrowhead="empty", arrowtail="none"];
+"pythermondt.readers.s3_reader.S4Reader" -> "pythermondt.readers.base_reader.BaseReader" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.augmentation.GaussianNoise" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.augmentation.RandomFlip" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.normalization.MaxNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];

@@ -48,6 +48,7 @@ jobs:
         pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.writers
         pyreverse -p pythermondt.data.datacontainer -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data.datacontainer
         pyreverse -p pythermondt.data.units -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data.units
+        pyreverse -p pythermondt.io -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.io
 
     - name: Check for New or Modified Graphviz Files
       id: files-check

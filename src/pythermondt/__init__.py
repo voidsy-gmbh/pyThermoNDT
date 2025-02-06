@@ -1,5 +1,5 @@
 from .data import ThermoContainer, ThermoDataset
-from .transforms import normalization, utils, preprocessing
+from .transforms import augmentation, normalization, utils, preprocessing, sampling
 from .readers import S3Reader, LocalReader
 from .writers import S3Writer, LocalWriter
 from .__pkginfo__ import __version__

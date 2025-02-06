@@ -36,6 +36,9 @@ jobs:
       run: |
         # Define color palette for the diagrams
         COLOR_PALETTE="#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED"
+
+        # Generate a top level overview of the project
+        pyreverse -p Overview -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" --max-depth 1 pythermondt
         
         # Generate diagrams
         pyreverse -p pythermondt -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt

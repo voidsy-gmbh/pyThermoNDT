@@ -4,7 +4,7 @@ import os
 from glob import glob
 from typing import List, Type, Optional
 from .base_reader import BaseReader
-from ..io.parsers import BaseParser
+from ..io import BaseParser
 
 class LocalReader(BaseReader):
     def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None):

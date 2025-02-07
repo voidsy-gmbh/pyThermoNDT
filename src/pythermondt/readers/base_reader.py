@@ -3,7 +3,7 @@ from tqdm.auto import tqdm
 from typing import Tuple, Type, Optional, Iterator, Dict, List
 from abc import ABC, abstractmethod
 from ..data import DataContainer
-from ..io.parsers import BaseParser, HDF5Parser, SimulationParser
+from ..io import BaseParser, HDF5Parser, SimulationParser
 
 # Define which parser should be used for which file extensions
 FILE_EXTENSIONS: Dict[Type[BaseParser], Tuple[str, ...]] = {

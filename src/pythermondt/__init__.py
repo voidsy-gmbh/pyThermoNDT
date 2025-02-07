@@ -1,7 +1,8 @@
-from .data import ThermoContainer, ThermoDataset, Units, is_unit_info, generate_label
-from .transforms import normalization, utils, preprocessing
+from .data import ThermoContainer, ThermoDataset
+from .transforms import augmentation, normalization, utils, preprocessing, sampling
 from .readers import S3Reader, LocalReader
 from .writers import S3Writer, LocalWriter
+from .io import HDF5Parser, SimulationParser
 from .__pkginfo__ import __version__
 
 # TODO: Implement logging instead of print statements according to this guide: https://docs.python.org/3/howto/logging.html

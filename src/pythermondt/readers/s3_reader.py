@@ -3,7 +3,7 @@ import re
 import boto3
 from typing import Type, List, Optional
 from .base_reader import BaseReader
-from .parsers import BaseParser
+from ..io import BaseParser
 
 class S3Reader(BaseReader):
     def __init__(self, source: str, cache_files: bool = False, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None, boto3_session: boto3.Session = boto3.Session()):

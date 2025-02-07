@@ -1,0 +1,9 @@
+digraph "classes_pythermondt.io" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.io.parsers.base_parser.BaseParser" [color="#EB5757", fontcolor="black", label=<{BaseParser|<br ALIGN="LEFT"/>|<I>parse</I>(data_bytes: io.BytesIO): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.io.parsers.hdf5_parser.HDF5Parser" [color="#EB5757", fontcolor="black", label=<{HDF5Parser|<br ALIGN="LEFT"/>|parse(data_bytes: io.BytesIO): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.io.parsers.simulation_parser.SimulationParser" [color="#EB5757", fontcolor="black", label=<{SimulationParser|<br ALIGN="LEFT"/>|parse(data_bytes: io.BytesIO): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.io.parsers.hdf5_parser.HDF5Parser" -> "pythermondt.io.parsers.base_parser.BaseParser" [arrowhead="empty", arrowtail="none"];
+"pythermondt.io.parsers.simulation_parser.SimulationParser" -> "pythermondt.io.parsers.base_parser.BaseParser" [arrowhead="empty", arrowtail="none"];
+}

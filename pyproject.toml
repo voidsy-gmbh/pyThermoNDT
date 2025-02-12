@@ -33,7 +33,9 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-cov>=4.1",
-    "uv>=0.4"
+    "uv>=0.4",
+    "ruff>=0.6",
+    "pre-commit>=3.8"
 ]
 
 [tool.setuptools.packages.find]

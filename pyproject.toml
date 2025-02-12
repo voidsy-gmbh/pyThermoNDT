@@ -61,3 +61,15 @@ testpaths = ["tests"]
 
 [tool.uv]
 required-version = "~=0.6.0" # Pin uv to major version 0.6 for stability
+
+# Ruff
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "N", "UP"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"

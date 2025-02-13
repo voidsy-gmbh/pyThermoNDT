@@ -54,13 +54,13 @@ addopts = [
 ]
 testpaths = ["tests"]
 
-# TODO: Find a better way to install torch cpu only before publishing to PyPI, they do not allow this yet
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
+# # TODO: Find a better way to install torch cpu only before publishing to PyPI, they do not allow this yet
+# [[tool.uv.index]]
+# name = "pytorch-cpu"
+# url = "https://download.pytorch.org/whl/cpu"
+# explicit = true
 
-[tool.uv.sources]
-torch = [
-  { index = "pytorch-cpu" },
-]
+# [tool.uv.sources]
+# torch = [
+#   { index = "pytorch-cpu" },
+# ]

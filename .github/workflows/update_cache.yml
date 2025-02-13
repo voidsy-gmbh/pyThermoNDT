@@ -33,4 +33,4 @@ jobs:
       - if: steps.setup-uv.outputs.cache-hit != 'true'
         name: Sync dependencies
         run: |
-          uv sync --group dev
+          uv sync --extra dev

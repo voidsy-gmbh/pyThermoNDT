@@ -21,20 +21,16 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
-          # Install a specific version of uv.
+          python-version: 3.12
           version: "0.5.31" # Pin uv version for stability
           enable-cache: true
+          prune-cache: true
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py
       
-      # Step 3 Setup python
-      - name: Setup Python
+      # Step 3 Sync dependencies if cache hit
+      - if: steps.setup-uv.outputs.cache-hit == 'true'
+        name: Sync dependencies
         run: |
-          uv python install --project .
-
-      # # Step 4: Install dependencies if cache miss
-      # - if: steps.setup-uv.outputs.cache-hit != 'true'
-      #   name: Install dependencies
-      #   run: |
-      #     uv pip install ".[dev]"
+          uv sync --group dev

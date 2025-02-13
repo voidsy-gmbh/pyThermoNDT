@@ -38,6 +38,7 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-cov>=4.1",
+    "uv>=0.4"
 ]
 
 [tool.setuptools.packages.find]
@@ -52,3 +53,13 @@ addopts = [
     "--import-mode=importlib",
 ]
 testpaths = ["tests"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu" },
+]

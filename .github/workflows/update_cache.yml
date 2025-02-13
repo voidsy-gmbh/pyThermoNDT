@@ -7,16 +7,15 @@ on:
     branches:
       - "main" # Update cache on main branch
 
-      # Environment variables
+# Environment variables
 env:
-  UV_SYSTEM_PYTHON: 1
+  UV_SYSTEM_PYTHON: 1 # Use system python
   UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
 
 jobs:
   build-cache:
     name: Build Cache
     runs-on: ubuntu-latest
-
     steps:
       # Step 1: Checkout repository
       - name: Checkout repository
@@ -30,7 +29,6 @@ jobs:
           version: "0.5.31" # Pin uv version for stability
           enable-cache: false
 
-        
       # Step 3: Setup Python
       - name: Set up Python 3.12
         uses: actions/setup-python@v5

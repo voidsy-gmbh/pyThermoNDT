@@ -14,14 +14,14 @@ changelog:
       labels:
         - breaking change
     
-    - title: "✨ Enhancements"
-      labels:
-        - enhancement
-    
     - title: "🐛 Bug Fixes"
       labels:
         - bug
         - bug fix
+
+    - title: "✨ Enhancements"
+      labels:
+        - enhancement
 
     - title: "🔨 Maintenance"
       labels:

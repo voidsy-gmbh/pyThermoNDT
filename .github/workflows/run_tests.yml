@@ -27,7 +27,6 @@ jobs:
         with:
           python-version: 3.12
           version: "0.5.31" # Pin uv version for stability
-          enable-cache: false
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py

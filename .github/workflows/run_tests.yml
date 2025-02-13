@@ -26,6 +26,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.31" # Pin uv version for stability
+          pyproject-file: "pyproject.toml"
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py

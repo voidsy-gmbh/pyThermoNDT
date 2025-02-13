@@ -7,8 +7,10 @@ on:
     branches:
       - "main" # Update cache on main branch
 
+      # Environment variables
 env:
   UV_SYSTEM_PYTHON: 1
+  UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
 
 jobs:
   build-cache:
@@ -36,15 +38,13 @@ jobs:
           python-version: 3.12
 
       # Step 4: Restore pip cache ==> if cache miss, install dependencies and cache them
-      - name: Cache pip
+      - name: Cache uv
         id: cache-pip
         uses: actions/cache@v4
         with:
-          path: ${{ env.pythonLocation }}
-          key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ env.UV_CACHE_DIR }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
           lookup-only: true
-        env:
-          pythonLocation: ${{ env.pythonLocation }}
 
       # Step 5: Install dependencies if cache miss
       - if: steps.cache-pip.outputs.cache-hit != 'true'
@@ -52,4 +52,6 @@ jobs:
         run: |
           uv pip install ".[dev]"
       
-      # Step 6: Prune cache
+      # Step 6: Prune cache to save space
+      - name: Minimize uv cache
+        run: uv cache prune --ci

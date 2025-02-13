@@ -13,11 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Setup Python
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       # Step 2: Setup uv
       - name: Install uv
@@ -25,10 +23,12 @@ jobs:
         with:
           # Install a specific version of uv.
           version: "0.5.31"
-
-      # Step 3: Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
+        
+      # Step 3: Setup Python
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
 
       # Step 4: Restore pip cache ==> if cache miss, install dependencies and cache them
       - name: Cache pip

@@ -12,7 +12,6 @@ changelog:
 
     - title: "💥 Breaking Changes"
       labels:
-        - breaking
         - breaking change
     
     - title: "✨ Enhancements"

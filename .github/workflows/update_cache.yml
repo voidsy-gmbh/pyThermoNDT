@@ -21,7 +21,6 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.12
           version: "0.5.31" # Pin uv version for stability
           enable-cache: true
           prune-cache: true
@@ -33,4 +32,4 @@ jobs:
       - if: steps.setup-uv.outputs.cache-hit != 'true'
         name: Sync dependencies
         run: |
-          uv sync --extra dev
+          uv sync --extra dev --project .

@@ -30,10 +30,12 @@ jobs:
       
       # Step 3 Setup python
       - name: Setup Python
-        run: uv python install
-
-      # Step 4: Install dependencies if cache miss
-      - if: steps.setup-uv.outputs.cache-hit != 'true'
-        name: Install dependencies
         run: |
-          uv pip install ".[dev]"
+          uv python install
+          echo uv pip list
+
+      # # Step 4: Install dependencies if cache miss
+      # - if: steps.setup-uv.outputs.cache-hit != 'true'
+      #   name: Install dependencies
+      #   run: |
+      #     uv pip install ".[dev]"

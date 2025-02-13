@@ -19,11 +19,18 @@ jobs:
         with:
           python-version: 3.12
 
-      # Step 2: Checkout repository
+      # Step 2: Setup uv
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # Install a specific version of uv.
+          version: "0.5.31"
+
+      # Step 3: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 3: Restore pip cache ==> if cache miss, install dependencies and cache them
+      # Step 4: Restore pip cache ==> if cache miss, install dependencies and cache them
       - name: Cache pip
         id: cache-pip
         uses: actions/cache@v4
@@ -34,9 +41,8 @@ jobs:
         env:
           pythonLocation: ${{ env.pythonLocation }}
 
-      # Step 4: Install dependencies if cache miss
+      # Step 5: Install dependencies if cache miss
       - if: steps.cache-pip.outputs.cache-hit != 'true'
         name: Install dependencies
         run: |
-          pip install torch>=2.0+cpu
-          pip install ".[dev]"
+          uv pip install ".[dev]"

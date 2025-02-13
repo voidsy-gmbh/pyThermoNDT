@@ -32,7 +32,7 @@ changelog:
   
     - title: "⚡ CI & Automation"
       labels:
-        - "ci: tests"
+        - "ci: testing"
         - "ci: linting"
 
     - title: "Other Changes"

@@ -26,10 +26,15 @@ changelog:
 
     - title: "🔨 Maintenance"
       labels:
+        - dependencies
+        - documentation
         - maintenance
         - refactor
-        - documentation
-        - tests
+  
+    - title: "⚡ CI & Automation"
+      labels:
+        - "ci: tests"
+        - "ci: linting"
 
     - title: "Other Changes"
       labels:

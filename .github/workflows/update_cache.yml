@@ -31,7 +31,7 @@ jobs:
       # Step 3 Setup python
       - name: Setup Python
         run: |
-          uv python install
+          uv python install .
           uv venv
 
       # Step 4: Install dependencies if cache miss

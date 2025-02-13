@@ -30,7 +30,7 @@ jobs:
             **/setup.py
       
       # Step 3 Sync dependencies if cache hit
-      - if: steps.setup-uv.outputs.cache-hit == 'true'
+      - if: steps.setup-uv.outputs.cache-hit != 'true'
         name: Sync dependencies
         run: |
           uv sync --group dev

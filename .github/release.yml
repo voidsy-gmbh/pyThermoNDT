@@ -12,24 +12,27 @@ changelog:
 
     - title: "💥 Breaking Changes"
       labels:
-        - breaking
         - breaking change
-    
-    - title: "✨ Enhancements"
-      labels:
-        - enhancement
     
     - title: "🐛 Bug Fixes"
       labels:
-        - bug
         - bug fix
+
+    - title: "✨ Enhancements"
+      labels:
+        - enhancement
 
     - title: "🔨 Maintenance"
       labels:
+        - dependencies
+        - documentation
         - maintenance
         - refactor
-        - documentation
-        - tests
+  
+    - title: "⚡ CI & Automation"
+      labels:
+        - "ci: testing"
+        - "ci: linting"
 
     - title: "Other Changes"
       labels:

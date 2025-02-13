@@ -32,20 +32,14 @@ jobs:
           # Install a specific version of uv.
           version: "0.5.31" # Pin uv version for stability
           enable-cache: false
-        
-      # Step 3: Setup Python
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
 
-      # Step 4: Restore uv cache 
-      # - name: Restore uv cache
-      #   id: uv-cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ${{ env.UV_CACHE_DIR }}
-      #     key: ${{ runner.os }}-${{ env.UV_CACHE_DIR }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
+      Step 4: Restore uv cache 
+      - name: Restore uv cache
+        id: uv-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ env.UV_CACHE_DIR }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
 
       # Step 5: Install dependencies
       - name: Install dependencies

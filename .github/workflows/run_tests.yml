@@ -13,49 +13,54 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    env:
+      UV_SYSTEM_PYTHON: 1 # Use system pyhton
+      UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:
-      # Step 1: Setup Python
-      - name: Setup Python
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup uv
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # Install a specific version of uv.
+          version: "0.5.31" # Pin uv version for stability
+          enable-cache: false
+        
+      # Step 3: Setup Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
 
-      # Step 2: Checkout code in the current branch
-      - name: Checkout code
-        uses: actions/checkout@v4   
-
-      # Step 3: Restore pip cache
-      - name: Cache pip
+      # Step 4: Restore pip cache ==> if cache miss, install dependencies and cache them
+      - name: Cache uv
         id: cache-pip
         uses: actions/cache@v4
         with:
-          path: ${{ env.pythonLocation }}
-          key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
-        env:
-          pythonLocation: ${{ env.pythonLocation }}
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ env.UV_CACHE_DIR }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
+          lookup-only: true
 
-      # Step 4: Install dependencies if cache miss
+      # Step 5: Install dependencies if cache miss
       - if: steps.cache-pip.outputs.cache-hit != 'true'
         name: Install dependencies
         run: |
-          echo "Cache miss, installing dependencies"
-          pip install torch>=2.0+cpu
-          pip install ".[dev]"
-        
-        # Step 5: Just install pyThermoNDT without dependencies if cache hit
-      - if: steps.cache-pip.outputs.cache-hit == 'true'
-        name: Cache hit
-        run: |
-          echo "Cache hit, just install pyThermoNDT without dependencies"
-          pip install . --no-deps
+          uv pip install ".[dev]"
+      
+      # Step 6: Prune cache to save space
+      - name: Minimize uv cache
+        run: uv cache prune --ci
 
-      # Step 6: Run tests
+      # Step 7: Run tests
       - name: Run Tests
         run: pytest
 
-      # Step 7: Set Output Based on Test Success
+      # Step 8: Set Output Based on Test Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

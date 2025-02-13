@@ -6,7 +6,7 @@ on:
   push:
     branches:
       - "main" # Update cache on main branch
-      
+
 env:
   UV_SYSTEM_PYTHON: 1
 
@@ -25,7 +25,9 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           # Install a specific version of uv.
-          version: "0.5.31"
+          version: "0.5.31" # Pin uv version for stability
+          enable-cache: false
+
         
       # Step 3: Setup Python
       - name: Set up Python 3.12
@@ -49,3 +51,5 @@ jobs:
         name: Install dependencies
         run: |
           uv pip install ".[dev]"
+      
+      # Step 6: Prune cache

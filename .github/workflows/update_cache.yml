@@ -36,8 +36,8 @@ jobs:
           python-version: 3.12
 
       # Step 4: Restore pip cache ==> if cache miss, install dependencies and cache them
-      - name: Cache uv
-        id: cache-pip
+      - name: Lookup uv cache
+        id: cache-uv
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
@@ -45,7 +45,7 @@ jobs:
           lookup-only: true
 
       # Step 5: Install dependencies if cache miss
-      - if: steps.cache-pip.outputs.cache-hit != 'true'
+      - if: steps.cache-uv.outputs.cache-hit != 'true'
         name: Install dependencies
         run: |
           uv pip install ".[dev]"

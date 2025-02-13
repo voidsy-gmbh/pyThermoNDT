@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Setup uv
-      - name: Install uv and setup python environment
+      - name: Setup uv
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -32,8 +32,12 @@ jobs:
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py
+      
+      # Step 3 Setup python
+      - name: Setup Python
+        run: uv python install
 
-      # Step 3: Install dependencies if cache miss
+      # Step 4: Install dependencies if cache miss
       - if: steps.setup-uv.outputs.cache-hit != 'true'
         name: Install dependencies
         run: |

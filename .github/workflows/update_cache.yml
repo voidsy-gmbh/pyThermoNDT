@@ -31,11 +31,10 @@ jobs:
       # Step 3 Setup python
       - name: Setup Python
         run: |
-          uv python install .
-          uv venv
+          uv python install --project .
 
-      # Step 4: Install dependencies if cache miss
-      - if: steps.setup-uv.outputs.cache-hit != 'true'
-        name: Install dependencies
-        run: |
-          uv pip install ".[dev]"
+      # # Step 4: Install dependencies if cache miss
+      # - if: steps.setup-uv.outputs.cache-hit != 'true'
+      #   name: Install dependencies
+      #   run: |
+      #     uv pip install ".[dev]"

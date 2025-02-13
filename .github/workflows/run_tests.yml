@@ -41,7 +41,7 @@ jobs:
 
       # Step 4: Run tests
       - name: Run Tests
-        run: pytest
+        run: uv run pytest
 
       # Step 5: Set Output Based on Test Success
       - id: set_output

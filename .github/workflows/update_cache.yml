@@ -9,7 +9,6 @@ on:
 
 # Environment variables
 env:
-  UV_SYSTEM_PYTHON: 1 # Use system python
   UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
 
 jobs:
@@ -31,9 +30,8 @@ jobs:
 
       # Step 3: Setup Python
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
+        run:
+          uv python install 3.12
 
       # Step 4: Restore pip cache ==> if cache miss, install dependencies and cache them
       - name: Lookup uv cache

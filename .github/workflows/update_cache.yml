@@ -7,11 +7,6 @@ on:
     branches:
       - "main" # Update cache on main branch
 
-# Environment variables
-env:
-  UV_SYSTEM_PYTHON: 1 # Use system python
-  UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
-
 jobs:
   build-cache:
     name: Build Cache

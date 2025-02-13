@@ -16,7 +16,6 @@ changelog:
     
     - title: "🐛 Bug Fixes"
       labels:
-        - bug
         - bug fix
 
     - title: "✨ Enhancements"

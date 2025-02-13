@@ -45,9 +45,8 @@ jobs:
           path: ${{ env.UV_CACHE_DIR }}
           key: ${{ runner.os }}-${{ env.UV_CACHE_DIR }}-${{ hashFiles('setup.py', 'pyproject.toml') }}
 
-      # Step 5: Install dependencies if cache miss
-      - if: steps.uv-cache.outputs.cache-hit != 'true'
-        name: Install dependencies
+      # Step 5: Install dependencies
+      - name: Install dependencies
         run: |
           uv pip install ".[dev]"
       

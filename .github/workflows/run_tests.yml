@@ -9,13 +9,15 @@ on:
         description: "Whether tests succeeded"
         value: ${{ jobs.test.outputs.success }}
 
+        # Environment variables
+env:
+  UV_SYSTEM_PYTHON: 1 # Use system pyhton
+  UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
+
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    env:
-      UV_SYSTEM_PYTHON: 1 # Use system pyhton
-      UV_CACHE_DIR: /tmp/.uv-cache # Configure a constant location for the uv cache
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:

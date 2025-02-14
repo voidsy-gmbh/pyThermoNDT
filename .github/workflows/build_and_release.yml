@@ -141,7 +141,6 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: false # Disable cache for pip build
-          version: "0.5.31" # Pin uv version for stability
 
       # Step 4: Build conda package
       - name: Build conda package

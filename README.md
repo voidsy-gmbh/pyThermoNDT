@@ -75,14 +75,16 @@ For using this package, take a look at the Jupyter Notebooks in [examples](examp
 Setting up a development environment is required before contributing. 2 Options are described below:
 
 ### Option 1: Using UV / Pip (Recommended)
-Setting up the development environment using UV/Pip is recommended as it is faster and more lightweight than Conda:
+Setting up the development environment using uv / Pip is recommended as it is faster and more lightweight than Conda:
 
 To set up the venv run the following command in the root directory of the repository:
 ```
 uv venv
 uv pip install -e .[dev]
 ```
-This will create a new virtual environment called `venv` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will immediately be reflected in the environment without having to reinstall the package every time. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). Use Select Interpreter in VSCode to select the venv as the interpreter for the workspace. This will allow VSCode to use the venv for running the code and provide proper code completion.
+This will create a new virtual environment called `venv` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will immediately be reflected in the environment without having to reinstall the package every time. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). 
+
+* **VSCode Setup:** Use 'Select Interpreter' in VSCode to choose venv for running the code and enabling proper autocompletion.
 
 If you dont want to use uv, you can also do the same thing with pip (though pip is much slower than uv):
 ```
@@ -99,7 +101,7 @@ To set up the environment run the following command in the root directory of the
 ```
 conda env create -f environment.yml
 ```
-This will create a new conda environment called `pythermondt-dev` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will immediately be reflected in the environment without having to reinstall the package every time. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). Use Select Interpreter in VSCode to select the conda environment as the interpreter for the workspace. This will allow VSCode to use the conda environment for running the code and provide proper code completion.
+This will create a new conda environment called `pythermondt-dev` with all the necessary dependencies installed. The package will be installed in development mode, similar to the Pip setup above.
 
 ### Running Tests
 Tests are written using pytest and are located in [tests](tests/). Tests can be run locally using the following command:

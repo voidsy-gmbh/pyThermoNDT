@@ -72,11 +72,9 @@ For using this package, take a look at the Jupyter Notebooks in [examples](examp
 
 ## Contributing
 
-### Setting up the Development Environment
+Setting up a development environment is required before contributing. 2 Options are described below:
 
-You can set up your development environment using either **Conda** or **UV / Pip**.
-
-#### Option 1: Using UV / Pip (Recommended)
+### Option 1: Using UV / Pip (Recommended)
 Setting up the development environment using UV/Pip is recommended as it is faster and more lightweight than Conda:
 
 To set up the venv run the following command in the root directory of the repository:
@@ -94,7 +92,7 @@ venv\Scripts\activate.bat # Windows
 pip install -e .[dev]
 ```
 
-#### Option 2: Using Conda
+### Option 2: Using Conda
 The dependencies for development are specified in [environment.yml](environment.yml)
 
 To set up the environment run the following command in the root directory of the repository:
@@ -118,4 +116,4 @@ The package version is defined in [pythermondt/\__pkginfo\__.py](src/pythermondt
 
 When releasing a new version:
 1. Update the version number in [pythermondt/\__pkginfo\__.py](src/pythermondt/__pkginfo__.py).
-2. Create a new release branch named 'release/version_number' This will automatically trigger a GitHub action that will build the package and create a release draft on GitHubs [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).
+2. Create a new release branch named 'release/version_string' This will automatically trigger a GitHub action that will build the package and create a release draft on GitHubs [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).

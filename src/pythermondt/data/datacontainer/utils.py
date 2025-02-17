@@ -1,6 +1,8 @@
 import re
-from typing import List, Tuple, TypeGuard
-from .node import BaseNode, RootNode, GroupNode, DataNode, NodeType
+from typing import TypeGuard
+
+from .node import BaseNode, DataNode, GroupNode, NodeType, RootNode
+
 
 def is_rootnode(node: BaseNode) -> "TypeGuard[RootNode]":
     """ Checks if the given node is a RootNode.
@@ -49,7 +51,7 @@ def validate_path(path: str, name: str = "") -> str:
         ValueError: If the path is not valid.
     """
     # Add name to the path
-    if name and path[-1] != "/":    
+    if name and path[-1] != "/":
         path = path + "/" + name
     else:
         path = path + name
@@ -62,7 +64,7 @@ def validate_path(path: str, name: str = "") -> str:
     # Check for double slashes or trailing slash ==> remove them
     if '//' in normalized_path:
         normalized_path = re.sub(r'/+', '/', normalized_path)
-        
+
     if normalized_path != "/" and normalized_path.endswith('/'):
         normalized_path = normalized_path[:-1]
 
@@ -73,7 +75,7 @@ def validate_path(path: str, name: str = "") -> str:
 
     return normalized_path
 
-def validate_paths(paths: List[str]) -> Tuple[str, ...]:
+def validate_paths(paths: list[str]) -> tuple[str, ...]:
     """ Validates and normalizes the given list of HDF5 paths.
     
     Parameters:
@@ -87,7 +89,7 @@ def validate_paths(paths: List[str]) -> Tuple[str, ...]:
     """
     return tuple(validate_path(path) for path in paths)
 
-def split_path(path: str) -> Tuple[str, str]:
+def split_path(path: str) -> tuple[str, str]:
     """ Splits the given HDF5 path into the parent path and the name of the group or dataset.
 
     Parameters:
@@ -103,7 +105,7 @@ def split_path(path: str) -> Tuple[str, str]:
     else:
         return parent, child
 
-def generate_key(path: str, name: str) -> Tuple[str, str, str]:
+def generate_key(path: str, name: str) -> tuple[str, str, str]:
     """ Generates a key for the given path and name.
     First the path is validated and normalized, then it is split into the parent path and the name of the group or dataset.
 

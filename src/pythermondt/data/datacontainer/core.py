@@ -1,13 +1,15 @@
-import torch
-from typing import Optional
 from io import BytesIO
-from .node import RootNode, GroupNode, DataNode, NodeType
-from .group_ops import GroupOps
-from .dataset_ops import DatasetOps
+
+import torch
+
 from .attribute_ops import AttributeOps
-from .serialization_ops import SerializationOps, DeserializationOps
+from .dataset_ops import DatasetOps
+from .group_ops import GroupOps
+from .node import RootNode
+from .serialization_ops import DeserializationOps, SerializationOps
+from .utils import is_datanode, is_groupnode
 from .visualization_ops import VisualizationOps
-from .utils import is_groupnode, is_datanode
+
 
 class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, GroupOps, DatasetOps, AttributeOps):
     """
@@ -17,7 +19,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     The data structure can be serialized to a HDF5 file and deserialized from a HDF5 file using save_to_hdf5 and load_from_hdf5 methods respectively.
     It also provides methods for visualization of the data structure.
     """
-    def __init__(self, hdf5_bytes: Optional[BytesIO] = None):
+    def __init__(self, hdf5_bytes: BytesIO | None = None):
         """ Initializes a DataContainer instance.
         By default, initializes an empty DataContainer. 
         If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
@@ -41,7 +43,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
             returnstring = returnstring + f"{path}: ({node.name}: {node.type})" + "\n"
 
         return returnstring
-    
+
     # Overwrite the __eq__ method to provide a comparison between two DataContainer instances
     def __eq__(self, other: object) -> bool:
         """Compare two DataContainers for equality.
@@ -68,7 +70,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         # Check if node structure is equal
         if set(self.nodes.keys()) != set(other.nodes.keys()):
             return False
-        
+
         # Compare each node
         for path, node in self.nodes.items():
             # Retrieve other node
@@ -77,19 +79,19 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
             # Compare node types and names
             if node.type != other_node.type or node.name != other_node.name:
                 return False
-            
+
             # Checks for GroupNodes
             if is_groupnode(node) and is_groupnode(other_node):
                 # Compare attributes
                 if dict(node.attributes) != dict(other_node.attributes):
                     return False
-            
+
             # Checks for DataNodes
             if is_datanode(node) and is_datanode(other_node):
                 # Compare attributes
                 if dict(node.attributes) != dict(other_node.attributes):
                     return False
-                    
+
                 # Compare actual data
                 if not torch.equal(node.data, other_node.data):
                     return False

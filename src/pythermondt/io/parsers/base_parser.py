@@ -1,6 +1,8 @@
 import io
 from abc import ABC, abstractmethod
+
 from ...data import DataContainer
+
 
 class BaseParser(ABC):
     """ A base class for all parsers that are used to parse data from a BytesIO object into a DataContainer object.
@@ -10,7 +12,7 @@ class BaseParser(ABC):
     """
     def __init__(self) -> None:
         raise TypeError("This class is static and should not be instantiated.")
-    
+
     @staticmethod
     @abstractmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:

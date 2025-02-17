@@ -1,7 +1,7 @@
-import torch
 from ..data import DataContainer
-from .utils import ThermoTransform
 from ..data.units import Units
+from .utils import ThermoTransform
+
 
 class MinMaxNormalize(ThermoTransform):
     ''' 
@@ -19,7 +19,7 @@ class MinMaxNormalize(ThermoTransform):
         if eps > 1e-3:
             print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
         self.eps = eps
-    
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         tdata = container.get_dataset("/Data/Tdata")
@@ -33,7 +33,7 @@ class MinMaxNormalize(ThermoTransform):
         container.update_dataset("/Data/Tdata", tdata)
         container.update_unit("/Data/Tdata", Units.dimensionless)
         return container
-    
+
 class MaxNormalize(ThermoTransform):
     ''' 
     Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the max value of the data.
@@ -49,7 +49,7 @@ class MaxNormalize(ThermoTransform):
         if eps > 1e-3:
             print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
         self.eps = eps
-    
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         tdata = container.get_dataset("/Data/Tdata")
@@ -62,7 +62,7 @@ class MaxNormalize(ThermoTransform):
         container.update_dataset("/Data/Tdata", tdata)
         container.update_unit("/Data/Tdata", Units.dimensionless)
         return container
-    
+
 class ZScoreNormalize(ThermoTransform):
     ''' 
     Normalizes the Temperature data (Tdata) in the container to have mean 0 and standard deviation 1.
@@ -78,7 +78,7 @@ class ZScoreNormalize(ThermoTransform):
         if eps > 1e-3:
             print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
         self.eps = eps
-    
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         tdata = container.get_dataset("/Data/Tdata")

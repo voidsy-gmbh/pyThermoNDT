@@ -1,10 +1,12 @@
 import pytest
 import torch
-from torch import Tensor
 from numpy import ndarray
+from torch import Tensor
+
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import DataNode
 from pythermondt.data.datacontainer.utils import validate_path
+
 
 @pytest.fixture
 def dataset_container(empty_container:DataContainer):
@@ -43,11 +45,11 @@ def test_add_dataset(dataset_container:DataContainer, data:str | None, path:str,
     # Empty dataset ==> default value in container is a torch.empty(0) tensor
     if test_data is None:
         assert torch.equal(dataset_container.nodes[key].data, torch.empty(0)) #type: ignore
-    
+
     # Ndarray
     elif isinstance(test_data, ndarray):
         assert torch.equal(dataset_container.nodes[key].data, torch.from_numpy(test_data)) #type: ignore
-    
+
     # Tensor
     elif isinstance(test_data, Tensor):
         assert torch.equal(dataset_container.nodes[key].data, test_data) # type:ignore
@@ -121,7 +123,7 @@ def test_add_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
         # Empty dataset ==> default value in container is a torch.empty(0) tensor
         if data is None:
             assert torch.equal(dataset_container.nodes[key].data, torch.empty(0)) #type: ignore
-        
+
         # Ndarray
         elif isinstance(data, ndarray):
             assert torch.equal(dataset_container.nodes[key].data, torch.from_numpy(data)) #type: ignore
@@ -129,7 +131,7 @@ def test_add_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
         # Tensor
         elif isinstance(data, Tensor):
             assert torch.equal(dataset_container.nodes[key].data, data) # type:ignore
-        
+
         # Error case
         else:
             assert False
@@ -162,15 +164,15 @@ def test_get_dataset(dataset_container:DataContainer, data:str, path:str, name:s
     # Empty dataset ==> default value in container is a torch.empty(0) tensor
     if test_data is None:
         assert torch.equal(retrieved_data, torch.empty(0)) #type: ignore
-    
+
     # Ndarray
     elif isinstance(test_data, ndarray):
         assert torch.equal(retrieved_data, torch.from_numpy(test_data)) #type: ignore
-    
+
     # Tensor
     elif isinstance(test_data, Tensor):
         assert torch.equal(retrieved_data, test_data) # type:ignore
-    
+
     # Error case
     else:
         assert False
@@ -213,11 +215,11 @@ def test_get_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
     retrieved_data = dataset_container.get_datasets(*keys)
 
     # Assertions
-    for data, retrieved in zip(test_data.values(), retrieved_data):
+    for data, retrieved in zip(test_data.values(), retrieved_data, strict=False):
         # Empty dataset ==> default value in container is a torch.empty(0) tensor
         if data is None:
             assert torch.equal(retrieved, torch.empty(0)) #type: ignore
-        
+
         # Ndarray
         elif isinstance(data, ndarray):
             assert torch.equal(retrieved, torch.from_numpy(data)) #type: ignore
@@ -225,7 +227,7 @@ def test_get_datasets(dataset_container:DataContainer, datasets:dict[str, str | 
         # Tensor
         elif isinstance(data, Tensor):
             assert torch.equal(retrieved, data) # type:ignore
-        
+
         # Error case
         else:
             assert False
@@ -423,16 +425,16 @@ def test_update_datasets(dataset_container:DataContainer, initial_datasets:dict[
 @pytest.mark.parametrize("initial_datasets, updated_datasets, expected_error", [
     # One non-existent dataset
     ({"dataset0": "sample_tensor"}, [
-        ("/non_existent", "sample_tensor2"), 
+        ("/non_existent", "sample_tensor2"),
         ("/dataset0", "sample_tensor2")
     ], KeyError),
-    
+
     # Update group instead of dataset
     ({"dataset0": "sample_tensor"}, [
         ("/dataset0", "sample_tensor2"),
         ("/testgroup", "sample_tensor2")  # testgroup is a group, not dataset
     ], TypeError),
-    
+
     # Update root instead of dataset
     ({"dataset0": "sample_tensor"}, [
         ("/dataset0", "sample_tensor2"),
@@ -442,17 +444,17 @@ def test_update_datasets(dataset_container:DataContainer, initial_datasets:dict[
 def test_update_datasets_non_existing(dataset_container: DataContainer, initial_datasets: dict[str, str], updated_datasets: list[tuple[str, str]], expected_error: type[Exception], request: pytest.FixtureRequest):
     # Add initial dataset to root
     initial_test_data = {
-        key: request.getfixturevalue(value) 
+        key: request.getfixturevalue(value)
         for key, value in initial_datasets.items()
     }
     dataset_container.add_datasets("/", **initial_test_data)
 
     # Try to update with invalid paths
     update_data = [
-        (path, request.getfixturevalue(fixture)) 
+        (path, request.getfixturevalue(fixture))
         for path, fixture in updated_datasets
     ]
-    
+
     # Assert that the expected error is raised
     with pytest.raises(expected_error):
         dataset_container.update_datasets(*update_data)

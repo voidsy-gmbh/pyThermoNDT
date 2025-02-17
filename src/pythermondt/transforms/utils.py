@@ -1,7 +1,10 @@
-import torch.nn as nn
-from typing import Callable, List
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+
+import torch.nn as nn
+
 from ..data import DataContainer
+
 
 class ThermoTransform(nn.Module, ABC):
     '''
@@ -26,7 +29,7 @@ class Compose(ThermoTransform):
     '''
         Composes several transforms together. This transform sequentially applies a list of transforms to the input container.
     '''
-    def __init__(self, transforms: List[ThermoTransform]):
+    def __init__(self, transforms: list[ThermoTransform]):
         '''
         Composes several transforms together. This transform sequentially applies a list of transforms to the input container.
         '''
@@ -38,7 +41,7 @@ class Compose(ThermoTransform):
         if not all(isinstance(t, Callable) for t in transforms):
             raise TypeError("Not all transforms are callable.")
         self.transforms = transforms
-    
+
     def forward(self, container: DataContainer) -> DataContainer:
         for t in self.transforms:
             container = t(container)

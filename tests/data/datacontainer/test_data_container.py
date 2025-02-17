@@ -1,8 +1,11 @@
-import pytest
 import io
+
+import pytest
 import torch
 from torch import Tensor
+
 from pythermondt.data import DataContainer
+
 
 def test_initialization(empty_container: DataContainer):
     """Test initialization of DataContainer."""
@@ -13,7 +16,7 @@ def test_group_operations(empty_container: DataContainer):
     """Test group operations of DataContainer."""
     empty_container.add_group('/', 'TestGroup')
     assert 'TestGroup' in empty_container.get_all_groups()
-    
+
     empty_container.remove_group('/TestGroup')
     assert 'TestGroup' not in empty_container.get_all_groups()
 
@@ -22,17 +25,17 @@ def test_single_dataset_operations(empty_container: DataContainer, sample_tensor
     # Test adding a single dataset
     empty_container.add_dataset('/', 'TestData', sample_tensor)
     assert 'TestData' in empty_container.get_all_dataset_names()
-    
+
     # Test getting a single dataset
     retrieved_data = empty_container.get_dataset('/TestData')
     assert torch.equal(retrieved_data, sample_tensor)
-    
+
     # Test updating a single dataset
     new_data = torch.tensor([[5, 6], [7, 8]])
     empty_container.update_dataset('/TestData', new_data)
     updated_data = empty_container.get_dataset('/TestData')
     assert torch.equal(updated_data, new_data)
-    
+
     # Test removing a single dataset
     empty_container.remove_dataset('/TestData')
     assert 'TestData' not in empty_container.get_all_dataset_names()
@@ -86,15 +89,15 @@ def test_serialization(empty_container: DataContainer, sample_tensor: Tensor):
     empty_container.add_group('/', 'TestGroup')
     empty_container.add_dataset('/TestGroup', 'TestData', sample_tensor)
     empty_container.add_attribute('/TestGroup/TestData', 'test_attr', 'test_value')
-    
+
     # Serialize
     serialized = empty_container.serialize_to_hdf5()
     assert isinstance(serialized, io.BytesIO)
-    
+
     # Deserialize
     new_container = DataContainer()
     new_container.deserialize(serialized)
-    
+
     # Check if data is the same
     assert 'TestGroup' in new_container.get_all_groups()
     assert 'TestData' in new_container.get_all_dataset_names()

@@ -1,7 +1,8 @@
 import io
-import h5py
-from .base_parser import BaseParser
+
 from ...data import DataContainer
+from .base_parser import BaseParser
+
 
 class HDF5Parser(BaseParser):
     @staticmethod

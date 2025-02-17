@@ -1,8 +1,9 @@
 import pytest
-import torch
 from torch import Tensor
+
 from pythermondt.data import ThermoContainer
-from pythermondt.data.datacontainer import GroupNode, DataNode
+from pythermondt.data.datacontainer import DataNode, GroupNode
+
 
 def test_initialization(thermo_container: ThermoContainer):
     """Test initialization of ThermoContainer."""
@@ -15,7 +16,7 @@ def test_initialization(thermo_container: ThermoContainer):
         # Extract node from ThermoContainer and check if it is a GroupNode
         group_node = thermo_container.nodes[group]
         assert isinstance(group_node, GroupNode)
-    
+
     for dataset in expected_datasets:
         data_node = thermo_container.nodes[dataset]
         assert isinstance(data_node, DataNode)

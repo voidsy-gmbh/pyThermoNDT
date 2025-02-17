@@ -1,6 +1,6 @@
 from .datacontainer import DataContainer
-from .datacontainer.node import RootNode
 from .units import Units
+
 
 class ThermoContainer(DataContainer):
     def __init__(self):

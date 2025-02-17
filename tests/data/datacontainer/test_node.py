@@ -1,7 +1,9 @@
 import pytest
 import torch
 from torch import Tensor
-from pythermondt.data.datacontainer.node import NodeType, RootNode, GroupNode, DataNode
+
+from pythermondt.data.datacontainer.node import DataNode, GroupNode, NodeType, RootNode
+
 
 # Root Node tests
 def test_root_node(root_node: RootNode):

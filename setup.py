@@ -1,5 +1,7 @@
-from setuptools import setup
 from pathlib import Path
+
+from setuptools import setup
+
 
 def get_version():
     """Get the version number."""

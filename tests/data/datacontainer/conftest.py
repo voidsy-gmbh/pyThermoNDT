@@ -1,8 +1,11 @@
-import pytest
 import copy
+
+import pytest
 from torch import Tensor
+
 from pythermondt.data import DataContainer, Units
-from pythermondt.data.datacontainer.node import RootNode, GroupNode, DataNode
+from pythermondt.data.datacontainer.node import DataNode, GroupNode, RootNode
+
 
 @pytest.fixture
 def root_node():
@@ -25,7 +28,7 @@ def empty_container():
     return DataContainer()
 
 @pytest.fixture
-def filled_container(empty_container:DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):  
+def filled_container(empty_container:DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
     """Container with basic structure for testing BaseOps"""
     # Initialize an empty container using deepcopy to avoid modifying the previous fixture
     container = copy.deepcopy(empty_container)
@@ -33,7 +36,7 @@ def filled_container(empty_container:DataContainer, sample_tensor: Tensor, sampl
     # Add a testgroup
     container.add_group("/", "TestGroup")
 
-    # Add a nested group 
+    # Add a nested group
     container.add_group("/TestGroup", "NestedGroup")
 
     # Add datasets

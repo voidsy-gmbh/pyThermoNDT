@@ -1,7 +1,7 @@
+import numpy as np
 import pytest
 import torch
-import numpy as np
-from pythermondt.data import DataContainer, ThermoContainer
+
 
 @pytest.fixture
 def sample_tensor():

@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
+
 from ..data import DataContainer
+
 
 class BaseWriter(ABC):
     @abstractmethod
     def __init__(self):
         """ Constructor for the BaseWriter class. Should be called by all subclasses. """
         pass
-    
+
     @abstractmethod
     def write(self, container: DataContainer, file_name: str):
         """Actual implementation of the writing a single DataContainer to the destination folder.

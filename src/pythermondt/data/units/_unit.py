@@ -1,4 +1,5 @@
-from typing import TypedDict, Any, TypeGuard
+from typing import Any, TypedDict, TypeGuard
+
 
 class Unit(TypedDict):
     '''TypedDict for unit information.'''
@@ -15,7 +16,7 @@ def is_unit_info(obj: Any) -> TypeGuard[Unit]:
     Returns:
         TypeGuard[UnitInfo]: True if the object is a valid UnitInfo, False otherwise.
     '''
-    return (isinstance(obj, dict) and 
+    return (isinstance(obj, dict) and
             "name" in obj and isinstance(obj["name"], str) and
             "quantity" in obj and isinstance(obj["quantity"], str) and
             "symbol" in obj and isinstance(obj["symbol"], str))

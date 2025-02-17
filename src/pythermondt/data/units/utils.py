@@ -1,5 +1,6 @@
-from .units import Units
 from ._unit import Unit
+from .units import Units
+
 
 def generate_label(unit: Unit) -> str:
     '''Generates a label from a UnitInfo object.
@@ -17,5 +18,5 @@ def generate_label(unit: Unit) -> str:
         return "arbitrary"
     if unit == Units.undefined:
         return ""
-    
+
     return f"{unit['quantity']} in {unit['symbol']}"

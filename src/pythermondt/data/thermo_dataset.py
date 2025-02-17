@@ -1,10 +1,13 @@
-import torch
+from collections.abc import Iterator, Sequence
 from itertools import chain
-from typing import Type, Dict, List, Optional, Iterator, Sequence
+
+import torch
 from torch.utils.data import Dataset
-from .datacontainer import DataContainer
-from ..transforms import ThermoTransform
+
 from ..readers.base_reader import BaseReader
+from ..transforms import ThermoTransform
+from .datacontainer import DataContainer
+
 
 class ThermoDataset(Dataset):
     """ Custom dataset class used for combining data, read from multiple readers.
@@ -12,7 +15,7 @@ class ThermoDataset(Dataset):
     This dataset is used to combine multiple readers into a single dataset. The dataset can be used to read data from multiple sources and apply a transform to the data.
     Like a normal PyTorch dataset, the dataset can be used to iterate over the data using the __getitem__ method and it is also compatible with PyTorch dataloaders.
     """
-    def __init__( self, data_source: BaseReader | List[BaseReader], transform: Optional[ThermoTransform] = None):
+    def __init__( self, data_source: BaseReader | list[BaseReader], transform: ThermoTransform | None = None):
         """ Initialize a custom PyTorch dataset from a list of readers.
         
         The sources are used to read the data and create the dataset. First the readers are grouped by type.
@@ -44,7 +47,7 @@ class ThermoDataset(Dataset):
         # Build the index map
         self._build_index()
 
-    def _validate_readers(self, readers: List[BaseReader]):
+    def _validate_readers(self, readers: list[BaseReader]):
         """Validate readers and check for duplicates."""
         # Check if the readers have found any files and if there are any duplicates
         # Check if all readers have enabled file caching
@@ -53,7 +56,7 @@ class ThermoDataset(Dataset):
                 print(f"Warning: Reader {reader.__repr__()} does not have file caching enabled. This can lead to issues with changing files. Consider enabling file caching.")
 
         # Group all the readers by type
-        readers_by_type: Dict[Type[BaseReader], List[BaseReader]] = {}  
+        readers_by_type: dict[type[BaseReader], list[BaseReader]] = {}
         for reader in readers:
             readers_by_type[type(reader)] = readers_by_type.get(type(reader), []) + [reader]
 
@@ -68,18 +71,18 @@ class ThermoDataset(Dataset):
                     # Check if the reader has found any files
                     if not reader.files:
                         raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
-                    
+
                     # Check for duplicate files
                     reader_files = set(reader.files)
                     new_duplicates = reader_files.intersection(all_files)
                     if new_duplicates:
                         duplicate_files.update(new_duplicates)
-                    
+
                     all_files.update(reader_files)
-                
+
                 if duplicate_files:
                     raise ValueError(f"Duplicate files found for reader of type {reader_type.__qualname__}: \n {duplicate_files}")
-                
+
             # Else duplicates are not possible ==> Check if the reader has found any files
             else:
                 if len(readers[0].files) == 0:
@@ -92,22 +95,22 @@ class ThermoDataset(Dataset):
         for reader_idx, reader in enumerate(self.__readers):
             reader_indices.extend([reader_idx] * len(reader.files))
             file_indices.extend(range(len(reader.files)))
-        
+
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
 
     @property
-    def files(self) -> List[str]:
+    def files(self) -> list[str]:
         return [file for reader in self.__readers for file in reader.files]
-    
+
     def __len__(self) -> int:
         return sum([len(reader.files) for reader in self.__readers])
-    
+
     def __getitem__(self, idx) -> DataContainer:
         # Check if the index is valid
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
-        
+
         # Extract the reader and file index from the index map
         reader_idx = int(self.__reader_index[idx].item())
         file_idx = int(self.__file_index[idx].item())
@@ -120,12 +123,12 @@ class ThermoDataset(Dataset):
             # Apply the transform if any is given
             if self.__transform:
                 data = self.__transform(data)
-            
+
             return data
 
         except FileNotFoundError:
             print(f"File not found for reader {self.__readers[reader_idx].__repr__()} at index {file_idx}")
-        
+
         except Exception as e:
             print(f"Error reading file for reader {self.__readers[reader_idx].__repr__()} at index {file_idx}: {e}")
 
@@ -142,8 +145,8 @@ class IndexedThermoDataset(ThermoDataset):
     This can be useful when a subset of the data needs to be selected and a different transform needs to be applied to the subset, e.g. for random splits of 
     train, validation and test data. The IndexedThermoDataset maintains the transform chain of the parent dataset and appends the additional transform to it.
     """
-    
-    def __init__(self, dataset: ThermoDataset, indices: Sequence[int], transform: Optional[ThermoTransform] = None):
+
+    def __init__(self, dataset: ThermoDataset, indices: Sequence[int], transform: ThermoTransform | None = None):
         """Initialize an indexed dataset with optional additional transform.
 
         Parameters:
@@ -166,7 +169,7 @@ class IndexedThermoDataset(ThermoDataset):
     def __len__(self) -> int:
         """Return length of indexed dataset."""
         return len(self.__indices)
-    
+
     def __iter__(self) -> Iterator[DataContainer]:
         """Return iterator over indexed subset."""
         return (self[i] for i in range(len(self.__indices)))
@@ -183,17 +186,17 @@ class IndexedThermoDataset(ThermoDataset):
         # Validate index
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
-            
+
         # Get data using parent dataset's underlying logic ==> Apply parent transform
         data = self.__dataset[self.__indices[idx]]
-        
+
         # Apply additional transform if specified
         if self.__transform:
             data = self.__transform(data)
-            
+
         return data
 
     @property
-    def files(self) -> List[str]:
+    def files(self) -> list[str]:
         """Return list of files corresponding to indexed subset."""
         return [self.__dataset.files[i] for i in self.__indices]

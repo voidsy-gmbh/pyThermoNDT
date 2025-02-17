@@ -1,7 +1,9 @@
 import pytest
+
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import GroupNode
 from pythermondt.data.datacontainer.utils import validate_path
+
 
 @pytest.fixture
 def group_container(empty_container: DataContainer):
@@ -20,10 +22,10 @@ def group_container(empty_container: DataContainer):
 def test_add_group(group_container: DataContainer, path: str, name: str):
     # Add a group
     group_container.add_group(path, name)
-    
+
     # Generate the full path for verification
     key = validate_path(path, name)
-    
+
     # Verify group was added correctly
     assert key in group_container.nodes.keys()
     assert isinstance(group_container.nodes[key], GroupNode)
@@ -37,7 +39,7 @@ def test_add_group(group_container: DataContainer, path: str, name: str):
 def test_add_group_existing(group_container: DataContainer, path: str, name: str):
     # Add initial group
     group_container.add_group(path, name)
-    
+
     # Try to add the same group again
     with pytest.raises(KeyError):
         group_container.add_group(path, name)
@@ -60,11 +62,11 @@ def test_get_all_groups(empty_container: DataContainer):
         ("/group1", "nested1"),
         ("/group2", "nested2"),
     ]
-    
+
     # Add all groups
     for path, name in groups:
         empty_container.add_group(path, name)
-    
+
     # Get all groups and verify
     all_groups = empty_container.get_all_groups()
     expected_names = {"group1", "group2", "nested1", "nested2"}
@@ -80,13 +82,13 @@ def test_remove_group(empty_container: DataContainer, setup_groups: list[tuple[s
     # Setup initial groups
     for path, name in setup_groups:
         empty_container.add_group(path, name)
-    
+
     # Remove the specified group
     empty_container.remove_group(remove_path)
-    
+
     # Verify group was removed
     assert remove_path not in empty_container.nodes.keys()
-    
+
     # If we removed a parent group, verify all children were removed
     for key in empty_container.nodes.keys():
         assert not key.startswith(remove_path + "/")
@@ -105,10 +107,10 @@ def test_remove_group_with_datasets(empty_container: DataContainer, sample_tenso
     # Setup group with dataset
     empty_container.add_group("/", "group1")
     empty_container.add_dataset("/group1", "dataset1", sample_tensor)
-    
+
     # Remove group
     empty_container.remove_group("/group1")
-    
+
     # Verify group and dataset were removed
     assert "/group1" not in empty_container.nodes.keys()
     assert "/group1/dataset1" not in empty_container.nodes.keys()

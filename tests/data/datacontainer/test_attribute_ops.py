@@ -1,7 +1,10 @@
-import pytest
 from typing import Any
+
+import pytest
 from torch import Tensor
+
 from pythermondt.data import DataContainer, Units
+
 
 @pytest.fixture
 def attr_container(empty_container: DataContainer, sample_tensor: Tensor):
@@ -23,7 +26,7 @@ def attr_container(empty_container: DataContainer, sample_tensor: Tensor):
 def test_add_attribute(attr_container: DataContainer, path: str, key: str, value: Any):
     # Add attribute
     attr_container.add_attribute(path, key, value)
-    
+
     # Verify attribute was added correctly
     retrieved_value = attr_container.get_attribute(path, key)
     assert retrieved_value == value
@@ -37,10 +40,10 @@ def test_add_attributes(attr_container: DataContainer):
         "float_attr": 3.14,
         "list_attr": [1, 2, 3]
     }
-    
+
     # Add attributes
     attr_container.add_attributes("/testgroup", **attrs)
-    
+
     # Verify all attributes
     for key, value in attrs.items():
         retrieved = attr_container.get_attribute("/testgroup", key)
@@ -54,7 +57,7 @@ def test_add_attributes(attr_container: DataContainer):
 def test_add_attribute_existing(attr_container: DataContainer, path: str, key: str, value: Any):
     # Add initial attribute
     attr_container.add_attribute(path, key, "initial_value")
-    
+
     # Try to add duplicate attribute
     with pytest.raises(KeyError):
         attr_container.add_attribute(path, key, value)
@@ -75,7 +78,7 @@ def test_get_attributes(attr_container: DataContainer):
         "float_attr": 3.14
     }
     attr_container.add_attributes("/testgroup", **attrs)
-    
+
     # Test getting multiple attributes
     retrieved_values = attr_container.get_attributes("/testgroup", "str_attr", "int_attr", "float_attr")
     expected_values = tuple(attrs.values())
@@ -89,7 +92,7 @@ def test_get_all_attributes(attr_container: DataContainer):
         "float_attr": 3.14
     }
     attr_container.add_attributes("/testgroup", **attrs)
-    
+
     # Get all attributes
     all_attrs = attr_container.get_all_attributes("/testgroup")
     assert all_attrs == attrs
@@ -97,11 +100,11 @@ def test_get_all_attributes(attr_container: DataContainer):
 def test_unit_operations(attr_container: DataContainer):
     # Test adding unit
     attr_container.add_unit("/testdata", Units.kelvin)
-    
+
     # Test getting unit
     unit = attr_container.get_unit("/testdata")
     assert unit == Units.kelvin
-    
+
     # Test updating unit
     attr_container.update_unit("/testdata", Units.celsius)
     updated_unit = attr_container.get_unit("/testdata")
@@ -114,14 +117,14 @@ def test_unit_operations(attr_container: DataContainer):
     ("/testdata", "list_attr", [1, 2], [3, 4]),
     ("/testgroup", "dict_attr", {"old": "value"}, {"new": "value"}),
 ])
-def test_update_attribute(attr_container: DataContainer, path: str, key: str, 
+def test_update_attribute(attr_container: DataContainer, path: str, key: str,
                          initial_value: Any, update_value: Any):
     # Add initial attribute
     attr_container.add_attribute(path, key, initial_value)
-    
+
     # Update attribute
     attr_container.update_attribute(path, key, update_value)
-    
+
     # Verify update
     retrieved = attr_container.get_attribute(path, key)
     assert retrieved == update_value
@@ -135,7 +138,7 @@ def test_update_attributes(attr_container: DataContainer):
         "float_attr": 3.14
     }
     attr_container.add_attributes("/testgroup", **initial_attrs)
-    
+
     # Update attributes
     updated_attrs = {
         "str_attr": "updated",
@@ -143,7 +146,7 @@ def test_update_attributes(attr_container: DataContainer):
         "float_attr": 2.718
     }
     attr_container.update_attributes("/testgroup", **updated_attrs)
-    
+
     # Verify updates
     for key, value in updated_attrs.items():
         retrieved = attr_container.get_attribute("/testgroup", key)
@@ -160,7 +163,7 @@ def test_update_attribute_nonexistent(attr_container: DataContainer, path: str, 
 def test_update_attribute_wrong_type(attr_container: DataContainer):
     # Add string attribute
     attr_container.add_attribute("/testgroup", "str_attr", "string")
-    
+
     # Try to update with different type
     with pytest.raises(TypeError):
         attr_container.update_attribute("/testgroup", "str_attr", 42)
@@ -172,10 +175,10 @@ def test_update_attribute_wrong_type(attr_container: DataContainer):
 def test_remove_attribute(attr_container: DataContainer, path: str, key: str):
     # Add attribute
     attr_container.add_attribute(path, key, "value")
-    
+
     # Remove attribute
     attr_container.remove_attribute(path, key)
-    
+
     # Verify removal
     with pytest.raises(KeyError):
         attr_container.get_attribute(path, key)

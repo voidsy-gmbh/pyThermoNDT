@@ -1,7 +1,8 @@
 import pytest
-from torch import Tensor
+
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.utils import split_path
+
 
 def test_path_exists(filled_container: DataContainer):
     # Test existing paths

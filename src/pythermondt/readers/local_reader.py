@@ -1,13 +1,14 @@
 import io
-import re
 import os
+import re
 from glob import glob
-from typing import List, Type, Optional
-from .base_reader import BaseReader
+
 from ..io import BaseParser
+from .base_reader import BaseReader
+
 
 class LocalReader(BaseReader):
-    def __init__(self, source: str, cache_files: bool = True, parser: Optional[Type[BaseParser]] = None, num_files: Optional[int] = None):
+    def __init__(self, source: str, cache_files: bool = True, parser: type[BaseParser] | None = None, num_files: int | None = None):
         """ Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
@@ -37,7 +38,7 @@ class LocalReader(BaseReader):
 
         else:
             raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
-        
+
         # Call the constructor of the BaseReader class
         super().__init__(source, cache_files, parser, num_files)
 
@@ -45,7 +46,7 @@ class LocalReader(BaseReader):
     def remote_source(self) -> bool:
         return False
 
-    def _get_file_list(self, num_files: Optional[int] = None) -> List[str]:
+    def _get_file_list(self, num_files: int | None = None) -> list[str]:
         # Resolve the source pattern based on the source type
         match self.__source_type:
             case "file":
@@ -59,22 +60,22 @@ class LocalReader(BaseReader):
 
             case _:
                 raise ValueError("Invalid source type.")
-            
+
         # Check if the found files match the specified file extension
         file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extensions)]
         if not file_paths:
             raise ValueError("No files found. Please check the source expression and file extensions")
-        
+
         # Limit the number of files to the specified number
         if num_files:
             file_paths = file_paths[:num_files]
-        
+
         return file_paths
 
     def _read_file(self, path: str) -> io.BytesIO:
         # Open file in binary mode and return it as BytesIO object
         with open(path, 'rb') as file:
             return io.BytesIO(file.read())
-        
+
     def _close(self):
         pass  # No need to close any resources for LocalReader

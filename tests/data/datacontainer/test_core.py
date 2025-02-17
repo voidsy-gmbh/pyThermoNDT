@@ -1,7 +1,8 @@
 
-import pytest
 from torch import Tensor
+
 from pythermondt.data import DataContainer
+
 
 def test_basic_container_equality(empty_container: DataContainer, filled_container: DataContainer, complex_container: DataContainer):
     """Test basic container equality cases."""
@@ -33,7 +34,7 @@ def test_different_data_inequality(filled_container: DataContainer, sample_tenso
     different_data.add_group("/TestGroup", "NestedGroup")
     different_data.add_dataset("/TestGroup", "TestDataset1", sample_eye_tensor)  # Swapped tensors
     different_data.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_tensor)
-    
+
     assert filled_container != different_data
 
 def test_different_structure_inequality(filled_container: DataContainer, sample_tensor: Tensor):
@@ -41,7 +42,7 @@ def test_different_structure_inequality(filled_container: DataContainer, sample_
     different_structure = DataContainer()
     different_structure.add_group("/", "DifferentGroup")
     different_structure.add_dataset("/DifferentGroup", "TestDataset", sample_tensor)
-    
+
     assert filled_container != different_structure
 
 def test_different_names_inequality(filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
@@ -51,5 +52,5 @@ def test_different_names_inequality(filled_container: DataContainer, sample_tens
     different_names.add_group("/TestGroup", "NestedGroup")
     different_names.add_dataset("/TestGroup", "DifferentName", sample_tensor)
     different_names.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_eye_tensor)
-    
+
     assert filled_container != different_names

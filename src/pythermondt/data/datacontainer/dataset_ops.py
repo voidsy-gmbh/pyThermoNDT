@@ -1,13 +1,15 @@
+
 import torch
-from typing import List, Dict, Tuple, Optional
-from torch import Tensor
 from numpy import ndarray
+from torch import Tensor
+
 from .base import BaseOps
 from .node import DataNode
 from .utils import generate_key
 
+
 class DatasetOps(BaseOps):
-    def add_dataset(self, path: str, name: str, data: Optional[Tensor | ndarray]= None):
+    def add_dataset(self, path: str, name: str, data: Tensor | ndarray | None= None):
         """Adds a single dataset to a specified path in the DataContainer.
 
         Parameters:
@@ -20,17 +22,17 @@ class DatasetOps(BaseOps):
             KeyError: If the dataset already exists.
         """
         key, parent, child = generate_key(path, name)
-        
+
         # Convert the numpy array to a PyTorch tensor ==> internally, the data is stored as a PyTorch tensor
         if isinstance(data, ndarray):
             data = torch.from_numpy(data)
-        
+
         if data is None:
             self.nodes[key] = DataNode(name)
         else:
             self.nodes[key] = DataNode(name, data)
 
-    def add_datasets(self, path: str, **datasets: Optional[Tensor | ndarray]):
+    def add_datasets(self, path: str, **datasets: Tensor | ndarray | None):
         """Adds multiple datasets to a specified path in the DataContainer.
 
         Parameters:
@@ -56,10 +58,10 @@ class DatasetOps(BaseOps):
         Raises:
             KeyError: If the dataset does not exist.
             KeyError: If the node is not a dataset.
-        """       
+        """
         return self.nodes(path, DataNode).data
-    
-    def get_datasets(self, *paths: str) -> Tuple[Tensor,...]:
+
+    def get_datasets(self, *paths: str) -> tuple[Tensor,...]:
         """Get multiple datasets from specified paths in the DataContainer.
 
         Parameters:
@@ -74,15 +76,15 @@ class DatasetOps(BaseOps):
         """
         return tuple(self.get_dataset(path) for path in paths)
 
-    def get_all_dataset_names(self) -> List[str]:
+    def get_all_dataset_names(self) -> list[str]:
         """Get a list of all dataset names in the DataContainer.
 
         Returns:
             List[str]: A list of names of all datasets in the DataContainer, without their full paths.
         """
         return [node.name for node in self.nodes.values() if isinstance(node, DataNode)]
-    
-    
+
+
     def remove_dataset(self, path: str):
         """Removes a single dataset from a specified path in the DataContainer.
 
@@ -113,7 +115,7 @@ class DatasetOps(BaseOps):
 
         self.nodes(path, DataNode).data = data
 
-    def update_datasets(self, *updates: Tuple[str, Tensor | ndarray]):
+    def update_datasets(self, *updates: tuple[str, Tensor | ndarray]):
         """Update multiple datasets in the DataContainer.
 
         Parameters:

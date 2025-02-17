@@ -1,9 +1,10 @@
+from collections.abc import Sequence
+
 import torch
-import math
-import timeit
-from .utils import ThermoTransform
+
 from ..data import DataContainer
-from typing import Sequence, Optional
+from .utils import ThermoTransform
+
 
 class SelectFrames(ThermoTransform):
     """Select a subset of frames from the data container specified by a single index or a list of indices."""
@@ -23,7 +24,7 @@ class SelectFrames(ThermoTransform):
         # Check if frame_indices are valid
         if any(idx < 0 or idx >= tdata.shape[-1] for idx in self.frame_indices):
             raise ValueError(f"Invalid frame index. Frame indices must be in the range [0, {tdata.shape[-1] - 1}].")
-        
+
         # Check if we are in time domain
         if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
             raise ValueError("SelectFrames transform can only be applied to time domain data.")
@@ -42,7 +43,7 @@ class SelectFrames(ThermoTransform):
 
 class SelectFrameRange(ThermoTransform):
     """Select a range of frames from the data container, by specifying their start and end index."""
-    def __init__(self, start: Optional[int] = None, end: Optional[int] = None):
+    def __init__(self, start: int | None = None, end: int | None = None):
         """Select a range of frames from the data container, by specifying their start and end index.
 
         Parameters:
@@ -60,10 +61,10 @@ class SelectFrameRange(ThermoTransform):
         # Check if frame range is valid
         if self.start is not None and (self.start < 0 or self.start >= tdata.shape[-1]):
             raise ValueError(f"Invalid start index. Start index must be in the range [0, {tdata.shape[-1] - 1}].")
-        
+
         if self.end is not None and (self.end < 0 or self.end >= tdata.shape[-1]):
             raise ValueError(f"Invalid end index. End index must be in the range [0, {tdata.shape[-1] - 1}].")
-        
+
         # Check if we are in time domain
         if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
             raise ValueError("SelectFrameRange transform can only be applied to time domain data.")
@@ -81,7 +82,7 @@ class SelectFrameRange(ThermoTransform):
         # Update Container and return
         container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
         return container
-    
+
 class NonUniformSampling(ThermoTransform):
     """Implement a non-uniform sampling strategy for the data container according to this paper:
     
@@ -89,7 +90,7 @@ class NonUniformSampling(ThermoTransform):
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
-    def __init__(self, n_samples: int, tau: Optional[float] = None):
+    def __init__(self, n_samples: int, tau: float | None = None):
         """Implement a non-uniform sampling strategy for the data container according to this paper:
     
         Efficient defect reconstruction from temporal non-uniform pulsed
@@ -109,17 +110,17 @@ class NonUniformSampling(ThermoTransform):
         """Calculate minimum tau according to equation (25) using binary search."""
         low = dt_min # use dt_min as lower bound
         high = t_end # use t_end as a upper bond because tau >= t_end makes no sense
-        precision = 1e-2 
-        
+        precision = 1e-2
+
         # 1.) Binary search
         while high - low > precision:
             tau = (low + high) / 2
             t_diff = tau * ((t_end/tau + 1)**(1/(n_samples_original-1)) - 1)
-            
+
             # Update bounds
             if t_diff > dt_min:
                 high = tau  # Narrow down to lower half
-            else: 
+            else:
                 low = tau # Narrow down to upper half
 
         # return the calculated tau
@@ -132,11 +133,11 @@ class NonUniformSampling(ThermoTransform):
         # Check if we are in time domain
         if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
             raise ValueError("NonUniformSampling transform can only be applied to time domain data.")
-        
+
         # Check if number of samples is valid
         if self.n_samples <= 0 or self.n_samples > len(domain_values):
             raise ValueError(f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}].")
-        
+
         # Calculate tau using binary search if not provided
         n_samples_original = len(domain_values)
         t_end = domain_values[-1]

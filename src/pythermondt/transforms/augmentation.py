@@ -1,6 +1,8 @@
 import torch
+
 from ..data import DataContainer
 from .utils import ThermoTransform
+
 
 class RandomFlip(ThermoTransform):
     ''' 
@@ -19,7 +21,7 @@ class RandomFlip(ThermoTransform):
         # Check if p_height and p_width are probabilities
         if not 0 <= p_height <= 1:
             raise ValueError("p_height must be in the range [0, 1]")
-        
+
         if not 0 <= p_width <= 1:
             raise ValueError("p_width must be in the range [0, 1]")
 
@@ -30,12 +32,12 @@ class RandomFlip(ThermoTransform):
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
-        
+
         # Flip the data along the height if the random number is less than p_height
         if torch.rand(1).item() < self.p_height:
             tdata = torch.flip(tdata, [1])
             mask = torch.flip(mask, [1])
-        
+
         # Flip the data along the width if the random number is less than p_width
         if torch.rand(1).item() < self.p_width:
             tdata = torch.flip(tdata, [0])
@@ -44,7 +46,7 @@ class RandomFlip(ThermoTransform):
         # Update the container and return it
         container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
         return container
-    
+
 class GaussianNoise(ThermoTransform):
     """Add Gaussian noise to the Temperature data in the container based on specified mean and standard deviation."""
     def __init__(self, mean: float = 0.0, std: float = 0.1):
@@ -70,7 +72,7 @@ class GaussianNoise(ThermoTransform):
         tdata = container.get_dataset("/Data/Tdata")
         noise = torch.normal(
             mean=self.mean,
-            std=self.std, 
+            std=self.std,
             size=tdata.size(),
             device=tdata.device,
             dtype=tdata.dtype

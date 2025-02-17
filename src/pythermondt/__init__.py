@@ -1,9 +1,9 @@
-from .data import ThermoContainer, ThermoDataset
-from .transforms import augmentation, normalization, utils, preprocessing, sampling
-from .readers import S3Reader, LocalReader
-from .writers import S3Writer, LocalWriter
-from .io import HDF5Parser, SimulationParser
 from .__pkginfo__ import __version__
+from .data import ThermoContainer, ThermoDataset
+from .io import HDF5Parser, SimulationParser
+from .readers import LocalReader, S3Reader
+from .transforms import augmentation, normalization, preprocessing, sampling, utils
+from .writers import LocalWriter, S3Writer
 
 # TODO: Implement logging instead of print statements according to this guide: https://docs.python.org/3/howto/logging.html
 # TODO: Implement async data loading

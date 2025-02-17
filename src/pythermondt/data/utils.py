@@ -1,13 +1,15 @@
-import math
-import torch
 import itertools
+import math
 from collections.abc import Sequence
-from typing import Optional
-from torch import Generator, default_generator
-from .thermo_dataset import ThermoDataset, IndexedThermoDataset
-from ..transforms import ThermoTransform
 
-def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[Sequence[Optional[ThermoTransform]]] = None, generator: Generator = default_generator) -> list[IndexedThermoDataset]:
+import torch
+from torch import Generator, default_generator
+
+from ..transforms import ThermoTransform
+from .thermo_dataset import IndexedThermoDataset, ThermoDataset
+
+
+def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Sequence[ThermoTransform | None] | None = None, generator: Generator = default_generator) -> list[IndexedThermoDataset]:
     """ Split a dataset into random non-overlapping subsets of given lengths with optional transforms beeing applied.
 
     If a list of fractions that sum up to 1 is given, the lengths will be computed automatically as floor(frac * len(dataset)) for each fraction provided.
@@ -30,11 +32,11 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[
     # Validate transforms if provided
     if transforms is not None and len(transforms) != len(lengths):
         raise ValueError(f"Number of transforms: {len(transforms)} must match number of splits: {len(lengths)}")
-    
+
     # Validate lenghts
     if not all(value >= 0 for value in lengths):
         raise ValueError("All values in lengths must be greater or equal to 0")
-    
+
     # If lengths are provided as fractions and not as absolute numbers
     if math.isclose(sum(lengths), 1) and sum(lengths) <= 1:
         # Compute the lenghts of the subsets
@@ -59,13 +61,13 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[
         if length == 0:
             print(
                 f"Length of split at index {i} is 0. ",
-                f"This might result in an empty dataset."
+                "This might result in an empty dataset."
             )
 
     # Raise an error if the computed lengths don't match the length of the original dataset
     if sum(lengths) != len(dataset):
         raise ValueError(f"The sum of the computed subset lengths: {lengths} does not match the length of the original dataset: {len(dataset)}")
-    
+
     # Generate random indices
     indices = torch.randperm(sum(lengths), generator=generator).tolist()
 
@@ -73,5 +75,5 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Optional[
     transforms = transforms if transforms else [None] * len(lengths)
     return [
         IndexedThermoDataset(dataset, indices[offset - length:offset], transform)
-        for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths))
+        for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths), strict=False)
     ]

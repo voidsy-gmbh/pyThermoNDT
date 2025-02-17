@@ -1,5 +1,6 @@
 from ._unit import Unit, is_unit_info
 
+
 class Units:
     '''Container for all units inside pythermondt.'''
     # Special units
@@ -10,18 +11,18 @@ class Units:
     # Temperature
     kelvin = Unit(name="kelvin", quantity="temperature", symbol="K")
     celsius = Unit(name="celsius", quantity="temperature", symbol="°C")
-    
-    # Time 
+
+    # Time
     second = Unit(name="second", quantity="time", symbol="s")
     millisecond = Unit(name="millisecond", quantity="time", symbol="ms")
-    
+
     # Add more units here as needed
-    
+
     @classmethod
     def print_available_units(cls):
         '''Print all units in the Units class.'''
         print("Available units:")
-        print("name: quantity (symbol)\n")    
+        print("name: quantity (symbol)\n")
         for unit in cls.__dict__.values():
             if is_unit_info(unit):
                 print(f"{unit['name']}: {unit['quantity']} ({unit['symbol']})")

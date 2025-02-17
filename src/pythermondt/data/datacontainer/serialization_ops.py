@@ -1,13 +1,17 @@
 import io
-import h5py
 import json
-from typing import Any, Dict, ItemsView
-from .base import BaseOps
-from .node import DataNode, GroupNode, RootNode, AttributeTypes
-from .utils import validate_path
-from .group_ops import GroupOps
-from .dataset_ops import DatasetOps
+from collections.abc import ItemsView
+from typing import Any
+
+import h5py
+
 from .attribute_ops import AttributeOps
+from .base import BaseOps
+from .dataset_ops import DatasetOps
+from .group_ops import GroupOps
+from .node import AttributeTypes, DataNode, GroupNode, RootNode
+from .utils import validate_path
+
 
 class SerializationOps(BaseOps):
     def serialize_to_hdf5(self) -> io.BytesIO:
@@ -88,7 +92,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             h5py.File(hdf5_bytes)
         except OSError:
             raise ValueError("The given BytesIO object does not contain a valid HDF5 file.")
-        
+
         # Reset the position of the BytesIO object to the beginning (in case the pointer was moved by the h5py.File function)
         hdf5_bytes.seek(0)
 
@@ -97,7 +101,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             self.nodes["/"] = RootNode()
 
         # Open the HDF5 file in read mode
-        with h5py.File(hdf5_bytes, 'r') as f:           
+        with h5py.File(hdf5_bytes, 'r') as f:
             # Iterate over all items in the HDF5 file
             for item_name, item in f.items():
                 if isinstance(item, h5py.Group):
@@ -148,9 +152,9 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
 
         # Add dataset attributes if they exist
         if dataset.attrs:
-            self._process_attributes(f"{path}/{name}", dict(dataset.attrs))     
+            self._process_attributes(f"{path}/{name}", dict(dataset.attrs))
 
-    def _process_attributes(self, path: str, attributes: Dict[str, Any]):
+    def _process_attributes(self, path: str, attributes: dict[str, Any]):
         """ Processes and adds attributes to a node in the DataContainer.
 
         Parameters:
@@ -177,7 +181,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
                 pass
 
             # Add the attribute to the node in the DataContainer
-            self.add_attribute(path, key, value) 
+            self.add_attribute(path, key, value)
 
     def load_from_hdf5(self, path: str):
         """ Loads an HDF5 file from the specified path and deserializes it into the DataContainer.

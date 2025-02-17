@@ -1,9 +1,12 @@
 import io
-import mat73
 import json
+
+import mat73
 import numpy as np
-from .base_parser import BaseParser
+
 from ...data import DataContainer, ThermoContainer
+from .base_parser import BaseParser
+
 
 class SimulationParser(BaseParser):
     @staticmethod
@@ -24,20 +27,20 @@ class SimulationParser(BaseParser):
         # Check if the BytesIO object is empty
         if data_bytes.getbuffer().nbytes == 0:
             raise ValueError("The given BytesIO object is empty.")
-        
+
         # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
         try:
             data = mat73.loadmat(data_bytes, use_attrdict=True)['SimResult']
         except OSError:
             raise ValueError("The given BytesIO object does not contain a valid .mat file.")
-        
+
         # Create an empty Thermocontainer ==> predefined structure
         datacontainer = ThermoContainer()
 
         # Add source as an attribute
         datacontainer.add_attributes(path='/MetaData', Source='Simulation')
-        
-        # Iterate through all keys and save the values in the datacontainer ==> 
+
+        # Iterate through all keys and save the values in the datacontainer ==>
         # If one key does not exist the variable in the datapoint will stay None
         for key in data.keys():
             match key:
@@ -64,7 +67,7 @@ class SimulationParser(BaseParser):
                         for sublist in data[key]
                     ]
 
-                    #TODO: Actually this is a list of lists. Should be improved in the future (maybe with a pandas dataframe ==> needs more work!) 
+                    #TODO: Actually this is a list of lists. Should be improved in the future (maybe with a pandas dataframe ==> needs more work!)
                     # Replace ' with " to make it a valid json string
                     converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
 
@@ -78,7 +81,7 @@ class SimulationParser(BaseParser):
                     except json.JSONDecodeError:
                         sim_par = converted_comsol_parameters
                     datacontainer.add_attributes(path='/MetaData', SimulationParameter=sim_par)
-                    
+
                 case 'NoiseLevel':
                     datacontainer.add_attributes(path='/Data/Tdata', NoiseLevel=data[key])
                 case 'Shapes':

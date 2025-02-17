@@ -1,10 +1,13 @@
-import pytest
 import io
+
+import pytest
+
 from pythermondt.data import DataContainer
+
 
 @pytest.mark.parametrize("container_fixture", [
     "empty_container",
-    "filled_container", 
+    "filled_container",
     "complex_container"
 ])
 def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRequest):
@@ -21,23 +24,23 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
     """
     # Get the container from the fixture
     original_container = request.getfixturevalue(container_fixture) #type: DataContainer
-    
+
     # Serialize the DataContainer
     hdf5_bytes = original_container.serialize_to_hdf5()
 
     # Check if the serialized data is a bytes object and is not empty
     assert isinstance(hdf5_bytes, io.BytesIO)
     assert hdf5_bytes.getbuffer().nbytes > 0
-    
+
     # Deserialize into a new container
     deserialized_container = DataContainer(hdf5_bytes)
-    
+
     # Check if the deserialized container is equal to the original container
     assert deserialized_container == original_container
 
 @pytest.mark.parametrize("container_fixture", [
     "empty_container",
-    "filled_container", 
+    "filled_container",
     "complex_container"
 ])
 def test_serialize_file_operations(container_fixture: str, request: pytest.FixtureRequest, tmp_path):
@@ -47,14 +50,14 @@ def test_serialize_file_operations(container_fixture: str, request: pytest.Fixtu
 
     # Get the container from the fixture
     original_container = request.getfixturevalue(container_fixture) #type: DataContainer
-    
+
     # Save container to file
     original_container.save_to_hdf5(str(file_path))
-    
+
     # Load into new container
     loaded_container = DataContainer()
     loaded_container.load_from_hdf5(str(file_path))
-    
+
     # Verify equality
     assert loaded_container == original_container
 

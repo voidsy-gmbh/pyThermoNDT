@@ -5,13 +5,16 @@ from .utils import ThermoTransform
 
 class MinMaxNormalize(ThermoTransform):
     """
-    Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the min and max values of the data.
-    This is done by subtracting the min value from the data and dividing by the difference between the max and min values.
+    Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the min and max values of the
+    data. This is done by subtracting the min value from the data and dividing by the difference between the max and
+    min values.
     """
 
     def __init__(self, eps: float = 1e-12):
         """
-        Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the min and max values of the data.
+        Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the min and max values of the
+        data. This is done by subtracting the min value from the data and dividing by the difference between the max and
+        min values.
 
         Parameters:
             eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.

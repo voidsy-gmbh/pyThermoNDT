@@ -9,12 +9,14 @@ from .utils import ThermoTransform
 
 class ApplyLUT(ThermoTransform):
     """
-    Applies the LookUpTable of the container to the Temperature data (Tdata) in the container. Therefore Tdata gets converted from uint16 to float64.
+    Applies the LookUpTable of the container to the Temperature data (Tdata) in the container.
+    Therefore Tdata gets converted from uint16 to float64.
     """
 
     def __init__(self):
         """
-        Applies the LookUpTable of the container to the Temperature data (Tdata) in the container. Therefore Tdata gets converted from uint16 to float64.
+        Applies the LookUpTable of the container to the Temperature data (Tdata) in the container.
+        Therefore Tdata gets converted from uint16 to float64.
         """
         super().__init__()
 
@@ -63,7 +65,8 @@ class SubstractFrame(ThermoTransform):
         Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
 
         Parameters:
-            frame (int): Frame number that should be substracted from the Temperature data. Default is the initial frame (frame 0).
+            frame (int): Frame number that should be substracted from the Temperature data.
+                Default is the initial frame (frame 0).
         """
         super().__init__()
 
@@ -105,10 +108,12 @@ class RemoveFlash(ThermoTransform):
 
         2 methods are available:
         - "excitation_signal": Detect the flash by finding the frame where the excitation signal goes from 1 back to 0.
-        - "max_temp": Detect the flash by finding the frame with the maximum temperature value in it. May not work if the flash is not the hottest frame.
+        - "max_temp": Detect the flash by finding the frame with the maximum temperature value in it.
+            May not work if the flash is not the hottest frame.
 
         Parameters:
-            method (Literal["excitation_signal", "max_temp"]): Method to detect the flash. Default is "excitation_signal".
+            method (Literal["excitation_signal", "max_temp"]): Method to detect the flash.
+                Default is "excitation_signal".
             offset (int): Offset in frames to add to the detected flash end. Default is 0.
         """
         super().__init__()
@@ -117,7 +122,9 @@ class RemoveFlash(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract tdata and domain values
-        tdata, excitation_signal, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/ExcitationSignal", "/MetaData/DomainValues")
+        tdata, excitation_signal, domain_values = container.get_datasets(
+            "/Data/Tdata", "/MetaData/ExcitationSignal", "/MetaData/DomainValues"
+        )
 
         # Detect the flash frame based on the method
         match self.method:
@@ -141,7 +148,9 @@ class RemoveFlash(ThermoTransform):
 
         # Check if the flash end is valid
         if flash_end_idx < 0 or flash_end_idx >= len(domain_values):
-            raise IndexError(f"Flash end index {flash_end_idx} is out of bounds. Valid range is {[0, len(domain_values) - 1]}.")
+            raise IndexError(
+                f"Flash end index {flash_end_idx} is out of bounds. Valid range is {[0, len(domain_values) - 1]}."
+            )
 
         # Keep only the frames after the flash
         tdata = tdata[..., flash_end_idx:]
@@ -153,6 +162,8 @@ class RemoveFlash(ThermoTransform):
 
         # Update the container and return it
         container.update_datasets(
-            ("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal)
+            ("/Data/Tdata", tdata),
+            ("/MetaData/DomainValues", domain_values),
+            ("/MetaData/ExcitationSignal", excitation_signal),
         )
         return container

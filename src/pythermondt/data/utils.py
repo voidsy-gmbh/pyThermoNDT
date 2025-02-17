@@ -10,19 +10,25 @@ from .thermo_dataset import IndexedThermoDataset, ThermoDataset
 
 
 def random_split(
-    dataset: ThermoDataset, lengths: Sequence, transforms: Sequence[ThermoTransform | None] | None = None, generator: Generator = default_generator
+    dataset: ThermoDataset,
+    lengths: Sequence,
+    transforms: Sequence[ThermoTransform | None] | None = None,
+    generator: Generator = default_generator,
 ) -> list[IndexedThermoDataset]:
     """Split a dataset into random non-overlapping subsets of given lengths with optional transforms beeing applied.
 
-    If a list of fractions that sum up to 1 is given, the lengths will be computed automatically as floor(frac * len(dataset)) for each fraction provided.
+    If a list of fractions that sum up to 1 is given, the lengths will be computed automatically as
+    floor(frac * len(dataset)) for each fraction provided.
 
-    After computing the lengths, if there are any remainders, 1 count will be distributed in round-robin fashion to the lengths until there are no remainders left.
+    After computing the lengths, if there are any remainders, 1 count will be distributed in round-robin fashion to the
+    lengths until there are no remainders left.
 
     Parameters:
         dataset (Dataset): Dataset to be split
         lengths (Sequence[float]): Fractions for each split that sum up to 1.0.
         transforms (Sequence[ThermoTransform], optional): Optional sequence of transforms for each split.
-        generator (Generator, optional): Generator used for reproducible splits. Per default the default generator is used.
+        generator (Generator, optional): Generator used for reproducible splits.
+            Per default the default generator is used.
 
     Returns:
         List[ThermoSubset]: List of subsets with the specified lengths and transforms
@@ -65,7 +71,10 @@ def random_split(
 
     # Raise an error if the computed lengths don't match the length of the original dataset
     if sum(lengths) != len(dataset):
-        raise ValueError(f"The sum of the computed subset lengths: {lengths} does not match the length of the original dataset: {len(dataset)}")
+        raise ValueError(
+            f"The sum of the computed subset lengths: {lengths} does not match "
+            f"the length of the original dataset: {len(dataset)}"
+        )
 
     # Generate random indices
     indices = torch.randperm(sum(lengths), generator=generator).tolist()

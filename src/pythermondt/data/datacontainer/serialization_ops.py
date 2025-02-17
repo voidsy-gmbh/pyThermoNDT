@@ -93,7 +93,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         except OSError:
             raise ValueError("The given BytesIO object does not contain a valid HDF5 file.")
 
-        # Reset the position of the BytesIO object to the beginning (in case the pointer was moved by the h5py.File function)
+        # Reset the position of the BytesIO object to the start in case the pointer was moved by the h5py.File function
         hdf5_bytes.seek(0)
 
         # Check if a root node exists in the DataContainer ==> if not, add it

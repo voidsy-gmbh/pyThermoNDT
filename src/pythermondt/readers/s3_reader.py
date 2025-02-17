@@ -18,15 +18,22 @@ class S3Reader(BaseReader):
     ):
         """Initialize an instance of the S3Reader class.
 
-        This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must cofigure an authentication method
-        for boto3, according to the documentation: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration
+        This class is used to read data from an S3 bucket, using the the boto3 SDK. For using this class, the user must
+        configure an authentication method for boto3, according to the documentation: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration
 
         Parameters:
-            source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]. All files that start with the provided prefix will be read. Specifiy the file extension if you want to autoselect a parser based on the file extension.
-            cache_files (bool, optional): If True, all the files are downloaded first and the paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is False, to prevent disk space issues.
-            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
-            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads all files. Default is None.
-            boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
+            source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext].
+                All files that start with the provided prefix will be read. Specifiy the file extension if you want to
+                autoselect a parser based on the file extension.
+            cache_files (bool, optional): If True, all the files are downloaded first and the paths are cached in
+                memory. This means the reader only checks for new files once, so changes to the file sources will not be
+                noticed at runtime. Default is False, to prevent disk space issues.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data.
+                If not specified, the parser will be auto selected based on the file extension. Default is None.
+            num_files (int, optional): Limit the number of files that the reader can read.
+                If None, the reader reads all files. Default is None.
+            boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client.
+                Default is a new boto3 session with the default profile.
         """
 
         # Create a new s3 client from the give session
@@ -34,7 +41,9 @@ class S3Reader(BaseReader):
 
         # Validate the source path
         if not re.match(r"^s3:\/\/[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](?:\/[\w\s.-]+)*$", source):
-            raise ValueError("The source must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]")
+            raise ValueError(
+                "The source must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext]"
+            )
 
         # Extract the bucket and prefix from the source path
         ext = re.findall(r"\.[a-zA-Z0-9]+$", source)
@@ -65,8 +74,8 @@ class S3Reader(BaseReader):
         return io.BytesIO(response["Body"].read())
 
     def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        # Create a paginator for the list_objects_v2 method ==> The amout of objects to get with list_objects_v2 is limited to 1000
-        # ==> In that case the requests are split into multiple pages which the paginator can iterate over
+        # Create a paginator for the list_objects_v2 method ==> The amount of objects to get with list_objects_v2 is
+        # limited to 1000 ==> requests are split into multiple pages which the paginator can iterate over
         paginator = self.__client.get_paginator("list_objects_v2")
 
         # Iterate over all pages and get the content of the objects

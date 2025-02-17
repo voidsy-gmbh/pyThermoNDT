@@ -8,16 +8,27 @@ from .base_reader import BaseReader
 
 
 class LocalReader(BaseReader):
-    def __init__(self, source: str, cache_files: bool = True, parser: type[BaseParser] | None = None, num_files: int | None = None):
+    def __init__(
+        self,
+        source: str,
+        cache_files: bool = True,
+        parser: type[BaseParser] | None = None,
+        num_files: int | None = None,
+    ):
         """Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
 
         Parameters:
-            source (str): The source of the data. This can either be a file path, a directory path, or a regular expression.
-            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only checks for new files once, so changes to the file sources will not be noticed at runtime. Default is True.
-            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified, the parser will be auto selected based on the file extension. Default is None.
-            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads all files. Default is None.
+            source (str): The source of the data. This can either be a file path, a directory path, or a regular
+                expression.
+            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only
+                checks for new files once, so changes to the file sources will not be noticed at runtime. Default is
+                True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data.
+                If not specified, the parser will be auto selected based on the file extension. Default is None.
+            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads
+                all files. Default is None.
         """
         # Check if source is a valid regex pattern
         try:

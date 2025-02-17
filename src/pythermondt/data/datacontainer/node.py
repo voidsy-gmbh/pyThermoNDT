@@ -52,7 +52,10 @@ class AttributeNode(BaseNode, ABC):
 
     def add_attribute(self, key: str, value: AttributeTypes):
         if key in self.__attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' already exists. Use 'update_attribute' to update the value.")
+            raise KeyError(
+                f"Attribute with key '{key}' in node '{self.name}' already exists. "
+                "Use 'update_attribute' to update the value."
+            )
         self.__attributes[key] = value
 
     def add_attributes(self, **attributes: AttributeTypes):
@@ -71,11 +74,15 @@ class AttributeNode(BaseNode, ABC):
 
     def update_attribute(self, key: str, value: AttributeTypes) -> None:
         if key not in self.__attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist. Use 'add_attribute' to add a new attribute.")
+            raise KeyError(
+                f"Attribute with key '{key}' in node '{self.name}' does not exist. "
+                f"Use 'add_attribute' to add a new attribute."
+            )
 
         if type(self.__attributes[key]) != type(value):
             raise TypeError(
-                f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. Cannot update attribute with value of type '{type(value)}'."
+                f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. "
+                f"Cannot update attribute with value of type '{type(value)}'."
             )
         self.__attributes[key] = value
 

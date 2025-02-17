@@ -20,7 +20,9 @@ class SelectFrames(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
-        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
+        tdata, domain_values, excitation_signal = container.get_datasets(
+            "/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal"
+        )
 
         # Check if frame_indices are valid
         if any(idx < 0 or idx >= tdata.shape[-1] for idx in self.frame_indices):
@@ -40,7 +42,9 @@ class SelectFrames(ThermoTransform):
 
         # Update Container and return
         container.update_datasets(
-            ("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal)
+            ("/Data/Tdata", tdata),
+            ("/MetaData/DomainValues", domain_values),
+            ("/MetaData/ExcitationSignal", excitation_signal),
         )
         return container
 
@@ -53,7 +57,8 @@ class SelectFrameRange(ThermoTransform):
 
         Parameters:
             start (Optional[int]): Start index of the frame range. Default is None, which means the start index is 0.
-            end (Optional[int]): End index of the frame range, which is inclusiv. Default is None, which means the end index is the last frame.
+            end (Optional[int]): End index of the frame range, which is inclusiv.
+                Default is None, which means the end index is the last frame.
         """
         super().__init__()
         self.start = start
@@ -61,7 +66,9 @@ class SelectFrameRange(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
-        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
+        tdata, domain_values, excitation_signal = container.get_datasets(
+            "/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal"
+        )
 
         # Check if frame range is valid
         if self.start is not None and (self.start < 0 or self.start >= tdata.shape[-1]):
@@ -86,7 +93,9 @@ class SelectFrameRange(ThermoTransform):
 
         # Update Container and return
         container.update_datasets(
-            ("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal)
+            ("/Data/Tdata", tdata),
+            ("/MetaData/DomainValues", domain_values),
+            ("/MetaData/ExcitationSignal", excitation_signal),
         )
         return container
 
@@ -136,7 +145,9 @@ class NonUniformSampling(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
-        tdata, domain_values, excitation_signal = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal")
+        tdata, domain_values, excitation_signal = container.get_datasets(
+            "/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal"
+        )
 
         # Check if we are in time domain
         if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
@@ -144,13 +155,17 @@ class NonUniformSampling(ThermoTransform):
 
         # Check if number of samples is valid
         if self.n_samples <= 0 or self.n_samples > len(domain_values):
-            raise ValueError(f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}].")
+            raise ValueError(
+                f"Invalid number of samples. Number of samples must be in the range [1, {len(domain_values)}]."
+            )
 
         # Calculate tau using binary search if not provided
         n_samples_original = len(domain_values)
         t_end = domain_values[-1]
         if not self.tau:
-            tau = self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), n_samples_original)
+            tau = self._calculate_tau(
+                t_end.item(), domain_values[1].item() - domain_values[0].item(), n_samples_original
+            )
         else:
             tau = torch.tensor(self.tau)
 
@@ -171,6 +186,8 @@ class NonUniformSampling(ThermoTransform):
 
         # Update Container and return
         container.update_datasets(
-            ("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal)
+            ("/Data/Tdata", tdata),
+            ("/MetaData/DomainValues", domain_values),
+            ("/MetaData/ExcitationSignal", excitation_signal),
         )
         return container

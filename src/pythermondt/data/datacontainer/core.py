@@ -15,9 +15,10 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     """
     Manages and serializes data into HDF5 format.
 
-    This class manages data in a hierarchical structure, similar to a HDF5 File. It provides methods to add groups, datasets and attributes to the data structure.
-    The data structure can be serialized to a HDF5 file and deserialized from a HDF5 file using save_to_hdf5 and load_from_hdf5 methods respectively.
-    It also provides methods for visualization of the data structure.
+    This class manages data in a hierarchical structure, similar to a HDF5 File. It provides methods to add
+    groups, datasets and attributes to the data structure. The data structure can be serialized to a HDF5 file and
+    deserialized from a HDF5 file using save_to_hdf5 and load_from_hdf5 methods respectively. It also provides methods
+    for visualization of the data structure.
     """
 
     def __init__(self, hdf5_bytes: BytesIO | None = None):

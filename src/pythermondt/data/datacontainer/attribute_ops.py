@@ -66,10 +66,11 @@ class AttributeOps(BaseOps):
 
         Parameters:
             path (str): The path to the group or dataset.
-            *keys (str): Variable number of attribute keys. Can be provided as separate arguments or unpacked from a list.
+            *keys (str): Variable number of attribute keys.
+                Can be provided as separate arguments or unpacked from a list.
 
         Returns:
-            Tuple[str | int | float | list | tuple | dict | Unit, ...]: The values of the attributes, in the same order as the input keys.
+            Tuple[str | int | float | list | tuple | dict | Unit, ...]: The values of the attributes, in the same order.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -84,7 +85,7 @@ class AttributeOps(BaseOps):
             path (str): The path to the group or dataset.
 
         Returns:
-            Dict[str, str | int | float | list | tuple | dict | UnitInfo]: A dictionary of all attributes in the group or dataset.
+            Dict[str, str | int | float | list | tuple | dict | UnitInfo]: A dictionary of all attributes at the path.
 
         Raises:
             KeyError: If the group or dataset does not exist.

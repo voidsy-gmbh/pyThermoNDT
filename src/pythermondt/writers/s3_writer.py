@@ -13,7 +13,8 @@ class S3Writer(BaseWriter):
         Parameters:
             bucket (str): The name of the bucket to write to.
             destination_folder (str): The destination folder where the DataContainers should be written to.
-            boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client. Default is a new boto3 session with the default profile.
+            boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client.
+                Default is a new boto3 session with the default profile.
         """
         self.bucket = bucket
         self.destination_folder = destination_folder
@@ -58,7 +59,13 @@ class S3Writer(BaseWriter):
 
         except ClientError as e:
             error_code = e.response["Error"]["Code"]
-            if error_code in ["InvalidAccessKeyId", "SignatureDoesNotMatch", "AuthFailure", "InvalidSecurity", "InvalidToken"]:
+            if error_code in [
+                "InvalidAccessKeyId",
+                "SignatureDoesNotMatch",
+                "AuthFailure",
+                "InvalidSecurity",
+                "InvalidToken",
+            ]:
                 raise PermissionError("Invalid AWS credentials") from e
             elif error_code == "AccessDenied":
                 raise PermissionError("Access denied. Check your AWS permissions for this resource.") from e

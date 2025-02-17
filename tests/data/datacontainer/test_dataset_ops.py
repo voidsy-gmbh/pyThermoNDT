@@ -35,7 +35,9 @@ def dataset_container(empty_container: DataContainer):
         ("/testgroup/nestedgroup", "dataset2"),  # add to a nested group
     ],
 )
-def test_add_dataset(dataset_container: DataContainer, data: str | None, path: str, name: str, request: pytest.FixtureRequest):
+def test_add_dataset(
+    dataset_container: DataContainer, data: str | None, path: str, name: str, request: pytest.FixtureRequest
+):
     # Request testdata from the fixtures
     test_data = request.getfixturevalue(data) if data is not None else None
 
@@ -87,7 +89,9 @@ def test_add_dataset(dataset_container: DataContainer, data: str | None, path: s
         pytest.param("/testgroup/nestedgroup", "test_dataset2"),  # In nested group
     ],
 )
-def test_add_dataset_existing(dataset_container: DataContainer, data: str, path: str, name: str, request: pytest.FixtureRequest):
+def test_add_dataset_existing(
+    dataset_container: DataContainer, data: str, path: str, name: str, request: pytest.FixtureRequest
+):
     # Request testdata from the fixtures
     test_data = request.getfixturevalue(data) if data is not None else None
 
@@ -133,7 +137,9 @@ def test_add_dataset_invalid_path(dataset_container: DataContainer, path: str, n
         ("/testgroup/nestedgroup"),  # add to a nested group
     ],
 )
-def test_add_datasets(dataset_container: DataContainer, datasets: dict[str, str | None], path: str, request: pytest.FixtureRequest):
+def test_add_datasets(
+    dataset_container: DataContainer, datasets: dict[str, str | None], path: str, request: pytest.FixtureRequest
+):
     # Request testdata from the fixtures
     test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in datasets.items()}
 
@@ -245,7 +251,9 @@ def test_get_dataset_non_existing(dataset_container: DataContainer, path: str, e
         ("/testgroup/nestedgroup"),  # add to a nested group
     ],
 )
-def test_get_datasets(dataset_container: DataContainer, datasets: dict[str, str | None], path: str, request: pytest.FixtureRequest):
+def test_get_datasets(
+    dataset_container: DataContainer, datasets: dict[str, str | None], path: str, request: pytest.FixtureRequest
+):
     # Request testdata from the fixtures
     test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in datasets.items()}
 
@@ -285,7 +293,9 @@ def test_get_datasets(dataset_container: DataContainer, datasets: dict[str, str 
         (["/", "/testgroup/nestedgroup/dataset2"], TypeError),  # one path is the root group
     ],
 )
-def test_get_datasets_non_existing(dataset_container: DataContainer, paths: list[str], expected_error: type[Exception], sample_tensor: Tensor):
+def test_get_datasets_non_existing(
+    dataset_container: DataContainer, paths: list[str], expected_error: type[Exception], sample_tensor: Tensor
+):
     # Add a valid dataset
     dataset_container.add_dataset("/testgroup/nestedgroup", "dataset2", sample_tensor)
 
@@ -312,7 +322,9 @@ def test_get_datasets_non_existing(dataset_container: DataContainer, paths: list
         ("/testgroup/nestedgroup"),  # add to a nested group
     ],
 )
-def test_get_all_dataset_names(dataset_container: DataContainer, datasets: dict[str, str | None], path: str, request: pytest.FixtureRequest):
+def test_get_all_dataset_names(
+    dataset_container: DataContainer, datasets: dict[str, str | None], path: str, request: pytest.FixtureRequest
+):
     # Request testdata from the fixtures
     test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in datasets.items()}
 
@@ -347,7 +359,9 @@ def test_get_all_dataset_names(dataset_container: DataContainer, datasets: dict[
         ("/testgroup/nestedgroup", "dataset2"),  # remove from a nested group
     ],
 )
-def test_remove_dataset(dataset_container: DataContainer, data: str | None, path: str, name: str, request: pytest.FixtureRequest):
+def test_remove_dataset(
+    dataset_container: DataContainer, data: str | None, path: str, name: str, request: pytest.FixtureRequest
+):
     # Request testdata from the fixtures
     test_data = request.getfixturevalue(data) if data is not None else None
 
@@ -398,7 +412,12 @@ def test_remove_dataset_non_existing(dataset_container: DataContainer, path: str
     ],
 )
 def test_update_dataset(
-    dataset_container: DataContainer, initial_data: str | None, updated_data: str, path: str, name: str, request: pytest.FixtureRequest
+    dataset_container: DataContainer,
+    initial_data: str | None,
+    updated_data: str,
+    path: str,
+    name: str,
+    request: pytest.FixtureRequest,
 ):
     # Request initial test data from the fixtures
     initial_test_data = request.getfixturevalue(initial_data) if initial_data is not None else None
@@ -447,7 +466,9 @@ def test_update_dataset(
         ("/testgroup/nestedgroup/non_existent_dataset2"),  # update a non-existent dataset in a nested group
     ],
 )
-def test_update_dataset_non_existing(dataset_container: DataContainer, data: str, path: str, request: pytest.FixtureRequest):
+def test_update_dataset_non_existing(
+    dataset_container: DataContainer, data: str, path: str, request: pytest.FixtureRequest
+):
     # Request test data from the fixtures
     test_data = request.getfixturevalue(data)
 
@@ -460,10 +481,22 @@ def test_update_dataset_non_existing(dataset_container: DataContainer, data: str
 @pytest.mark.parametrize(
     "initial_datasets, updated_datasets",
     [
-        ({"dataset0": "sample_tensor", "dataset1": "sample_ndarray"}, [("dataset0", "sample_tensor2"), ("dataset1", "sample_ndarray2")]),
-        ({"dataset0": "sample_empty_tensor", "dataset1": "sample_empty_ndarray"}, [("dataset0", "sample_tensor"), ("dataset1", "sample_ndarray")]),
-        ({"dataset0": None, "dataset1": "sample_ndarray"}, [("dataset0", "sample_tensor"), ("dataset1", "sample_ndarray2")]),
-        ({"dataset0": "sample_tensor", "dataset1": None}, [("/dataset0", "sample_tensor2"), ("dataset1", "sample_empty_ndarray")]),
+        (
+            {"dataset0": "sample_tensor", "dataset1": "sample_ndarray"},
+            [("dataset0", "sample_tensor2"), ("dataset1", "sample_ndarray2")],
+        ),
+        (
+            {"dataset0": "sample_empty_tensor", "dataset1": "sample_empty_ndarray"},
+            [("dataset0", "sample_tensor"), ("dataset1", "sample_ndarray")],
+        ),
+        (
+            {"dataset0": None, "dataset1": "sample_ndarray"},
+            [("dataset0", "sample_tensor"), ("dataset1", "sample_ndarray2")],
+        ),
+        (
+            {"dataset0": "sample_tensor", "dataset1": None},
+            [("/dataset0", "sample_tensor2"), ("dataset1", "sample_empty_ndarray")],
+        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -482,7 +515,9 @@ def test_update_datasets(
     request: pytest.FixtureRequest,
 ):
     # Request initial test data from the fixtures
-    initial_test_data = {key: request.getfixturevalue(value) if value is not None else None for key, value in initial_datasets.items()}
+    initial_test_data = {
+        key: request.getfixturevalue(value) if value is not None else None for key, value in initial_datasets.items()
+    }
 
     # Add initial datasets
     dataset_container.add_datasets(path, **initial_test_data)
@@ -516,7 +551,11 @@ def test_update_datasets(
     "initial_datasets, updated_datasets, expected_error",
     [
         # One non-existent dataset
-        ({"dataset0": "sample_tensor"}, [("/non_existent", "sample_tensor2"), ("/dataset0", "sample_tensor2")], KeyError),
+        (
+            {"dataset0": "sample_tensor"},
+            [("/non_existent", "sample_tensor2"), ("/dataset0", "sample_tensor2")],
+            KeyError,
+        ),
         # Update group instead of dataset
         (
             {"dataset0": "sample_tensor"},

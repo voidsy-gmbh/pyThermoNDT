@@ -11,7 +11,8 @@ from .base_parser import BaseParser
 class SimulationParser(BaseParser):
     @staticmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:
-        """Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a DataContainer object.
+        """Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a
+        DataContainer object.
 
         The BytesIO object must contain a .mat file with simulattion data from COMSOL.
 
@@ -63,10 +64,12 @@ class SimulationParser(BaseParser):
                 case "ComsolParameters":
                     # Convert Comsol Parameters to a json string
                     converted_comsol_parameters = [
-                        [item.item() if isinstance(item, np.ndarray) else item for item in sublist] for sublist in data[key]
+                        [item.item() if isinstance(item, np.ndarray) else item for item in sublist]
+                        for sublist in data[key]
                     ]
 
-                    # TODO: Actually this is a list of lists. Should be improved in the future (maybe with a pandas dataframe ==> needs more work!)
+                    # TODO: Actually this is a list of lists. Should be improved in the future
+                    # (maybe with a pandas dataframe ==> needs more work!)
                     # Replace ' with " to make it a valid json string
                     converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
 

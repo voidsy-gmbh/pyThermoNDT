@@ -36,7 +36,8 @@ class DatasetOps(BaseOps):
 
         Parameters:
             path (str): The path to the parent group.
-            **datasets (Dict[str, Optional[Tensor | ndarray]]): The datasets to add, with the key being the name of the dataset.
+            **datasets (Dict[str, Optional[Tensor | ndarray]]): The datasets to add, provided as a dictionary.
+                The specified key will become the name of the dataset.
 
         Raises:
             KeyError: If the parent group does not exist.
@@ -64,7 +65,8 @@ class DatasetOps(BaseOps):
         """Get multiple datasets from specified paths in the DataContainer.
 
         Parameters:
-            *paths (str): Variable number of paths to the datasets. Can be provided as separate arguments or unpacked from a list.
+            *paths (str): Variable number of paths to the datasets.
+                Can be provided as separate arguments or unpacked from a list.
 
         Returns:
             Tuple[Tensor, ...]: The tensors stored in the datasets, in the same order as the input paths.
@@ -117,7 +119,8 @@ class DatasetOps(BaseOps):
         """Update multiple datasets in the DataContainer.
 
         Parameters:
-            *updates (Tuple[str, Tensor | ndarray]): Variable number of (path, data) tuples. Can be provided as separate tuples or unpacked from a list.
+            *updates (Tuple[str, Tensor | ndarray]): Variable number of (path, data) tuples.
+                Can be provided as separate tuples or unpacked from a list.
 
         Raises:
             KeyError: If a dataset does not exist.

@@ -3,7 +3,9 @@ from torch import Tensor
 from pythermondt.data import DataContainer
 
 
-def test_basic_container_equality(empty_container: DataContainer, filled_container: DataContainer, complex_container: DataContainer):
+def test_basic_container_equality(
+    empty_container: DataContainer, filled_container: DataContainer, complex_container: DataContainer
+):
     """Test basic container equality cases."""
     # Self-equality for empty and filled containers
     assert empty_container == empty_container
@@ -16,7 +18,9 @@ def test_basic_container_equality(empty_container: DataContainer, filled_contain
     assert empty_container != complex_container
 
 
-def test_identical_structure_equality(filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
+def test_identical_structure_equality(
+    filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor
+):
     """Test equality of containers with identical structure but different objects."""
     identical_container = DataContainer()
     identical_container.add_group("/", "TestGroup")

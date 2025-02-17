@@ -6,10 +6,11 @@ class Units:
 
     # Special units
     dimensionless = Unit(name="dimensionless", quantity="dimensionless", symbol="1")
-    arbitrary = Unit(
-        name="arbitrary", quantity="arbitrary", symbol="a. u."
-    )  # Special unit for data that is not really dimensionaless but has not been processed yet (e.g. temp without LUT applied)
-    undefined = Unit(name="undefined", quantity="undefined", symbol="N/A")  # Return value for datasets without a unit defined
+    # arbitrary: Special unit for data that is not really dimensionaless but has not been processed yet
+    # (e.g. temp without LUT applied)
+    arbitrary = Unit(name="arbitrary", quantity="arbitrary", symbol="a. u.")
+    # undefined: Return value for datasets without a unit defined
+    undefined = Unit(name="undefined", quantity="undefined", symbol="N/A")
 
     # Temperature
     kelvin = Unit(name="kelvin", quantity="temperature", symbol="K")

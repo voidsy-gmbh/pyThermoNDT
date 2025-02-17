@@ -9,7 +9,13 @@ def test_initialization(thermo_container: ThermoContainer):
     """Test initialization of ThermoContainer."""
     # Expected groups that should be present after initialization of ThermoContainer
     expected_groups = ["/Data", "/GroundTruth", "/MetaData"]
-    expected_datasets = ["/Data/Tdata", "/GroundTruth/DefectMask", "/MetaData/LookUpTable", "/MetaData/ExcitationSignal", "/MetaData/DomainValues"]
+    expected_datasets = [
+        "/Data/Tdata",
+        "/GroundTruth/DefectMask",
+        "/MetaData/LookUpTable",
+        "/MetaData/ExcitationSignal",
+        "/MetaData/DomainValues",
+    ]
 
     # Check if all expected groups are present
     for group in expected_groups:

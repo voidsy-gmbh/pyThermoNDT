@@ -45,9 +45,12 @@ class DataContainerBase(ABC):
             return node
 
         def __set_node(self, key: str, value: NodeTypes) -> None:
-            # Block any overwrites by default ==> updating nodes is handled using __get_node by uverrding .data attribute in Node classes
+            # Block any overwrites by default ==> updating nodes is handled using __get_node
+            # by overriding .data attribute in Node classes
             if key in self.__nodes:
-                raise KeyError(f"Node at path '{key}' already exists. Use a different path or delete the existing node.")
+                raise KeyError(
+                    f"Node at path '{key}' already exists. Use a different path or delete the existing node."
+                )
 
             # Special handling for root nodes
             if isinstance(value, RootNode):
@@ -55,7 +58,9 @@ class DataContainerBase(ABC):
                     raise ValueError("RootNode must be placed at the root path '/'.")
 
                 if "/" in self.__nodes:
-                    raise ValueError("RootNode already exists in the DataContainer. RootNode must be unique for each DataContainer.")
+                    raise ValueError(
+                        "RootNode already exists in the DataContainer. RootNode must be unique for each DataContainer."
+                    )
 
                 self.__nodes[key] = value
                 return
@@ -64,7 +69,10 @@ class DataContainerBase(ABC):
             parent, _ = split_path(key)
             if parent not in self.__nodes:
                 if parent == "/" and parent not in self.__nodes:
-                    raise KeyError("RootNode does not exist in this container. Check container initialization and ensure that a RootNode exists!")
+                    raise KeyError(
+                        "RootNode does not exist in this container. "
+                        "Check container initialization and ensure that a RootNode exists!"
+                    )
                 else:
                     raise KeyError(f"Parent node at path '{parent}' does not exist.")
 
@@ -117,11 +125,12 @@ class DataContainerBase(ABC):
     def nodes(self) -> __NodeAccessor:
         """Property to access nodes in the DataContainer.
 
-        This property is indexable and callable to get and set nodes. The path is checked for existence.
-        Optionally the nodes is also checked for the correct type (provided as a function argument) while getting a node. Therefore the returned type is ensured to be correct.
-        When setting nodes, the parent path is checked for existence and type (either RootNode or GroupNode).
-        It also allows for deleting nodes by using the del keyword. If a group is deleted, all child nodes are also deleted to avoid orphaned nodes.
-        Use with caution! Some sanity checks are disabled when using the property directly. Only for advanced users!
+        This property is indexable and callable to get and set nodes. The path is checked for existence. Optionally the
+        nodes is also checked for the correct type (provided as a function argument) while getting a node. Therefore the
+        returned type is ensured to be correct. When setting nodes, the parent path is checked for existence and type
+        (either RootNode or GroupNode). It also allows for deleting nodes by using the del keyword. If a group is
+        deleted, all child nodes are also deleted to avoid orphaned nodes. Use with caution! Some sanity checks are
+        disabled when using the property directly. Only for advanced users!
 
         Example usage:
         ```python
@@ -212,7 +221,9 @@ class BaseOps(DataContainerBase):
             return False
 
     def _parent_exists(self, key: str) -> bool:
-        """Check if the parent of the given path exists and is a GroupNode or RootNode. If the path itself is the root path, it returns False.
+        """
+        Check if the parent of the given path exists and is a GroupNode or RootNode.
+        If the path itself is the root path, it returns False.
 
         Parameters:
             key (str): The path to check.

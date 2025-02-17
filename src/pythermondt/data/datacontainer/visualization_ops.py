@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import numpy as np  # noqa: F401
 import torch
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
@@ -36,7 +37,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Initialize the frame display
             self.current_frame = 0  # type: int
             self.current_frame_data = self.tdata[self.current_frame]  # type: np.ndarray
-            self.frame_img = self.frame_ax.imshow(self.current_frame_data, aspect="auto", cmap="plasma", vmin=self.tdata.min(), vmax=self.tdata.max())
+            self.frame_img = self.frame_ax.imshow(
+                self.current_frame_data, aspect="auto", cmap="plasma", vmin=self.tdata.min(), vmax=self.tdata.max()
+            )
             self.frame_ax.set_title(f"Frame {self.current_frame}")
 
             # Setup the profile plot
@@ -51,7 +54,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # 3.) Setup the interactive elements
             # Setup the slider
             slider_ax = plt.axes((0.2, 0.02, 0.6, 0.03))
-            self.frame_slider = Slider(ax=slider_ax, label="Frame", valmin=0, valmax=self.tdata.shape[0] - 1, valinit=0, valstep=1)
+            self.frame_slider = Slider(
+                ax=slider_ax, label="Frame", valmin=0, valmax=self.tdata.shape[0] - 1, valinit=0, valstep=1
+            )
 
             # Setup the clear button
             clear_ax = plt.axes((0.85, 0.02, 0.1, 0.03))
@@ -138,7 +143,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             vmin = round(self.current_frame_data.min(), 8)
             vmax = round(self.current_frame_data.max(), 8)
 
-            # Directly set the image norm, because set_clim does call color sanitazion inside, which can lead to wrong updates
+            # Directly set the image norm, because set_clim does call color sanitazion inside
+            # This can lead to wrong updates
             self.frame_img.norm = Normalize(vmin, vmax)
 
             # Redraw points on the new frame
@@ -200,7 +206,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
         Parameters:
             frame_number (int): The frame number to visualize.
-            option (str): The visualization option to apply. Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
+            option (str): The visualization option to apply.
+                Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
             cmap (str): The color map to use for the visualization. Defaults to 'plasma'.
         """
         # Clear current figure
@@ -252,11 +259,14 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     def show_pixel_profile(self, pixel_pos_x: int, pixel_pos_y: int):
         """Plot the profile of a specific pixel across the dataset's domain values with an option for data adjustment.
 
-        The X-axis of the plot is labeled according to the domaintype attribute, reflecting the dataset's domain (e.g., time, frequency). The Y-axis is generically labeled as 'Temperature in K'.
+        The X-axis of the plot is labeled according to the domaintype attribute, reflecting the dataset's domain
+        (e.g., time, frequency). The Y-axis is generically labeled as 'Temperature in K'.
 
         Parameters:
-            pixel_pos_x (int): The X-coordinate (column index) of the pixel. Must be within the dataset's second dimension range.
-            pixel_pos_y (int): The Y-coordinate (row index) of the pixel. Must be within the dataset's first dimension range.
+            pixel_pos_x (int): The X-coordinate (column index) of the pixel.
+                Must be within the dataset's second dimension range.
+            pixel_pos_y (int): The Y-coordinate (row index) of the pixel.
+                Must be within the dataset's first dimension range.
         """
         # Clear the current figure
         plt.clf()

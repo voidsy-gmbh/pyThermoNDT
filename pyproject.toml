@@ -31,7 +31,6 @@ dev = [
     "pytest-cov>=4.1",
     "uv>=0.4",
     "ruff>=0.6",
-    "pre-commit>=3.8"
 ]
 
 # Config for the build system

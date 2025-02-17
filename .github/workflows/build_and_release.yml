@@ -1,4 +1,4 @@
-name: Test, Build and Release Python Package
+name: Build and Release Python Package
 
 on:
   workflow_dispatch:
@@ -110,9 +110,9 @@ jobs:
       matrix:
         build_type: [conda, pip]
     outputs:
-      conda_archive: ${{ steps.build_conda.outputs.CONDA_ARCHIVE }}
-      wheel_file: ${{ steps.build_pip.outputs.WHEEL_FILE }}
-      tar_file: ${{ steps.build_pip.outputs.TAR_FILE }}
+      conda_archive: ${{ steps.build-conda.outputs.CONDA_ARCHIVE }}
+      wheel_file: ${{ steps.build-pip.outputs.WHEEL_FILE }}
+      tar_file: ${{ steps.build-pip.outputs.TAR_FILE }}
     steps:
       # Step 1: Checkout code in the current branch
       - name: Checkout code
@@ -138,15 +138,14 @@ jobs:
       # Step 3: Setup build environment for pip
       - name: Setup build environment for pip
         if: matrix.build_type == 'pip'
-        uses: actions/setup-python@v5
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.12
-      - run: pip install build
+          enable-cache: false # Disable cache for pip build
 
       # Step 4: Build conda package
       - name: Build conda package
         if: matrix.build_type == 'conda'
-        id: build_conda
+        id: build-conda
         shell: micromamba-shell {0}
         run: |
           OUTPUT_DIR="./pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package"
@@ -159,9 +158,9 @@ jobs:
       # Step 5: Build pip package
       - name: Build pip package
         if: matrix.build_type == 'pip'
-        id: build_pip
+        id: build-pip
         run: |
-          python -m build
+          uv build --no-sources .
           echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
           echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
 
@@ -171,9 +170,9 @@ jobs:
         with:
           name: ${{ matrix.build_type }}-package
           path: |
-            ${{ steps.build_conda.outputs.CONDA_ARCHIVE }}
-            dist/*.whl
-            dist/*.tar.gz
+            ${{ steps.build-conda.outputs.CONDA_ARCHIVE }}
+            ${{ steps.build-pip.outputs.WHEEL_FILE }}
+            ${{ steps.build-pip.outputs.TAR_FILE }}
 
   # Job 4: Release the package
   release:

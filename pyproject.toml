@@ -1,10 +1,5 @@
 [build-system]
-requires = [
-    "setuptools>=66.0",
-    "wheel>=0.4",
-    "build>=1.0",
-    "twine>=4.0",
-]
+requires = ["setuptools>=66.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -38,6 +33,7 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-cov>=4.1",
+    "uv>=0.4"
 ]
 
 [tool.setuptools.packages.find]
@@ -52,3 +48,6 @@ addopts = [
     "--import-mode=importlib",
 ]
 testpaths = ["tests"]
+
+[tool.uv]
+required-version = "~=0.6.0" # Pin uv to major version 0.6 for stability

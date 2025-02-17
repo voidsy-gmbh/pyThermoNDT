@@ -70,6 +70,8 @@ exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "N", "UP"]
 fixable = ["ALL"]
+pydocstyle.convention = "google"
 
 [tool.ruff.format]
+docstring-code-format = true # Enable reformatting of code snippets in docstrings.
 quote-style = "double"

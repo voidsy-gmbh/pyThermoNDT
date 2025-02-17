@@ -63,6 +63,9 @@ required-version = "~=0.6.0" # Pin uv to major version 0.6 for stability
 [tool.ruff]
 line-length = 150
 target-version = "py310"
+exclude = [
+    "./examples/*", # Exclude the example notebooks from linting
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "N", "UP"]

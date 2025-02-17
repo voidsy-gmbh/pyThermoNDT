@@ -35,12 +35,7 @@ dev = [
 
 # Config for the build system
 [build-system]
-requires = [
-    "setuptools>=66.0",
-    "wheel>=0.4",
-    "build>=1.0",
-    "twine>=4.0",
-]
+requires = ["setuptools>=66.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -58,9 +53,11 @@ addopts = [
 ]
 testpaths = ["tests"]
 
+
 # UV
 [tool.uv]
 required-version = "~=0.6.0" # Pin uv to major version 0.6 for stability
+
 
 # Ruff
 [tool.ruff]

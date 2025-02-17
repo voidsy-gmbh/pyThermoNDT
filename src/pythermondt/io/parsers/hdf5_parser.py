@@ -7,7 +7,7 @@ from .base_parser import BaseParser
 class HDF5Parser(BaseParser):
     @staticmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:
-        """ Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a DataContainer object.
+        """Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a DataContainer object.
 
         The BytesIO object must contain a serialized DataContainer object in HDF5 format.
 

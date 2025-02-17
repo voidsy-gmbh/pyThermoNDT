@@ -9,6 +9,7 @@ from .utils import split_path
 NodeTypes = RootNode | GroupNode | DataNode
 T = TypeVar("T", bound=NodeTypes)
 
+
 class DataContainerBase(ABC):
     # Inner class to access nodes in the DataContainer ==> Needed to make the node property indexable and callable
     class __NodeAccessor:
@@ -81,7 +82,7 @@ class DataContainerBase(ABC):
 
             # If it's a group, remove all child nodes as well to avoid orphaned nodes
             if isinstance(self.__nodes[key], GroupNode):
-                child_keys = [k for k in self.__nodes.keys() if k.startswith(key + '/')]
+                child_keys = [k for k in self.__nodes.keys() if k.startswith(key + "/")]
                 for child_key in child_keys:
                     del self.__nodes[child_key]
 
@@ -114,11 +115,11 @@ class DataContainerBase(ABC):
 
     @property
     def nodes(self) -> __NodeAccessor:
-        """ Property to access nodes in the DataContainer.
+        """Property to access nodes in the DataContainer.
 
-        This property is indexable and callable to get and set nodes. The path is checked for existence. 
+        This property is indexable and callable to get and set nodes. The path is checked for existence.
         Optionally the nodes is also checked for the correct type (provided as a function argument) while getting a node. Therefore the returned type is ensured to be correct.
-        When setting nodes, the parent path is checked for existence and type (either RootNode or GroupNode). 
+        When setting nodes, the parent path is checked for existence and type (either RootNode or GroupNode).
         It also allows for deleting nodes by using the del keyword. If a group is deleted, all child nodes are also deleted to avoid orphaned nodes.
         Use with caution! Some sanity checks are disabled when using the property directly. Only for advanced users!
 
@@ -132,7 +133,7 @@ class DataContainerBase(ABC):
         node = data_container.nodes("/Data")
 
         # Returns the node at path "/Data". Raises TypeError if the node is not a DataNode
-        node = data_container.nodes("/Data", DataNode) 
+        node = data_container.nodes("/Data", DataNode)
 
         # Returns the node at path "/Data". Raises TypeError if the node is not a DataNode or GroupNode
         node = data_container.nodes("/Data", DataNode, GroupNode)
@@ -146,6 +147,7 @@ class DataContainerBase(ABC):
         ```
         """
         return self.__node_accessor
+
 
 # Basic operations for the DataContainer
 class BaseOps(DataContainerBase):
@@ -169,7 +171,7 @@ class BaseOps(DataContainerBase):
 
         Parameters:
             key (str): The path to check.
-        
+
         Returns:
             bool: True if a DataNode exists at the path, False otherwise.
         """
@@ -199,7 +201,7 @@ class BaseOps(DataContainerBase):
 
         Parameters:
             key (str): The path to check.
-        
+
         Returns:
             bool: True if the given path is the root path, False otherwise.
         """

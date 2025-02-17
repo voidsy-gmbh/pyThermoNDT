@@ -11,20 +11,21 @@ from ..io import BaseParser, HDF5Parser, SimulationParser
 
 # Define which parser should be used for which file extensions
 FILE_EXTENSIONS: dict[type[BaseParser], tuple[str, ...]] = {
-    HDF5Parser: ('.hdf5', '.h5'),
-    SimulationParser: ('.mat',),
+    HDF5Parser: (".hdf5", ".h5"),
+    SimulationParser: (".mat",),
     # Add more file extensions for future parsers here
 }
 
 # Lookup table for file extensions ==> for fast validation if the file extension is supported by the parser
-FILE_EXTENSIONS_LUT = {ext:parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
+FILE_EXTENSIONS_LUT = {ext: parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
+
 
 class BaseReader(ABC):
-    """ Base class for all readers. This class defines the interface for all readers, subclassing this class.
-    """
+    """Base class for all readers. This class defines the interface for all readers, subclassing this class."""
+
     @abstractmethod
     def __init__(self, source: str, cache_files: bool = True, parser: type[BaseParser] | None = None, num_files: int | None = None):
-        """ Constructor for the BaseReader class.
+        """Constructor for the BaseReader class.
 
         Parameters:
             source (str): The source of the data. This can be a file path, a directory path, a regular expression. In case of cloud storage, this can be a URL.
@@ -33,7 +34,7 @@ class BaseReader(ABC):
             num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads all files. Default is None.
         """
         # Extract file extension from the source
-        ext = re.findall(r'\.[a-zA-Z0-9]+$', source)
+        ext = re.findall(r"\.[a-zA-Z0-9]+$", source)
 
         # Try to auto select the parser based on the file extension if no parser is specified
         if parser is None:
@@ -60,9 +61,13 @@ class BaseReader(ABC):
         correct_parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else self.parser
 
         if correct_parser is None:
-            raise ValueError(f"The source contains an invalid file extension: '({ext[0]})'! Use a file extensions that is supported by the {self.parser.__name__}: {self.file_extensions}")
+            raise ValueError(
+                f"The source contains an invalid file extension: '({ext[0]})'! Use a file extensions that is supported by the {self.parser.__name__}: {self.file_extensions}"
+            )
         elif correct_parser is not self.parser:
-             raise ValueError(f"Wrong parser selected for the file extension: '({ext[0]})'! Use the {correct_parser.__name__} for this file extension instead")
+            raise ValueError(
+                f"Wrong parser selected for the file extension: '({ext[0]})'! Use the {correct_parser.__name__} for this file extension instead"
+            )
 
         # Set args
         self.__source = source
@@ -107,7 +112,7 @@ class BaseReader(ABC):
             with bar:
                 for cached_path, file in files_to_download:
                     try:
-                        with open(cached_path, 'wb') as f:
+                        with open(cached_path, "wb") as f:
                             f.write(self._read_file(file).getbuffer())
                     except Exception as e:
                         print(f"Error downloading file: {file} - {e}")
@@ -128,14 +133,14 @@ class BaseReader(ABC):
         return self.num_files
 
     def __getitem__(self, idx: int) -> DataContainer:
-        """ Returns the parsed data in a DataContainer object at file path at the given index."""
+        """Returns the parsed data in a DataContainer object at file path at the given index."""
         if idx < 0 or idx >= len(self):
             raise IndexError(f"Index out of range. Must be between 0 and {len(self)}")
         return self.read(self.files[idx])
 
     def __iter__(self) -> Iterator[DataContainer]:
-        """ Creates an iterator that reads and parses all the files in the reader. 
-        
+        """Creates an iterator that reads and parses all the files in the reader.
+
         In case caching is disabled, a snapshot of the file list is taken to avoid undefined behavior when the file list changes during iteration.
         For maximum performance, its is recommend to enable caching when iterating over the files.
 
@@ -146,44 +151,44 @@ class BaseReader(ABC):
         file_paths = self.files
 
         for file in file_paths:
-                yield self.read(file)
+            yield self.read(file)
 
     def __next__(self) -> DataContainer:
         return next(iter(self))
 
-    @ property
+    @property
     def source(self) -> str:
-        """ Returns the source of the reader."""
+        """Returns the source of the reader."""
         return self.__source
 
     @property
     def parser(self) -> type[BaseParser]:
-        """ Returns the parser class that the reader uses to parse the data."""
+        """Returns the parser class that the reader uses to parse the data."""
         return self.__parser
 
     @property
     def cache_files(self) -> bool:
-        """ Returns True if the reader caches the file paths, False otherwise."""
+        """Returns True if the reader caches the file paths, False otherwise."""
         return self.__cache_files
 
     @property
     def file_extensions(self) -> tuple[str, ...]:
-        """ Returns the file extensions that the reader can read."""
+        """Returns the file extensions that the reader can read."""
         return self.__file_extensions
 
     @property
     def file_names(self) -> list[str]:
-        """ Returns a list of all the file names that the reader can read."""
+        """Returns a list of all the file names that the reader can read."""
         return [os.path.basename(path) for path in self.files]
 
     @property
     def num_files(self) -> int:
-        """ Returns the number of files that the reader can read."""
+        """Returns the number of files that the reader can read."""
         return len(self.files)
 
     @property
     def files(self) -> list[str]:
-        """ Returns a list of all the paths to the files that the reader can read."""
+        """Returns a list of all the paths to the files that the reader can read."""
         # If caching is off, return the file list directly
         if not self.__cache_files:
             return self._get_file_list(num_files=self.__num_files)
@@ -200,16 +205,16 @@ class BaseReader(ABC):
 
         Parameters:
             s (str): The string to be sanitized.
-        
+
         Returns:
             str: The sanitized string.
         """
         # Replace non-alphanumeric characters (except underscores) with underscores
-        s = re.sub(r'[^\w\-_\. ]', '_', s)
+        s = re.sub(r"[^\w\-_\. ]", "_", s)
         # Replace multiple underscores with a single underscore
-        s = re.sub(r'_+', '_', s)
+        s = re.sub(r"_+", "_", s)
         # Remove leading/trailing underscores
-        return s.strip('_')
+        return s.strip("_")
 
     def _create_safe_folder_name(self) -> str:
         """Creates a safe folder name for the downloaded files.
@@ -217,7 +222,7 @@ class BaseReader(ABC):
         Used to create a folder name for the downloaded files, that is persistend and does not change between runs.
 
         Returns:
-            str: The safe folder name.   
+            str: The safe folder name.
         """
         safe_class_name = self._sanitize_string(self.__class__.__qualname__)
         safe_source_expr = self._sanitize_string(self.source)
@@ -228,12 +233,12 @@ class BaseReader(ABC):
     @property
     @abstractmethod
     def remote_source(self) -> bool:
-        """ Returns True if the reader reads files from a remote source, False otherwise. This property must be implemented by the subclass."""
+        """Returns True if the reader reads files from a remote source, False otherwise. This property must be implemented by the subclass."""
         raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
     def _read_file(self, path: str) -> io.BytesIO:
-        """ Actual implementation of how a single file is read into memory. This method must be implemented by the subclass."""
+        """Actual implementation of how a single file is read into memory. This method must be implemented by the subclass."""
         raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
@@ -243,14 +248,14 @@ class BaseReader(ABC):
 
     @abstractmethod
     def _close(self):
-        """ Closes any open connections or resources that the reader might have opened. 
+        """Closes any open connections or resources that the reader might have opened.
         If the reader does not open any connections or resources, this method can be passed. Must be implemented by the subclass.
         """
         raise NotImplementedError("Method must be implemented by subclass")
 
     def read(self, path: str) -> DataContainer:
         """Reads and parse the file at the given path into a DataContainer object using the specified parser.
-        
+
         Parameters:
             path (str): The path to the file to be read.
 
@@ -264,7 +269,7 @@ class BaseReader(ABC):
         try:
             # If the reader reads from a remote source and files are cached, read the file from the local directory
             if self.remote_source and self.__cache_files and self.__cached_paths is not None:
-                with open(path, 'rb') as f:
+                with open(path, "rb") as f:
                     return self.parser.parse(io.BytesIO(f.read()))
         except FileNotFoundError:
             raise FileNotFoundError("File not found in cached files. Clear the cache and try again.")
@@ -276,7 +281,7 @@ class BaseReader(ABC):
             raise Exception(f"Error reading file: {path} - {e}")
 
     def clear_cache(self):
-        """ Clears the cached file paths. Therefore the reader will check for new files on the next call of the files property."""
+        """Clears the cached file paths. Therefore the reader will check for new files on the next call of the files property."""
         # Clear cached paths
         self.__cached_paths = None
 
@@ -287,8 +292,7 @@ class BaseReader(ABC):
             os.rmdir(self.__local_dir)
 
     def rebuild_cache(self):
-        """ Rebuilds the cache by first clearing the cache and then downloading the files again.
-        """
+        """Rebuilds the cache by first clearing the cache and then downloading the files again."""
         # Clear the cache
         self.clear_cache()
 

@@ -1,4 +1,3 @@
-
 import torch
 from numpy import ndarray
 from torch import Tensor
@@ -9,14 +8,14 @@ from .utils import generate_key
 
 
 class DatasetOps(BaseOps):
-    def add_dataset(self, path: str, name: str, data: Tensor | ndarray | None= None):
+    def add_dataset(self, path: str, name: str, data: Tensor | ndarray | None = None):
         """Adds a single dataset to a specified path in the DataContainer.
 
         Parameters:
             path (str): The path to the parent group.
             name (str): The name of the dataset to add.
-            data (Tensor, optional): The data to store in the dataset. If None, an empty dataset is created. 
-        
+            data (Tensor, optional): The data to store in the dataset. If None, an empty dataset is created.
+
         Raises:
             KeyError: If the parent group does not exist.
             KeyError: If the dataset already exists.
@@ -38,7 +37,7 @@ class DatasetOps(BaseOps):
         Parameters:
             path (str): The path to the parent group.
             **datasets (Dict[str, Optional[Tensor | ndarray]]): The datasets to add, with the key being the name of the dataset.
-        
+
         Raises:
             KeyError: If the parent group does not exist.
             KeyError: If any of the datasets already exist.
@@ -51,25 +50,25 @@ class DatasetOps(BaseOps):
 
         Parameters:
             path (str): The path to the dataset
-        
+
         Returns:
             Tensor: The data stored in the dataset.
-        
+
         Raises:
             KeyError: If the dataset does not exist.
             KeyError: If the node is not a dataset.
         """
         return self.nodes(path, DataNode).data
 
-    def get_datasets(self, *paths: str) -> tuple[Tensor,...]:
+    def get_datasets(self, *paths: str) -> tuple[Tensor, ...]:
         """Get multiple datasets from specified paths in the DataContainer.
 
         Parameters:
             *paths (str): Variable number of paths to the datasets. Can be provided as separate arguments or unpacked from a list.
-        
+
         Returns:
             Tuple[Tensor, ...]: The tensors stored in the datasets, in the same order as the input paths.
-        
+
         Raises:
             KeyError: If a dataset does not exist.
             KeyError: If the node is not a dataset.
@@ -84,13 +83,12 @@ class DatasetOps(BaseOps):
         """
         return [node.name for node in self.nodes.values() if isinstance(node, DataNode)]
 
-
     def remove_dataset(self, path: str):
         """Removes a single dataset from a specified path in the DataContainer.
 
         Parameters:
             path (str): The path to the dataset
-        
+
         Raises:
             KeyError: If the dataset does not exist.
         """
@@ -105,7 +103,7 @@ class DatasetOps(BaseOps):
         Parameters:
             path (str): The path to the dataset.
             data (Tensor): The new data to store in the dataset.
-        
+
         Raises:
             KeyError: If the dataset does not exist.
         """
@@ -120,7 +118,7 @@ class DatasetOps(BaseOps):
 
         Parameters:
             *updates (Tuple[str, Tensor | ndarray]): Variable number of (path, data) tuples. Can be provided as separate tuples or unpacked from a list.
-        
+
         Raises:
             KeyError: If a dataset does not exist.
         """

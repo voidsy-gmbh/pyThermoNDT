@@ -8,13 +8,14 @@ from .utils import ThermoTransform
 
 
 class ApplyLUT(ThermoTransform):
-    ''' 
+    """
     Applies the LookUpTable of the container to the Temperature data (Tdata) in the container. Therefore Tdata gets converted from uint16 to float64.
-    '''
+    """
+
     def __init__(self):
-        ''' 
+        """
         Applies the LookUpTable of the container to the Temperature data (Tdata) in the container. Therefore Tdata gets converted from uint16 to float64.
-        '''
+        """
         super().__init__()
 
     def forward(self, container: DataContainer) -> DataContainer:
@@ -51,17 +52,19 @@ class ApplyLUT(ThermoTransform):
         container.update_unit("/Data/Tdata", Units.kelvin)
         return container
 
+
 class SubstractFrame(ThermoTransform):
-    ''' 
+    """
     Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
-    '''
+    """
+
     def __init__(self, frame: int = 0):
-        ''' 
+        """
         Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
-        
+
         Parameters:
             frame (int): Frame number that should be substracted from the Temperature data. Default is the initial frame (frame 0).
-        '''
+        """
         super().__init__()
 
         # Check if frame is a positive integer
@@ -93,10 +96,12 @@ class SubstractFrame(ThermoTransform):
         container.update_dataset("/Data/Tdata", tdata)
         return container
 
+
 class RemoveFlash(ThermoTransform):
-    """ Automatically detect the flash and remove all the frames before it. """
+    """Automatically detect the flash and remove all the frames before it."""
+
     def __init__(self, method: Literal["excitation_signal", "max_temp"] = "excitation_signal", offset: int = 0):
-        """ Automatically detect the flash and remove all the frames before it.
+        """Automatically detect the flash and remove all the frames before it.
 
         2 methods are available:
         - "excitation_signal": Detect the flash by finding the frame where the excitation signal goes from 1 back to 0.
@@ -147,5 +152,7 @@ class RemoveFlash(ThermoTransform):
         domain_values = domain_values - domain_values[0]
 
         # Update the container and return it
-        container.update_datasets(("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal))
+        container.update_datasets(
+            ("/Data/Tdata", tdata), ("/MetaData/DomainValues", domain_values), ("/MetaData/ExcitationSignal", excitation_signal)
+        )
         return container

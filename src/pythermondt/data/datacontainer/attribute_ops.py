@@ -63,14 +63,14 @@ class AttributeOps(BaseOps):
 
     def get_attributes(self, path: str, *keys: str) -> tuple[str | int | float | list | tuple | dict | Unit, ...]:
         """Get multiple attributes from a specified group or dataset in the DataContainer.
-    
+
         Parameters:
             path (str): The path to the group or dataset.
             *keys (str): Variable number of attribute keys. Can be provided as separate arguments or unpacked from a list.
-        
+
         Returns:
             Tuple[str | int | float | list | tuple | dict | Unit, ...]: The values of the attributes, in the same order as the input keys.
-        
+
         Raises:
             KeyError: If the group or dataset does not exist.
             KeyError: If any attribute does not exist.

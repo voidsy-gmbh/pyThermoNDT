@@ -2,11 +2,14 @@ from ._unit import Unit, is_unit_info
 
 
 class Units:
-    '''Container for all units inside pythermondt.'''
+    """Container for all units inside pythermondt."""
+
     # Special units
     dimensionless = Unit(name="dimensionless", quantity="dimensionless", symbol="1")
-    arbitrary = Unit(name="arbitrary", quantity="arbitrary", symbol="a. u.") # Special unit for data that is not really dimensionaless but has not been processed yet (e.g. temp without LUT applied)
-    undefined = Unit(name="undefined", quantity="undefined", symbol="N/A") # Return value for datasets without a unit defined
+    arbitrary = Unit(
+        name="arbitrary", quantity="arbitrary", symbol="a. u."
+    )  # Special unit for data that is not really dimensionaless but has not been processed yet (e.g. temp without LUT applied)
+    undefined = Unit(name="undefined", quantity="undefined", symbol="N/A")  # Return value for datasets without a unit defined
 
     # Temperature
     kelvin = Unit(name="kelvin", quantity="temperature", symbol="K")
@@ -20,7 +23,7 @@ class Units:
 
     @classmethod
     def print_available_units(cls):
-        '''Print all units in the Units class.'''
+        """Print all units in the Units class."""
         print("Available units:")
         print("name: quantity (symbol)\n")
         for unit in cls.__dict__.values():
@@ -29,6 +32,7 @@ class Units:
 
     def __init__(self):
         raise TypeError("This class is static and should not be instantiated.")
+
 
 # Test
 if __name__ == "__main__":

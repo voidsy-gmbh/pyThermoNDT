@@ -9,7 +9,7 @@ from .base_reader import BaseReader
 
 class LocalReader(BaseReader):
     def __init__(self, source: str, cache_files: bool = True, parser: type[BaseParser] | None = None, num_files: int | None = None):
-        """ Initliaze an instance of the LocalReader class.
+        """Initliaze an instance of the LocalReader class.
 
         This class is used to read data from the local file system.
 
@@ -74,7 +74,7 @@ class LocalReader(BaseReader):
 
     def _read_file(self, path: str) -> io.BytesIO:
         # Open file in binary mode and return it as BytesIO object
-        with open(path, 'rb') as file:
+        with open(path, "rb") as file:
             return io.BytesIO(file.read())
 
     def _close(self):

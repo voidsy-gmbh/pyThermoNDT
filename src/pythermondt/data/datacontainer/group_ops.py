@@ -1,4 +1,3 @@
-
 from .base import BaseOps
 from .node import GroupNode
 from .utils import generate_key

@@ -5,10 +5,10 @@ from .base_writer import BaseWriter
 
 class LocalWriter(BaseWriter):
     def __init__(self, destination_folder: str):
-        """ Instantiates a new HDF5Writer 
+        """Instantiates a new HDF5Writer
 
         Parameters:
-            destination_folder (str): The destination folder where the DataContainers should be written to.       
+            destination_folder (str): The destination folder where the DataContainers should be written to.
         """
         # Verify folder
         if not os.path.exists(destination_folder):
@@ -24,5 +24,5 @@ class LocalWriter(BaseWriter):
         path = os.path.join(self.destination_folder, file_name)
 
         # Write the DataContainer to the file
-        with open(path, 'wb') as file:
+        with open(path, "wb") as file:
             file.write(container.serialize_to_hdf5().getvalue())

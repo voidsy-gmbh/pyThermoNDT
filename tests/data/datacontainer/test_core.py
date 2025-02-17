@@ -1,4 +1,3 @@
-
 from torch import Tensor
 
 from pythermondt.data import DataContainer
@@ -16,6 +15,7 @@ def test_basic_container_equality(empty_container: DataContainer, filled_contain
     assert filled_container != complex_container
     assert empty_container != complex_container
 
+
 def test_identical_structure_equality(filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
     """Test equality of containers with identical structure but different objects."""
     identical_container = DataContainer()
@@ -27,6 +27,7 @@ def test_identical_structure_equality(filled_container: DataContainer, sample_te
 
     assert filled_container == identical_container
 
+
 def test_different_data_inequality(filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
     """Test inequality of containers with same structure but different data."""
     different_data = DataContainer()
@@ -37,6 +38,7 @@ def test_different_data_inequality(filled_container: DataContainer, sample_tenso
 
     assert filled_container != different_data
 
+
 def test_different_structure_inequality(filled_container: DataContainer, sample_tensor: Tensor):
     """Test inequality of containers with different structure."""
     different_structure = DataContainer()
@@ -44,6 +46,7 @@ def test_different_structure_inequality(filled_container: DataContainer, sample_
     different_structure.add_dataset("/DifferentGroup", "TestDataset", sample_tensor)
 
     assert filled_container != different_structure
+
 
 def test_different_names_inequality(filled_container: DataContainer, sample_tensor: Tensor, sample_eye_tensor: Tensor):
     """Test inequality of containers with different node names."""

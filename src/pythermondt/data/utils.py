@@ -9,8 +9,10 @@ from ..transforms import ThermoTransform
 from .thermo_dataset import IndexedThermoDataset, ThermoDataset
 
 
-def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Sequence[ThermoTransform | None] | None = None, generator: Generator = default_generator) -> list[IndexedThermoDataset]:
-    """ Split a dataset into random non-overlapping subsets of given lengths with optional transforms beeing applied.
+def random_split(
+    dataset: ThermoDataset, lengths: Sequence, transforms: Sequence[ThermoTransform | None] | None = None, generator: Generator = default_generator
+) -> list[IndexedThermoDataset]:
+    """Split a dataset into random non-overlapping subsets of given lengths with optional transforms beeing applied.
 
     If a list of fractions that sum up to 1 is given, the lengths will be computed automatically as floor(frac * len(dataset)) for each fraction provided.
 
@@ -18,13 +20,13 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Sequence[
 
     Parameters:
         dataset (Dataset): Dataset to be split
-        lengths (Sequence[float]): Fractions for each split that sum up to 1.0. 
+        lengths (Sequence[float]): Fractions for each split that sum up to 1.0.
         transforms (Sequence[ThermoTransform], optional): Optional sequence of transforms for each split.
         generator (Generator, optional): Generator used for reproducible splits. Per default the default generator is used.
 
     Returns:
         List[ThermoSubset]: List of subsets with the specified lengths and transforms
-        
+
     Raises:
         ValueError: If lengths don't sum up to 1.0
         ValueError: If number of transforms doesn't match lengths
@@ -59,10 +61,7 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Sequence[
     # Print a warning if any of the splits have a length of 0
     for i, length in enumerate(lengths):
         if length == 0:
-            print(
-                f"Length of split at index {i} is 0. ",
-                "This might result in an empty dataset."
-            )
+            print(f"Length of split at index {i} is 0. ", "This might result in an empty dataset.")
 
     # Raise an error if the computed lengths don't match the length of the original dataset
     if sum(lengths) != len(dataset):
@@ -74,6 +73,6 @@ def random_split(dataset:ThermoDataset, lengths: Sequence, transforms: Sequence[
     # Create the subsets and return
     transforms = transforms if transforms else [None] * len(lengths)
     return [
-        IndexedThermoDataset(dataset, indices[offset - length:offset], transform)
+        IndexedThermoDataset(dataset, indices[offset - length : offset], transform)
         for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths), strict=False)
     ]

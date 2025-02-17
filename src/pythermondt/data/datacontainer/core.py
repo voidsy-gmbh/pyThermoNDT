@@ -15,13 +15,14 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     """
     Manages and serializes data into HDF5 format.
 
-    This class manages data in a hierarchical structure, similar to a HDF5 File. It provides methods to add groups, datasets and attributes to the data structure. 
+    This class manages data in a hierarchical structure, similar to a HDF5 File. It provides methods to add groups, datasets and attributes to the data structure.
     The data structure can be serialized to a HDF5 file and deserialized from a HDF5 file using save_to_hdf5 and load_from_hdf5 methods respectively.
     It also provides methods for visualization of the data structure.
     """
+
     def __init__(self, hdf5_bytes: BytesIO | None = None):
-        """ Initializes a DataContainer instance.
-        By default, initializes an empty DataContainer. 
+        """Initializes a DataContainer instance.
+        By default, initializes an empty DataContainer.
         If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
 
         Parameters:
@@ -36,7 +37,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         if hdf5_bytes:
             self.deserialize(hdf5_bytes)
 
-   # Overwrite the __str__ method to provide a string representation of the DataContainer
+    # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):
         returnstring = ""
         for path, node in self.nodes.items():
@@ -47,14 +48,14 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     # Overwrite the __eq__ method to provide a comparison between two DataContainer instances
     def __eq__(self, other: object) -> bool:
         """Compare two DataContainers for equality.
-    
+
         Containers are equal if they have:
-        1. Same node structure 
+        1. Same node structure
         2. Equal data in all datasets
         3. Identical attributes for every group and dataset
 
-        **Note**: This implements strict equality. Even with the same initial data, containers 
-        that have undergone stochastic transforms (e.g. GaussianNoise) will not be equal 
+        **Note**: This implements strict equality. Even with the same initial data, containers
+        that have undergone stochastic transforms (e.g. GaussianNoise) will not be equal
         since their data differs.
 
         Parameters:

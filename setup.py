@@ -10,5 +10,6 @@ def get_version():
     exec(pkg_init, {}, locals_dict)
     return locals_dict["__version__"]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     setup(version=get_version())

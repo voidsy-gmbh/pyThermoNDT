@@ -5,17 +5,18 @@ from .utils import ThermoTransform
 
 
 class RandomFlip(ThermoTransform):
-    ''' 
+    """
     Randomly flips all frames in the Temperature data (Tdata) of the container along the height (vertical flip) or width (horizontal flip), or both, based on specified probabilities.
-    '''
+    """
+
     def __init__(self, p_height: float = 0.5, p_width: float = 0.5):
-        ''' 
+        """
         Initializes the RandomFlip transformation with specified probabilities for flipping along the height and width directions.
-        
+
         Parameters:
             p_height (float): Probability of flipping along the height (vertical flip), in the range [0, 1]. Default is 0.5.
             p_width (float): Probability of flipping along the width (horizontal flip), in the range [0, 1]. Default is 0.5.
-        '''
+        """
         super().__init__()
 
         # Check if p_height and p_width are probabilities
@@ -47,11 +48,13 @@ class RandomFlip(ThermoTransform):
         container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
         return container
 
+
 class GaussianNoise(ThermoTransform):
     """Add Gaussian noise to the Temperature data in the container based on specified mean and standard deviation."""
+
     def __init__(self, mean: float = 0.0, std: float = 0.1):
         """Initializes the GaussianNoise transformation with specified mean and standard deviation.
-        
+
         Parameters:
             mean (float): Mean of the Gaussian noise. Default is 0.0.
             std (float): Standard deviation of the Gaussian noise. Default is 1.0.
@@ -70,12 +73,6 @@ class GaussianNoise(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         tdata = container.get_dataset("/Data/Tdata")
-        noise = torch.normal(
-            mean=self.mean,
-            std=self.std,
-            size=tdata.size(),
-            device=tdata.device,
-            dtype=tdata.dtype
-        )
+        noise = torch.normal(mean=self.mean, std=self.std, size=tdata.size(), device=tdata.device, dtype=tdata.dtype)
         container.update_dataset("/Data/Tdata", tdata + noise)
         return container

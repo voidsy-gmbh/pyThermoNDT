@@ -17,6 +17,7 @@ def test_path_exists(filled_container: DataContainer):
     assert filled_container._path_exists("/TestGroup/NonExistentDataset") == False
     assert filled_container._path_exists("/TestGroup/NestedGroup/NonExistentDataset") == False
 
+
 def test_is_datanode(filled_container: DataContainer):
     # Test existing DataNode paths
     assert filled_container._path_exists("/TestDataset") == True
@@ -32,6 +33,7 @@ def test_is_datanode(filled_container: DataContainer):
     assert filled_container._is_datanode("/TestGroup") == False
     assert filled_container._is_datanode("/TestGroup/NestedGroup") == False
 
+
 def test_is_groupnode(filled_container: DataContainer):
     # Test existing GroupNode paths
     assert filled_container._is_groupnode("/TestGroup") == True
@@ -44,6 +46,7 @@ def test_is_groupnode(filled_container: DataContainer):
     # Test existing paths that are not GroupNodes
     assert filled_container._is_groupnode("/TestGroup/TestDataset") == False
     assert filled_container._is_groupnode("/TestGroup/NestedGroup/TestDataset2") == False
+
 
 def test_is_rootnode(filled_container: DataContainer):
     # Test the root path
@@ -61,6 +64,7 @@ def test_is_rootnode(filled_container: DataContainer):
     assert filled_container._is_rootnode("/NonExistentGroup") == False
     assert filled_container._is_rootnode("/TestGroup/NonExistentDataset") == False
     assert filled_container._is_rootnode("/TestGroup/NestedGroup/NonExistentDataset") == False
+
 
 def test_parent_exists(filled_container: DataContainer):
     # Test existing parent paths
@@ -80,6 +84,7 @@ def test_parent_exists(filled_container: DataContainer):
     assert filled_container._parent_exists("/TestGroup/TestDataset/Child") == False
     assert filled_container._parent_exists("/TestGroup/NestedGroup/TestDataset2/Child") == False
 
+
 # Only run the tests in this file if it is run directly
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main(["-v", __file__])

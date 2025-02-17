@@ -10,26 +10,27 @@ from .datacontainer import DataContainer
 
 
 class ThermoDataset(Dataset):
-    """ Custom dataset class used for combining data, read from multiple readers.
+    """Custom dataset class used for combining data, read from multiple readers.
 
     This dataset is used to combine multiple readers into a single dataset. The dataset can be used to read data from multiple sources and apply a transform to the data.
     Like a normal PyTorch dataset, the dataset can be used to iterate over the data using the __getitem__ method and it is also compatible with PyTorch dataloaders.
     """
-    def __init__( self, data_source: BaseReader | list[BaseReader], transform: ThermoTransform | None = None):
-        """ Initialize a custom PyTorch dataset from a list of readers.
-        
+
+    def __init__(self, data_source: BaseReader | list[BaseReader], transform: ThermoTransform | None = None):
+        """Initialize a custom PyTorch dataset from a list of readers.
+
         The sources are used to read the data and create the dataset. First the readers are grouped by type.
         Then all readers of the same type are checked for duplicate files. If any duplicates are found, an error is raised.
 
         **Note**: When combining readers, it is recommend that all readers enable file caching, especially in cases where files need to be fetched from a remote location and these files are changing at runtime. The readers accomodate for this by raising an error if a file is not found and
         taking a snapshot of the files list when a iterator is created. The Dataset will catch these errors when trying to read the data and return an **empty Datacontainer**
-        
+
         However, enabling file caching is still recommended to avoid issues with changing files, especially when using a dataset for model training. A warning is printed if any reader does not have file caching enabled.
 
         Parameters:
             data_source (List[BaseReader]): List of readers to be used as a data source for the dataset
             transform (ThermoTransform, optional): Optional transform to be directly applied to the data when it is read
-            
+
         Raises:
             ValueError: If any of the readers of the same type find duplicate or invalid data
             ValueError: If any of the readers of the same type do not find any files
@@ -53,7 +54,9 @@ class ThermoDataset(Dataset):
         # Check if all readers have enabled file caching
         for reader in readers:
             if not reader.cache_files:
-                print(f"Warning: Reader {reader.__repr__()} does not have file caching enabled. This can lead to issues with changing files. Consider enabling file caching.")
+                print(
+                    f"Warning: Reader {reader.__repr__()} does not have file caching enabled. This can lead to issues with changing files. Consider enabling file caching."
+                )
 
         # Group all the readers by type
         readers_by_type: dict[type[BaseReader], list[BaseReader]] = {}
@@ -138,11 +141,12 @@ class ThermoDataset(Dataset):
     def __iter__(self) -> Iterator[DataContainer]:
         return chain.from_iterable(self.__readers)
 
+
 class IndexedThermoDataset(ThermoDataset):
     """Extension of ThermoDataset that supports indexing with optional additional transforms.
 
-    The IndexedThermoDataset maintains a subset of the parent dataset and allows for an additional transform to be applied to the data. 
-    This can be useful when a subset of the data needs to be selected and a different transform needs to be applied to the subset, e.g. for random splits of 
+    The IndexedThermoDataset maintains a subset of the parent dataset and allows for an additional transform to be applied to the data.
+    This can be useful when a subset of the data needs to be selected and a different transform needs to be applied to the subset, e.g. for random splits of
     train, validation and test data. The IndexedThermoDataset maintains the transform chain of the parent dataset and appends the additional transform to it.
     """
 
@@ -159,7 +163,7 @@ class IndexedThermoDataset(ThermoDataset):
         """
         # Validate the indices
         if not all(0 <= i < len(dataset) for i in indices):
-            raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset)-1}]")
+            raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset) - 1}]")
 
         # Store parent dataset and indices
         self.__dataset = dataset  # Original dataset
@@ -176,10 +180,10 @@ class IndexedThermoDataset(ThermoDataset):
 
     def __getitem__(self, idx: int) -> DataContainer:
         """Get an item with proper transform chain.
-        
+
         Args:
             idx (int): Index into the subset
-            
+
         Returns:
             DataContainer: Transformed data container
         """

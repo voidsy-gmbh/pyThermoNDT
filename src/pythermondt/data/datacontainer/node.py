@@ -9,10 +9,12 @@ from ..units import Unit
 
 AttributeTypes = str | int | float | list | tuple | dict | Unit
 
+
 class NodeType(Enum):
     ROOT = "root"
     DATASET = "dataset"
     GROUP = "group"
+
 
 class BaseNode(ABC):
     @abstractmethod
@@ -32,9 +34,11 @@ class BaseNode(ABC):
     def type(self) -> NodeType:
         return self.__type
 
+
 class RootNode(BaseNode):
     def __init__(self):
         super().__init__("root", NodeType.ROOT)
+
 
 class AttributeNode(BaseNode, ABC):
     @abstractmethod
@@ -70,7 +74,9 @@ class AttributeNode(BaseNode, ABC):
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist. Use 'add_attribute' to add a new attribute.")
 
         if type(self.__attributes[key]) != type(value):
-            raise TypeError(f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. Cannot update attribute with value of type '{type(value)}'.")
+            raise TypeError(
+                f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. Cannot update attribute with value of type '{type(value)}'."
+            )
         self.__attributes[key] = value
 
     def update_attributes(self, **attributes: AttributeTypes):
@@ -80,9 +86,11 @@ class AttributeNode(BaseNode, ABC):
     def clear_attributes(self) -> None:
         self.__attributes.clear()
 
+
 class GroupNode(AttributeNode):
     def __init__(self, name: str):
         super().__init__(name, NodeType.GROUP)
+
 
 class DataNode(AttributeNode):
     def __init__(self, name: str, data: Tensor = torch.empty(0)):
@@ -100,6 +108,7 @@ class DataNode(AttributeNode):
     @data.deleter
     def data(self) -> None:
         self.__data = torch.empty(0)
+
 
 # Test code
 if __name__ == "__main__":

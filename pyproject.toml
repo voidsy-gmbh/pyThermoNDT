@@ -50,4 +50,4 @@ addopts = [
 testpaths = ["tests"]
 
 [tool.uv]
-required-version = "0.6.*" # Pin uv to major version 0.6 for stability
+required-version = "~=0.6.0" # Pin uv to major version 0.6 for stability

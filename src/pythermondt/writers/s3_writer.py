@@ -7,7 +7,7 @@ from .base_writer import BaseWriter
 
 
 class S3Writer(BaseWriter):
-    def __init__(self, bucket: str, destination_folder: str, boto3_session: boto3.Session = boto3.Session()):
+    def __init__(self, bucket: str, destination_folder: str, boto3_session: boto3.Session | None = None):
         """Instantiates a new HDF5Writer
 
         Parameters:
@@ -16,6 +16,10 @@ class S3Writer(BaseWriter):
             boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client.
                 Default is a new boto3 session with the default profile.
         """
+        # Use default boto3 session if none is provided
+        if not boto3_session:
+            boto3_session = boto3.Session()
+
         self.bucket = bucket
         self.destination_folder = destination_folder
 

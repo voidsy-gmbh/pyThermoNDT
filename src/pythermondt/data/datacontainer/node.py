@@ -100,9 +100,9 @@ class GroupNode(AttributeNode):
 
 
 class DataNode(AttributeNode):
-    def __init__(self, name: str, data: Tensor = torch.empty(0)):
+    def __init__(self, name: str, data: Tensor | None = None):
         super().__init__(name, NodeType.DATASET)
-        self.__data: Tensor = data
+        self.__data: Tensor = data if data is not None else torch.empty(0)
 
     @property
     def data(self) -> Tensor:

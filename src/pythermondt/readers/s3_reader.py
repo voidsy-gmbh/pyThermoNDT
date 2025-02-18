@@ -14,7 +14,7 @@ class S3Reader(BaseReader):
         cache_files: bool = False,
         parser: type[BaseParser] | None = None,
         num_files: int | None = None,
-        boto3_session: boto3.Session = boto3.Session(),
+        boto3_session: boto3.Session | None = None,
     ):
         """Initialize an instance of the S3Reader class.
 
@@ -35,6 +35,9 @@ class S3Reader(BaseReader):
             boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client.
                 Default is a new boto3 session with the default profile.
         """
+        # Use default boto3 session if none is provided
+        if not boto3_session:
+            boto3_session = boto3.Session()
 
         # Create a new s3 client from the give session
         self.__client = boto3_session.client("s3")

@@ -71,6 +71,9 @@ exclude = [
 select = ["E", "F", "W", "I", "B", "N", "UP"]
 fixable = ["ALL"]
 pydocstyle.convention = "google"
+ignore = [
+    "UP038" # Ignore for performance reasons, see: https://github.com/astral-sh/ruff/issues/7871
+]
 
 [tool.ruff.format]
 docstring-code-format = true # Enable reformatting of code snippets in docstrings.

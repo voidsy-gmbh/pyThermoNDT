@@ -279,7 +279,9 @@ class BaseReader(ABC):
 
     @abstractmethod
     def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        """Actual implementation of how the reader gets the list of files. This method must be implemented by the subclass.
+        """Actual implementation of how the reader gets the list of files.
+
+        This method must be implemented by the subclass.
 
         Parameters:
             num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads

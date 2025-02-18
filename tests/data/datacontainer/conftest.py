@@ -53,7 +53,10 @@ def filled_container(empty_container: DataContainer, sample_tensor: Tensor, samp
 
 @pytest.fixture
 def complex_container(filled_container: DataContainer):
-    """Fixture for DataContainer with complex structure. Based on filled_container, with additional atttributes added."""
+    """Fixture for DataContainer with complex structure.
+
+    Fixture is based on filled_container, with additional atttributes added.
+    """
     # Initialize an empty container using deepcopy to avoid modifying the previous fixture
     container = copy.deepcopy(filled_container)
 

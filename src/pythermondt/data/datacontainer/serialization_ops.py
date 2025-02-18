@@ -90,8 +90,8 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         # Check if the BytesIO object is a HDF5 file
         try:
             h5py.File(hdf5_bytes)
-        except OSError:
-            raise ValueError("The given BytesIO object does not contain a valid HDF5 file.")
+        except OSError as o:
+            raise ValueError("The given BytesIO object does not contain a valid HDF5 file.") from o
 
         # Reset the position of the BytesIO object to the start in case the pointer was moved by the h5py.File function
         hdf5_bytes.seek(0)

@@ -73,7 +73,7 @@ class BaseReader(ABC):
         except KeyError:
             raise ValueError(
                 f"The specified Parser: {parser.__name__} is not supported by the {self.__class__.__name__} class."
-            )
+            ) from None
 
         # validate that the source expression does not contain an invalid file extension ==>
         #  File extensions are defined by the parser
@@ -315,13 +315,13 @@ class BaseReader(ABC):
                 with open(path, "rb") as f:
                     return self.parser.parse(io.BytesIO(f.read()))
         except FileNotFoundError:
-            raise FileNotFoundError("File not found in cached files. Clear the cache and try again.")
+            raise FileNotFoundError("File not found in cached files. Clear the cache and try again.") from None
 
         # Else read the file directly from the source
         try:
             return self.parser.parse(self._read_file(path))
         except Exception as e:
-            raise Exception(f"Error reading file: {path} - {e}")
+            raise Exception(f"Error reading file: {path} - {e}") from e
 
     def clear_cache(self):
         """

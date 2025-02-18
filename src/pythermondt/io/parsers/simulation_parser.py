@@ -32,8 +32,8 @@ class SimulationParser(BaseParser):
         # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
         try:
             data = mat73.loadmat(data_bytes, use_attrdict=True)["SimResult"]
-        except OSError:
-            raise ValueError("The given BytesIO object does not contain a valid .mat file.")
+        except OSError as o:
+            raise ValueError("The given BytesIO object does not contain a valid .mat file.") from o
 
         # Create an empty Thermocontainer ==> predefined structure
         datacontainer = ThermoContainer()

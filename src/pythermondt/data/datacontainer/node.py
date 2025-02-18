@@ -79,7 +79,7 @@ class AttributeNode(BaseNode, ABC):
                 f"Use 'add_attribute' to add a new attribute."
             )
 
-        if type(self.__attributes[key]) != type(value):
+        if type(value) is not type(self.__attributes[key]):
             raise TypeError(
                 f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. "
                 f"Cannot update attribute with value of type '{type(value)}'."

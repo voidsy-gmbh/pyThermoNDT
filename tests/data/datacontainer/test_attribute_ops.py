@@ -34,7 +34,7 @@ def test_add_attribute(attr_container: DataContainer, path: str, key: str, value
     # Verify attribute was added correctly
     retrieved_value = attr_container.get_attribute(path, key)
     assert retrieved_value == value
-    assert type(retrieved_value) == type(value)
+    assert isinstance(retrieved_value, type(value))
 
 
 def test_add_attributes(attr_container: DataContainer):
@@ -48,7 +48,7 @@ def test_add_attributes(attr_container: DataContainer):
     for key, value in attrs.items():
         retrieved = attr_container.get_attribute("/testgroup", key)
         assert retrieved == value
-        assert type(retrieved) == type(value)
+        assert isinstance(retrieved, type(value))
 
 
 @pytest.mark.parametrize(
@@ -134,7 +134,7 @@ def test_update_attribute(attr_container: DataContainer, path: str, key: str, in
     # Verify update
     retrieved = attr_container.get_attribute(path, key)
     assert retrieved == update_value
-    assert type(retrieved) == type(update_value)
+    assert isinstance(retrieved, type(update_value))
 
 
 def test_update_attributes(attr_container: DataContainer):

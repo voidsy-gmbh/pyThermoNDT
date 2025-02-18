@@ -40,7 +40,7 @@ class Compose(ThermoTransform):
         Composes several transforms together. This transform sequentially applies a list of transforms
         to the input container.
         """
-        super(Compose, self).__init__()
+        super().__init__()
 
         # Check if all the provided transforms are valid
         if not all(isinstance(t, ThermoTransform) for t in transforms):

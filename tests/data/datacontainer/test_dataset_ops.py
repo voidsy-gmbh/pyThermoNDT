@@ -64,7 +64,7 @@ def test_add_dataset(
 
     # Error case
     else:
-        assert False
+        raise AssertionError("Invalid test data")
 
 
 # Test adding a dataset that already exists in the container
@@ -166,7 +166,7 @@ def test_add_datasets(
 
         # Error case
         else:
-            assert False
+            raise AssertionError("Invalid test data")
 
 
 # Test getting a dataset from the container
@@ -213,7 +213,7 @@ def test_get_dataset(dataset_container: DataContainer, data: str, path: str, nam
 
     # Error case
     else:
-        assert False
+        raise AssertionError("Invalid test data")
 
 
 # Test getting a dataset that does not exist in the container or refer to something else
@@ -280,7 +280,7 @@ def test_get_datasets(
 
         # Error case
         else:
-            assert False
+            raise AssertionError("Invalid test data")
 
 
 # Test getting multiple datasets where one or more do not exist in the container
@@ -445,7 +445,7 @@ def test_update_dataset(
 
     # Error case
     else:
-        assert False
+        raise AssertionError("Invalid test data")
 
 
 # Test updating a dataset that does not exist in the container
@@ -535,15 +535,15 @@ def test_update_datasets(
 
         # Ndarray
         if isinstance(data, ndarray):
-            assert torch.equal(retrieved_data, torch.from_numpy(data))  # type: ignore
+            assert torch.equal(retrieved_data, torch.from_numpy(data))
 
         # Tensor
         elif isinstance(data, Tensor):
-            assert torch.equal(retrieved_data, data)  # type:ignore
+            assert torch.equal(retrieved_data, data)
 
         # Error case
         else:
-            assert False
+            raise AssertionError("Invalid test data")
 
 
 # Test updating multiple datasets where one or more do not exist in the container

@@ -68,11 +68,28 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "N", "UP"]
+select = [
+    "E", # pydocstyle error
+    "F", # pyflakes 
+    "W", # pydocstyle warning
+    "I", # Isort
+    "B", # flake8-bugbear
+    "N", # pep8-naming
+    "UP", # pyupdate
+    "D", # pydocstyle
+]
 fixable = ["ALL"]
 pydocstyle.convention = "google"
 ignore = [
-    "UP038" # Ignore for performance reasons, see: https://github.com/astral-sh/ruff/issues/7871
+    "UP038", # Use X | Y in {} call instead of (X, Y) ==> Ignore for performance reasons, see: https://github.com/astral-sh/ruff/issues/7871
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D106",   # Missing docstring in public nested class
+    "D107",   # Missing docstring in `__init__`
 ]
 
 [tool.ruff.format]

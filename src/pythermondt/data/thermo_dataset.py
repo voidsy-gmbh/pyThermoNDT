@@ -169,7 +169,7 @@ class IndexedThermoDataset(ThermoDataset):
         Parameters:
             dataset (ThermoDataset): Parent dataset to index into
             indices (Sequence[int]): Sequence of indices to select from parent
-            transform (Optional[ThermoTransform]): Optional transform to apply after parent's transform
+            transform (ThermoTransform, optional): Optional transform to apply after parent's transform
 
         Raises:
             IndexError: If any of the provided indices are out of range

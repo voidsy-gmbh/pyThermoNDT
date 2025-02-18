@@ -56,8 +56,8 @@ class SelectFrameRange(ThermoTransform):
         """Select a range of frames from the data container, by specifying their start and end index.
 
         Parameters:
-            start (Optional[int]): Start index of the frame range. Default is None, which means the start index is 0.
-            end (Optional[int]): End index of the frame range, which is inclusiv.
+            start (int, optional): Start index of the frame range. Default is None, which means the start index is 0.
+            end (int, optional): End index of the frame range, which is inclusiv.
                 Default is None, which means the end index is the last frame.
         """
         super().__init__()

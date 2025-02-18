@@ -26,7 +26,7 @@ def random_split(
     Parameters:
         dataset (Dataset): Dataset to be split
         lengths (Sequence[float]): Fractions for each split that sum up to 1.0.
-        transforms (Sequence[ThermoTransform], optional): Optional sequence of transforms for each split.
+        transforms (Sequence[ThermoTransform | None], optional): Optional sequence of transforms for each split.
         generator (Generator, optional): Generator used for reproducible splits.
             Per default the default generator is used.
 

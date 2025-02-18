@@ -101,15 +101,17 @@ class SelectFrameRange(ThermoTransform):
 
 
 class NonUniformSampling(ThermoTransform):
-    """Implement a non-uniform sampling strategy for the data container according to this paper:
+    """Implement a non-uniform sampling strategy for the data container.
 
+    The implementation is based on the following paper:
     Efficient defect reconstruction from temporal non-uniform pulsed
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
     def __init__(self, n_samples: int, tau: float | None = None):
-        """Implement a non-uniform sampling strategy for the data container according to this paper:
+        """Implement a non-uniform sampling strategy for the data container.
 
+        The implementation is based on the following paper:
         Efficient defect reconstruction from temporal non-uniform pulsed
         thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
 

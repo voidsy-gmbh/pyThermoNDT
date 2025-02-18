@@ -8,7 +8,7 @@ from pythermondt.data import DataContainer, Units
 
 @pytest.fixture
 def attr_container(empty_container: DataContainer, sample_tensor: Tensor):
-    """Container fixture for testing attribute operations"""
+    """Container fixture for testing attribute operations."""
     # Add a group and dataset for testing
     empty_container.add_group("/", "testgroup")
     empty_container.add_dataset("/", "testdata", sample_tensor)

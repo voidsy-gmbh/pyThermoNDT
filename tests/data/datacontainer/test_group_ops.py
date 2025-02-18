@@ -7,7 +7,7 @@ from pythermondt.data.datacontainer.utils import validate_path
 
 @pytest.fixture
 def group_container(empty_container: DataContainer):
-    """Container fixture for testing group operations"""
+    """Container fixture for testing group operations."""
     empty_container.add_group("/", "testgroup")  # root level group
     empty_container.add_group("/testgroup", "nestedgroup")  # nested group
     return empty_container

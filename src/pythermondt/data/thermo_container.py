@@ -4,7 +4,7 @@ from .units import Units
 
 class ThermoContainer(DataContainer):
     def __init__(self):
-        """Initializes a DataContainer with a predefined structure for thermographic data"""
+        """Initializes a DataContainer with a predefined structure for thermographic data."""
         super().__init__()
 
         # Set initial groups

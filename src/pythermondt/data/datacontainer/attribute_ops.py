@@ -32,7 +32,7 @@ class AttributeOps(BaseOps):
         self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)
 
     def add_unit(self, path: str, unit: Unit):
-        """Adds the unit information to the specified dataset
+        """Adds the unit information to the specified dataset.
 
         Parameters:
             path (str): The path to the dataset.

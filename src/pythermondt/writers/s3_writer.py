@@ -8,7 +8,7 @@ from .base_writer import BaseWriter
 
 class S3Writer(BaseWriter):
     def __init__(self, bucket: str, destination_folder: str, boto3_session: boto3.Session | None = None):
-        """Instantiates a new HDF5Writer
+        """Instantiates a new HDF5Writer.
 
         Parameters:
             bucket (str): The name of the bucket to write to.

@@ -227,8 +227,9 @@ class BaseReader(ABC):
         return self.__cached_paths
 
     def _sanitize_string(self, s: str) -> str:
-        """Sanitizes a given string by:
+        """Sanitizes a given string to be used as a folder name.
 
+        The string is processed by:
         * replacing non-alphanumeric characters with underscores
         * removing leading/trailing underscores.
 

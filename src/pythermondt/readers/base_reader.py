@@ -262,23 +262,20 @@ class BaseReader(ABC):
     @property
     @abstractmethod
     def remote_source(self) -> bool:
-        """
-        Returns True if the reader reads files from a remote source, False otherwise.
+        """Returns True if the reader reads files from a remote source, False otherwise.
         This property must be implemented by the subclass.
         """
         raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
     def _read_file(self, path: str) -> io.BytesIO:
-        """
-        Actual implementation of how a single file is read into memory. This method must be implemented by the subclass.
+        """Actual implementation of how a single file is read into memory. This method must be implemented by the subclass.
         """
         raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
     def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        """
-        Actual implementation of how the reader gets the list of files. This method must be implemented by the subclass.
+        """Actual implementation of how the reader gets the list of files. This method must be implemented by the subclass.
 
         Parameters:
             num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads
@@ -288,8 +285,7 @@ class BaseReader(ABC):
 
     @abstractmethod
     def _close(self):
-        """
-        Closes any open connections or resources that the reader might have opened.
+        """Closes any open connections or resources that the reader might have opened.
 
         If the reader does not open any connections or resources, this method can be passed.
         Must be implemented by the subclass.
@@ -324,8 +320,7 @@ class BaseReader(ABC):
             raise Exception(f"Error reading file: {path} - {e}") from e
 
     def clear_cache(self):
-        """
-        Clears the cached file paths.
+        """Clears the cached file paths.
 
         Therefore the reader will check for new files on the next call of the files property.
         """

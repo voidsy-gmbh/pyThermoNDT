@@ -12,8 +12,7 @@ from .visualization_ops import VisualizationOps
 
 
 class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, GroupOps, DatasetOps, AttributeOps):
-    """
-    Manages and serializes data into HDF5 format.
+    """Manages and serializes data into HDF5 format.
 
     This class manages data in a hierarchical structure, similar to a HDF5 File. It provides methods to add
     groups, datasets and attributes to the data structure. The data structure can be serialized to a HDF5 file and

@@ -17,8 +17,7 @@ class BaseParser(ABC):
     @staticmethod
     @abstractmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:
-        """
-        Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a
+        """Parses the data from the given BytesIO object, that was read using one of the BaseReaders subclasses into a
         DataContainer object.
 
         Subclasses must implement this method.

@@ -16,7 +16,6 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the attribute already exists.
         """
-
         self.nodes(path, DataNode, GroupNode).add_attribute(key, value)
 
     def add_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):

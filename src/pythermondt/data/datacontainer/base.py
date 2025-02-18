@@ -222,8 +222,7 @@ class BaseOps(DataContainerBase):
             return False
 
     def _parent_exists(self, key: str) -> bool:
-        """
-        Check if the parent of the given path exists and is a GroupNode or RootNode.
+        """Check if the parent of the given path exists and is a GroupNode or RootNode.
         If the path itself is the root path, it returns False.
 
         Parameters:

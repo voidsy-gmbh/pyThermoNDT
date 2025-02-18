@@ -112,8 +112,7 @@ def split_path(path: str) -> tuple[str, str]:
 
 
 def generate_key(path: str, name: str) -> tuple[str, str, str]:
-    """
-    Generates a key for the given path and name. First the path is validated and normalized, then it is split into the
+    """Generates a key for the given path and name. First the path is validated and normalized, then it is split into the
     parent path and the name of the group or dataset.
 
     Parameters:

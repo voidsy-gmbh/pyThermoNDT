@@ -4,15 +4,13 @@ from .utils import ThermoTransform
 
 
 class MinMaxNormalize(ThermoTransform):
-    """
-    Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the min and max values of the
+    """Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the min and max values of the
     data. This is done by subtracting the min value from the data and dividing by the difference between the max and
     min values.
     """
 
     def __init__(self, eps: float = 1e-12):
-        """
-        Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the min and max values of the
+        """Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the min and max values of the
         data. This is done by subtracting the min value from the data and dividing by the difference between the max and
         min values.
 
@@ -40,8 +38,7 @@ class MinMaxNormalize(ThermoTransform):
 
 
 class MaxNormalize(ThermoTransform):
-    """
-    Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the max value of the data.
+    """Normalizes the Temperature data (Tdata) in the container to range [0, 1] by using the max value of the data.
     This is done by dividing the data by the max value of the data.
     """
 
@@ -71,8 +68,7 @@ class MaxNormalize(ThermoTransform):
 
 
 class ZScoreNormalize(ThermoTransform):
-    """
-    Normalizes the Temperature data (Tdata) in the container to have mean 0 and standard deviation 1.
+    """Normalizes the Temperature data (Tdata) in the container to have mean 0 and standard deviation 1.
     This is done by subtracting the mean value from the data and dividing by the standard deviation of the data.
     """
 

@@ -17,8 +17,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.
 
-            Args:
-                container: DataContainer with thermographic data
+            Parameters:
+                parent (VisualizationOps): The parent container for the interactive analysis.
             """
             # 1.) Retrieve data from the container
             self.container = parent

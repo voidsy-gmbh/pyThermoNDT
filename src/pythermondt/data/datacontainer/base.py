@@ -1,4 +1,3 @@
-from abc import ABC
 from collections.abc import ItemsView, KeysView, ValuesView
 from typing import TypeVar, overload
 
@@ -10,7 +9,7 @@ NodeTypes = RootNode | GroupNode | DataNode
 T = TypeVar("T", bound=NodeTypes)
 
 
-class DataContainerBase(ABC):
+class DataContainerBase:
     # Inner class to access nodes in the DataContainer ==> Needed to make the node property indexable and callable
     class __NodeAccessor:
         def __init__(self):
@@ -119,6 +118,8 @@ class DataContainerBase(ABC):
             return self.__get_node(key, *node_types)
 
     def __init__(self):
+        if type(self) is DataContainerBase:
+            raise TypeError(f"{self.__class__.__name__} is a base class and cannot be instantiated directly.")
         self.__node_accessor = self.__NodeAccessor()
 
     @property

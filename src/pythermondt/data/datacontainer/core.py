@@ -22,6 +22,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
 
     def __init__(self, hdf5_bytes: BytesIO | None = None):
         """Initializes a DataContainer instance.
+
         By default, initializes an empty DataContainer.
         If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
 

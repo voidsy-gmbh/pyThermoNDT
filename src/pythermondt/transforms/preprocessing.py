@@ -8,13 +8,17 @@ from .utils import ThermoTransform
 
 
 class ApplyLUT(ThermoTransform):
-    """Applies the LookUpTable of the container to the Temperature data (Tdata) in the container.
-    Therefore Tdata gets converted from uint16 to float64.
+    """Applies the LookUpTable of the container to the Temperature data in the container.
+
+    This is done by indexing the LookUpTable (Float64) with the Temperature data (Uint16).
+    As a result Tdata gets converted from uint16 to float64.
     """
 
     def __init__(self):
-        """Applies the LookUpTable of the container to the Temperature data (Tdata) in the container.
-        Therefore Tdata gets converted from uint16 to float64.
+        """Applies the LookUpTable of the container to the Temperature data in the container.
+
+        This is done by indexing the LookUpTable (Float64) with the Temperature data (Uint16).
+        As a result Tdata gets converted from uint16 to float64.
         """
         super().__init__()
 
@@ -54,8 +58,7 @@ class ApplyLUT(ThermoTransform):
 
 
 class SubstractFrame(ThermoTransform):
-    """Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
-    """
+    """Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container."""
 
     def __init__(self, frame: int = 0):
         """Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.

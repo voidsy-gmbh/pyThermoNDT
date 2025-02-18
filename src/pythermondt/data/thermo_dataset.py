@@ -101,8 +101,10 @@ class ThermoDataset(Dataset):
                     raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
 
     def _build_index(self):
-        """Build an index map using 2 torch Tensors for fast and memory efficient mapping of reader
-        and file index to the global index of the dataset.
+        """Build an index map using 2 torch Tensors.
+
+        This is done to achieve a fast and memory efficient mapping of reader and file index to the global index
+        of the dataset. 1 Tensor is used to store the reader index and the other Tensor is used to store the file index.
         """
         reader_indices = []
         file_indices = []

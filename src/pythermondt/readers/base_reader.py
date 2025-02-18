@@ -264,13 +264,16 @@ class BaseReader(ABC):
     @abstractmethod
     def remote_source(self) -> bool:
         """Returns True if the reader reads files from a remote source, False otherwise.
+
         This property must be implemented by the subclass.
         """
         raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
     def _read_file(self, path: str) -> io.BytesIO:
-        """Actual implementation of how a single file is read into memory. This method must be implemented by the subclass.
+        """Actual implementation of how a single file is read into memory.
+
+        This method must be implemented by the subclass.
         """
         raise NotImplementedError("Method must be implemented by subclass")
 

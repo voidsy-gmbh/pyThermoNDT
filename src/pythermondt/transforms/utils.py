@@ -8,6 +8,7 @@ from ..data import DataContainer
 
 class ThermoTransform(nn.Module, ABC):
     """Abstract base class that all transforms of PyThermoNDT must inherit from.
+
     Initializes the module and sets up necessary configurations.
     """
 
@@ -16,7 +17,9 @@ class ThermoTransform(nn.Module, ABC):
 
     @abstractmethod
     def forward(self, container: DataContainer) -> DataContainer:
-        """Abstract method that must be implemented in the sub-class. This method should contain the transformation logic.
+        """Abstract method that must be implemented in the sub-class.
+
+        This method should contain the actual transformation logic.
         """
         raise NotImplementedError("Forward method must be implemented in the sub-class.")
 
@@ -28,13 +31,15 @@ class ThermoTransform(nn.Module, ABC):
 
 
 class Compose(ThermoTransform):
-    """Composes several transforms together. This transform sequentially applies a list of transforms
-    to the input container.
+    """Compose a sequence of transforms together into a single transform.
+
+    This transform sequentially applies a list of transforms to the input container.
     """
 
     def __init__(self, transforms: list[ThermoTransform]):
-        """Composes several transforms together. This transform sequentially applies a list of transforms
-        to the input container.
+        """Compose a sequence of transforms together into a single transform.
+
+        This transform sequentially applies a list of transforms to the input container.
         """
         super().__init__()
 

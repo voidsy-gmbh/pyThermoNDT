@@ -99,7 +99,7 @@ jobs:
 
   # Job 2: Run test using pytest
   test:
-    uses: ./.github/workflows/run_tests.yml
+    uses: ./.github/workflows/tests.yml
 
   # Job 3: Build the package (conda or pip) and upload artifacts using a matrix job
   build:

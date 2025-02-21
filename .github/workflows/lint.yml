@@ -1,0 +1,33 @@
+# Reusbale workflow to run linting for pyThermoNDT
+name: Run Linters
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      test_success:
+        description: "Whether tests succeeded"
+        value: ${{ jobs.lint.outputs.success }}
+
+jobs:
+  lint:
+    name: Run Ruff
+    runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.set_output.outputs.success }}q
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Setup ruff
+      - name: Setup and run ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check"
+
+      # Step 3: Set Output Based on Lint Success
+      - id: set_output
+        if: success()
+        run: echo "success=true" >> $GITHUB_OUTPUT
+    

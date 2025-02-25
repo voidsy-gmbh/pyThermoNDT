@@ -2,9 +2,15 @@ repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+        # Check and fix common formatting issues
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
+
+        # Check syntax
     -   id: check-yaml
+    -   id: check-toml
+
+        # Check for added large files
     -   id: check-added-large-files
         args: [--maxkb=1024] # Allow files up to 1MB
 

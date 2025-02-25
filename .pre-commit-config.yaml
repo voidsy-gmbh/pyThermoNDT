@@ -14,6 +14,9 @@ repos:
     -   id: check-added-large-files
         args: [--maxkb=1024] # Allow files up to 1MB
 
+        # Security checks
+    -   id: detect-private-key
+
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.7
     hooks:

@@ -99,9 +99,13 @@ jobs:
 
   # Job 2: Run test using pytest
   test:
-    uses: ./.github/workflows/run_tests.yml
+    uses: ./.github/workflows/tests.yml
 
-  # Job 3: Build the package (conda or pip) and upload artifacts using a matrix job
+  # Job 3: Lint the source code
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  # Job 4: Build the package (conda or pip) and upload artifacts using a matrix job
   build:
     needs: validate
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
@@ -174,9 +178,9 @@ jobs:
             ${{ steps.build-pip.outputs.WHEEL_FILE }}
             ${{ steps.build-pip.outputs.TAR_FILE }}
 
-  # Job 4: Release the package
+  # Job 5: Release the package
   release:
-    needs: [validate, build, test]
+    needs: [validate, build, test, lint]
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout code in the current branch

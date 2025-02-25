@@ -1,16 +1,20 @@
-import torch
-from typing import Dict, ItemsView
-from enum import Enum
-from torch import Tensor
 from abc import ABC, abstractmethod
+from collections.abc import ItemsView
+from enum import Enum
+
+import torch
+from torch import Tensor
+
 from ..units import Unit
 
 AttributeTypes = str | int | float | list | tuple | dict | Unit
+
 
 class NodeType(Enum):
     ROOT = "root"
     DATASET = "dataset"
     GROUP = "group"
+
 
 class BaseNode(ABC):
     @abstractmethod
@@ -21,7 +25,7 @@ class BaseNode(ABC):
     @property
     def name(self) -> str:
         return self.__name
-    
+
     @name.setter
     def name(self, name: str) -> None:
         self.__name = name
@@ -29,26 +33,31 @@ class BaseNode(ABC):
     @property
     def type(self) -> NodeType:
         return self.__type
-    
+
+
 class RootNode(BaseNode):
     def __init__(self):
         super().__init__("root", NodeType.ROOT)
+
 
 class AttributeNode(BaseNode, ABC):
     @abstractmethod
     def __init__(self, name: str, type: NodeType) -> None:
         super().__init__(name, type)
-        self.__attributes: Dict[str, AttributeTypes] = {}
-    
+        self.__attributes: dict[str, AttributeTypes] = {}
+
     @property
     def attributes(self) -> ItemsView[str, AttributeTypes]:
         return self.__attributes.items()
-    
-    def add_attribute(self, key: str, value: AttributeTypes):         
+
+    def add_attribute(self, key: str, value: AttributeTypes):
         if key in self.__attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' already exists. Use 'update_attribute' to update the value.")
+            raise KeyError(
+                f"Attribute with key '{key}' in node '{self.name}' already exists. "
+                "Use 'update_attribute' to update the value."
+            )
         self.__attributes[key] = value
-    
+
     def add_attributes(self, **attributes: AttributeTypes):
         for key, value in attributes.items():
             self.add_attribute(key, value)
@@ -57,7 +66,7 @@ class AttributeNode(BaseNode, ABC):
         if key not in self.__attributes.keys():
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist.")
         return self.__attributes[key]
-    
+
     def remove_attribute(self, key: str) -> None:
         if key not in self.__attributes.keys():
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist.")
@@ -65,10 +74,16 @@ class AttributeNode(BaseNode, ABC):
 
     def update_attribute(self, key: str, value: AttributeTypes) -> None:
         if key not in self.__attributes.keys():
-            raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist. Use 'add_attribute' to add a new attribute.")
-        
-        if type(self.__attributes[key]) != type(value):
-            raise TypeError(f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. Cannot update attribute with value of type '{type(value)}'.")
+            raise KeyError(
+                f"Attribute with key '{key}' in node '{self.name}' does not exist. "
+                f"Use 'add_attribute' to add a new attribute."
+            )
+
+        if type(value) is not type(self.__attributes[key]):
+            raise TypeError(
+                f"Attribute with key '{key}' in node '{self.name}' is of type '{type(self.__attributes[key])}'. "
+                f"Cannot update attribute with value of type '{type(value)}'."
+            )
         self.__attributes[key] = value
 
     def update_attributes(self, **attributes: AttributeTypes):
@@ -78,14 +93,16 @@ class AttributeNode(BaseNode, ABC):
     def clear_attributes(self) -> None:
         self.__attributes.clear()
 
+
 class GroupNode(AttributeNode):
     def __init__(self, name: str):
         super().__init__(name, NodeType.GROUP)
 
+
 class DataNode(AttributeNode):
-    def __init__(self, name: str, data: Tensor = torch.empty(0)):
+    def __init__(self, name: str, data: Tensor | None = None):
         super().__init__(name, NodeType.DATASET)
-        self.__data: Tensor = data
+        self.__data: Tensor = data if data is not None else torch.empty(0)
 
     @property
     def data(self) -> Tensor:
@@ -98,6 +115,7 @@ class DataNode(AttributeNode):
     @data.deleter
     def data(self) -> None:
         self.__data = torch.empty(0)
+
 
 # Test code
 if __name__ == "__main__":

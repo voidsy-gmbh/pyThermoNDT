@@ -1,7 +1,9 @@
 import pytest
 import torch
 from torch import Tensor
-from pythermondt.data.datacontainer.node import NodeType, RootNode, GroupNode, DataNode
+
+from pythermondt.data.datacontainer.node import DataNode, GroupNode, NodeType, RootNode
+
 
 # Root Node tests
 def test_root_node(root_node: RootNode):
@@ -9,17 +11,20 @@ def test_root_node(root_node: RootNode):
     assert root_node.name == "root"
     assert root_node.type == NodeType.ROOT
 
+
 # Group Node tests
 def test_group_node(group_node: GroupNode):
     """Test GroupNode initialization."""
     assert group_node.name == "test_group"
     assert group_node.type == NodeType.GROUP
 
+
 def test_group_node_attributes(group_node: GroupNode):
     """Test adding and getting attributes of GroupNode."""
     # Test GroupNode attributes
     group_node.add_attribute("test_attr", "test_value")
     assert group_node.get_attribute("test_attr") == "test_value"
+
 
 def test_group_node_update_attribute(group_node: GroupNode):
     """Test updating attributes of GroupNode."""
@@ -36,6 +41,7 @@ def test_group_node_update_attribute(group_node: GroupNode):
     with pytest.raises(TypeError):
         group_node.update_attribute("test_attr", 123)
 
+
 def test_group_node_remove_attribute(group_node: GroupNode):
     """Test removing attributes of GroupNode."""
     # Test GroupNode remove attribute
@@ -44,6 +50,7 @@ def test_group_node_remove_attribute(group_node: GroupNode):
     with pytest.raises(KeyError):
         group_node.get_attribute("test_attr")
 
+
 # Data Node tests
 def test_data_node(data_node: DataNode, sample_tensor: Tensor):
     """Test DataNode initialization."""
@@ -51,17 +58,20 @@ def test_data_node(data_node: DataNode, sample_tensor: Tensor):
     assert data_node.type == NodeType.DATASET
     assert torch.equal(data_node.data, sample_tensor)
 
+
 def test_data_node_data_update(data_node: DataNode, sample_eye_tensor: Tensor):
     """Test updating data of DataNode."""
     # Test DataNode update data
     data_node.data = sample_eye_tensor
     assert torch.equal(data_node.data, sample_eye_tensor)
 
+
 def test_data_node_attributes(data_node: DataNode):
     """Test adding and getting attributes of DataNode."""
     # Test DataNode attributes
     data_node.add_attribute("shape", list(data_node.data.shape))
     assert data_node.get_attribute("shape") == list(data_node.data.shape)
+
 
 def test_data_node_update_attribute(data_node: DataNode):
     """Test updating attributes of DataNode."""
@@ -78,6 +88,7 @@ def test_data_node_update_attribute(data_node: DataNode):
     with pytest.raises(TypeError):
         data_node.update_attribute("shape", "new_value")
 
+
 # Node Type Enum tests
 def test_node_type_enum():
     """Test NodeType enum."""
@@ -85,6 +96,7 @@ def test_node_type_enum():
     assert NodeType.GROUP.value == "group"
     assert NodeType.DATASET.value == "dataset"
 
+
 # Only run the tests in this file if it is run directly
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main(["-v", __file__])

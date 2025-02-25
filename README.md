@@ -113,6 +113,29 @@ Single tests can be run by specifying the test file and test name:
 pytest tests/test_file.py::test_name
 ```
 
+### Code Formatting and Linting
+The project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and linting to maintain consistent code quality. Ruff combines functionality from multiple tools (black, flake8, isort, pylint, etc.) into a single, fast package that is written in Rust.
+
+#### Running Ruff
+After setting up your development environment, you can run Ruff with the following commands:
+
+Format the staged changes according to the formatting rules:
+```
+ruff format
+```
+
+Check for any linting issues:
+```
+ruff check
+```
+
+Check for any linting issues and automatically fix them if possible:
+```
+ruff check --fix 
+```
+
+Optionally you can install the [VSCode extension for Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) to get real-time feedback on your code.
+
 ### Versioning
 The package version is defined in [pythermondt/\__pkginfo\__.py](src/pythermondt/__pkginfo__.py). The version number should be updated according to the [PEP 440 – Version Identification and Dependency Specification](https://setuptools.pypa.io/en/latest/userguide/distribution.html) guidelines.
 

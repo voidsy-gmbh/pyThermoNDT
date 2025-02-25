@@ -1,7 +1,7 @@
-from typing import Dict, Tuple, List
+from ..units import Unit, Units, is_unit_info
 from .base import BaseOps
 from .node import DataNode, GroupNode
-from ..units import Unit, Units, is_unit_info
+
 
 class AttributeOps(BaseOps):
     def add_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | Unit):
@@ -16,7 +16,6 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the attribute already exists.
         """
-        
         self.nodes(path, DataNode, GroupNode).add_attribute(key, value)
 
     def add_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
@@ -33,7 +32,7 @@ class AttributeOps(BaseOps):
         self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)
 
     def add_unit(self, path: str, unit: Unit):
-        """Adds the unit information to the specified dataset
+        """Adds the unit information to the specified dataset.
 
         Parameters:
             path (str): The path to the dataset.
@@ -60,37 +59,38 @@ class AttributeOps(BaseOps):
             KeyError: If the attribute does not exist.
         """
         return self.nodes(path, DataNode, GroupNode).get_attribute(key)
-    
-    def get_attributes(self, path: str, *keys: str) -> Tuple[str | int | float | list | tuple | dict | Unit, ...]:
+
+    def get_attributes(self, path: str, *keys: str) -> tuple[str | int | float | list | tuple | dict | Unit, ...]:
         """Get multiple attributes from a specified group or dataset in the DataContainer.
-    
+
         Parameters:
             path (str): The path to the group or dataset.
-            *keys (str): Variable number of attribute keys. Can be provided as separate arguments or unpacked from a list.
-        
+            *keys (str): Variable number of attribute keys.
+                Can be provided as separate arguments or unpacked from a list.
+
         Returns:
-            Tuple[str | int | float | list | tuple | dict | Unit, ...]: The values of the attributes, in the same order as the input keys.
-        
+            Tuple[str | int | float | list | tuple | dict | Unit, ...]: The values of the attributes, in the same order.
+
         Raises:
             KeyError: If the group or dataset does not exist.
             KeyError: If any attribute does not exist.
         """
-        return tuple(self.get_attribute(path, key) for key in keys) 
-    
-    def get_all_attributes(self, path: str) -> Dict[str, str | int | float | list | tuple | dict | Unit]:
+        return tuple(self.get_attribute(path, key) for key in keys)
+
+    def get_all_attributes(self, path: str) -> dict[str, str | int | float | list | tuple | dict | Unit]:
         """Get all attributes from a specified group or dataset in the DataContainer.
 
         Parameters:
             path (str): The path to the group or dataset.
 
         Returns:
-            Dict[str, str | int | float | list | tuple | dict | UnitInfo]: A dictionary of all attributes in the group or dataset.
+            Dict[str, str | int | float | list | tuple | dict | UnitInfo]: A dictionary of all attributes at the path.
 
         Raises:
             KeyError: If the group or dataset does not exist.
         """
         return dict(self.nodes(path, DataNode, GroupNode).attributes)
-    
+
     def get_unit(self, path: str) -> Unit:
         """Get the unit information from the specified dataset.
 
@@ -108,10 +108,10 @@ class AttributeOps(BaseOps):
             unit = self.nodes(path, DataNode).get_attribute("Unit")
         except KeyError:
             unit = Units.undefined
-        
+
         # Verify that unit is valid and return it ==> otherwise return undefined
         return unit if is_unit_info(unit) else Units.undefined
-    
+
     def remove_attribute(self, path: str, key: str):
         """Remove an attribute from a specified group or dataset in the DataContainer.
 

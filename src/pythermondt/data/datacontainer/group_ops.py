@@ -1,7 +1,7 @@
-from typing import List
 from .base import BaseOps
 from .node import GroupNode
 from .utils import generate_key
+
 
 class GroupOps(BaseOps):
     def add_group(self, path: str, name: str):
@@ -18,14 +18,14 @@ class GroupOps(BaseOps):
         key, _, _ = generate_key(path, name)
         self.nodes[key] = GroupNode(name)
 
-    def get_all_groups(self) -> List[str]:
+    def get_all_groups(self) -> list[str]:
         """Get a list of all groups in the DataContainer.
 
         Returns:
             List[str]: A list of all groups in the DataContainer.
         """
         return [node.name for node in self.nodes.values() if isinstance(node, GroupNode)]
-    
+
     def remove_group(self, path: str):
         """Removes a single group from a specified path in the DataContainer.
 

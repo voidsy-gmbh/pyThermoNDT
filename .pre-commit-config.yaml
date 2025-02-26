@@ -8,6 +8,7 @@ repos:
 
         # Check syntax
     -   id: check-yaml
+        exclude: ^conda/meta\.yaml$  # Exclude conda meta.yaml because meta.yaml uses jinja2 syntax which is not valid yaml
     -   id: check-toml
 
         # Check for added large files

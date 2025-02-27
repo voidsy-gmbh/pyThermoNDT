@@ -94,7 +94,11 @@ After you have set up the environment and installed the pre-commit hooks, you ca
 If you are using VSCode, make sure to select the correct interpreter for the environment you have created to enable proper autocompletion.
 For more information see the [VSCode documentation](https://code.visualstudio.com/docs/python/environments).
 
-## Running Tests
+## Code Quality and Validation
+
+This project uses automated testing, linting, and code formatting to maintain code quality.
+
+### Running Tests
 
 Tests are written using pytest and are located in the [tests](tests/) directory.
 
@@ -109,11 +113,11 @@ pytest tests/test_file.py::test_name
 pytest -k test_name
 ```
 
-## Code Formatting and Linting
+###  Code Formatting and Linting
 
 The project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and linting to maintain consistent code quality. Ruff combines functionality from multiple tools (black, flake8, isort, pylint, etc.) into a single, fast package written in Rust.
 
-### Running Ruff
+#### Running Ruff
 
 ```bash
 # Format code

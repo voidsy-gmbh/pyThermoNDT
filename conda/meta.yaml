@@ -11,7 +11,7 @@ source:
 build:
   noarch: python
   number: 0
-  # Even though we're using pip here, it's just to install the directory contents directly without a setup.py. 
+  # Even though we're using pip here, it's just to install the directory contents directly without a setup.py.
   # The actual build and dependencies are handled by conda-build and conda due to --no-deps flag.
   script: {{ PYTHON }} -m pip install . --no-deps -vv
 

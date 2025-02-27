@@ -33,25 +33,25 @@ jobs:
           # If triggered by push, check branch name
           if [[ "${{ github.event_name }}" == "push" ]]; then
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
-            
+
             # Check if it's a release branch
             if [[ $BRANCH_NAME != release/* ]]; then
               echo "This is not a release branch. Stopping workflow."
               exit 1
             fi
-            
+
             # Extract version from branch name
             BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
-            
+
             # Get version from file
             FILE_VERSION=$(get_version_from_file)
-            
+
             # Compare versions
             if [[ "$BRANCH_VERSION" != "$FILE_VERSION" ]]; then
               echo "Branch version ($BRANCH_VERSION) does not match version in __pkginfo__.py ($FILE_VERSION)"
               exit 1
             fi
-            
+
             RELEASE_VERSION=$FILE_VERSION
           else
             # For manual triggers, just get version from file
@@ -70,26 +70,26 @@ jobs:
           # Get release info and debug output
           RELEASE_INFO=$(gh release view ${{ steps.get_version.outputs.RELEASE_VERSION }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
           echo "Debug - Release Info: $RELEASE_INFO"
-          
+
           if [[ "$RELEASE_INFO" == *"not_found"* ]]; then
             echo "RELEASE_DOES_EXIST=false" >> $GITHUB_OUTPUT
           else
             echo "RELEASE_DOES_EXIST=true" >> $GITHUB_OUTPUT
-            
+
             # Parse the JSON array properly
             IS_DRAFT=$(echo $RELEASE_INFO | jq -r '.[0]')
             IS_PRERELEASE=$(echo $RELEASE_INFO | jq -r '.[1]')
             PUBLISHED_AT=$(echo $RELEASE_INFO | jq -r '.[2]')
-            
+
             if [[ "$IS_DRAFT" == "false" && "$PUBLISHED_AT" != "null" ]]; then
               echo "IS_PUBLISHED=true" >> $GITHUB_OUTPUT
             else
               echo "IS_PUBLISHED=false" >> $GITHUB_OUTPUT
             fi
-            
+
             echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_OUTPUT
           fi
-      
+
       # Step 4: Stop workflow if an official release already exists
       - name: Stop if official release exists
         if: steps.check_release.outputs.IS_PUBLISHED == 'true'

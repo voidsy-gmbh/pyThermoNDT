@@ -27,7 +27,7 @@ jobs:
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py
-      
+
       # Step 3 Sync dependencies if cache hit
       - if: steps.setup-uv.outputs.cache-hit != 'true'
         name: Sync dependencies

@@ -82,7 +82,7 @@ To set up the venv run the following command in the root directory of the reposi
 uv venv
 uv pip install -e .[dev]
 ```
-This will create a new virtual environment called `venv` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will immediately be reflected in the environment without having to reinstall the package every time. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). 
+This will create a new virtual environment called `venv` with all the necessary dependencies installed. It will also install pyThermoNDT in development mode. This means that changes to the source code will immediately be reflected in the environment without having to reinstall the package every time. For more information on development mode see the [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
 
 * **VSCode Setup:** Use 'Select Interpreter' in VSCode to choose venv for running the code and enabling proper autocompletion.
 
@@ -131,7 +131,7 @@ ruff check
 
 Check for any linting issues and automatically fix them if possible:
 ```
-ruff check --fix 
+ruff check --fix
 ```
 
 Optionally you can install the [VSCode extension for Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) to get real-time feedback on your code.

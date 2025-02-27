@@ -35,8 +35,6 @@ uv pip install -e .[dev]
 
 This creates a virtual environment called `venv` with all necessary dependencies and installs pyThermoNDT in editable mode. Changes to the source code will immediately be reflected without reinstalling the package (see [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) for more information).
 
-* **VSCode Setup:** Use 'Select Interpreter' in VSCode to choose venv for proper autocompletion.
-
 If you don't want to use uv, you can also use pip:
 
 ```bash
@@ -62,9 +60,9 @@ conda env create -f environment.yml
 
 This creates a conda environment called `pythermondt-dev` with all necessary dependencies installed in development mode.
 
-## Pre-commit Hooks
+### Pre-commit Hooks
 
-This project uses pre-commit hooks to enforce code quality standards. The hooks automatically check and fix common issues like trailing whitespace, end-of-file issues, and run Ruff for code formatting and linting.
+This project uses pre-commit hooks to enforce code quality standards. The hooks automatically check and fix common issues like trailing whitespace, end-of-file issues, and run Ruff for code formatting and linting. For this project it is highly recommended to use pre-commit hooks to ensure code quality.
 
 To set up pre-commit hooks:
 
@@ -87,6 +85,11 @@ Pre-commit configuration is defined in `.pre-commit-config.yaml` and includes:
 - Large file detection
 - Security checks (detect private keys)
 - Ruff for code linting and formatting
+
+After you have set up the environment and installed the pre-commit hooks, you can start developing.
+
+If you are using VSCode, make sure to select the correct interpreter for the environment you have created to enable proper autocompletion.
+For more information see the [VSCode documentation](https://code.visualstudio.com/docs/python/environments).
 
 ## Running Tests
 

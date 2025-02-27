@@ -6,7 +6,7 @@ Thank you for your interest in contributing to pyThermoNDT! This document provid
 
 First of all, any contributions to the project are welcome! If you want to contribute, please follow these steps:
 
-1. Fork the repository and create a feature branch from `main`.
+1. Create a feature branch from `main`.
 2. Make your changes and update the documentation if necessary.
 3. Add or update tests for any new or modified functionality.
 4. Ensure your code passes all tests and pre-commit hooks.

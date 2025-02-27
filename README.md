@@ -71,4 +71,4 @@ The current recommended way to install pythermondt via conda is to use the insta
 For detailed usage examples, check out the Jupyter Notebooks in the [examples](examples/) directory.
 
 ## Contributing
-Contributions are welcome! Please see the [Contributing Guidelines](CONTRIBUTING.md) for details on setting up a development environment, coding standards, and pull request process.
+Contributions are welcome! Please see the [Contributing Guidelines](CONTRIBUTING.md) for details on [setting up a development environment](CONTRIBUTING.md#setting-up-development-environment), [coding standards](CONTRIBUTING.md#code-quality-and-validation), and the [pull request process](CONTRIBUTING.md#pull-request-process).

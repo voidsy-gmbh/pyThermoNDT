@@ -4,11 +4,18 @@ Thank you for your interest in contributing to pyThermoNDT! This document provid
 
 ## Pull Request Process
 
+First of all, any contributions to the project are welcome! If you want to contribute, please follow these steps:
+
 1. Fork the repository and create a feature branch from `main`.
-2. Update the documentation if necessary.
+2. Make your changes and update the documentation if necessary.
 3. Add or update tests for any new or modified functionality.
 4. Ensure your code passes all tests and pre-commit hooks.
-5. Submit a pull request with a clear description of the changes.
+5. Submit a pull request with a clear description of:
+   - What problem your PR solves
+   - The changes you've made
+   - Any relevant issue numbers
+
+Your pull request will be reviewed by the maintainers, who may request changes or provide feedback.
 
 ## Setting Up Development Environment
 

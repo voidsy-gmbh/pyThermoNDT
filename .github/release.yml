@@ -33,6 +33,8 @@ changelog:
       labels:
         - "ci: testing"
         - "ci: linting"
+        - "ci: pre-commit"
+        - "ci: general"
 
     - title: "Other Changes"
       labels:

@@ -1,3 +1,6 @@
+# Global exclude pattern for all hooks
+exclude: '^(examples/|docs/pyreverse/)'
+
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

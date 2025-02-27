@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 def get_version():
-    """Get the version number."""
+    """Get the version number and provide it for automatic inclusion in builds."""
     pkg_init = Path("src/pythermondt/__pkginfo__.py").read_text()
     locals_dict = {}
     exec(pkg_init, {}, locals_dict)

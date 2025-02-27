@@ -2,6 +2,14 @@
 
 Thank you for your interest in contributing to pyThermoNDT! This document provides guidelines and instructions for contributing to the project.
 
+## Pull Request Process
+
+1. Fork the repository and create a feature branch from `main`.
+2. Update the documentation if necessary.
+3. Add or update tests for any new or modified functionality.
+4. Ensure your code passes all tests and pre-commit hooks.
+5. Submit a pull request with a clear description of the changes.
+
 ## Setting Up Development Environment
 
 There are two recommended ways to set up your development environment:
@@ -103,14 +111,6 @@ ruff check --fix
 ```
 
 Optionally, you can install the [VSCode extension for Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) for real-time feedback.
-
-## Pull Request Process
-
-1. Fork the repository and create a feature branch from `main`.
-2. Update the documentation if necessary.
-3. Add or update tests for any new or modified functionality.
-4. Ensure your code passes all tests and pre-commit hooks.
-5. Submit a pull request with a clear description of the changes.
 
 ## Versioning
 

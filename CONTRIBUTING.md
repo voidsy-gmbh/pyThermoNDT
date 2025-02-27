@@ -33,7 +33,7 @@ uv venv
 uv pip install -e .[dev]
 ```
 
-This creates a virtual environment called `venv` with all necessary dependencies and installs pyThermoNDT in editable mode. Changes to the source code will immediately be reflected without reinstalling the package (see [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) for more information).
+This creates a virtual environment called `venv` with all necessary dependencies and installs pyThermoNDT in editable mode. Changes to the source code will immediately be reflected without having to reinstall the package (see [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) for more information).
 
 If you don't want to use uv, you can also use pip:
 

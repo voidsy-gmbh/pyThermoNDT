@@ -19,7 +19,7 @@ jobs:
       # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       # Step 2: Setup ruff
       - name: Setup and run ruff
         uses: astral-sh/ruff-action@v3
@@ -30,4 +30,3 @@ jobs:
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT
-    

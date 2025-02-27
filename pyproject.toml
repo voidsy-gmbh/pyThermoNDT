@@ -29,8 +29,8 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-cov>=4.1",
-    "uv>=0.4",
     "ruff>=0.9",
+    "pre-commit>=3.5",
 ]
 
 # Config for the build system
@@ -65,12 +65,13 @@ line-length = 120
 target-version = "py310"
 exclude = [
     "./examples/*", # Exclude the example notebooks from linting
+    "./docs/pyreverse/*", # Exclude the pyreverse output from linting
 ]
 
 [tool.ruff.lint]
 select = [
     "E", # pydocstyle error
-    "F", # pyflakes 
+    "F", # pyflakes
     "W", # pydocstyle warning
     "I", # Isort
     "B", # flake8-bugbear

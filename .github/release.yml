@@ -3,7 +3,7 @@ changelog:
   exclude:
     labels:
       - skip-news
-  
+
   # Categories the PRs based on the label
   categories:
     - title: "🚀 New Features"
@@ -13,7 +13,7 @@ changelog:
     - title: "💥 Breaking Changes"
       labels:
         - breaking change
-    
+
     - title: "🐛 Bug Fixes"
       labels:
         - bug fix
@@ -28,11 +28,13 @@ changelog:
         - documentation
         - maintenance
         - refactor
-  
+
     - title: "⚡ CI & Automation"
       labels:
         - "ci: testing"
         - "ci: linting"
+        - "ci: pre-commit"
+        - "ci: general"
 
     - title: "Other Changes"
       labels:

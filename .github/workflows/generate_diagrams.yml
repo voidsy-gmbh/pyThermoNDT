@@ -40,7 +40,7 @@ jobs:
 
         # Generate a top level overview of the project
         pyreverse -p Overview -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" --max-depth 1 pythermondt
-        
+
         # Generate diagrams
         pyreverse -p pythermondt -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt
         pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data
@@ -69,14 +69,14 @@ jobs:
         for file in ./docs/pyreverse/graphviz/*.gv; do
           dot -Tjpg "$file" -o "./docs/pyreverse/images/$(basename ${file%.gv}.jpg)"
         done
-    
+
     - name: Upload diagrams
       if: env.CHANGED == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: diagrams
         path: ./docs/pyreverse/images/*.jpg
-    
+
     - name: Commit and Push Diagrams back to the repository
       if: env.CHANGED == 'true'
       run: |

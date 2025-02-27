@@ -1,0 +1,29 @@
+# Global exclude pattern for all hooks
+exclude: '^(examples/|docs/pyreverse/)'
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+        # Check and fix common formatting issues
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+
+        # Check syntax
+    -   id: check-yaml
+        exclude: ^conda/meta\.yaml$  # Exclude conda meta.yaml because meta.yaml uses jinja2 syntax which is not valid yaml
+    -   id: check-toml
+
+        # Check for added large files
+    -   id: check-added-large-files
+        args: [--maxkb=1024] # Allow files up to 1MB
+
+        # Security checks
+    -   id: detect-private-key
+
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.7
+    hooks:
+    -   id: ruff
+        args: [--fix]
+    -   id: ruff-format

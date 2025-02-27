@@ -10,10 +10,13 @@ First of all, any contributions to the project are welcome! If you want to contr
 2. Make your changes and update the documentation if necessary.
 3. Add or update tests for any new or modified functionality.
 4. Ensure your code passes all tests and pre-commit hooks.
-5. Submit a pull request with a clear description of:
-   - What problem your PR solves
-   - The changes you've made
-   - Any relevant issue numbers
+5. Submit a pull request with:
+   - A clear and concise title that describes the changes (this will later appear in the changelog)
+   - An appropriate label (this is important for automated changelog generation, see [release.yml](.github/release.yml))
+   - A clear description of:
+     - What problem your PR solves
+     - The changes you've made
+     - Any relevant issue numbers
 
 Your pull request will be reviewed by the maintainers, who may request changes or provide feedback.
 

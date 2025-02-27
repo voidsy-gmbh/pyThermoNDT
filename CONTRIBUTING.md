@@ -91,6 +91,9 @@ pytest
 
 # Run a specific test
 pytest tests/test_file.py::test_name
+
+# Filter tests by name
+pytest -k test_name
 ```
 
 ## Code Formatting and Linting

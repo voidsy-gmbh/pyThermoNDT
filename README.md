@@ -5,10 +5,10 @@ pyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 ## Features
 
 - **Multi-source Data Loading:** Read thermographic data seamlessly from local files and S3 storage
-- **Hierarchical Data Structure:** Store and access thermographic data, metadata, and ground truth in a consistent format
-- **Remote Data Caching:** Automatically cache data from remote sources for improved performance
-- **Composable Transforms:** Build custom processing pipelines with reusable transformation components
-- **PyTorch Integration:** Use with PyTorch DataLoader for efficient batch processing and model training
+- **Hierarchical Data Structure:** Store and access thermographic data, metadata, and ground truth in a common format
+- **Remote Data Caching:** Optionally cache data from remote sources for improved performance
+- **Composable Transforms:** Build custom processing pipelines with reusable transform components
+- **PyTorch Integration:** Datasets compatible with PyTorch DataLoader for training deep learning models
 
 ## Quick Example
 ```python
@@ -37,6 +37,9 @@ processed = transform(container)
 
 # Visualize results
 processed.show_frame(frame_number=10)
+
+# Create a PyTorch DataLoader for batch processing
+dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 ```
 
 ## Installation

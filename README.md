@@ -2,6 +2,35 @@
 
 pyThermoNDT is a Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications. It provides various methods to load, transform, visualize, and write thermographic data, making it easier and more efficient to work with thermal imaging in NDT contexts.
 
+## Quick Example
+```python
+from pythermondt import transforms as T
+from pythermondt.data import ThermoDataset
+from pythermondt.readers import LocalReader, S3Reader
+
+# Load data from different sources
+local_reader = LocalReader("data/*.hdf5")
+s3_reader = S3Reader("s3://bucket-name/data.hdf5")
+
+# Combine into a dataset (with caching for remote data)
+dataset = ThermoDataset([local_reader, s3_reader])
+
+# Create a transform pipeline
+transform = T.Compose([
+    T.ApplyLUT(),           # Convert raw data to temperatures
+    T.RemoveFlash(),        # Remove flash frames
+    T.NonUniformSampling(64), # Resample data to 64 frames
+    T.MinMaxNormalize()     # Normalize data
+])
+
+# Access and process first container
+container = dataset[0]
+processed = transform(container)
+
+# Visualize results
+processed.show_frame(frame_number=10)
+```
+
 ## Installation
 
 ### From Wheel Package (Recommended)

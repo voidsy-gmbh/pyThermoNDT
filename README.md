@@ -5,7 +5,7 @@ pyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 ## Installation
 
 ### From Wheel Package (Recommended)
-Download the latest wheel package (`.whl` file) from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and run:
+Download the latest wheel package (`.whl` file) from the [release page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and run:
 
 ```bash
 pip install /path/to/downloaded/pythermondt-x.y.z-py3-none-any.whl
@@ -29,7 +29,7 @@ pip install git+https://github.com/voidsy-gmbh/pyThermoNDT.git
 ```
 
 ### From a local conda channel
-Download the latest conda install packge (`.zip` file) from the [releases page](github.com/voidsy-gmbh/pyThermoNDT/releases) and unzip it. The file contains a local conda channel
+Download the latest conda install packge (`.zip` file) from the [release page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and unzip it. The file contains a local conda channel
 with pyThermoNDT and its dependencies. To install pyThermoNDT from the local channel, run:
 
 ```bash

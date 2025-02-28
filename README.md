@@ -4,68 +4,38 @@ pyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 
 ## Installation
 
-### Pip
+### From Wheel Package (Recommended)
+Download the latest wheel package (`.whl` file) from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and run:
 
-#### From Wheel Package (Recommended)
-1. Download the wheel package (`.whl` file) from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases)
-2. Install using pip:
-    ```
-    pip install /path/to/downloaded/file.whl
-    ```
+```bash
+pip install /path/to/downloaded/pythermondt-x.y.z-py3-none-any.whl
+```
 
-#### From Source
-1. Clone the repository:
-    ```
-    git clone https://github.com/yourusername/pyThermoNDT.git
-    cd pyThermoNDT
-    ```
-2. Install either in development mode:
-    ```
-    pip install -e .
-    ```
-    or just install the package:
-    ```
-    pip install .
-    ```
+### From Source
+pyThermoNDT can be installed directly from the source code:
 
-### Conda
+Clone the repository and install the package locally:
 
-#### From Install Package (Recommended)
-The current recommended way to install pythermondt via conda is to use the install package, provided as a .zip files with the releases:
+```bash
+git clone https://github.com/voidsy-gmbh/pyThermoNDT.git
+cd pyThermoNDT
+pip install .
+```
 
-1. Download the latest conda install package (`.zip` file) from the [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).
+Or install directly from GitHub:
 
-2. Add conda-forge to your channels. This is recommended so that pip dependencies can be resolved without having to specifiy the channel each time:
-    ```
-    conda config --add channels conda-forge
-    ```
+```bash
+pip install git+https://github.com/voidsy-gmbh/pyThermoNDT.git
+```
 
-3. Unpack the .zip file. Now install pyThermoNDT in your current environment using conda:
-    ```
-    conda install pythermondt -c /path/to/unpacked/folder
-    ```
+### From a local conda channel
+Download the latest conda install packge (`.zip` file) from the [releases page](github.com/voidsy-gmbh/pyThermoNDT/releases) and unzip it. The file contains a local conda channel
+with pyThermoNDT and its dependencies. To install pyThermoNDT from the local channel, run:
 
-#### From Source
-1. Clone the repository:
-    ```
-    git clone https://github.com/yourusername/pyThermoNDT.git
-    cd pyThermoNDT
-    ```
-
-2. Add conda-forge to your channels. This is recommended so that pip dependencies can be resolved without having to specifiy the channel each time:
-    ```
-    conda config --add channels conda-forge
-    ```
-
-3. Build the package (Note: you need to install the [conda-build](https://docs.conda.io/projects/conda-build/en/stable/install-conda-build.html) package for this):
-   ```
-    conda build conda
-   ```
-
-4. Install the built package in your current environment:
-   ```
-   conda install pythermondt --use-local
-   ```
+```bash
+conda config --add channels conda-forge # Recommended to resolve pip dependencies using conda
+conda install pythermondt -c /path/to/downloaded/folder
+```
 
 ## Documentation
 For detailed usage examples, check out the Jupyter Notebooks in the [examples](examples/) directory.

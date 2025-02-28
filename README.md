@@ -2,6 +2,14 @@
 
 pyThermoNDT is a Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications. It provides various methods to load, transform, visualize, and write thermographic data, making it easier and more efficient to work with thermal imaging in NDT contexts.
 
+## Features
+
+- **Multi-source Data Loading:** Read thermographic data seamlessly from local files and S3 storage
+- **Hierarchical Data Structure:** Store and access thermographic data, metadata, and ground truth in a consistent format
+- **Remote Data Caching:** Automatically cache data from remote sources for improved performance
+- **Composable Transforms:** Build custom processing pipelines with reusable transformation components
+- **PyTorch Integration:** Use with PyTorch DataLoader for efficient batch processing and model training
+
 ## Quick Example
 ```python
 from pythermondt import transforms as T

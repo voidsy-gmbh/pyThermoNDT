@@ -19,7 +19,7 @@ from pythermondt.data import ThermoDataset
 from pythermondt.readers import LocalReader, S3Reader
 
 # Load data from different sources
-local_reader = LocalReader("data/*.hdf5", cache_files=True)
+local_reader = LocalReader("path/to/data/*.hdf5", cache_files=True)
 s3_reader = S3Reader("s3://bucket-name/data.hdf5", cache_files=True)
 
 # Combine into a dataset (with caching for remote data)

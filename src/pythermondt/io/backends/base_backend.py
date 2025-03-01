@@ -25,7 +25,9 @@ class BaseBackend(ABC):
         raise NotImplementedError("The method must be implemented by the subclass!")
 
     @abstractmethod
-    def get_file_list(self, pattern: Pattern | str, extensions: tuple[str, ...] | None = None) -> list[str]:
+    def get_file_list(
+        self, pattern: Pattern | str, extensions: tuple[str, ...] | None = None, num_files: int | None = None
+    ) -> list[str]:
         # Get list of files matching pattern/extensions
         # This centralizes file discovery logic
         raise NotImplementedError("The method must be implemented by the subclass!")

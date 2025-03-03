@@ -7,6 +7,16 @@ class BaseBackend(ABC):
     def __init__(self, pattern: Pattern | str) -> None:
         self.__pattern = pattern
 
+    @property
+    @abstractmethod
+    def remote_source(self) -> bool:
+        # Property to determine if the source is remote
+        raise NotImplementedError("The method must be implemented by the subclass!")
+
+    @property
+    def pattern(self) -> Pattern | str:
+        return self.__pattern
+
     @abstractmethod
     def read_file(self, file_path: str) -> BytesIO:
         # Actual implementation of how to read one file
@@ -32,13 +42,3 @@ class BaseBackend(ABC):
         # Get list of files matching pattern/extensions
         # This centralizes file discovery logic
         raise NotImplementedError("The method must be implemented by the subclass!")
-
-    @property
-    @abstractmethod
-    def remote_source(self) -> bool:
-        # Property to determine if the source is remote
-        raise NotImplementedError("The method must be implemented by the subclass!")
-
-    @property
-    def pattern(self) -> Pattern | str:
-        return self.__pattern

@@ -7,17 +7,7 @@ from collections.abc import Iterator
 from tqdm.auto import tqdm
 
 from ..data import DataContainer
-from ..io import BaseParser, HDF5Parser, SimulationParser
-
-# Define which parser should be used for which file extensions
-FILE_EXTENSIONS: dict[type[BaseParser], tuple[str, ...]] = {
-    HDF5Parser: (".hdf5", ".h5"),
-    SimulationParser: (".mat",),
-    # Add more file extensions for future parsers here
-}
-
-# Lookup table for file extensions ==> for fast validation if the file extension is supported by the parser
-FILE_EXTENSIONS_LUT = {ext: parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
+from ..io.parsers import PARSER_REGISTRY, BaseParser, find_parser_for_extension
 
 
 class BaseReader(ABC):
@@ -50,7 +40,7 @@ class BaseReader(ABC):
         # Try to auto select the parser based on the file extension if no parser is specified
         if parser is None:
             # Auto select the parser based on the file extension
-            parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else None
+            parser = find_parser_for_extension(ext[0]) if len(ext) > 0 else None
 
             # Raise an error if no file extension is found
             if not ext:
@@ -58,6 +48,9 @@ class BaseReader(ABC):
                     f"Could not auto select a parser for the source: {source}. "
                     f"Source does not contain a file extension."
                 )
+
+            # Try to auto select the parser based on the file extension
+            parser = find_parser_for_extension(ext[0])
 
             if parser is None:
                 raise ValueError(
@@ -68,16 +61,15 @@ class BaseReader(ABC):
         self.__parser = parser
 
         # Set the file extensions based on what parser is used
-        try:
-            self.__file_extensions = FILE_EXTENSIONS[self.parser]
-        except KeyError:
+        self.__file_extensions = self.parser.supported_extensions
+        if self.parser not in PARSER_REGISTRY:
             raise ValueError(
                 f"The specified Parser: {parser.__name__} is not supported by the {self.__class__.__name__} class."
-            ) from None
+            )
 
         # validate that the source expression does not contain an invalid file extension ==>
         #  File extensions are defined by the parser
-        correct_parser = FILE_EXTENSIONS_LUT.get(ext[0], None) if len(ext) > 0 else self.parser
+        correct_parser = find_parser_for_extension(ext[0]) if len(ext) > 0 else self.parser
 
         if correct_parser is None:
             raise ValueError(

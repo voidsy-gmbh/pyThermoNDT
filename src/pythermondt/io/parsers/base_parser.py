@@ -15,6 +15,15 @@ class BaseParser(Protocol):
         raise TypeError("This class is static and should not be instantiated.")
 
     @staticmethod
+    def supported_extensions() -> tuple[str, ...]:
+        """Return the file extensions this parser supports.
+
+        Returns:
+            tuple[str, ...]: A tuple of strings containing the file extensions this parser supports.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @staticmethod
     def parse(data_bytes: BytesIO) -> DataContainer:
         """Parses the data from the given BytesIO object into a DataContainer object.
 

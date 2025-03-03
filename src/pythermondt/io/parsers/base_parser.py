@@ -1,9 +1,10 @@
 from io import BytesIO
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from ...data import DataContainer
 
 
+@runtime_checkable
 class BaseParser(Protocol):
     """A base class for all parsers that are used to parse data from a BytesIO object into a DataContainer object.
 

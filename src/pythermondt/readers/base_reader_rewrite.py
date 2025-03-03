@@ -1,21 +1,54 @@
+import re
 from abc import ABC, abstractmethod
 
-from ..io import BaseBackend, BaseParser, HDF5Parser, SimulationParser
-
-# Define which parser should be used for which file extensions
-FILE_EXTENSIONS: dict[type[BaseParser], tuple[str, ...]] = {
-    HDF5Parser: (".hdf5", ".h5"),
-    SimulationParser: (".mat",),
-    # Add more file extensions for future parsers here
-}
-
-# Lookup table for file extensions ==> for fast validation if the file extension is supported by the parser
-FILE_EXTENSIONS_LUT = {ext: parser for parser, extensions in FILE_EXTENSIONS.items() for ext in extensions}
+from ..io.backends import BaseBackend
+from ..io.parsers import BaseParser, find_parser_for_extension
 
 
 class BaseReader(ABC):
     @abstractmethod
-    def __init__(self, backend: BaseBackend, parser: BaseParser):
+    def __init__(self, backend: BaseBackend, parser: type[BaseParser] | None = None):
+        # Extract file extension from the source
+        source = backend.pattern if isinstance(backend.pattern, str) else backend.pattern.pattern
+        ext = re.findall(r"\.[a-zA-Z0-9]+$", source)
+
+        # Try to auto select the parser based on the file extension if no parser is specified
+        if parser is None:
+            # Auto select the parser based on the file extension
+            parser = find_parser_for_extension(ext[0]) if len(ext) > 0 else None
+
+            # Raise an error if no file extension is found
+            if not ext:
+                raise ValueError(
+                    f"Could not auto select a parser for the source: {source}. "
+                    f"Source does not contain a file extension."
+                )
+
+            # Try to auto select the parser based on the file extension
+            parser = find_parser_for_extension(ext[0])
+
+            if parser is None:
+                raise ValueError(
+                    f"Could not auto select a parser for the source: {source}. Please specify the parser manually."
+                )
+
+        # validate that the source expression does not contain an invalid file extension ==>
+        #  File extensions are defined by the parser
+        correct_parser = find_parser_for_extension(ext[0]) if len(ext) > 0 else parser
+
+        if correct_parser is None:
+            raise ValueError(
+                f"The source contains an invalid file extension: '({ext[0]})'! "
+                f"Use a file extensions that is supported by the {self.parser.__name__}: "
+                f"{parser.supported_extensions}"
+            )
+        elif correct_parser is not parser:
+            raise ValueError(
+                f"Wrong parser selected for the file extension: '({ext[0]})'! "
+                f"Use the {correct_parser.__name__} for this file extension instead"
+            )
+
+        # Assign private attributes
         self.__backend = backend
         self.__parser = parser
 
@@ -33,12 +66,12 @@ class BaseReader(ABC):
         return self.__backend
 
     @property
-    def parser(self) -> BaseParser:
+    def parser(self) -> type[BaseParser]:
         return self.__parser
 
     @property
     def files(self) -> list[str]:
-        return self.backend.get_file_list()
+        return self.backend.get_file_list(extensions=self.parser.supported_extensions)
 
     def __str__(self):
         return f"{self.__class__.__name__}(backend={self.backend.__class__.__name__}, parser={self.parser.__name__}"

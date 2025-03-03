@@ -9,9 +9,7 @@ from .base_parser import BaseParser
 
 
 class SimulationParser(BaseParser):
-    @staticmethod
-    def supported_extensions() -> tuple[str, ...]:
-        return (".mat",)
+    supported_extensions = (".mat",)
 
     @staticmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:

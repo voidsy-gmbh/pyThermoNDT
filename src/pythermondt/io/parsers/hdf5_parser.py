@@ -5,6 +5,8 @@ from .base_parser import BaseParser
 
 
 class HDF5Parser(BaseParser):
+    supported_extensions = (".h5", ".hdf5")
+
     @staticmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:
         """Parses the data from the given BytesIO object into a DataContainer object.

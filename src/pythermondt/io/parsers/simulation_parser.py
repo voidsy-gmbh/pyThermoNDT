@@ -9,6 +9,8 @@ from .base_parser import BaseParser
 
 
 class SimulationParser(BaseParser):
+    supported_extensions = (".mat",)
+
     @staticmethod
     def parse(data_bytes: io.BytesIO) -> DataContainer:
         """Parses the data from the given BytesIO object into a DataContainer object.

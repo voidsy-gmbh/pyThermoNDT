@@ -38,10 +38,15 @@ class BaseReader(ABC):
 
     @property
     def files(self) -> list[str]:
-        return self.backend.get_file_list(pattern=".*", extensions=None)
+        return self.backend.get_file_list()
 
     def __str__(self):
         return f"{self.__class__.__name__}(backend={self.backend.__class__.__name__}, parser={self.parser.__name__}"
+
+    def __getitem__(self, idx: int):
+        if idx < 0 or idx >= len(self.files):
+            raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)})")
+        return self.read_file(self.files[idx])
 
     def read_file(self, file_path: str):
         return self.parser.parse(self.backend.read_file(file_path))

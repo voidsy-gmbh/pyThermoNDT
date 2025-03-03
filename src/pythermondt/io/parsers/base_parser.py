@@ -12,17 +12,28 @@ class BaseParser(Protocol):
     DataContainer object. Integrity checks and error handling should be implemented by the subclasses.
     """
 
+    supported_extensions: tuple[str, ...] = ("",)
+
     def __init__(self) -> None:
         raise TypeError("This class is static and should not be instantiated.")
 
-    @staticmethod
-    def supported_extensions() -> tuple[str, ...]:
-        """Return the file extensions this parser supports.
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
 
-        Returns:
-            tuple[str, ...]: A tuple of strings containing the file extensions this parser supports.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
+        # Skip validation for ParserBase itself
+        if cls.__name__ == "ParserBase":
+            return
+
+        # Check if supported_extensions is defined and not empty
+        if (
+            not hasattr(cls, "supported_extensions")
+            or cls.supported_extensions == ("",)
+            or not isinstance(cls.supported_extensions, tuple)
+        ):
+            raise TypeError(
+                f"Parser class '{cls.__name__}' must define a classvariable called 'supported_extensions' "
+                "as a tuple with at least one file extension in it"
+            )
 
     @staticmethod
     def parse(data_bytes: BytesIO) -> DataContainer:

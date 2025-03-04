@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 
 from ..data import DataContainer
 from ..io.backends import BaseBackend
@@ -52,6 +53,13 @@ class BaseReader(ABC):
         if idx < 0 or idx >= len(self.files):
             raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)})")
         return self.read_file(self.files[idx])
+
+    def __len__(self) -> int:
+        return len(self.files)
+
+    def __iter__(self) -> Iterator[DataContainer]:
+        for file in self.files:
+            yield self.read_file(file)
 
     def read_file(self, file_path: str) -> DataContainer:
         # Get raw file data from backend

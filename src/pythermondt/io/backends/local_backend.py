@@ -35,11 +35,15 @@ class LocalBackend(BaseBackend):
                 raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
         else:
             raise ValueError("The provided source must be a string or a regex pattern.")
-        super().__init__(pattern_str)
+        self.__pattern_str = pattern_str
 
     @property
     def remote_source(self) -> bool:
         return False
+
+    @property
+    def pattern(self) -> str:
+        return self.__pattern_str
 
     def read_file(self, file_path: str) -> BytesIO:
         with open(file_path, "rb") as file:

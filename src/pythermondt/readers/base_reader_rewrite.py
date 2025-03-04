@@ -21,6 +21,7 @@ class BaseReader(ABC):
         self.__backend = backend
         self.__parser = parser
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
+        self.__files_cache = None
 
     @property
     @abstractmethod
@@ -41,7 +42,11 @@ class BaseReader(ABC):
 
     @property
     def files(self) -> list[str]:
-        return self.backend.get_file_list(extensions=self.__supported_extensions)
+        if self.__files_cache is None:
+            self.__files_cache = self.backend.get_file_list(
+                extensions=self.__supported_extensions, num_files=self._LocalReader__num_files
+            )
+        return self.__files_cache
 
     def __str__(self):
         return (
@@ -58,7 +63,11 @@ class BaseReader(ABC):
         return len(self.files)
 
     def __iter__(self) -> Iterator[DataContainer]:
-        for file in self.files:
+        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
+        # and caching is of
+        file_paths = self.files
+
+        for file in file_paths:
             yield self.read_file(file)
 
     def read_file(self, file_path: str) -> DataContainer:

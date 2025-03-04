@@ -9,6 +9,14 @@ from .base_backend import BaseBackend
 
 class LocalBackend(BaseBackend):
     def __init__(self, pattern: Pattern | str) -> None:
+        """Initialize an instance of the LocalBackend class.
+
+        This class is used to read data from local files, or directories, using the standard Python file I/O operations.
+
+        Parameters:
+            pattern (Pattern | str): The source of the data. This must be a valid file path, directory path, or a regex
+                pattern. If a regex pattern is provided, it will be used to determine the files using glob.
+        """
         # Convert pattern to string if it is a re.Pattern object
         pattern_str = pattern.pattern if isinstance(pattern, Pattern) else pattern
 

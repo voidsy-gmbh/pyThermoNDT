@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 
+from ..data import DataContainer
 from ..io.backends import BaseBackend
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
@@ -47,12 +48,12 @@ class BaseReader(ABC):
             f"{', parser=' + self.parser.__name__ if self.parser else ''})"
         )
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: int) -> DataContainer:
         if idx < 0 or idx >= len(self.files):
             raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)})")
         return self.read_file(self.files[idx])
 
-    def read_file(self, file_path: str):
+    def read_file(self, file_path: str) -> DataContainer:
         # Get raw file data from backend
         file_data = self.backend.read_file(file_path)
 

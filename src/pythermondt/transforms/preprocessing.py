@@ -166,3 +166,99 @@ class RemoveFlash(ThermoTransform):
             ("/MetaData/ExcitationSignal", excitation_signal),
         )
         return container
+
+
+class CropFrames(ThermoTransform):
+    """Crops the frames of the Temperature data (Tdata) of the container."""
+
+    def __init__(self, height: int, width: int, strategy: Literal["C", "TL", "TR", "BL", "BR"]):
+        """Crops the frames of the Temperature data (Tdata) of the container.
+
+        Parameters:
+            height (int): Height of the cropped frames.
+            width (int): Width of the cropped frames.
+            strategy (Literal["C", "TL", "TR", "BL", "BR"]): Strategy to crop the frames.
+                - "C": Crop the frames around the center.
+                - "TL": Crop the frames around the top left corner.
+                - "TR": Crop the frames around the top right corner.
+                - "BL": Crop the frames around the bottom left corner.
+                - "BR": Crop the frames around the bottom right corner.
+        """
+        super().__init__()
+
+        # Check if height and width are positive integers
+        if height <= 0 or not isinstance(height, int):
+            raise ValueError("Height must be a positive integer.")
+
+        if width <= 0 or not isinstance(width, int):
+            raise ValueError("Width must be a positive integer.")
+
+        # Check if strategy is valid
+        if strategy not in ["C", "TL", "TR", "BL", "BR"]:
+            raise ValueError("Invalid strategy. Choose between 'C', 'TL', 'TR', 'BL', 'BR'.")
+
+        self.height = height
+        self.width = width
+        self.strategy = strategy
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract the data
+        tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
+
+        if self.height > tdata.shape[0]:
+            raise ValueError("Height is bigger than the data.")
+
+        if self.width > tdata.shape[1]:
+            raise ValueError("Width is bigger than the data.")
+
+        match self.strategy:
+            case "C":
+                # Center cropping
+                if tdata.shape[0] - self.height % 2 == 0:
+                    top = (tdata.shape[0] - self.height) // 2
+                    bottom = top + self.height
+                else:
+                    raise ValueError("Height is not even. Center cropping is not possible.")
+                if tdata.shape[1] - self.width % 2 == 0:
+                    left = (tdata.shape[1] - self.width) // 2
+                    right = left + self.width
+                else:
+                    raise ValueError("Width is not even. Center cropping is not possible.")
+            case "TL":
+                # Top left cropping
+                top = 0
+                bottom = self.height
+                left = 0
+                right = self.width
+
+            case "TR":
+                # Top right cropping
+                top = 0
+                bottom = self.height
+                left = tdata.shape[1] - self.width
+                right = tdata.shape[1]
+
+            case "BL":
+                # Bottom left cropping
+                top = tdata.shape[0] - self.height
+                bottom = tdata.shape[0]
+                left = 0
+                right = self.width
+
+            case "BR":
+                # Bottom right cropping
+                top = tdata.shape[0] - self.height
+                bottom = tdata.shape[0]
+                left = tdata.shape[1] - self.width
+                right = tdata.shape[1]
+
+            case _:
+                raise ValueError("Invalid strategy.")
+
+        # Crop the data
+        tdata = tdata[top:bottom, left:right]
+        mask = mask[top:bottom, left:right]
+
+        # Update the container and return it
+        container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
+        return container

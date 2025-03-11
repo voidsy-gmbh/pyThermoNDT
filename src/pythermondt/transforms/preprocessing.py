@@ -206,25 +206,42 @@ class CropFrames(ThermoTransform):
         tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
 
         if self.height > tdata.shape[0]:
-            raise ValueError("Height is bigger than the data.")
+            raise ValueError(
+                f"Invalid cropping height: Requested height ({self.height}) is greater than "
+                f"the data height ({tdata.shape[0]}). Ensure the height does not exceed the data dimensions."
+            )
 
         if self.width > tdata.shape[1]:
-            raise ValueError("Width is bigger than the data.")
+            raise ValueError(
+                f"Invalid cropping width: Requested width ({self.width}) is greater than "
+                f"the data width ({tdata.shape[1]}). Ensure the width does not exceed the data dimensions."
+            )
 
         match self.strategy:
             case "C":
                 # Center cropping
-                print((tdata.shape[0] - self.height) % 2 == 0)
-                if (tdata.shape[0] - self.height) % 2 == 0:
-                    top = (tdata.shape[0] - self.height) // 2
+                height_diff = tdata.shape[0] - self.height
+                width_diff = tdata.shape[1] - self.width
+
+                if height_diff % 2 == 0:
+                    top = height_diff // 2
                     bottom = top + self.height
                 else:
-                    raise ValueError("Height is not even. Center cropping is not possible.")
-                if (tdata.shape[1] - self.width) % 2 == 0:
-                    left = (tdata.shape[1] - self.width) // 2
+                    raise ValueError(
+                        f"Invalid height for center cropping: "
+                        f"Original height = {tdata.shape[0]}, Target height = {self.height}. "
+                        f"Difference ({height_diff}) must be even for proper centering."
+                    )
+
+                if width_diff % 2 == 0:
+                    left = width_diff // 2
                     right = left + self.width
                 else:
-                    raise ValueError("Width is not even. Center cropping is not possible.")
+                    raise ValueError(
+                        f"Invalid width for center cropping: "
+                        f"Original width = {tdata.shape[1]}, Target width = {self.width}. "
+                        f"Difference ({width_diff}) must be even for proper centering."
+                    )
             case "TL":
                 # Top left cropping
                 top = 0

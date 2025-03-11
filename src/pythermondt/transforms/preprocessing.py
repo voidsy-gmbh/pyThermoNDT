@@ -171,13 +171,13 @@ class RemoveFlash(ThermoTransform):
 class CropFrames(ThermoTransform):
     """Crops the frames of the Temperature data (Tdata) of the container."""
 
-    def __init__(self, height: int, width: int, strategy: Literal["C", "TL", "TR", "BL", "BR"]):
+    def __init__(self, height: int, width: int, method: Literal["C", "TL", "TR", "BL", "BR"]):
         """Crops the frames of the Temperature data (Tdata) of the container.
 
         Parameters:
             height (int): Height of the cropped frames.
             width (int): Width of the cropped frames.
-            strategy (Literal["C", "TL", "TR", "BL", "BR"]): Strategy to crop the frames.
+            method (Literal["C", "TL", "TR", "BL", "BR"]): Strategy to crop the frames.
                 - "C": Crop the frames around the center.
                 - "TL": Crop the frames around the top left corner.
                 - "TR": Crop the frames around the top right corner.
@@ -194,12 +194,12 @@ class CropFrames(ThermoTransform):
             raise ValueError("Width must be a positive integer.")
 
         # Check if strategy is valid
-        if strategy not in ["C", "TL", "TR", "BL", "BR"]:
-            raise ValueError("Invalid strategy. Choose between 'C', 'TL', 'TR', 'BL', 'BR'.")
+        if method not in ["C", "TL", "TR", "BL", "BR"]:
+            raise ValueError("Invalid method. Choose between 'C', 'TL', 'TR', 'BL', 'BR'.")
 
         self.height = height
         self.width = width
-        self.strategy = strategy
+        self.strategy = method
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data

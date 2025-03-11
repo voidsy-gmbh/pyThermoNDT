@@ -5,6 +5,7 @@ charset="utf-8"
 "pythermondt.readers.base_reader" [color="#F2994A", label=<pythermondt.readers.base_reader>, shape="box", style="filled"];
 "pythermondt.readers.local_reader" [color="#F2994A", label=<pythermondt.readers.local_reader>, shape="box", style="filled"];
 "pythermondt.readers.s3_reader" [color="#F2994A", label=<pythermondt.readers.s3_reader>, shape="box", style="filled"];
+"pythermondt.readers" -> "pythermondt.readers.base_reader" [arrowhead="open", arrowtail="none"];
 "pythermondt.readers" -> "pythermondt.readers.local_reader" [arrowhead="open", arrowtail="none"];
 "pythermondt.readers" -> "pythermondt.readers.s3_reader" [arrowhead="open", arrowtail="none"];
 "pythermondt.readers.local_reader" -> "pythermondt.readers.base_reader" [arrowhead="open", arrowtail="none"];

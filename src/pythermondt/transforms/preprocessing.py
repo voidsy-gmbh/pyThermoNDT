@@ -171,18 +171,18 @@ class RemoveFlash(ThermoTransform):
 class CropFrames(ThermoTransform):
     """Crops the frames of the Temperature data (Tdata) of the container."""
 
-    def __init__(self, height: int, width: int, method: Literal["C", "TL", "TR", "BL", "BR"]):
+    def __init__(self, height: int, width: int, method: Literal["C", "TL", "TR", "BL", "BR"] = "C"):
         """Crops the frames of the Temperature data (Tdata) of the container.
 
         Parameters:
             height (int): Height of the cropped frames.
             width (int): Width of the cropped frames.
-            method (Literal["C", "TL", "TR", "BL", "BR"]): Strategy to crop the frames.
-                - "C": Crop the frames around the center.
-                - "TL": Crop the frames around the top left corner.
-                - "TR": Crop the frames around the top right corner.
-                - "BL": Crop the frames around the bottom left corner.
-                - "BR": Crop the frames around the bottom right corner.
+            method (optional, Literal["C", "TL", "TR", "BL", "BR"]): Cropping strategy. Default is "C" (center).
+                - "C": Center cropping
+                - "TL": Top left cropping
+                - "TR": Top right cropping
+                - "BL": Bottom left cropping
+                - "BR": Bottom right cropping
         """
         super().__init__()
 

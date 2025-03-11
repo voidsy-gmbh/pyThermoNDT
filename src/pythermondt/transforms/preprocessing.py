@@ -214,12 +214,13 @@ class CropFrames(ThermoTransform):
         match self.strategy:
             case "C":
                 # Center cropping
-                if tdata.shape[0] - self.height % 2 == 0:
+                print((tdata.shape[0] - self.height) % 2 == 0)
+                if (tdata.shape[0] - self.height) % 2 == 0:
                     top = (tdata.shape[0] - self.height) // 2
                     bottom = top + self.height
                 else:
                     raise ValueError("Height is not even. Center cropping is not possible.")
-                if tdata.shape[1] - self.width % 2 == 0:
+                if (tdata.shape[1] - self.width) % 2 == 0:
                     left = (tdata.shape[1] - self.width) // 2
                     right = left + self.width
                 else:

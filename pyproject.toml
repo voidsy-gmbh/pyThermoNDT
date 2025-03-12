@@ -105,8 +105,8 @@ serialize = [
     "{major}.{minor}.{patch}{release}",
     "{major}.{minor}.{patch}"
 ]
-commit = true
-tag = true
+commit = false
+tag = false
 tag_name = "{new_version}"
 message = "Bump version: {current_version} → {new_version}"
 

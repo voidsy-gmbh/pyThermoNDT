@@ -172,7 +172,7 @@ class CropFrames(ThermoTransform):
     """Crops the frames of the Temperature data (Tdata) of the container."""
 
     def __init__(self, height: int, width: int, method: Literal["C", "TL", "TR", "BL", "BR"] = "C"):
-        """Crops the frames of the Temperature data (Tdata) of the container.
+        """Crops the frames and the mask in the container to the specified height and width.
 
         Parameters:
             height (int): Height of the cropped frames.

@@ -24,6 +24,7 @@ jobs:
         with:
           fetch-depth: 0  # Required for tags history
 
+        # Step 2: Bump the current version
       - name: Bump version
         id: bump
         uses: callowayproject/bump-my-version@master
@@ -34,11 +35,13 @@ jobs:
           args: ${{ inputs.bump-type }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+        # Step 3: Check if the version was bumped
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
 
+        # Step 4: Push changes and tags
       - name: Push changes and tags
         if: steps.bump.outputs.bumped == 'true'
         run: |

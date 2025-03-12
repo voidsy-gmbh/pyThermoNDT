@@ -166,3 +166,117 @@ class RemoveFlash(ThermoTransform):
             ("/MetaData/ExcitationSignal", excitation_signal),
         )
         return container
+
+
+class CropFrames(ThermoTransform):
+    """Crops the frames of the Temperature data (Tdata) of the container."""
+
+    def __init__(self, height: int, width: int, method: Literal["C", "TL", "TR", "BL", "BR"] = "C"):
+        """Crops the frames and the mask in the container to the specified height and width.
+
+        Parameters:
+            height (int): Height of the cropped frames.
+            width (int): Width of the cropped frames.
+            method (optional, Literal["C", "TL", "TR", "BL", "BR"]): Cropping strategy. Default is "C" (center).
+                - "C": Center cropping
+                - "TL": Top left cropping
+                - "TR": Top right cropping
+                - "BL": Bottom left cropping
+                - "BR": Bottom right cropping
+        """
+        super().__init__()
+
+        # Check if height and width are positive integers
+        if height <= 0 or not isinstance(height, int):
+            raise ValueError("Height must be a positive integer.")
+
+        if width <= 0 or not isinstance(width, int):
+            raise ValueError("Width must be a positive integer.")
+
+        # Check if strategy is valid
+        if method not in ["C", "TL", "TR", "BL", "BR"]:
+            raise ValueError("Invalid method. Choose between 'C', 'TL', 'TR', 'BL', 'BR'.")
+
+        self.height = height
+        self.width = width
+        self.strategy = method
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract the data
+        tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
+
+        if self.height > tdata.shape[0]:
+            raise ValueError(
+                f"Invalid cropping height: Requested height ({self.height}) is greater than "
+                f"the data height ({tdata.shape[0]}). Ensure the height does not exceed the data dimensions."
+            )
+
+        if self.width > tdata.shape[1]:
+            raise ValueError(
+                f"Invalid cropping width: Requested width ({self.width}) is greater than "
+                f"the data width ({tdata.shape[1]}). Ensure the width does not exceed the data dimensions."
+            )
+
+        match self.strategy:
+            case "C":
+                # Center cropping
+                height_diff = tdata.shape[0] - self.height
+                width_diff = tdata.shape[1] - self.width
+
+                if height_diff % 2 == 0:
+                    top = height_diff // 2
+                    bottom = top + self.height
+                else:
+                    raise ValueError(
+                        f"Invalid height for center cropping: "
+                        f"Original height = {tdata.shape[0]}, Target height = {self.height}. "
+                        f"Difference ({height_diff}) must be even for proper centering."
+                    )
+
+                if width_diff % 2 == 0:
+                    left = width_diff // 2
+                    right = left + self.width
+                else:
+                    raise ValueError(
+                        f"Invalid width for center cropping: "
+                        f"Original width = {tdata.shape[1]}, Target width = {self.width}. "
+                        f"Difference ({width_diff}) must be even for proper centering."
+                    )
+            case "TL":
+                # Top left cropping
+                top = 0
+                bottom = self.height
+                left = 0
+                right = self.width
+
+            case "TR":
+                # Top right cropping
+                top = 0
+                bottom = self.height
+                left = tdata.shape[1] - self.width
+                right = tdata.shape[1]
+
+            case "BL":
+                # Bottom left cropping
+                top = tdata.shape[0] - self.height
+                bottom = tdata.shape[0]
+                left = 0
+                right = self.width
+
+            case "BR":
+                # Bottom right cropping
+                top = tdata.shape[0] - self.height
+                bottom = tdata.shape[0]
+                left = tdata.shape[1] - self.width
+                right = tdata.shape[1]
+
+            case _:
+                raise ValueError("Invalid strategy.")
+
+        # Crop the data
+        tdata = tdata[top:bottom, left:right]
+        mask = mask[top:bottom, left:right]
+
+        # Update the container and return it
+        container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
+        return container

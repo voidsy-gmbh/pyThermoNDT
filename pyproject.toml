@@ -99,7 +99,7 @@ docstring-code-format = true # Enable reformatting of code snippets in docstring
 quote-style = "double"
 
 [tool.bumpversion]
-current_version = "0.1.5dev"
+current_version = "0.1.5"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?P<release>dev)?"
 serialize = [
     "{major}.{minor}.{patch}{release}",

@@ -58,3 +58,10 @@ jobs:
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
+
+      # Step 5: Push changes
+      - name: Push changes
+        if: steps.bump.outputs.bumped == 'true'
+        run: |
+          git push
+          git push --tags

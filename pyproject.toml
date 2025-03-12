@@ -31,6 +31,7 @@ dev = [
     "pytest-cov>=4.1",
     "ruff>=0.9",
     "pre-commit>=3.5",
+    "bump-my-version>=1.0",
 ]
 
 # Config for the build system
@@ -96,3 +97,27 @@ ignore = [
 [tool.ruff.format]
 docstring-code-format = true # Enable reformatting of code snippets in docstrings.
 quote-style = "double"
+
+# Bump Version
+[tool.bumpversion]
+current_version = "0.1.5dev"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?P<release>dev)?"
+serialize = [
+    "{major}.{minor}.{patch}{release}",
+    "{major}.{minor}.{patch}"
+]
+ignore_current_version = true
+tag_name = "{new_version}"
+message = "Bump version: {current_version} → {new_version}"
+
+[tool.bumpversion.parts.release]
+optional_value = ""
+values = [
+    "dev",
+    ""
+]
+
+[[tool.bumpversion.files]]
+filename = "src/pythermondt/__pkginfo__.py"
+search = "__version__ = \"{current_version}\""
+replace = "__version__ = \"{new_version}\""

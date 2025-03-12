@@ -49,7 +49,7 @@ jobs:
         run: |
           echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-          bump-my-version bump ${{ inputs.bump-type }} --commit --dry-run
+          bump-my-version bump ${{ inputs.bump-type }} --commit
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 

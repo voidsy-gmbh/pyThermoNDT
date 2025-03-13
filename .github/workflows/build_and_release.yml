@@ -109,74 +109,9 @@ jobs:
   build:
     needs: validate
     if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        build_type: [conda, pip]
-    outputs:
-      conda_archive: ${{ steps.build-conda.outputs.CONDA_ARCHIVE }}
-      wheel_file: ${{ steps.build-pip.outputs.WHEEL_FILE }}
-      tar_file: ${{ steps.build-pip.outputs.TAR_FILE }}
-    steps:
-      # Step 1: Checkout code in the current branch
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Setup build environment for conda
-      - name: Setup build environment for conda
-        if: matrix.build_type == 'conda'
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          init-shell: bash
-          environment-name: build-env
-          cache-environment: true
-          cache-environment-key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
-          condarc: |
-            channels:
-              - conda-forge
-              - pytorch
-          create-args: >-
-            python=3.12
-            conda-build
-
-      # Step 3: Setup build environment for pip
-      - name: Setup build environment for pip
-        if: matrix.build_type == 'pip'
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: false # Disable cache for pip build
-
-      # Step 4: Build conda package
-      - name: Build conda package
-        if: matrix.build_type == 'conda'
-        id: build-conda
-        shell: micromamba-shell {0}
-        run: |
-          OUTPUT_DIR="./pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package"
-          conda build conda --output-folder $OUTPUT_DIR
-          conda index $OUTPUT_DIR
-          ZIP_NAME="pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package.zip"
-          zip -r "$ZIP_NAME" $OUTPUT_DIR
-          echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
-
-      # Step 5: Build pip package
-      - name: Build pip package
-        if: matrix.build_type == 'pip'
-        id: build-pip
-        run: |
-          uv build --no-sources .
-          echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
-          echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
-
-      # Step 6: Upload artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.build_type }}-package
-          path: |
-            ${{ steps.build-conda.outputs.CONDA_ARCHIVE }}
-            ${{ steps.build-pip.outputs.WHEEL_FILE }}
-            ${{ steps.build-pip.outputs.TAR_FILE }}
+    uses: ./.github/workflows/build.yml
+    with:
+      release_version: ${{ needs.validate.outputs.release_version }}
 
   # Job 5: Release the package
   release:

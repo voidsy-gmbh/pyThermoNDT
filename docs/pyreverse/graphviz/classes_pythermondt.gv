@@ -10,6 +10,7 @@ charset="utf-8"
 "pythermondt.readers.base_reader.BaseReader" [color="#F2994A", fontcolor="black", label=<{BaseReader|cache_files : bool<br ALIGN="LEFT"/>file_extensions : tuple[str, ...]<br ALIGN="LEFT"/>file_names : list[str]<br ALIGN="LEFT"/>files : list[str]<br ALIGN="LEFT"/>num_files : int<br ALIGN="LEFT"/>parser : type[BaseParser]<br ALIGN="LEFT"/>remote_source : bool<br ALIGN="LEFT"/>source : str<br ALIGN="LEFT"/>|clear_cache()<br ALIGN="LEFT"/>read(path: str): DataContainer<br ALIGN="LEFT"/>rebuild_cache()<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.writers.base_writer.BaseWriter" [color="#27AE60", fontcolor="black", label=<{BaseWriter|<br ALIGN="LEFT"/>|<I>write</I>(container: DataContainer, file_name: str)<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.utils.Compose" [color="#EB5757", fontcolor="black", label=<{Compose|transforms : list[ThermoTransform]<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.preprocessing.CropFrames" [color="#EB5757", fontcolor="black", label=<{CropFrames|height : int<br ALIGN="LEFT"/>strategy : Literal['C', 'TL', 'TR', 'BL', 'BR']<br ALIGN="LEFT"/>width : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.core.DataContainer" [color="#27AE60", fontcolor="black", label=<{DataContainer|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.base.DataContainerBase" [color="#27AE60", fontcolor="black", label=<{DataContainerBase|nodes : __NodeAccessor<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.data.datacontainer.node.DataNode" [color="#27AE60", fontcolor="black", label=<{DataNode|data : Tensor<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
@@ -79,6 +80,7 @@ charset="utf-8"
 "pythermondt.transforms.normalization.MinMaxNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.normalization.ZScoreNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.ApplyLUT" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.preprocessing.CropFrames" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.RemoveFlash" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.SubstractFrame" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.sampling.NonUniformSampling" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];

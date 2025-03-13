@@ -3,6 +3,7 @@ rankdir=BT
 charset="utf-8"
 "pythermondt.transforms.preprocessing.ApplyLUT" [color="#F2994A", fontcolor="black", label=<{ApplyLUT|<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.utils.Compose" [color="#F2994A", fontcolor="black", label=<{Compose|transforms : list[ThermoTransform]<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.preprocessing.CropFrames" [color="#F2994A", fontcolor="black", label=<{CropFrames|height : int<br ALIGN="LEFT"/>strategy : Literal['C', 'TL', 'TR', 'BL', 'BR']<br ALIGN="LEFT"/>width : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.augmentation.GaussianNoise" [color="#F2994A", fontcolor="black", label=<{GaussianNoise|mean : float<br ALIGN="LEFT"/>std : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.normalization.MaxNormalize" [color="#F2994A", fontcolor="black", label=<{MaxNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.normalization.MinMaxNormalize" [color="#F2994A", fontcolor="black", label=<{MinMaxNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
@@ -20,6 +21,7 @@ charset="utf-8"
 "pythermondt.transforms.normalization.MinMaxNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.normalization.ZScoreNormalize" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.ApplyLUT" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.preprocessing.CropFrames" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.RemoveFlash" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.SubstractFrame" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.sampling.NonUniformSampling" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];

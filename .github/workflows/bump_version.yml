@@ -43,7 +43,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      # Step 4: Bump version
+      # Step 5: Bump version
       - name: Bump version
         id: bump
         run: |
@@ -53,13 +53,13 @@ jobs:
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-      # Step 4: Check if the version was bumped
+      # Step 6: Check if the version was bumped
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
 
-      # Step 5: Push changes
+      # Step 7: Push changes
       - name: Push changes
         if: steps.bump.outputs.bumped == 'true'
         run: |

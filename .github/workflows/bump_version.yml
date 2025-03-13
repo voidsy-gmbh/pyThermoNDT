@@ -1,4 +1,5 @@
 name: Bump version
+description: 'Reuseable workflow to bump the version of pyThermoNDT'
 
 on:
   workflow_call:

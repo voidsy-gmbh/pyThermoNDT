@@ -123,6 +123,8 @@ jobs:
       # Step 1: Checkout code in the current branch
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: release/${{ needs.prepare.outputs.release_version }}
 
       # Step 2: Delete existing draft release if it exists
       - name: Delete existing draft release

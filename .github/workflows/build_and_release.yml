@@ -84,12 +84,6 @@ jobs:
           exit 1
             # Step 3: Create a release branch
 
-      # Step 8: Rename the release branch and push
-      - name: Create release branch
-        run: |
-          git branch -m release/${{ steps.bump.outputs.current-version }}
-          git push origin release/${{ steps.bump.outputs.current-version }}
-
   # Job 2: Run test using pytest
   test:
     uses: ./.github/workflows/tests.yml

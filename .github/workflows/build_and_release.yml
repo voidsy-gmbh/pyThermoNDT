@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Validate the release branch and check if an official release already exists
+  # Job 1: Validate and prepare the release branch. Also check if an official release already exists
   validate:
     runs-on: ubuntu-latest
     outputs:
-      release_version: ${{ steps.get_version.outputs.RELEASE_VERSION }}
+      release_version: ${{ steps.bump.outputs.current_version }}
       release_exists: ${{ steps.check_release.outputs.RELEASE_DOES_EXIST }}
       is_draft: ${{ steps.check_release.outputs.IS_DRAFT }}
       is_published: ${{ steps.check_release.outputs.IS_PUBLISHED }}
@@ -17,46 +17,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Get release version
-      - name: Get Release Version
-        id: get_version
-        run: |
-          # Function to get version from _version.py
-          get_version_from_file() {
-            VERSION=$(python -c "exec(open('src/pythermondt/__pkginfo__.py').read()); print(__version__)")
-            echo $VERSION
-          }
-
-          # If triggered by push, check branch name
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-
-            # Check if it's a release branch
-            if [[ $BRANCH_NAME != release/* ]]; then
-              echo "This is not a release branch. Stopping workflow."
-              exit 1
-            fi
-
-            # Extract version from branch name
-            BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
-
-            # Get version from file
-            FILE_VERSION=$(get_version_from_file)
-
-            # Compare versions
-            if [[ "$BRANCH_VERSION" != "$FILE_VERSION" ]]; then
-              echo "Branch version ($BRANCH_VERSION) does not match version in __pkginfo__.py ($FILE_VERSION)"
-              exit 1
-            fi
-
-            RELEASE_VERSION=$FILE_VERSION
-          else
-            # For manual triggers, just get version from file
-            RELEASE_VERSION=$(get_version_from_file)
-          fi
-
-          echo "The release version is $RELEASE_VERSION"
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+      # Step 2: Bump to release version
+      - name: Bump version
+        id: bump
+        uses: ./.github/workflows/bump_version.yml
+        with:
+          bump-type: release
 
       # Step 3: Check if an official release already exists
       - name: Check if release exists
@@ -65,7 +31,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get release info and debug output
-          RELEASE_INFO=$(gh release view ${{ steps.get_version.outputs.RELEASE_VERSION }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
+          RELEASE_INFO=$(gh release view ${{ steps.bump.outputs.current_version }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
           echo "Debug - Release Info: $RELEASE_INFO"
 
           if [[ "$RELEASE_INFO" == *"not_found"* ]]; then
@@ -91,8 +57,17 @@ jobs:
       - name: Stop if official release exists
         if: steps.check_release.outputs.IS_PUBLISHED == 'true'
         run: |
-          echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
+          echo "An official release with the tag ${{ steps.bump.outputs.current_version }} already exists. Stopping workflow."
           exit 1
+            # Step 3: Create a release branch
+
+      # Step 5: Create release branch
+      - name: Create release branch
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git checkout -b release/${{ steps.bump.outputs.current-version }}
+          git push origin release/${{ steps.bump.outputs.current-version }}
 
   # Job 2: Run test using pytest
   test:

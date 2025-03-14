@@ -122,13 +122,24 @@ jobs:
         run: |
           uv pip install bump-my-version==1.0.2
 
-      # Step 4: Create a release branch
+      # Step 4: Delete existing release branch if it exists and release is draft. Rejected if release is published
+      - name:
+        run: |
+          if [[ "${{ needs.prepare.outputs.release_exists }}" == "true" && "${{ needs.prepare.outputs.is_draft }}" == "true" ]]; then
+            git branch -D release/${{ needs.prepare.outputs.release_version }}
+            git push origin --delete release/${{ needs.prepare.outputs.release_version }}
+          elif [[ "${{ needs.prepare.outputs.release_exists }}" == "true" && "${{ needs.prepare.outputs.is_draft }}" == "false" ]]; then
+            echo "An official release with the tag ${{ needs.prepare.outputs.release_version }} already exists. Stopping workflow."
+            exit 1
+          fi
+
+      # Step 5: Create a release branch from the current branch and delete exsting if release is draft
       - name: Create release branch
         run: |
           git branch -m release/${{ needs.prepare.outputs.release_version }}
           git push origin release/${{ needs.prepare.outputs.release_version }}
 
-      # Step 5: Bump the version
+      # Step 6: Bump the version
       - name: Bump to release version
         id: bump
         run: |
@@ -137,7 +148,7 @@ jobs:
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-      # Step 6: Delete existing draft release if it exists
+      # Step 7: Delete existing draft release if it exists
       - name: Delete existing draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -145,13 +156,13 @@ jobs:
         run: |
           gh release delete ${{ needs.prepare.outputs.release_version }} --yes
 
-      # Step 7: Download artifacts from previous job
+      # Step 8: Download artifacts from previous job
       - name: Download artifacts from build job
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      # Step 8: Create new draft release with all packages
+      # Step 9: Create new draft release with all packages
       - name: Create Draft Release
         if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2

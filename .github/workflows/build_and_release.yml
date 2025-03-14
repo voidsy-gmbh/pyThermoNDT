@@ -2,9 +2,6 @@ name: Build and Release Python Package
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "release/*"
 
 jobs:
   # Job 1: Validate the release branch and check if an official release already exists

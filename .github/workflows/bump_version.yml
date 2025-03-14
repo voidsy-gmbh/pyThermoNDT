@@ -9,6 +9,16 @@ on:
         required: true
         type: string
         default: 'patch'
+      commit-after-bump:
+        description: 'Whether to commit the changes after bumping the version'
+        required: true
+        type: boolean
+        default: true
+      push-after-bump:
+        description: 'Whether to push the changes after bumping the version'
+        required: true
+        type: boolean
+        default: true
     outputs:
       bumped:
         description: 'Whether the version was bumped'
@@ -73,7 +83,12 @@ jobs:
         run: |
           echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-          bump-my-version bump ${{ inputs.bump-type }} --commit
+          commit_flag=""
+          if [ "${{ inputs.commit-after-bump }}" = "true" ] || [ "${{ inputs.push-after-bump }}" = "true" ]; then
+            commit_flag="--commit"
+          fi
+
+          bump-my-version bump ${{ inputs.bump-type }} $commit_flag
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 

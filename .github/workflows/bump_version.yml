@@ -42,7 +42,7 @@ jobs:
       previous-version: ${{ steps.bump.outputs.previous-version }}
       current-version: ${{ steps.bump.outputs.current-version }}
     steps:
-        # Step 1: Checkout code in the current branch
+      # Step 1: Checkout code in the current branch
       - name: Checkout the code
         uses: actions/checkout@v4
         with:

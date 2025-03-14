@@ -38,19 +38,12 @@ jobs:
         run : |
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-      # Step 4: Setup github user a create a release branch
-      - name: Setup git user
-        run: |
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          git checkout -b release/${{ steps.get_current_version.outputs.current-version }}
-
       # Step 5: Bump the version
       - name: Bump to release version
         id: bump
         run: |
           echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
-          bump-my-version bump release --commit
+          bump-my-version bump release
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
@@ -121,10 +114,36 @@ jobs:
       # Step 1: Checkout code in the current branch
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: release/${{ needs.prepare.outputs.release_version }}
 
-      # Step 2: Delete existing draft release if it exists
+      # Step 2: Setup uv
+      - name: Setup uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+          enable-cache: false
+
+      # Step 3: Install bump-my-version
+      - name: Install bump-my-version
+        run: |
+          uv pip install bump-my-version==1.0.2
+
+      # Step 4: Create a release branch
+      - name: Create release branch
+        run: |
+          git branch -m release/${{ needs.prepare.outputs.release_version }}
+          git push origin release/${{ needs.prepare.outputs.release_version }}
+
+      # Step 5: Bump the version
+      - name: Bump to release version
+        id: bump
+        run: |
+          echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+          bump-my-version bump release
+          ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
+          echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+
+      # Step 6: Delete existing draft release if it exists
       - name: Delete existing draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -132,13 +151,13 @@ jobs:
         run: |
           gh release delete ${{ needs.prepare.outputs.release_version }} --yes
 
-      # Step 3: Download artifacts from previous job
+      # Step 7: Download artifacts from previous job
       - name: Download artifacts from build job
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      # Step 4: Create new draft release with all packages
+      # Step 8: Create new draft release with all packages
       - name: Create Draft Release
         if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2

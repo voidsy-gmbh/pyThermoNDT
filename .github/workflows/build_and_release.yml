@@ -5,7 +5,7 @@ on:
 
 jobs:
   # Job 1: Validate and prepare the release branch. Also check if an official release already exists
-  validate:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.bump.outputs.current-version }}
@@ -109,15 +109,15 @@ jobs:
 
   # Job 4: Build the package (conda or pip) and upload artifacts using a matrix job
   build:
-    needs: validate
-    if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
+    needs: prepare
+    if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
     uses: ./.github/workflows/build.yml
     with:
-      release_version: ${{ needs.validate.outputs.release_version }}
+      release_version: ${{ needs.prepare.outputs.release_version }}
 
   # Job 5: Release the package
   release:
-    needs: [validate, build, test, lint]
+    needs: [prepare, build, test, lint]
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout code in the current branch
@@ -128,9 +128,9 @@ jobs:
       - name: Delete existing draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: needs.validate.outputs.release_exists == 'true' && needs.validate.outputs.is_draft == 'true'
+        if: needs.prepare.outputs.release_exists == 'true' && needs.prepare.outputs.is_draft == 'true'
         run: |
-          gh release delete ${{ needs.validate.outputs.release_version }} --yes
+          gh release delete ${{ needs.prepare.outputs.release_version }} --yes
 
       # Step 3: Download artifacts from previous job
       - name: Download artifacts from build job
@@ -140,11 +140,11 @@ jobs:
 
       # Step 4: Create new draft release with all packages
       - name: Create Draft Release
-        if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
+        if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.validate.outputs.release_version }}
-          name: pyThermoNDT ${{ needs.validate.outputs.release_version }}
+          tag_name: ${{ needs.prepare.outputs.release_version }}
+          name: pyThermoNDT ${{ needs.prepare.outputs.release_version }}
           body: |
             ## Release Contents
             - Conda Package (.zip): Full conda package with all dependencies (for conda installation)

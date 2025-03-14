@@ -9,6 +9,11 @@ on:
         required: true
         type: string
         default: 'patch'
+      ref:
+        description: 'The branch or tag to bump the version in'
+        required: true
+        type: string
+        default: ''
       commit-after-bump:
         description: 'Whether to commit the changes after bumping the version'
         required: true
@@ -57,6 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
+          ref: ${{ github.event.inputs.ref }}
 
       # Step 2: Setup uv
       - name: Setup uv

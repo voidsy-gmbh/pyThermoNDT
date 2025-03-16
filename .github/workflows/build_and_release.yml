@@ -82,7 +82,6 @@ jobs:
         run: |
           echo "An official release with the tag ${{ steps.bump.outputs.current-version }} already exists. Stopping workflow."
           exit 1
-            # Step 3: Create a release branch
 
   # Job 2: Run test using pytest
   test:

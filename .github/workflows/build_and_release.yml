@@ -131,7 +131,8 @@ jobs:
       - name:
         run: |
           if [[ "${{ needs.prepare.outputs.release_exists }}" == "true" && "${{ needs.prepare.outputs.is_draft }}" == "true" ]]; then
-            git push origin --delete release/${{ needs.prepare.outputs.release_version }}
+            git push origin --delete release/${{ needs.prepare.outputs.release_version }} \
+            || echo "Deletion of the remote branch failed. Mabye it doesn't exist or has already been deleted"
           elif [[ "${{ needs.prepare.outputs.release_exists }}" == "true" && "${{ needs.prepare.outputs.is_draft }}" == "false" ]]; then
             echo "An official release with the tag ${{ needs.prepare.outputs.release_version }} already exists. Stopping workflow."
             exit 1

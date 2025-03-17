@@ -131,14 +131,13 @@ jobs:
       - name:
         run: |
           if [[ "${{ needs.prepare.outputs.release_exists }}" == "true" && "${{ needs.prepare.outputs.is_draft }}" == "true" ]]; then
-            git branch -D release/${{ needs.prepare.outputs.release_version }}
             git push origin --delete release/${{ needs.prepare.outputs.release_version }}
           elif [[ "${{ needs.prepare.outputs.release_exists }}" == "true" && "${{ needs.prepare.outputs.is_draft }}" == "false" ]]; then
             echo "An official release with the tag ${{ needs.prepare.outputs.release_version }} already exists. Stopping workflow."
             exit 1
           fi
 
-      # Step 6: Create a release branch from the current branch and delete exsting if release is draft
+      # Step 6: Create and push a release branch
       - name: Create release branch
         run: |
           git branch -m release/${{ needs.prepare.outputs.release_version }}

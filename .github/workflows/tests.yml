@@ -1,9 +1,14 @@
-# Reusbale workflow to run tests for pyThermoNDT
 name: Run Tests
+description: 'Reuseable workflow to run all tests for pyThermoNDT'
 
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      ref:
+        description: 'The branch or tag to test. Defaults to the reference of the workflow trigger'
+        type: string
+        default: ''
     outputs:
       test_success:
         description: "Whether tests succeeded"
@@ -19,6 +24,8 @@ jobs:
       # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       # Step 2: Setup uv
       - name: Setup uv

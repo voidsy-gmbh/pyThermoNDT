@@ -1,10 +1,44 @@
 name: Bump version
+description: 'Reuseable workflow to bump the version of pyThermoNDT'
 
 on:
+  workflow_call:
+    inputs:
+      bump-type:
+        description: 'The type of bump to perform'
+        required: true
+        type: string
+        default: 'patch'
+      ref:
+        description: 'The branch or tag to bump the version in'
+        required: true
+        type: string
+        default: ''
+      commit-after-bump:
+        description: 'Whether to commit the changes after bumping the version'
+        required: true
+        type: boolean
+        default: true
+      push-after-bump:
+        description: 'Whether to push the changes after bumping the version'
+        required: true
+        type: boolean
+        default: true
+    outputs:
+      bumped:
+        description: 'Whether the version was bumped'
+        value: ${{ jobs.bump.outputs.bumped }}
+      previous-version:
+        description: 'The previous version'
+        value: ${{ jobs.bump.outputs.previous-version }}
+      current-version:
+        description: 'The current version'
+        value: ${{ jobs.bump.outputs.current-version }}
+
   workflow_dispatch:
     inputs:
       bump-type:
-        description: 'Bump type'
+        description: 'The type of bump to perform'
         required: true
         default: 'patch'
         type: choice
@@ -14,35 +48,64 @@ on:
         - patch
         - release
 
+
 jobs:
   bump:
     runs-on: ubuntu-latest
+    outputs:
+      bumped: ${{ steps.bump.outputs.bumped }}
+      previous-version: ${{ steps.bump.outputs.previous-version }}
+      current-version: ${{ steps.bump.outputs.current-version }}
     steps:
-        # Step 1: Checkout code in the current branch
+      # Step 1: Checkout code in the current branch
       - name: Checkout the code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
+          ref: ${{ github.event.inputs.ref }}
 
-        # Step 2: Bump the current version
+      # Step 2: Setup uv
+      - name: Setup uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+          enable-cache: false
+
+      # Step 3: Install bump-my-version
+      - name: Install bump-my-version
+        run: |
+          uv pip install bump-my-version==1.0.2
+
+      # Step 4: Setup github user
+      - name: Setup git user
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      # Step 5: Bump version
       - name: Bump version
         id: bump
-        uses: callowayproject/bump-my-version@master
-        env:
-            BUMPVERSION_COMMIT: true
-            BUMPVERSION_COMMIT_ARGS: "--no-verify"
-        with:
-          args: ${{ inputs.bump-type }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-        # Step 3: Check if the version was bumped
+          commit_flag=""
+          if [ "${{ inputs.commit-after-bump }}" = "true" ] || [ "${{ inputs.push-after-bump }}" = "true" ]; then
+            commit_flag="--commit"
+          fi
+
+          bump-my-version bump ${{ inputs.bump-type }} $commit_flag
+          ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
+          echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+
+      # Step 6: Check if the version was bumped
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
 
-        # Step 4: Push changes and tags
-      - name: Push changes and tags
+      # Step 7: Push changes
+      - name: Push changes
         if: steps.bump.outputs.bumped == 'true'
         run: |
           git push

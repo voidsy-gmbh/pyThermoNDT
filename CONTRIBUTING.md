@@ -136,7 +136,24 @@ Optionally, you can install the [VSCode extension for Ruff](https://marketplace.
 
 The package version is defined in [pythermondt/\__pkginfo\__.py](src/pythermondt/__pkginfo__.py). The version number should follow [PEP 440](https://setuptools.pypa.io/en/latest/userguide/distribution.html) guidelines.
 
-When releasing a new version:
+### Release Workflow
 
-1. Update the version number in [pythermondt/\__pkginfo\__.py](src/pythermondt/__pkginfo__.py).
-2. Create a new release branch named `release/version_string`. This will automatically trigger a GitHub action that will build the package and create a release draft on GitHub's [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases).
+This project uses an automated release workflow with GitHub Actions und [bump-my-version](https://github.com/callowayproject/bump-my-version) Manually updating the version
+string should be avoided. If you really need to use the [CLI-Interface](https://callowayproject.github.io/bump-my-version/reference/cli/) that bump-my-version provides.
+
+When using the automated release workflow, the these steps should be followed:
+1. **Trigger a release:**
+   - Manually trigger the [Build and Release Pyhton Package workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/build_and_release.yml) on the `main` branch.
+   - This workflow:
+     - Creates a `release/X.Y.Z` branch
+     - Bumps the version number by removing the "dev" suffix
+     - Builds and tests the package
+     - Creates a draft release on GitHub's [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases)
+
+2. **Finalizing a Release**:
+   - Review the draft release on GitHub
+   - Edit release notes as needed
+   - Click "Publish release" to make it official
+   - Publishing automatically triggers a post-release workflow that:
+     - Increments the patch version in the main branch
+     - Adds the "dev" suffix for the next development cycle

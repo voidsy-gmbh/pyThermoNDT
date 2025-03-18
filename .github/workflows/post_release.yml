@@ -1,0 +1,16 @@
+name: Post-Release Workflow
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  # Job 1: Bump the version in the main branch to the next patch version
+  bump-version:
+    name: Bump Version to Next Patch
+    uses: ./.github/workflows/bump_version.yml
+    with:
+      bump-type: patch
+      ref: main
+      commit-after-bump: true
+      push-after-bump: true

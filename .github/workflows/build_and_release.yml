@@ -2,73 +2,70 @@ name: Build and Release Python Package
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "release/*"
 
 jobs:
-  # Job 1: Validate the release branch and check if an official release already exists
-  validate:
+  # Job 1: Validate and prepare the release branch. Also check if an official release already exists
+  prepare:
     runs-on: ubuntu-latest
     outputs:
-      release_version: ${{ steps.get_version.outputs.RELEASE_VERSION }}
+      release_version: ${{ steps.bump.outputs.current-version }}
       release_exists: ${{ steps.check_release.outputs.RELEASE_DOES_EXIST }}
       is_draft: ${{ steps.check_release.outputs.IS_DRAFT }}
       is_published: ${{ steps.check_release.outputs.IS_PUBLISHED }}
     steps:
       # Step 1: Checkout code in the current branch
-      - name: Checkout code
+      - name: Checkout the code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for tags history
 
-      # Step 2: Get release version
-      - name: Get Release Version
-        id: get_version
+      # Step 2: Setup uv
+      - name: Setup uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+          enable-cache: false
+
+      # Step 3: Install bump-my-version
+      - name: Install bump-my-version
         run: |
-          # Function to get version from _version.py
-          get_version_from_file() {
-            VERSION=$(python -c "exec(open('src/pythermondt/__pkginfo__.py').read()); print(__version__)")
-            echo $VERSION
-          }
+          uv pip install bump-my-version==1.0.2
 
-          # If triggered by push, check branch name
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+      # Step 4: Setup github user
+      - name: Setup git user
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-            # Check if it's a release branch
-            if [[ $BRANCH_NAME != release/* ]]; then
-              echo "This is not a release branch. Stopping workflow."
-              exit 1
-            fi
+      # Step 5: Get the new version without bumping it
+      - name: Bump version dry run
+        id: get_new_version
+        shell: bash
+        run: |
+          # This retrieves the current and new version numbers as a JSON-formatted string.
+          VERSION_INFO=$(bump-my-version show --format json --increment release current_version new_version)
+          echo "current_version=$(echo $VERSION_INFO | jq -r .current_version)" >> $GITHUB_OUTPUT
+          echo "new_version=$(echo $VERSION_INFO | jq -r .new_version)" >> $GITHUB_OUTPUT
 
-            # Extract version from branch name
-            BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+      # Step 6: Create a local release branch and bump the version in there
+      - name: Create local release branch and bump version
+        id: bump
+        run: |
+          git branch -m release/${{ steps.get_new_version.outputs.new_version }}
+          echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+          bump-my-version bump release --commit
+          ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
+          echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-            # Get version from file
-            FILE_VERSION=$(get_version_from_file)
-
-            # Compare versions
-            if [[ "$BRANCH_VERSION" != "$FILE_VERSION" ]]; then
-              echo "Branch version ($BRANCH_VERSION) does not match version in __pkginfo__.py ($FILE_VERSION)"
-              exit 1
-            fi
-
-            RELEASE_VERSION=$FILE_VERSION
-          else
-            # For manual triggers, just get version from file
-            RELEASE_VERSION=$(get_version_from_file)
-          fi
-
-          echo "The release version is $RELEASE_VERSION"
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
-
-      # Step 3: Check if an official release already exists
+      # Step 7: Check if an official release already exists
       - name: Check if release exists
         id: check_release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get release info and debug output
-          RELEASE_INFO=$(gh release view ${{ steps.get_version.outputs.RELEASE_VERSION }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
+          RELEASE_INFO=$(gh release view ${{ steps.bump.outputs.current-version }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
           echo "Debug - Release Info: $RELEASE_INFO"
 
           if [[ "$RELEASE_INFO" == *"not_found"* ]]; then
@@ -90,110 +87,58 @@ jobs:
             echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_OUTPUT
           fi
 
-      # Step 4: Stop workflow if an official release already exists
+      # Step 8: Stop workflow if an official release already exists
       - name: Stop if official release exists
         if: steps.check_release.outputs.IS_PUBLISHED == 'true'
         run: |
-          echo "An official release with the tag ${{ steps.get_version.outputs.RELEASE_VERSION }} already exists. Stopping workflow."
+          echo "An official release with the tag ${{ steps.bump.outputs.current-version }} already exists. Stopping workflow."
           exit 1
+
+      # Step 9: Push the release branch to the remote
+      - name: Push release branch to remote
+        run: |
+          git push origin -u -f release/${{ steps.get_new_version.outputs.new_version }}
 
   # Job 2: Run test using pytest
   test:
+    needs: prepare
     uses: ./.github/workflows/tests.yml
+    with:
+      ref: release/${{ needs.prepare.outputs.release_version }}
 
   # Job 3: Lint the source code
   lint:
+    needs: prepare
     uses: ./.github/workflows/lint.yml
+    with:
+      ref: release/${{ needs.prepare.outputs.release_version }}
 
   # Job 4: Build the package (conda or pip) and upload artifacts using a matrix job
   build:
-    needs: validate
-    if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        build_type: [conda, pip]
-    outputs:
-      conda_archive: ${{ steps.build-conda.outputs.CONDA_ARCHIVE }}
-      wheel_file: ${{ steps.build-pip.outputs.WHEEL_FILE }}
-      tar_file: ${{ steps.build-pip.outputs.TAR_FILE }}
-    steps:
-      # Step 1: Checkout code in the current branch
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Setup build environment for conda
-      - name: Setup build environment for conda
-        if: matrix.build_type == 'conda'
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          init-shell: bash
-          environment-name: build-env
-          cache-environment: true
-          cache-environment-key: mamba-${{ runner.os }}-${{ hashFiles('setup.py', 'pyproject.toml', 'conda/**') }}
-          condarc: |
-            channels:
-              - conda-forge
-              - pytorch
-          create-args: >-
-            python=3.12
-            conda-build
-
-      # Step 3: Setup build environment for pip
-      - name: Setup build environment for pip
-        if: matrix.build_type == 'pip'
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: false # Disable cache for pip build
-
-      # Step 4: Build conda package
-      - name: Build conda package
-        if: matrix.build_type == 'conda'
-        id: build-conda
-        shell: micromamba-shell {0}
-        run: |
-          OUTPUT_DIR="./pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package"
-          conda build conda --output-folder $OUTPUT_DIR
-          conda index $OUTPUT_DIR
-          ZIP_NAME="pyThermoNDT_${{ needs.validate.outputs.release_version }}_conda_install_package.zip"
-          zip -r "$ZIP_NAME" $OUTPUT_DIR
-          echo "CONDA_ARCHIVE=$ZIP_NAME" >> $GITHUB_OUTPUT
-
-      # Step 5: Build pip package
-      - name: Build pip package
-        if: matrix.build_type == 'pip'
-        id: build-pip
-        run: |
-          uv build --no-sources .
-          echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
-          echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
-
-      # Step 6: Upload artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.build_type }}-package
-          path: |
-            ${{ steps.build-conda.outputs.CONDA_ARCHIVE }}
-            ${{ steps.build-pip.outputs.WHEEL_FILE }}
-            ${{ steps.build-pip.outputs.TAR_FILE }}
+    needs: prepare
+    if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      release_version: ${{ needs.prepare.outputs.release_version }}
 
   # Job 5: Release the package
   release:
-    needs: [validate, build, test, lint]
+    needs: [prepare, build, test, lint]
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout code in the current branch
+      # Step 1: Checkout code in the release branch
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: release/${{ needs.prepare.outputs.release_version }}
 
       # Step 2: Delete existing draft release if it exists
       - name: Delete existing draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: needs.validate.outputs.release_exists == 'true' && needs.validate.outputs.is_draft == 'true'
+        if: needs.prepare.outputs.release_exists == 'true' && needs.prepare.outputs.is_draft == 'true'
         run: |
-          gh release delete ${{ needs.validate.outputs.release_version }} --yes
+          gh release delete ${{ needs.prepare.outputs.release_version }} --yes
 
       # Step 3: Download artifacts from previous job
       - name: Download artifacts from build job
@@ -203,11 +148,11 @@ jobs:
 
       # Step 4: Create new draft release with all packages
       - name: Create Draft Release
-        if: needs.validate.outputs.release_exists == 'false' || needs.validate.outputs.is_draft == 'true'
+        if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.validate.outputs.release_version }}
-          name: pyThermoNDT ${{ needs.validate.outputs.release_version }}
+          tag_name: ${{ needs.prepare.outputs.release_version }}
+          name: pyThermoNDT ${{ needs.prepare.outputs.release_version }}
           body: |
             ## Release Contents
             - Conda Package (.zip): Full conda package with all dependencies (for conda installation)

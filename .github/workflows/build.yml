@@ -17,9 +17,11 @@ jobs:
       matrix:
         build_type: [conda, pip]
     steps:
-      # Step 1: Checkout code in the current branch
+      # Step 1: Checkout code in the specified release branch
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: release/${{ inputs.release_version }}
 
       # Step 2: Setup build environment for conda
       - name: Setup build environment for conda

@@ -12,12 +12,15 @@ on:
     outputs:
       test_success:
         description: "Whether tests succeeded"
-        value: ${{ jobs.test.outputs.success }}
+        value: ${{ jobs.test.result == 'success' }}
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
     outputs:
       success: ${{ steps.set_output.outputs.success }}
     steps:

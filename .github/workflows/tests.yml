@@ -35,7 +35,7 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
-          pyproject-file: "pyproject.toml"
+          python-version: ${{ matrix.python-version }}
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py

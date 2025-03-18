@@ -4,6 +4,11 @@ description: 'Reuseable workflow to run linting for pyThermoNDT'
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      ref:
+        description: 'The branch or tag to lint. Defaults to the reference of the workflow trigger'
+        type: string
+        default: ''
     outputs:
       test_success:
         description: "Whether tests succeeded"
@@ -19,6 +24,8 @@ jobs:
       # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       # Step 2: Setup ruff
       - name: Setup and run ruff

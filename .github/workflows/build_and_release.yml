@@ -32,22 +32,33 @@ jobs:
         run: |
           uv pip install bump-my-version==1.0.2
 
-      # Step 4: Get current version
-      - name: Get current version
-        id: get_current_version
-        run : |
-          echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+      # Step 4: Setup github user
+      - name: Setup git user
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-      # Step 5: Bump the version
-      - name: Bump to release version
+      # Step 5: Get the new version without bumping it
+      - name: Bump version dry run
+        id: get_new_version
+        shell: bash
+        run: |
+          # This retrieves the current and new version numbers as a JSON-formatted string.
+          VERSION_INFO=$(bump-my-version show --format json --increment "$RELEASE_KIND" current_version new_version)
+          echo "current_version=$(echo $VERSION_INFO | jq -r .current_version)" >> $GITHUB_OUTPUT
+          echo "new_version=$(echo $VERSION_INFO | jq -r .new_version)" >> $GITHUB_OUTPUT
+
+      # Step 6: Create a local release branch and bump the version in there
+      - name: Create local release branch and bump version
         id: bump
         run: |
+          git branch -m release/${{ steps.get_new_version.outputs.new_version }}
           echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
-          bump-my-version bump release
+          bump-my-version bump release --commit
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 
-      # Step 6: Check if an official release already exists
+      # Step 7: Check if an official release already exists
       - name: Check if release exists
         id: check_release
         env:
@@ -76,12 +87,17 @@ jobs:
             echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_OUTPUT
           fi
 
-      # Step 7: Stop workflow if an official release already exists
+      # Step 8: Stop workflow if an official release already exists
       - name: Stop if official release exists
         if: steps.check_release.outputs.IS_PUBLISHED == 'true'
         run: |
           echo "An official release with the tag ${{ steps.bump.outputs.current-version }} already exists. Stopping workflow."
           exit 1
+
+      # Step 9: Push the release branch to the remote
+      - name: Push release branch to remote
+        run: |
+          git push origin -u release/${{ steps.get_new_version.outputs.new_version }}
 
   # Job 2: Run test using pytest
   test:

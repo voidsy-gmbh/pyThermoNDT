@@ -143,7 +143,6 @@ jobs:
         run: |
           git branch -m release/${{ needs.prepare.outputs.release_version }}
           git push origin release/${{ needs.prepare.outputs.release_version }}
-          git checkout release/${{ needs.prepare.outputs.release_version }}
 
       # Step 7: Bump the version and push changes to the release branch
       - name: Bump to release version

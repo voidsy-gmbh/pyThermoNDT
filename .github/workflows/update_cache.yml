@@ -11,6 +11,9 @@ jobs:
   build-cache:
     name: Build Cache
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       # Step 1: Checkout repository
       - name: Checkout repository
@@ -21,6 +24,7 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
+          python-version: ${{ matrix.python-version }}
           pyproject-file: "pyproject.toml"
           enable-cache: true
           prune-cache: true

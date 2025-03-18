@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           # This retrieves the current and new version numbers as a JSON-formatted string.
-          VERSION_INFO=$(bump-my-version show --format json --increment "$RELEASE_KIND" current_version new_version)
+          VERSION_INFO=$(bump-my-version show --format json --increment release current_version new_version)
           echo "current_version=$(echo $VERSION_INFO | jq -r .current_version)" >> $GITHUB_OUTPUT
           echo "new_version=$(echo $VERSION_INFO | jq -r .new_version)" >> $GITHUB_OUTPUT
 

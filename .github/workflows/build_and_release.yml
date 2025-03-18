@@ -101,11 +101,17 @@ jobs:
 
   # Job 2: Run test using pytest
   test:
+    needs: prepare
     uses: ./.github/workflows/tests.yml
+    with:
+      ref: release/${{ needs.prepare.outputs.release_version }}
 
   # Job 3: Lint the source code
   lint:
+    needs: prepare
     uses: ./.github/workflows/lint.yml
+    with:
+      ref: release/${{ needs.prepare.outputs.release_version }}
 
   # Job 4: Build the package (conda or pip) and upload artifacts using a matrix job
   build:

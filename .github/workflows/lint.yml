@@ -9,17 +9,11 @@ on:
         description: 'The branch or tag to lint. Defaults to the reference of the workflow trigger'
         type: string
         default: ''
-    outputs:
-      test_success:
-        description: "Whether tests succeeded"
-        value: ${{ jobs.lint.outputs.success }}
 
 jobs:
   lint:
     name: Run Ruff
     runs-on: ubuntu-latest
-    outputs:
-      success: ${{ steps.set_output.outputs.success }}q
     steps:
       # Step 1.1: Checkout repository (workflow_call)
       - name: Checkout repository

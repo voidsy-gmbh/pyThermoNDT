@@ -9,10 +9,6 @@ on:
         description: 'The branch or tag to test. Defaults to the reference of the workflow trigger'
         type: string
         default: ''
-    outputs:
-      test_success:
-        description: "Whether tests succeeded"
-        value: ${{ jobs.test.result == 'success' }}
 
 jobs:
   test:
@@ -21,8 +17,6 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-    outputs:
-      success: ${{ steps.set_output.outputs.success }}
     steps:
       # Step 1.1: Checkout repository (workflow_call)
       - name: Checkout repository
@@ -54,8 +48,3 @@ jobs:
       # Step 4: Run tests
       - name: Run Tests
         run: uv run --project . pytest
-
-      # Step 5: Set Output Based on Test Success
-      - id: set_output
-        if: success()
-        run: echo "success=true" >> $GITHUB_OUTPUT

@@ -18,7 +18,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      # Step 1.1: Checkout repository (workflow_call)
+      # Step 1.1: Checkout repository (workflow_call) (see https://dev.to/koseimori/conditional-branching-with-workflowdispatch-and-workflowcall-in-github-actions-oik)
       - name: Checkout repository
         if: github.event.workflow != '.github/workflows/tests.yml'
         uses: actions/checkout@v4

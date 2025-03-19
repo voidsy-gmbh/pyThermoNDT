@@ -152,6 +152,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.release_version }}
+          target_commitish: release/${{ needs.prepare.outputs.release_version }}
           name: pyThermoNDT ${{ needs.prepare.outputs.release_version }}
           body: |
             ## Release Contents

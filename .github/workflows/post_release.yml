@@ -12,5 +12,3 @@ jobs:
     with:
       bump-type: patch
       ref: main
-      commit-after-bump: true
-      push-after-bump: true

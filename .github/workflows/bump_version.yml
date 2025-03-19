@@ -14,16 +14,6 @@ on:
         required: true
         type: string
         default: ''
-      commit-after-bump:
-        description: 'Whether to commit the changes after bumping the version'
-        required: true
-        type: boolean
-        default: true
-      push-after-bump:
-        description: 'Whether to push the changes after bumping the version'
-        required: true
-        type: boolean
-        default: true
     outputs:
       bumped:
         description: 'Whether the version was bumped'
@@ -57,12 +47,20 @@ jobs:
       previous-version: ${{ steps.bump.outputs.previous-version }}
       current-version: ${{ steps.bump.outputs.current-version }}
     steps:
-      # Step 1: Checkout code in the current branch
-      - name: Checkout the code
+      # Step 1.1: Checkout repository (workflow_call)
+      - name: Checkout repository
+        if: github.event_name == 'workflow_call'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
-          ref: ${{ github.event.inputs.ref }}
+          ref: ${{ inputs.ref }}
+
+      # Step 1.2: Checkout repository (workflow_dispatch)
+      - name: Checkout repository
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for tags history
 
       # Step 2: Setup uv
       - name: Setup uv
@@ -88,13 +86,7 @@ jobs:
         id: bump
         run: |
           echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
-
-          commit_flag=""
-          if [ "${{ inputs.commit-after-bump }}" = "true" ] || [ "${{ inputs.push-after-bump }}" = "true" ]; then
-            commit_flag="--commit"
-          fi
-
-          bump-my-version bump ${{ inputs.bump-type }} $commit_flag
+          bump-my-version bump ${{ inputs.bump-type }} --commit
           ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
           echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
 

@@ -5,7 +5,7 @@ description = "A Python package for manipulating thermographic data in Non-Destr
 authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
 license = {file = "LICENSE"}
 readme = "README.md"
-requires-python = ">=3.10, <3.13"
+requires-python = ">=3.10, <3.14"
 dependencies = [
     # General dependencies
     "tqdm>=4.65",

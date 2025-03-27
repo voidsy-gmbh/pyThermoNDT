@@ -152,7 +152,7 @@ class ThermoDataset(Dataset):
         return DataContainer()
 
     def __iter__(self) -> Iterator[DataContainer]:
-        return chain.from_iterable(self.__readers)
+        return (self.__transform(data) if self.__transform else data for data in chain.from_iterable(self.__readers))
 
 
 class IndexedThermoDataset(ThermoDataset):

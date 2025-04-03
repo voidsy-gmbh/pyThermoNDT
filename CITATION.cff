@@ -28,6 +28,9 @@ authors:
     city: Wels
     country: AT
     post-code: '4600'
+    website: 'https://www.voidsy.com'
+    email: support@voidsy.com
+    tel: +43 7242 909900
 repository-code: 'https://github.com/voidsy-gmbh/pyThermoNDT'
 abstract: >-
   pyThermoNDT is a Python package for manipulating

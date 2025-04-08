@@ -11,6 +11,8 @@ jobs:
   build-cache:
     name: Build Cache
     runs-on: ubuntu-latest
+    env:
+      UV_TORCH_BACKEND: "cpu" # Set the backend to CPU for all tests to avoid installing cuda dependencies
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]

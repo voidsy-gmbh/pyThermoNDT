@@ -44,8 +44,7 @@ jobs:
       # Step 3 Sync dependencies if cache hit
       - name: Sync dependencies
         run: |
-          uv pip install torch --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
-          uv sync --extra dev --project .
+          uv pip install .[dev] --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
 
       # Step 4: Run tests
       - name: Run Tests

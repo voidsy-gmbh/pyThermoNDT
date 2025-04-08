@@ -27,6 +27,11 @@ dependencies = [
     "boto3>=1.33",
 ]
 
+[project.urls]
+Repository = "https://github.com/voidsy-gmbh/pyThermoNDT"
+Issues = "https://github.com/voidsy-gmbh/pyThermoNDT/issues"
+Releases = "https://github.com/voidsy-gmbh/pyThermoNDT/releases"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3",

@@ -17,6 +17,8 @@ repos:
         # Check for added large files
     -   id: check-added-large-files
         args: [--maxkb=1024] # Allow files up to 1MB
+        exclude: tests/assets/.*
+
 
         # Security checks
     -   id: detect-private-key

@@ -11,8 +11,6 @@ jobs:
   build-cache:
     name: Build Cache
     runs-on: ubuntu-latest
-    env:
-      UV_TORCH_BACKEND: "cpu" # Set the backend to CPU for all tests to avoid installing cuda dependencies
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
@@ -38,4 +36,5 @@ jobs:
       - if: steps.setup-uv.outputs.cache-hit != 'true'
         name: Sync dependencies
         run: |
+          uv pip install torch --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
           uv sync --extra dev --project .

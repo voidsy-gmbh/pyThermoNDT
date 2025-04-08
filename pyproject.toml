@@ -2,9 +2,11 @@
 name = "pythermondt"
 dynamic = ["version"]
 description = "A Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications."
-authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
-license = {file = "LICENSE"}
 readme = "README.md"
+keywords = ["Active Thermography", "Data Analysis", "Machine Learning", "NDT", "Python"]
+authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10, <3.14"
 dependencies = [
     # General dependencies
@@ -24,6 +26,11 @@ dependencies = [
     # AWS
     "boto3>=1.33",
 ]
+
+[project.urls]
+Repository = "https://github.com/voidsy-gmbh/pyThermoNDT"
+Issues = "https://github.com/voidsy-gmbh/pyThermoNDT/issues"
+Releases = "https://github.com/voidsy-gmbh/pyThermoNDT/releases"
 
 [project.optional-dependencies]
 dev = [

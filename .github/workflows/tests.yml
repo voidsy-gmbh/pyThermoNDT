@@ -36,6 +36,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
+          pyproject-file: "pyproject.toml"
           cache-dependency-glob: |
             **/pyproject.toml
             **/setup.py
@@ -43,8 +44,8 @@ jobs:
       # Step 3 Sync dependencies if cache hit
       - name: Sync dependencies
         run: |
-          uv sync --extra dev --project .
+          uv pip install .[dev] --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
 
       # Step 4: Run tests
       - name: Run Tests
-        run: uv run --project . pytest
+        run: pytest

@@ -3,7 +3,8 @@ name = "pythermondt"
 dynamic = ["version"]
 description = "A Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications."
 authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
-license = {file = "LICENSE"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10, <3.14"
 dependencies = [

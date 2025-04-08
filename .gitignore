@@ -7,9 +7,6 @@ local_dev/*
 */local-dev/*
 local-dev/*
 
-# Ignore .mat files in test/testdata
-tests/testdata/*.mat
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

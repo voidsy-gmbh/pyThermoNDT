@@ -48,4 +48,4 @@ jobs:
 
       # Step 4: Run tests
       - name: Run Tests
-        run: uv run --project . pytest
+        run: pytest

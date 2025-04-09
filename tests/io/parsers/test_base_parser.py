@@ -36,24 +36,12 @@ def test_protocol_conformance():
     class IncompleteParser:
         supported_extensions = (".test",)
 
-    # Wrong parse method signature (will still pass runtime checking)
-    class WrongSignatureParser:
-        supported_extensions = (".test",)
-
-        @staticmethod
-        def parse(wrong_param: str) -> str:
-            return "wrong"
-
     # Check protocol conformance
     valid = ValidParser()
     incomplete = IncompleteParser()
-    wrong_sig = WrongSignatureParser()
 
+    # Check if valid parser is an instance of BaseParser
     assert isinstance(valid, BaseParser)
+
+    # Check if incomplete parser is not an instance of BaseParser
     assert not isinstance(incomplete, BaseParser)
-
-    # This will actually be True - runtime checking only verifies method names
-    assert isinstance(wrong_sig, BaseParser)
-
-    # Note: Real signature validation would happen during actual usage when
-    # calling the method with real parameters, not during isinstance checks

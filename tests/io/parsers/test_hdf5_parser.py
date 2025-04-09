@@ -34,8 +34,8 @@ def test_hdf5_parser_valid_container():
     parsed = HDF5Parser.parse(serialized)
 
     # Check that the parsed container has the expected structure
-    assert parsed._path_exists("/TestGroup")
-    assert parsed._path_exists("/TestGroup/TestData")
+    assert "TestGroup" in parsed.get_all_groups()
+    assert "TestData" in parsed.get_all_dataset_names()
 
     # Check data content matches
     assert parsed == original

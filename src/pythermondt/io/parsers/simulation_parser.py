@@ -89,7 +89,7 @@ class SimulationParser(BaseParser):
                     datacontainer.add_attributes(path="/Data/Tdata", NoiseLevel=data[key])
                 case "Shapes":
                     # Convert the Shapes into a Python dict first:
-                    shapes = {data[key].Names[i]: data[key].Numbers[i] for i in range(len(data[key].Names))}
+                    shapes = {data[key].Names[i]: int(data[key].Numbers[i]) for i in range(len(data[key].Names))}
                     datacontainer.add_attributes(path="/MetaData", Shapes=shapes)
 
         # Return the constructed datapoint

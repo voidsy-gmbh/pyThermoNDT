@@ -1,11 +1,14 @@
 import io
+import json
 from unittest.mock import patch
 
 import numpy as np
 import pytest
+from mat73.core import AttrDict
 
 from pythermondt.data import ThermoContainer
 from pythermondt.io.parsers import SimulationParser
+from tests.utils import containers_equal
 
 
 def test_simulation_parser_empty_bytes():
@@ -29,7 +32,7 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
     sim_result = {
         "Tdata": np.zeros((10, 10, 5)),
         "Time": np.linspace(0, 1, 5),
-        "GroundTruth": np.zeros((10, 10), dtype=bool),
+        "GroundTruth": AttrDict(DefectMask=np.zeros((10, 10)), LabelIds=json.dumps({"label1": 1, "label2": 2})),
         "LookUpTable": np.linspace(0, 100, 100),
         "ExcitationSignal": np.ones(5),
     }
@@ -42,7 +45,8 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
     expected.add_attributes(path="/MetaData", Source="Simulation")
     expected.update_dataset(path="/Data/Tdata", data=sim_result["Tdata"])
     expected.update_dataset(path="/MetaData/DomainValues", data=sim_result["Time"])
-    expected.update_dataset(path="/GroundTruth/DefectMask", data=sim_result["GroundTruth"])
+    expected.update_dataset(path="/GroundTruth/DefectMask", data=sim_result["GroundTruth"].DefectMask)
+    expected.add_attributes(path="/GroundTruth/DefectMask", LabelIds=json.loads(sim_result["GroundTruth"].LabelIds))
     expected.update_dataset(path="/MetaData/LookUpTable", data=sim_result["LookUpTable"])
     expected.update_dataset(path="/MetaData/ExcitationSignal", data=sim_result["ExcitationSignal"])
 
@@ -50,4 +54,4 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
     parsed = SimulationParser.parse(io.BytesIO(b"dummy"))
 
     # Check containers match
-    assert parsed == expected
+    assert containers_equal(parsed, expected), "Parsed data does not match expected data."

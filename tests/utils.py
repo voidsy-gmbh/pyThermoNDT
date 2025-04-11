@@ -59,7 +59,8 @@ def containers_equal(container1: DataContainer, container2: DataContainer, print
             # Handle diff output for different types
             if diff:
                 equal = False
-                differences.append(f"Attribute mismatch at path {path}: \n{diff.pretty(prefix='\t')}")
+                diff_text = diff.pretty(prefix="\t")
+                differences.append(f"Attribute mismatch at path {path}: \n{diff_text}")
 
         # Compare the data if the node is of type DataNode
         if isinstance(node1, DataNode) and isinstance(node2, DataNode):

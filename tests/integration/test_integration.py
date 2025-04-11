@@ -22,10 +22,6 @@ def test_local_reader_integration(test_case: IntegrationTestCase):
     source_reader = LocalReader(test_case.source_path)
     expected_reader = LocalReader(test_case.expected_path)
 
-    # Add this debugging code before the zip
-    print("Source files:", source_reader.files)
-    print("Expected files:", expected_reader.files)
-
     # Compare all conainers in the reader
     for i, (source_container, expected_container) in enumerate(zip(source_reader, expected_reader, strict=True)):
         # Compare containers

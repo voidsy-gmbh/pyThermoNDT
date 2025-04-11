@@ -54,7 +54,7 @@ class SimulationParser(BaseParser):
                         label_ids = data[key].LabelIds
                         label_ids = json.loads(label_ids) if isinstance(label_ids, str) else label_ids
                         datacontainer.add_attributes(path="/GroundTruth/DefectMask", LabelIds=label_ids)
-                    except json.JSONDecodeError:
+                    except (json.JSONDecodeError, AttributeError):
                         pass
                     datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data[key].DefectMask)
                 case "Time":

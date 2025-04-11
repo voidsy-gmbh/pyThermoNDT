@@ -49,13 +49,14 @@ class SimulationParser(BaseParser):
                 case "Tdata":
                     datacontainer.update_dataset(path="/Data/Tdata", data=data[key])
                 case "GroundTruth":
-                    # Check if file is old or new format for the label ids
-                    if isinstance(data[key], mat73.core.AttrDict):
-                        datacontainer.add_attributes(path="/GroundTruth/DefectMask", LabelIds=data[key].LabelIds)
-                        datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data[key].DefectMask)
-                    else:
-                        # datacontainer.update_attributes(path='GroundTruth/DefectMask', LabelIds=None)
-                        datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data[key])
+                    # Try to extract the label ids and convert to dict
+                    try:
+                        label_ids = data[key].LabelIds
+                        label_ids = json.loads(label_ids) if isinstance(label_ids, str) else label_ids
+                        datacontainer.add_attributes(path="/GroundTruth/DefectMask", LabelIds=label_ids)
+                    except json.JSONDecodeError:
+                        pass
+                    datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data[key].DefectMask)
                 case "Time":
                     datacontainer.update_dataset(path="/MetaData/DomainValues", data=data[key])
                 case "LookUpTable":

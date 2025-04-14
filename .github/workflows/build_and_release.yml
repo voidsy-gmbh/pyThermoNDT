@@ -126,6 +126,8 @@ jobs:
   release:
     needs: [prepare, build, test, lint]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Grant repository write access to be able to draft release. TODO: Replace with Github App
     steps:
       # Step 1: Checkout code in the release branch
       - name: Checkout code

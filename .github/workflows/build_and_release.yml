@@ -131,11 +131,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ssh-key: ${{ secrets.WRITE_KEY }}
           ref: release/${{ needs.prepare.outputs.release_version }}
 
       # Step 2: Delete existing draft release if it exists
       - name: Delete existing draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: needs.prepare.outputs.release_exists == 'true' && needs.prepare.outputs.is_draft == 'true'
         run: |
           gh release delete ${{ needs.prepare.outputs.release_version }} --yes
@@ -163,3 +164,5 @@ jobs:
             artifacts/**/*
           generate_release_notes: true
           draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
-          ssh-key: ${{ secrets.WRITE_KEY }}
+          ssh-key: ${{ secrets.WRITE_KEY }} # TODO: Replace with Github App: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560
 
       # Step 2: Setup uv
       - name: Setup uv

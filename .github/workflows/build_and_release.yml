@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
+          ssh-key: ${{ secrets.WRITE_KEY }}
 
       # Step 2: Setup uv
       - name: Setup uv

@@ -5,8 +5,6 @@ on:
 
 jobs:
   generate-diagrams:
-    permissions:
-      contents: write
     env:
       CHANGED: false
     runs-on: ubuntu-latest
@@ -14,6 +12,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ssh-key: ${{ secrets.WRITE_KEY }}
 
     - name: Set up Python 3.12
       uses: astral-sh/setup-uv@v5

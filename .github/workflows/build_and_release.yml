@@ -165,7 +165,7 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v5
         with:
           fromTag: ${{ steps.get_latest_tag.outputs.latest_tag }}
-          toTag: ${{ needs.prepare.outputs.release_version }}
+          toTag: release/${{ needs.prepare.outputs.release_version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 5: Create new draft release with all packages

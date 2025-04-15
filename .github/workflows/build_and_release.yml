@@ -66,6 +66,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get release info and debug output
+          echo "Debug - Checking if release exists for tag ${{ steps.bump.outputs.current-version }}"
           RELEASE_INFO=$(gh release view ${{ steps.bump.outputs.current-version }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
           echo "Debug - Release Info: $RELEASE_INFO"
 

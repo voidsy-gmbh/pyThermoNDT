@@ -53,6 +53,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
+          ssh-key: ${{ secrets.WRITE_KEY }}
           ref: ${{ inputs.ref }}
 
       # Step 1.2: Checkout repository (workflow_dispatch)
@@ -61,6 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for tags history
+          ssh-key: ${{ secrets.WRITE_KEY }} # TODO: Replace with GitHub App: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560
 
       # Step 2: Setup uv
       - name: Setup uv

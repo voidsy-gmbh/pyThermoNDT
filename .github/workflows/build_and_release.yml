@@ -152,12 +152,20 @@ jobs:
         with:
           path: artifacts
 
+      # Step 4: Determine the latest tag
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git tag --sort=-creatordate | head -n 1)
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
       # Step 4: Manually create the Changelog
       - name: Create Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
-          fromTag: gh release view --json tagName --jq [.tagName]
+          fromTag: ${{ steps.get_latest_tag.outputs.latest_tag }}
+          toTag: ${{ needs.prepare.outputs.release_version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 5: Create new draft release with all packages

@@ -7,6 +7,8 @@ jobs:
   # Job 1: Validate and prepare the release branch. Also check if an official release already exists
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # TODO: Grant repository write access to be able to extract current releases. Replace with GitHub App in the future: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560
     outputs:
       release_version: ${{ steps.bump.outputs.current-version }}
       release_exists: ${{ steps.check_release.outputs.RELEASE_DOES_EXIST }}
@@ -66,6 +68,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get release info and debug output
+          echo "Debug - Checking if release exists for tag ${{ steps.bump.outputs.current-version }}"
           RELEASE_INFO=$(gh release view ${{ steps.bump.outputs.current-version }} --json isDraft,isPrerelease,publishedAt --jq '[.isDraft, .isPrerelease, .publishedAt]' 2>&1 || echo "not_found")
           echo "Debug - Release Info: $RELEASE_INFO"
 
@@ -127,15 +130,22 @@ jobs:
     needs: [prepare, build, test, lint]
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Grant repository write access to be able to draft release. TODO: Replace with GitHub App
+      contents: write # TODO: Grant repository write access to be able to draft release. Replace with GitHub App in the future: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560
     steps:
-      # Step 1: Checkout code in the release branch
+      # Step 1: Checkout code in the current branch
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0  # Need full history for proper tagging
           ref: release/${{ needs.prepare.outputs.release_version }}
 
-      # Step 2: Delete existing draft release if it exists
+      # Step 2: Download artifacts from previous job
+      - name: Download artifacts from build job
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Step 3: Delete existing draft release if it exists
       - name: Delete existing draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -143,28 +153,35 @@ jobs:
         run: |
           gh release delete ${{ needs.prepare.outputs.release_version }} --yes
 
-      # Step 3: Download artifacts from previous job
-      - name: Download artifacts from build job
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      # Step 4: Create new draft release with all packages
-      - name: Create Draft Release
-        if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.prepare.outputs.release_version }}
-          target_commitish: release/${{ needs.prepare.outputs.release_version }}
-          name: pyThermoNDT ${{ needs.prepare.outputs.release_version }}
-          body: |
-            ## Release Contents
-            - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
-            - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
-            - Source Package (.tar.gz): Source distribution
-          files: |
-            artifacts/**/*
-          generate_release_notes: true
-          draft: true
+      # Step 4: Create the release with the GitHub CLI
+      - name: Create release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find artifact files
+          CONDA_PACKAGE=$(find artifacts -name "*.zip" -type f)
+          WHEEL_PACKAGE=$(find artifacts -name "*.whl" -type f)
+          SRC_PACKAGE=$(find artifacts -name "*.tar.gz" -type f)
+
+          # Create custom notes with clear release contents explanation
+          # Use -e flag with echo to interpret escape sequences
+          NOTES=$(cat <<EOF
+          ## Release Contents
+          - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
+          - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
+          - Source Package (.tar.gz): Source distribution
+
+          EOF
+          )
+
+          # Create the release
+          gh release create ${{ needs.prepare.outputs.release_version }} \
+            --title "pyThermoNDT ${{ needs.prepare.outputs.release_version }}" \
+            --notes "$NOTES" \
+            --generate-notes \
+            --notes-start-tag $(git tag --sort=-creatordate | head -n 1) \
+            --draft \
+            --target "release/${{ needs.prepare.outputs.release_version }}" \
+            "$CONDA_PACKAGE" \
+            "$WHEEL_PACKAGE" \
+            "$SRC_PACKAGE"

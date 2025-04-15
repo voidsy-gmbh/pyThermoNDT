@@ -164,7 +164,15 @@ jobs:
           SRC_PACKAGE=$(find artifacts -name "*.tar.gz" -type f)
 
           # Create custom notes with clear release contents explanation
-          NOTES="## Release Contents\n- Conda Package (.zip): Full conda package with all dependencies (for conda installation)\n- Wheel Package (.whl): Python wheel distribution (recommended for pip installation)\n- Source Package (.tar.gz): Source distribution\n\n"
+          # Use -e flag with echo to interpret escape sequences
+          NOTES=$(cat <<EOF
+          ## Release Contents
+          - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
+          - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
+          - Source Package (.tar.gz): Source distribution
+
+          EOF
+          )
 
           # Create the release
           gh release create ${{ needs.prepare.outputs.release_version }} \

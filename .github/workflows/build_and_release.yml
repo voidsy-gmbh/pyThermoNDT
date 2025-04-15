@@ -7,6 +7,8 @@ jobs:
   # Job 1: Validate and prepare the release branch. Also check if an official release already exists
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # TODO: Grant repository write access to be able to extract current releases. Replace with GitHub App in the future: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560
     outputs:
       release_version: ${{ steps.bump.outputs.current-version }}
       release_exists: ${{ steps.check_release.outputs.RELEASE_DOES_EXIST }}

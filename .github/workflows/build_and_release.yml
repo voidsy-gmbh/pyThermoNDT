@@ -164,7 +164,6 @@ jobs:
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
-          mode: COMMIT
           fromTag: ${{ steps.get_latest_tag.outputs.latest_tag }}
           toTag: release/${{ needs.prepare.outputs.release_version }}
           token: ${{ secrets.GITHUB_TOKEN }}

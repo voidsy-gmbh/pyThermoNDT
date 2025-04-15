@@ -156,6 +156,9 @@ jobs:
       - name: Create Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       # Step 5: Create new draft release with all packages
       - name: Create Draft Release

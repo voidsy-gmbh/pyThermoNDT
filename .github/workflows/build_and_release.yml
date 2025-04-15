@@ -156,6 +156,9 @@ jobs:
       - name: Create Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          fromTag: gh release view --json tagName --jq [.tagName]
+          toTag: ${{ needs.prepare.outputs.release_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -64,10 +64,10 @@ class LocalReader(BaseReader):
                 file_paths = [self.source]
 
             case "directory":
-                file_paths = glob(os.path.join(self.source, "*"))
+                file_paths = sorted(glob(os.path.join(self.source, "*")))
 
             case "regex":
-                file_paths = glob(self.source)
+                file_paths = sorted(glob(self.source))
 
             case _:
                 raise ValueError("Invalid source type.")

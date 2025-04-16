@@ -22,7 +22,7 @@ def test_local_reader_integration(test_case: IntegrationTestCase):
     source_reader = LocalReader(test_case.source_path)
     expected_reader = LocalReader(test_case.expected_path)
 
-    # Compare all conainers in the reader
+    # Compare all containers in the reader
     for i, (source_container, expected_container) in enumerate(zip(source_reader, expected_reader, strict=True)):
         # Compare containers
         assert containers_equal(source_container, expected_container), (

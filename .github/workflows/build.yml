@@ -19,14 +19,14 @@ jobs:
     steps:
       # Step 1: Checkout code in the specified release branch
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           ref: release/${{ inputs.release_version }}
 
       # Step 2: Setup build environment for conda
       - name: Setup build environment for conda
         if: matrix.build_type == 'conda'
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v1.11.0
         with:
           init-shell: bash
           environment-name: build-env
@@ -43,7 +43,7 @@ jobs:
       # Step 3: Setup build environment for pip
       - name: Setup build environment for pip
         if: matrix.build_type == 'pip'
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v5.4.2
         with:
           enable-cache: false # Disable cache for pip build
 
@@ -71,7 +71,7 @@ jobs:
 
       # Step 6: Upload artifacts
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: ${{ matrix.build_type }}-package
           path: |

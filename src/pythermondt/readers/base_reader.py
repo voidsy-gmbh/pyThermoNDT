@@ -1,4 +1,3 @@
-import io
 import os
 import re
 from abc import ABC, abstractmethod
@@ -8,6 +7,7 @@ from tqdm.auto import tqdm
 
 from ..data import DataContainer
 from ..io.parsers import PARSER_REGISTRY, BaseParser, find_parser_for_extension
+from ..utils import IOPathWrapper
 
 
 class BaseReader(ABC):
@@ -126,7 +126,7 @@ class BaseReader(ABC):
                 for cached_path, file in files_to_download:
                     try:
                         with open(cached_path, "wb") as f:
-                            f.write(self._read_file(file).getbuffer())
+                            f.write(self._read_file(file).file_obj.getbuffer())
                     except Exception as e:
                         print(f"Error downloading file: {file} - {e}")
                     finally:
@@ -262,7 +262,7 @@ class BaseReader(ABC):
         raise NotImplementedError("Method must be implemented by subclass")
 
     @abstractmethod
-    def _read_file(self, path: str) -> io.BytesIO:
+    def _read_file(self, path: str) -> IOPathWrapper:
         """Actual implementation of how a single file is read into memory.
 
         This method must be implemented by the subclass.
@@ -307,7 +307,7 @@ class BaseReader(ABC):
             # If the reader reads from a remote source and files are cached, read the file from the local directory
             if self.remote_source and self.__cache_files and self.__cached_paths is not None:
                 with open(path, "rb") as f:
-                    return self.parser.parse(io.BytesIO(f.read()))
+                    return self.parser.parse(IOPathWrapper(f.read()))
         except FileNotFoundError:
             raise FileNotFoundError("File not found in cached files. Clear the cache and try again.") from None
 

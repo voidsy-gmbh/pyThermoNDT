@@ -59,12 +59,12 @@ def test_serialize_file_operations(container_fixture: str, request: pytest.Fixtu
 def test_serialize_empty_bytes():
     """Test that deserializing empty bytes raises appropriate error."""
     empty_bytes = IOPathWrapper(io.BytesIO())
-    with pytest.raises(ValueError, match="The given BytesIO object is empty."):
+    with pytest.raises(ValueError, match="The given IOPathWrapper object is empty."):
         DataContainer(empty_bytes)
 
 
 def test_serialize_invalid_hdf5():
     """Test that deserializing invalid HDF5 data raises appropriate error."""
     invalid_bytes = IOPathWrapper(io.BytesIO(b"not an hdf5 file"))
-    with pytest.raises(ValueError, match="The given BytesIO object does not contain a valid HDF5 file."):
+    with pytest.raises(ValueError, match="The given IOPathWrapper object does not contain a valid HDF5 file."):
         DataContainer(invalid_bytes)

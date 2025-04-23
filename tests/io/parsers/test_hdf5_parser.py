@@ -11,14 +11,14 @@ from pythermondt.utils import IOPathWrapper
 def test_hdf5_parser_empty_bytes():
     """Test that HDF5Parser raises appropriate error with empty BytesIO."""
     empty_bytes = IOPathWrapper(io.BytesIO())
-    with pytest.raises(ValueError, match="The given BytesIO object is empty"):
+    with pytest.raises(ValueError, match="The given IOPathWrapper object is empty"):
         HDF5Parser.parse(empty_bytes)
 
 
 def test_hdf5_parser_invalid_bytes():
     """Test that HDF5Parser raises appropriate error with invalid HDF5 data."""
     invalid_bytes = IOPathWrapper(io.BytesIO(b"not an hdf5 file"))
-    with pytest.raises(ValueError, match="The given BytesIO object does not contain a valid HDF5 file"):
+    with pytest.raises(ValueError, match="The given IOPathWrapper object does not contain a valid HDF5 file"):
         HDF5Parser.parse(invalid_bytes)
 
 

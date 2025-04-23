@@ -84,18 +84,15 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         Parameters:
             hdf5_data (IOPathWrapper): The HDF5 file to deserialize.
         """
-        # Check if the BytesIO object is empty
+        # Check if the IOPathWrapper object is empty
         if hdf5_data.file_obj.getbuffer().nbytes == 0:
-            raise ValueError("The given BytesIO object is empty.")
+            raise ValueError("The given IOPathWrapper object is empty.")
 
-        # Check if the BytesIO object is a HDF5 file
+        # Check if the IOPathWrapper object is a HDF5 file
         try:
             h5py.File(hdf5_data.file_obj)
         except OSError as o:
-            raise ValueError("The given BytesIO object does not contain a valid HDF5 file.") from o
-
-        # Reset the position of the BytesIO object to the start in case the pointer was moved by the h5py.File function
-        hdf5_data.file_obj.seek(0)
+            raise ValueError("The given IOPathWrapper object does not contain a valid HDF5 file.") from o
 
         # Check if a root node exists in the DataContainer ==> if not, add it
         if not self._is_rootnode("/"):

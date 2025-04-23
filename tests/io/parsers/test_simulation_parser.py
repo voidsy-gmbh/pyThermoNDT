@@ -15,14 +15,14 @@ from tests.utils import containers_equal
 def test_simulation_parser_empty_bytes():
     """Test that SimulationParser raises appropriate error with empty BytesIO."""
     empty_bytes = IOPathWrapper(io.BytesIO())
-    with pytest.raises(ValueError, match="The given BytesIO object is empty"):
+    with pytest.raises(ValueError, match="The given IOPathWrapper object is empty"):
         SimulationParser.parse(empty_bytes)
 
 
 def test_simulation_parser_invalid_bytes():
     """Test that SimulationParser raises appropriate error with invalid MAT file."""
     invalid_bytes = IOPathWrapper(io.BytesIO(b"not a mat file"))
-    with pytest.raises(ValueError, match="The given BytesIO object does not contain a valid .mat file"):
+    with pytest.raises(ValueError, match="The given IOPathWrapper object does not contain a valid .mat file"):
         SimulationParser.parse(invalid_bytes)
 
 

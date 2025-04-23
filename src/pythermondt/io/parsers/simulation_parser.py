@@ -26,15 +26,15 @@ class SimulationParser(BaseParser):
         Raises:
             ValueError: If the given IOPathWrapper object is empty or does not contain a valid .mat file.
         """
-        # Check if the BytesIO object is empty
+        # Check if the IOPathWrapper object is empty
         if data.file_obj.getbuffer().nbytes == 0:
-            raise ValueError("The given BytesIO object is empty.")
+            raise ValueError("The given IOPathWrapper object is empty.")
 
         # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
         try:
             data_dict = mat73.loadmat(data.file_obj, use_attrdict=True)["SimResult"]
         except TypeError as o:
-            raise ValueError("The given BytesIO object does not contain a valid .mat file.") from o
+            raise ValueError("The given IOPathWrapper object does not contain a valid .mat file.") from o
 
         # Create an empty Thermocontainer ==> predefined structure
         datacontainer = ThermoContainer()

@@ -1,10 +1,11 @@
-import io
-
 import pytest
 import torch
 from torch import Tensor
 
 from pythermondt.data import DataContainer
+from pythermondt.utils import IOPathWrapper
+
+from ...utils import containers_equal
 
 
 def test_initialization(empty_container: DataContainer):
@@ -94,18 +95,14 @@ def test_serialization(empty_container: DataContainer, sample_tensor: Tensor):
 
     # Serialize
     serialized = empty_container.serialize_to_hdf5()
-    assert isinstance(serialized, io.BytesIO)
+    assert isinstance(serialized, IOPathWrapper)
 
     # Deserialize
     new_container = DataContainer()
     new_container.deserialize(serialized)
 
     # Check if data is the same
-    assert "TestGroup" in new_container.get_all_groups()
-    assert "TestData" in new_container.get_all_dataset_names()
-    retrieved_data = new_container.get_dataset("/TestGroup/TestData")
-    assert torch.equal(retrieved_data, sample_tensor)
-    assert new_container.get_attribute("/TestGroup/TestData", "test_attr") == "test_value"
+    assert containers_equal(empty_container, new_container)
 
 
 def test_error_handling(empty_container: DataContainer):

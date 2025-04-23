@@ -1,7 +1,6 @@
-from io import BytesIO
-
 import torch
 
+from ...utils import IOPathWrapper
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
@@ -20,14 +19,14 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     for visualization of the data structure.
     """
 
-    def __init__(self, hdf5_bytes: BytesIO | None = None):
+    def __init__(self, hdf5_data: IOPathWrapper | None = None):
         """Initializes a DataContainer instance.
 
         By default, initializes an empty DataContainer.
         If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
 
         Parameters:
-            hdf5_bytes (BytesIO, optional): The serialized HDF5 data as a BytesIO object.
+            hdf5_data (IOPathWrapper | None): The HDF5 file to deserialize. Defaults to None.
         """
         super().__init__()
 
@@ -35,8 +34,8 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         self.nodes["/"] = RootNode()
 
         # If provided, initialize from a serialized HDF5 file.
-        if hdf5_bytes:
-            self.deserialize(hdf5_bytes)
+        if hdf5_data:
+            self.deserialize(hdf5_data)
 
     # Overwrite the __str__ method to provide a string representation of the DataContainer
     def __str__(self):

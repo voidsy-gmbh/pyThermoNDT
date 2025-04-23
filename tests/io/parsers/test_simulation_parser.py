@@ -8,20 +8,21 @@ from mat73.core import AttrDict
 
 from pythermondt.data import ThermoContainer
 from pythermondt.io.parsers import SimulationParser
+from pythermondt.utils import IOPathWrapper
 from tests.utils import containers_equal
 
 
 def test_simulation_parser_empty_bytes():
     """Test that SimulationParser raises appropriate error with empty BytesIO."""
-    empty_bytes = io.BytesIO()
-    with pytest.raises(ValueError, match="The given BytesIO object is empty"):
+    empty_bytes = IOPathWrapper(io.BytesIO())
+    with pytest.raises(ValueError, match="The given IOPathWrapper object is empty"):
         SimulationParser.parse(empty_bytes)
 
 
 def test_simulation_parser_invalid_bytes():
     """Test that SimulationParser raises appropriate error with invalid MAT file."""
-    invalid_bytes = io.BytesIO(b"not a mat file")
-    with pytest.raises(ValueError, match="The given BytesIO object does not contain a valid .mat file"):
+    invalid_bytes = IOPathWrapper(io.BytesIO(b"not a mat file"))
+    with pytest.raises(ValueError, match="The given IOPathWrapper object does not contain a valid .mat file"):
         SimulationParser.parse(invalid_bytes)
 
 
@@ -51,7 +52,7 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
     expected.update_dataset(path="/MetaData/ExcitationSignal", data=sim_result["ExcitationSignal"])
 
     # Parse the mock data
-    parsed = SimulationParser.parse(io.BytesIO(b"dummy"))
+    parsed = SimulationParser.parse(IOPathWrapper(io.BytesIO(b"dummy")))
 
     # Check containers match
     assert containers_equal(parsed, expected), "Parsed data does not match expected data."

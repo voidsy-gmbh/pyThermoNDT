@@ -1,9 +1,9 @@
-import io
 import os
 import re
 from glob import glob
 
 from ..io import BaseParser
+from ..utils import IOPathWrapper
 from .base_reader import BaseReader
 
 
@@ -83,10 +83,8 @@ class LocalReader(BaseReader):
 
         return file_paths
 
-    def _read_file(self, path: str) -> io.BytesIO:
-        # Open file in binary mode and return it as BytesIO object
-        with open(path, "rb") as file:
-            return io.BytesIO(file.read())
+    def _read_file(self, path: str) -> IOPathWrapper:
+        return IOPathWrapper(path)
 
     def _close(self):
         pass  # No need to close any resources for LocalReader

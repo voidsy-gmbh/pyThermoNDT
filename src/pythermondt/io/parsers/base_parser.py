@@ -1,7 +1,7 @@
-from io import BytesIO
 from typing import Protocol, runtime_checkable
 
 from ...data import DataContainer
+from ...utils import IOPathWrapper
 
 
 @runtime_checkable
@@ -36,13 +36,13 @@ class BaseParser(Protocol):
             )
 
     @staticmethod
-    def parse(data_bytes: BytesIO) -> DataContainer:
-        """Parses the data from the given BytesIO object into a DataContainer object.
+    def parse(data: IOPathWrapper) -> DataContainer:
+        """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
         Subclasses must implement this method.
 
         Parameters:
-            data_bytes (io.BytesIO): The BytesIO object containing the data to be parsed.
+            data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.
 
         Returns:
             DataContainer: The parsed data as a DataContainer object.

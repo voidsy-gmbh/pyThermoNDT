@@ -1,0 +1,8 @@
+digraph "packages_pythermondt.utils" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.utils" [color="#F2994A", label=<pythermondt.utils>, shape="box", style="filled"];
+"pythermondt.utils.io" [color="#F2994A", label=<pythermondt.utils.io>, shape="box", style="filled"];
+"pythermondt.utils" -> "pythermondt.utils.io" [arrowhead="open", arrowtail="none"];
+"pythermondt.utils.io" -> "pythermondt.utils.io" [arrowhead="open", arrowtail="none"];
+}

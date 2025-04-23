@@ -1,0 +1,5 @@
+digraph "classes_pythermondt.utils" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.utils.io.IOPathWrapper" [color="#F2994A", fontcolor="black", label=<{IOPathWrapper|file_obj : BytesIO<br ALIGN="LEFT"/>path : str<br ALIGN="LEFT"/>|close()<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+}

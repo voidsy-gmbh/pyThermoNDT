@@ -6,14 +6,14 @@ from io import BytesIO
 class IOPathWrapper:
     """Wraps a file-like object (e.g., BytesIO) to provide both bytes and path-like access."""
 
-    def __init__(self, file_obj: BytesIO, original_path: str | None = None):
+    def __init__(self, file_obj: BytesIO | bytes, original_path: str | None = None):
         """Initialize with a file-like object and optional original path.
 
         Args:
-            file_obj: File-like object with read/seek methods
-            original_path: Original file path if available and valid
+            file_obj (BytesIO | bytes): File-like object or bytes to wrap.
+            original_path (str, optional): Original file path for reference. Defaults to None.
         """
-        self._file = file_obj
+        self._file = file_obj if isinstance(file_obj, BytesIO) else BytesIO(file_obj)
         self._original_path = original_path
         self._temp_path = None
 

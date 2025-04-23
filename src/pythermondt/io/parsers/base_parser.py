@@ -37,7 +37,7 @@ class BaseParser(Protocol):
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:
-        """Parses the data from the given BytesIO object into a DataContainer object.
+        """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
         Subclasses must implement this method.
 

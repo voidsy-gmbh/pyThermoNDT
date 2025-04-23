@@ -13,9 +13,9 @@ class SimulationParser(BaseParser):
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:
-        """Parses the data from the given BytesIO object into a DataContainer object.
+        """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
-        The BytesIO object must contain a .mat file with simulattion data from COMSOL.
+        The IOPathWrapper object must contain a .mat file with simulattion data from COMSOL.
 
         Parameters:
             data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.
@@ -24,7 +24,7 @@ class SimulationParser(BaseParser):
             DataContainer: The parsed data as a DataContainer object.
 
         Raises:
-            ValueError: If the given BytesIO object is empty or does not contain a valid .mat file.
+            ValueError: If the given IOPathWrapper object is empty or does not contain a valid .mat file.
         """
         # Check if the BytesIO object is empty
         if data.file_obj.getbuffer().nbytes == 0:

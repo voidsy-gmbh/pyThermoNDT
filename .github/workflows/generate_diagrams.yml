@@ -11,12 +11,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         ssh-key: ${{ secrets.WRITE_KEY }}
 
     - name: Set up Python 3.12
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v5.4.2
       with:
         python-version: '3.12'
         enable-cache: false
@@ -26,7 +26,7 @@ jobs:
         uv pip install git+https://github.com/pylint-dev/pylint.git # Install latest pylint version which also contains --max-depth option
 
     - name: Setup Graphviz
-      uses: ts-graphviz/setup-graphviz@v2
+      uses: ts-graphviz/setup-graphviz@v2.0.2
 
     - name: Create directories for diagrams
       run: |
@@ -74,7 +74,7 @@ jobs:
 
     - name: Upload diagrams
       if: env.CHANGED == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: diagrams
         path: ./docs/pyreverse/images/*.jpg

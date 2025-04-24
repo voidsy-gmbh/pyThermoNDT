@@ -35,7 +35,7 @@ class S3Writer(BaseWriter):
             path = file_name
 
         # Serialize the DataContainer to a HDF5 file
-        file_obj = container.serialize_to_hdf5()
+        file_obj = container.serialize_to_hdf5().file_obj
 
         # Progress bar for uploading the file
         bar = tqdm(

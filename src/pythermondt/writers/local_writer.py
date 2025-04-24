@@ -24,5 +24,4 @@ class LocalWriter(BaseWriter):
         path = os.path.join(self.destination_folder, file_name)
 
         # Write the DataContainer to the file
-        with open(path, "wb") as file:
-            file.write(container.serialize_to_hdf5().getvalue())
+        container.save_to_hdf5(path)

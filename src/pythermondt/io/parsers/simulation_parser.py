@@ -1,7 +1,7 @@
 import json
 
-import mat73
 import numpy as np
+import pymatreader
 
 from ...data import DataContainer, ThermoContainer
 from ...utils import IOPathWrapper
@@ -32,7 +32,7 @@ class SimulationParser(BaseParser):
 
         # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
         try:
-            data_dict = mat73.loadmat(data.file_obj, use_attrdict=True)["SimResult"]
+            data_dict = pymatreader.read_mat(data.file_path)["SimResult"]
         except TypeError as o:
             raise ValueError("The given IOPathWrapper object does not contain a valid .mat file.") from o
 

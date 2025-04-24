@@ -51,7 +51,7 @@ class SimulationParser(BaseParser):
                 case "GroundTruth":
                     # Try to extract the label ids and convert to dict
                     try:
-                        label_ids = data_dict[key].LabelIds
+                        label_ids = data_dict[key]["LabelIds"]
                         label_ids = json.loads(label_ids) if isinstance(label_ids, str) else label_ids
                         datacontainer.add_attributes(path="/GroundTruth/DefectMask", LabelIds=label_ids)
                     except (json.JSONDecodeError, AttributeError, KeyError):

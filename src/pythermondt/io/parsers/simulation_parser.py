@@ -56,7 +56,7 @@ class SimulationParser(BaseParser):
                         datacontainer.add_attributes(path="/GroundTruth/DefectMask", LabelIds=label_ids)
                     except (json.JSONDecodeError, AttributeError, KeyError):
                         pass
-                    datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data_dict[key].DefectMask)
+                    datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data_dict[key]["DefectMask"])
                 case "Time":
                     datacontainer.update_dataset(path="/MetaData/DomainValues", data=data_dict[key])
                 case "LookUpTable":
@@ -91,8 +91,8 @@ class SimulationParser(BaseParser):
                 case "Shapes":
                     # Convert the Shapes into a Python dict first:
                     shapes = {
-                        data_dict[key].Names[i]: int(data_dict[key].Numbers[i])
-                        for i in range(len(data_dict[key].Names))
+                        data_dict[key]["Names"][i]: int(data_dict[key]["Numbers"][i])
+                        for i in range(len(data_dict[key]["Names"]))
                     }
                     datacontainer.add_attributes(path="/MetaData", Shapes=shapes)
 

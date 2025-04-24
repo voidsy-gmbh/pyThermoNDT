@@ -64,10 +64,13 @@ class SimulationParser(BaseParser):
                 case "ExcitationSignal":
                     datacontainer.update_dataset(path="/MetaData/ExcitationSignal", data=data_dict[key])
                 case "ComsolParameters":
+                    # Reshape comsol parameters back to a list of lists ==> pymatreader loads this as a flattened list
+                    flattenend_comsol_parameters = reshape_pymatreader_parameters(data_dict[key])
+
                     # Convert Comsol Parameters to a json string
                     converted_comsol_parameters = [
-                        [item.item() if isinstance(item, np.ndarray) else item for item in sublist]
-                        for sublist in data_dict[key]
+                        [item.item() if isinstance(item, np.ndarray) and item.size == 1 else item for item in sublist]
+                        for sublist in flattenend_comsol_parameters
                     ]
 
                     # TODO: Actually this is a list of lists. Should be improved in the future
@@ -98,3 +101,25 @@ class SimulationParser(BaseParser):
 
         # Return the constructed datapoint
         return datacontainer
+
+
+def reshape_pymatreader_parameters(flat_params):
+    # Determine where the sections start
+    num_params = 46  # Based on your example
+
+    # Extract each section
+    param_names = flat_params[:num_params]
+    expressions = flat_params[num_params : 2 * num_params]
+    descriptions = flat_params[2 * num_params : 3 * num_params]
+    values = flat_params[3 * num_params : 4 * num_params]
+    units = flat_params[4 * num_params : 5 * num_params]
+
+    # Create the column headers
+    # result = [['Name', 'Expression', 'Description', 'Value', 'Unit']]
+    result = []
+
+    # Create a row for each parameter
+    for i in range(num_params):
+        result.append([param_names[i], expressions[i], descriptions[i], values[i], units[i]])
+
+    return result

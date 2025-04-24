@@ -306,8 +306,7 @@ class BaseReader(ABC):
         try:
             # If the reader reads from a remote source and files are cached, read the file from the local directory
             if self.remote_source and self.__cache_files and self.__cached_paths is not None:
-                with open(path, "rb") as f:
-                    return self.parser.parse(IOPathWrapper(f.read()))
+                return self.parser.parse(IOPathWrapper(path))
         except FileNotFoundError:
             raise FileNotFoundError("File not found in cached files. Clear the cache and try again.") from None
 

@@ -7,7 +7,9 @@ class IOPathWrapper:
     """Provides unified access to file content via both path and buffer interfaces."""
 
     def __init__(self, source: str | BytesIO | bytes):
-        """Initialize with either a file path or file content.
+        """Provides unified access to file content via both path and buffer interfaces.
+
+        Initialize with either a file path or file content.
 
         Args:
             source: Either a file path (str), file-like object, or bytes

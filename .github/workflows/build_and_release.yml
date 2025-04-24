@@ -33,7 +33,7 @@ jobs:
       # Step 3: Install bump-my-version
       - name: Install bump-my-version
         run: |
-          uv pip install bump-my-version --overrides .\requirements_dev.txt
+          uv pip install bump-my-version --overrides ./requirements_dev.txt
 
       # Step 4: Setup github user
       - name: Setup git user

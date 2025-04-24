@@ -1,9 +1,9 @@
-import io
 import re
 
 import boto3
 
 from ..io import BaseParser
+from ..utils import IOPathWrapper
 from .base_reader import BaseReader
 
 
@@ -68,13 +68,13 @@ class S3Reader(BaseReader):
     def remote_source(self) -> bool:
         return True
 
-    def _read_file(self, path: str) -> io.BytesIO:
+    def _read_file(self, path: str) -> IOPathWrapper:
         # Extract the bucket and the key from the path
         bucket = path.split("/")[2]
         key = "/".join(path.split("/")[3:])
 
         response = self.__client.get_object(Bucket=bucket, Key=key)
-        return io.BytesIO(response["Body"].read())
+        return IOPathWrapper(response["Body"].read())
 
     def _get_file_list(self, num_files: int | None = None) -> list[str]:
         # Create a paginator for the list_objects_v2 method ==> The amount of objects to get with list_objects_v2 is

@@ -39,7 +39,7 @@ class IOPathWrapper:
         return self.__file_obj
 
     @property
-    def path(self) -> str:
+    def file_path(self) -> str:
         """Get file path, using original path or creating temp file."""
         if isinstance(self.__source, str) and os.path.exists(self.__source):
             # Source is already a valid path - use directly

@@ -25,7 +25,7 @@ def test_local_reader_integration(test_case: IntegrationTestCase):
     # Compare all containers in the reader
     for i, (source_container, expected_container) in enumerate(zip(source_reader, expected_reader, strict=True)):
         # Compare containers
-        assert containers_equal(source_container, expected_container), (
+        assert containers_equal(expected_container, source_container), (
             f"Test case '{test_case.id}': {source_reader.files[i]} and {expected_reader.files[i]} are not equal"
         )
 
@@ -44,6 +44,6 @@ def test_thermodataset_integration(test_case: IntegrationTestCase):
     # Compare all containers in the dataset
     for i, (source_container, expected_container) in enumerate(zip(source_dataset, expected_dataset, strict=True)):
         # Compare containers
-        assert containers_equal(source_container, expected_container), (
+        assert containers_equal(expected_container, source_container), (
             f"Test case '{test_case.id}': {source_dataset.files[i]} and {expected_dataset.files[i]} are not equal"
         )

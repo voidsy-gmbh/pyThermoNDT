@@ -32,6 +32,7 @@ jobs:
         uses: astral-sh/ruff-action@v3.2.2
         with:
           args: "check"
+          version-file: requirements_dev.txt
 
       # Step 3: Set Output Based on Lint Success
       - id: set_output

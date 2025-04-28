@@ -4,6 +4,7 @@ from collections.abc import ItemsView
 from typing import Any
 
 import h5py
+import numpy as np
 
 from ...utils import IOPathWrapper
 from .attribute_ops import AttributeOps
@@ -177,6 +178,11 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             # If it fails, the value is not a JSON object or a string ==> keep it as it is
             except (json.JSONDecodeError, TypeError):
                 pass
+
+            # Convert NumPy scalars to Python native types
+            if isinstance(value, np.number):
+                # This handles all numpy scalar types (float64, int64, etc.)
+                value = value.item()
 
             # Add the attribute to the node in the DataContainer
             self.add_attribute(path, key, value)

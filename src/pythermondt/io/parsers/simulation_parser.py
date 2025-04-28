@@ -73,6 +73,14 @@ class SimulationParser(BaseParser):
                         for sublist in flattenend_comsol_parameters
                     ]
 
+                    # Clean up the list of lists ==> handle empty arrays and single dimensions
+                    for i, sublist in enumerate(converted_comsol_parameters):
+                        for j, item in enumerate(sublist):
+                            if isinstance(item, np.ndarray) and item.size == 1:
+                                converted_comsol_parameters[i][j] = item.item()
+                            if isinstance(item, np.ndarray) and item.size == 0:
+                                converted_comsol_parameters[i][j] = ""
+
                     # TODO: Actually this is a list of lists. Should be improved in the future
                     # (maybe with a pandas dataframe ==> needs more work!)
                     # Replace ' with " to make it a valid json string

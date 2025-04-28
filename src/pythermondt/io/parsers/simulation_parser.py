@@ -31,7 +31,7 @@ class SimulationParser(BaseParser):
         if data.file_obj.getbuffer().nbytes == 0:
             raise ValueError("The given IOPathWrapper object is empty.")
 
-        # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
+        # Try to load the .mat file using pymatreader ==> If it fails the file is not a valid .mat file
         try:
             data_dict = pymatreader.read_mat(data.file_path)["SimResult"]
         except MatReadError as o:

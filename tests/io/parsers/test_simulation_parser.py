@@ -26,7 +26,7 @@ def test_simulation_parser_invalid_bytes():
         SimulationParser.parse(invalid_bytes)
 
 
-@patch("pythermondt.io.parsers.simulation_parser.mat73.loadmat")
+@patch("pythermondt.io.parsers.simulation_parser.pymatreader.read_mat")
 def test_simulation_parser_basic_parsing(mock_loadmat):
     """Test that SimulationParser correctly parses a simple MAT file."""
     # Setup mock data structure - use dict instead of MagicMock for keys

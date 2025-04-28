@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import numpy as np
 import pymatreader
@@ -106,7 +107,8 @@ class SimulationParser(BaseParser):
         return datacontainer
 
 
-def reshape_pymatreader_parameters(flat_params):
+def reshape_pymatreader_parameters(flat_params: list[Any]) -> list[list[Any]]:
+    """Reshape the flattened list of parameters from pymatreader into a list of lists."""
     # Determine where the sections start
     num_params = len(flat_params) // 5
 
@@ -118,7 +120,6 @@ def reshape_pymatreader_parameters(flat_params):
     units = flat_params[4 * num_params : 5 * num_params]
 
     # Create the column headers
-    # result = [['Name', 'Expression', 'Description', 'Value', 'Unit']]
     result = []
 
     # Create a row for each parameter

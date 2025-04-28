@@ -108,7 +108,7 @@ class SimulationParser(BaseParser):
 
 def reshape_pymatreader_parameters(flat_params):
     # Determine where the sections start
-    num_params = 46  # Based on your example
+    num_params = len(flat_params) // 5
 
     # Extract each section
     param_names = flat_params[:num_params]

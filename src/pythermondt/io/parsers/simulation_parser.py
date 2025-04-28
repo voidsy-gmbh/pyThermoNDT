@@ -1,7 +1,9 @@
 import json
+from typing import Any
 
-import mat73
 import numpy as np
+import pymatreader
+from scipy.io.matlab import MatReadError
 
 from ...data import DataContainer, ThermoContainer
 from ...utils import IOPathWrapper
@@ -30,10 +32,10 @@ class SimulationParser(BaseParser):
         if data.file_obj.getbuffer().nbytes == 0:
             raise ValueError("The given IOPathWrapper object is empty.")
 
-        # Try to load the .mat file using mat73 ==> If it fails the file is not a valid .mat file
+        # Try to load the .mat file using pymatreader ==> If it fails the file is not a valid .mat file
         try:
-            data_dict = mat73.loadmat(data.file_obj, use_attrdict=True)["SimResult"]
-        except TypeError as o:
+            data_dict = pymatreader.read_mat(data.file_path)["SimResult"]
+        except MatReadError as o:
             raise ValueError("The given IOPathWrapper object does not contain a valid .mat file.") from o
 
         # Create an empty Thermocontainer ==> predefined structure
@@ -51,12 +53,12 @@ class SimulationParser(BaseParser):
                 case "GroundTruth":
                     # Try to extract the label ids and convert to dict
                     try:
-                        label_ids = data_dict[key].LabelIds
+                        label_ids = data_dict[key]["LabelIds"]
                         label_ids = json.loads(label_ids) if isinstance(label_ids, str) else label_ids
                         datacontainer.add_attributes(path="/GroundTruth/DefectMask", LabelIds=label_ids)
                     except (json.JSONDecodeError, AttributeError, KeyError):
                         pass
-                    datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data_dict[key].DefectMask)
+                    datacontainer.update_dataset(path="/GroundTruth/DefectMask", data=data_dict[key]["DefectMask"])
                 case "Time":
                     datacontainer.update_dataset(path="/MetaData/DomainValues", data=data_dict[key])
                 case "LookUpTable":
@@ -64,16 +66,21 @@ class SimulationParser(BaseParser):
                 case "ExcitationSignal":
                     datacontainer.update_dataset(path="/MetaData/ExcitationSignal", data=data_dict[key])
                 case "ComsolParameters":
-                    # Convert Comsol Parameters to a json string
-                    converted_comsol_parameters = [
-                        [item.item() if isinstance(item, np.ndarray) else item for item in sublist]
-                        for sublist in data_dict[key]
-                    ]
+                    # Reshape comsol parameters back to a list of lists ==> pymatreader loads this as a flattened list
+                    comsol_parameters = reshape_pymatreader_parameters(data_dict[key])
+
+                    # Clean up the list of lists ==> handle empty arrays and single dimensions
+                    for i, sublist in enumerate(comsol_parameters):
+                        for j, item in enumerate(sublist):
+                            if isinstance(item, np.ndarray) and item.size == 1:
+                                comsol_parameters[i][j] = item.item()
+                            if isinstance(item, np.ndarray) and item.size == 0:
+                                comsol_parameters[i][j] = ""
 
                     # TODO: Actually this is a list of lists. Should be improved in the future
                     # (maybe with a pandas dataframe ==> needs more work!)
                     # Replace ' with " to make it a valid json string
-                    converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
+                    converted_comsol_parameters = str(comsol_parameters).replace("'", '"')
 
                     # Replace nan with NaN to make it a valid json string
                     converted_comsol_parameters = converted_comsol_parameters.replace("nan", "NaN")
@@ -91,10 +98,32 @@ class SimulationParser(BaseParser):
                 case "Shapes":
                     # Convert the Shapes into a Python dict first:
                     shapes = {
-                        data_dict[key].Names[i]: int(data_dict[key].Numbers[i])
-                        for i in range(len(data_dict[key].Names))
+                        data_dict[key]["Names"][i]: int(data_dict[key]["Numbers"][i])
+                        for i in range(len(data_dict[key]["Names"]))
                     }
                     datacontainer.add_attributes(path="/MetaData", Shapes=shapes)
 
         # Return the constructed datapoint
         return datacontainer
+
+
+def reshape_pymatreader_parameters(flat_params: list[Any]) -> list[list[Any]]:
+    """Reshape the flattened list of parameters from pymatreader into a list of lists."""
+    # Determine where the sections start
+    num_params = len(flat_params) // 5
+
+    # Extract each section
+    param_names = flat_params[:num_params]
+    expressions = flat_params[num_params : 2 * num_params]
+    descriptions = flat_params[2 * num_params : 3 * num_params]
+    values = flat_params[3 * num_params : 4 * num_params]
+    units = flat_params[4 * num_params : 5 * num_params]
+
+    # Create the column headers
+    result = []
+
+    # Create a row for each parameter
+    for i in range(num_params):
+        result.append([param_names[i], expressions[i], descriptions[i], values[i], units[i]])
+
+    return result

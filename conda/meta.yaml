@@ -31,7 +31,7 @@ requirements:
 
     # Data loading and visualization
     - h5py>=3.9
-    - pymatreader>=1.0,
+    - pymatreader>=1.0
     - numpy>=1.23
     - matplotlib>=3.7
 

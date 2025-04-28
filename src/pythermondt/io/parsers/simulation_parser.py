@@ -68,24 +68,18 @@ class SimulationParser(BaseParser):
                     # Reshape comsol parameters back to a list of lists ==> pymatreader loads this as a flattened list
                     flattened_comsol_parameters = reshape_pymatreader_parameters(data_dict[key])
 
-                    # Convert Comsol Parameters to a json string
-                    converted_comsol_parameters = [
-                        [item.item() if isinstance(item, np.ndarray) and item.size == 1 else item for item in sublist]
-                        for sublist in flattened_comsol_parameters
-                    ]
-
                     # Clean up the list of lists ==> handle empty arrays and single dimensions
-                    for i, sublist in enumerate(converted_comsol_parameters):
+                    for i, sublist in enumerate(flattened_comsol_parameters):
                         for j, item in enumerate(sublist):
                             if isinstance(item, np.ndarray) and item.size == 1:
-                                converted_comsol_parameters[i][j] = item.item()
+                                flattened_comsol_parameters[i][j] = item.item()
                             if isinstance(item, np.ndarray) and item.size == 0:
-                                converted_comsol_parameters[i][j] = ""
+                                flattened_comsol_parameters[i][j] = ""
 
                     # TODO: Actually this is a list of lists. Should be improved in the future
                     # (maybe with a pandas dataframe ==> needs more work!)
                     # Replace ' with " to make it a valid json string
-                    converted_comsol_parameters = str(converted_comsol_parameters).replace("'", '"')
+                    converted_comsol_parameters = str(flattened_comsol_parameters).replace("'", '"')
 
                     # Replace nan with NaN to make it a valid json string
                     converted_comsol_parameters = converted_comsol_parameters.replace("nan", "NaN")

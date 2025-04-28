@@ -66,12 +66,12 @@ class SimulationParser(BaseParser):
                     datacontainer.update_dataset(path="/MetaData/ExcitationSignal", data=data_dict[key])
                 case "ComsolParameters":
                     # Reshape comsol parameters back to a list of lists ==> pymatreader loads this as a flattened list
-                    flattenend_comsol_parameters = reshape_pymatreader_parameters(data_dict[key])
+                    flattened_comsol_parameters = reshape_pymatreader_parameters(data_dict[key])
 
                     # Convert Comsol Parameters to a json string
                     converted_comsol_parameters = [
                         [item.item() if isinstance(item, np.ndarray) and item.size == 1 else item for item in sublist]
-                        for sublist in flattenend_comsol_parameters
+                        for sublist in flattened_comsol_parameters
                     ]
 
                     # Clean up the list of lists ==> handle empty arrays and single dimensions

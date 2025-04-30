@@ -1,9 +1,9 @@
 import os
 import re
 from glob import glob
-from io import BytesIO
 from re import Pattern
 
+from ...utils import IOPathWrapper
 from .base_backend import BaseBackend
 
 
@@ -53,13 +53,12 @@ class LocalBackend(BaseBackend):
     def pattern(self) -> str:
         return self.__pattern_str
 
-    def read_file(self, file_path: str) -> BytesIO:
-        with open(file_path, "rb") as file:
-            return BytesIO(file.read())
+    def read_file(self, file_path: str) -> IOPathWrapper:
+        return IOPathWrapper(file_path)
 
-    def write_file(self, bytes: BytesIO, file_path: str) -> None:
+    def write_file(self, bytes: IOPathWrapper, file_path: str) -> None:
         with open(file_path, "wb") as file:
-            file.write(bytes.read())
+            file.write(bytes.file_obj.read())
 
     def exists(self, file_path: str) -> bool:
         return os.path.exists(file_path)

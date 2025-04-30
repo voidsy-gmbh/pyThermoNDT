@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from io import BytesIO
+
+from ...utils import IOPathWrapper
 
 
 class BaseBackend(ABC):
@@ -10,12 +11,12 @@ class BaseBackend(ABC):
         raise NotImplementedError("The method must be implemented by the subclass!")
 
     @abstractmethod
-    def read_file(self, file_path: str) -> BytesIO:
+    def read_file(self, file_path: str) -> IOPathWrapper:
         # Actual implementation of how to read one file
         raise NotImplementedError("The method must be implemented by the subclass!")
 
     @abstractmethod
-    def write_file(self, bytes: BytesIO, file_path: str) -> None:
+    def write_file(self, bytes: IOPathWrapper, file_path: str) -> None:
         # Actual implementation of how to write one file
         raise NotImplementedError("The method must be implemented by the subclass!")
 

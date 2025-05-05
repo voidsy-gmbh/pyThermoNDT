@@ -20,6 +20,9 @@ class Units:
     second = Unit(name="second", quantity="time", symbol="s")
     millisecond = Unit(name="millisecond", quantity="time", symbol="ms")
 
+    # Frequency
+    hertz = Unit(name="hertz", quantity="frequency", symbol="Hz")
+
     # Add more units here as needed
 
     @classmethod

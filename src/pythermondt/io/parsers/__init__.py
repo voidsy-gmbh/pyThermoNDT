@@ -1,6 +1,7 @@
 from importlib.metadata import entry_points
 
 from .base_parser import BaseParser
+from .edevis_parser import EdevisParser
 from .hdf5_parser import HDF5Parser
 from .simulation_parser import SimulationParser
 
@@ -18,7 +19,7 @@ def _load_parser_plugins() -> list[type[BaseParser]]:
 
 
 # Parser registry of all available parsers
-PARSER_REGISTRY: list[type[BaseParser]] = [HDF5Parser, SimulationParser] + _load_parser_plugins()
+PARSER_REGISTRY: list[type[BaseParser]] = [HDF5Parser, SimulationParser, EdevisParser] + _load_parser_plugins()
 
 
 def find_parser_for_extension(extension: str) -> type[BaseParser] | None:

@@ -191,7 +191,7 @@ class EdevisParser(BaseParser):
                 container.update_dataset("/Data/Tdata", tdata)
 
                 # Create a simple excitation signal based on pulse length and domain values
-                # This is a simplified approach - actual signal might need more processing
+                # TODO: This is a simplified approach - actual signal might need more processing
                 excitation_signal = np.zeros_like(domain_values)
                 if data_type == 2:  # Only for time domain
                     # Set signal to 1 for the duration of the pulse

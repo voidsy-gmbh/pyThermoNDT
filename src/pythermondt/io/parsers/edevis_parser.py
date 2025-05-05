@@ -37,6 +37,7 @@ class EdevisParser(BaseParser):
         # Add source as an attribute
         container.add_attributes(path="/MetaData", Source="Edevis")
 
+        # Extract the file object from the IOPathWrapper
         data_bytes = data.file_obj
 
         try:
@@ -166,7 +167,7 @@ class EdevisParser(BaseParser):
                 data_bytes.seek(0)
 
                 # Read each frame
-                for j, offset in enumerate(frame_offsets):
+                for j, offset in enumerate(frame_offsets.tolist()):
                     data_bytes.seek(offset)
 
                     # Read frame data based on bit depth

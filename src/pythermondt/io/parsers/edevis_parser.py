@@ -160,40 +160,32 @@ class EdevisParser(BaseParser):
                 container.update_dataset("/MetaData/DomainValues", domain_values)
 
                 # Extract and store frame data
-                # Initialize temperature data array
-                tdata = np.zeros((height, width, len(frame_nodes)), dtype=np.float32)
+                # Map bit depth to corresponding numpy data type
+                tdata_type = {16: np.uint16, 32: np.float32, 64: np.float64}
+
+                # Check if the bit depth is supported
+                if bit_depth not in tdata_type:
+                    raise ValueError(f"Unsupported bit depth: {bit_depth}")
+
+                # Calculate bytes per pixel and frame size
+                bytes_per_pixel = bit_depth // 8
+                frame_size_bytes = width * height * bytes_per_pixel
+
+                # Initialize temperature data array with the appropriate type
+                tdata = np.zeros((height, width, len(frame_nodes)), dtype=tdata_type[bit_depth])
 
                 # Reset file position
                 data_bytes.seek(0)
 
                 # Read each frame
-                for j, offset in enumerate(frame_offsets.tolist()):
-                    data_bytes.seek(offset)
+                for j, offset in enumerate(frame_offsets):
+                    # Seek to frame position
+                    data_bytes.seek(offset.item())
 
-                    # Read frame data based on bit depth
-                    if bit_depth == 16:
-                        # Read raw data for 16-bit frames
-                        frame_data = np.frombuffer(
-                            data_bytes.read(width * height * 2),  # 2 bytes per pixel
-                            dtype=np.uint16,
-                        ).reshape(height, width)
-                    elif bit_depth == 32:
-                        # Read raw data for 32-bit frames
-                        frame_data = np.frombuffer(
-                            data_bytes.read(width * height * 4),  # 4 bytes per pixel
-                            dtype=np.float32,
-                        ).reshape(height, width)
-                    elif bit_depth == 64:
-                        # Read raw data for 64-bit frames
-                        frame_data = np.frombuffer(
-                            data_bytes.read(width * height * 8),  # 8 bytes per pixel
-                            dtype=np.float64,
-                        ).reshape(height, width)
-                    else:
-                        raise ValueError(f"Unsupported bit depth: {bit_depth}")
-
-                    # Store frame data
-                    tdata[:, :, j] = frame_data
+                    # Read the entire frame at once and reshape
+                    tdata[:, :, j] = np.frombuffer(
+                        data_bytes.read(frame_size_bytes), dtype=tdata_type[bit_depth]
+                    ).reshape(height, width)
 
                 # Store temperature data
                 container.update_dataset("/Data/Tdata", tdata)

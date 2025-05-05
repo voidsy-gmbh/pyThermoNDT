@@ -10,7 +10,7 @@ from .base_parser import BaseParser
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = ("di", "ITvisPulse", "OTvis")
+    supported_extensions = (".di", ".ITvisPulse", ".OTvis")
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:

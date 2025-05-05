@@ -1,5 +1,5 @@
 import tarfile
-from xml.dom.minidom import parseString
+from xml.dom.minidom import Element, parseString
 
 import numpy as np
 
@@ -73,29 +73,30 @@ class EdevisParser(BaseParser):
 
                 # Extract metadata
                 # Frame count
-                frame_count = int(node_seq_info.getElementsByTagName("FrameCount")[0].firstChild.data)
+                frame_count = int(get_element_text(node_seq_info, "FrameCount"))
 
                 # Window dimensions
-                window_str = node_seq_info.getElementsByTagName("Window")[0].firstChild.data
+                window_str = get_element_text(node_seq_info, "Window")
                 width = int(window_str.split(",")[2])
                 height = int(window_str.split(",")[3])
 
                 # Frame rate
-                frame_rate_str = node_seq_info.getElementsByTagName("FrameRate")[0].firstChild.data
+                frame_rate_str = get_element_text(node_seq_info, "FrameRate")
                 frame_rate = int(frame_rate_str.split("H")[0])
 
                 # Data type (e.g., dft: 13, raw: 2)
-                data_type = int(node_seq_info.getElementsByTagName("DataType")[0].firstChild.data)
+                data_type_str = get_element_text(node_seq_info, "DataType")
+                data_type = int(data_type_str)
 
                 # Bit depth
-                bit_depth = int(node_seq_info.getElementsByTagName("BitDepth")[0].firstChild.data)
+                bit_depth = int(get_element_text(node_seq_info, "BitDepth"))
 
                 # Excitation amplitude
-                amplitude_str = node_seq_info.getElementsByTagName("ExcitationAmplitude")[0].firstChild.data
+                amplitude_str = get_element_text(node_seq_info, "ExcitationAmplitude")
                 amplitude = float(amplitude_str.split(" %")[0])
 
                 # Excitation pulse length
-                pulse_str = node_seq_info.getElementsByTagName("ExcitationPulseLength")[0].firstChild.data
+                pulse_str = get_element_text(node_seq_info, "ExcitationPulseLength")
                 pulse_length = float(pulse_str.split("s")[0])
 
                 # Store metadata in container
@@ -144,12 +145,12 @@ class EdevisParser(BaseParser):
                     frame_offsets[j] = int(frame_node.attributes["TarFileHeaderDataOffset"].value)
 
                     if data_type == 13:  # Fourier (frequency domain)
-                        freq_str = frame_node.getElementsByTagName("FourierFrequency")[0].firstChild.data
+                        freq_str = get_element_text(frame_node, "FourierFrequency")
                         domain_values[j] = float(freq_str.split("Hz")[0])
                         # Set unit to hertz for frequency domain
                         container.update_unit("/MetaData/DomainValues", Units.hertz)
                     elif data_type == 2:  # Raw (time domain)
-                        time_str = frame_node.getElementsByTagName("FrameTime")[0].firstChild.data
+                        time_str = get_element_text(frame_node, "FrameTime")
                         domain_values[j] = float(time_str.split("s")[0])
                         # Set unit to second for time domain
                         container.update_unit("/MetaData/DomainValues", Units.second)
@@ -204,3 +205,12 @@ class EdevisParser(BaseParser):
 
         except Exception as e:
             raise ValueError(f"Error parsing Edevis file: {str(e)}") from e
+
+
+# Helper function to safely get text content from an element without raising a type error
+def get_element_text(parent_node: Element, tag_name: str) -> str:
+    """Safely extract text content from the first matching element."""
+    elements = parent_node.getElementsByTagName(tag_name)
+    if not elements or not elements[0].firstChild:
+        raise ValueError(f"Missing or empty {tag_name} element")
+    return elements[0].firstChild.nodeValue or ""

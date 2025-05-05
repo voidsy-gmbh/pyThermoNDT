@@ -3,7 +3,8 @@ from xml.dom.minidom import parseString
 
 import numpy as np
 
-from ...data import DataContainer, ThermoContainer, Units
+from ...data import DataContainer, ThermoContainer
+from ...data.units import Units
 from ...utils import IOPathWrapper
 from .base_parser import BaseParser
 

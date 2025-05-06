@@ -131,7 +131,9 @@ class EdevisParser(BaseParser):
                         # Extract LUT data
                         lut_size = 2**16
                         lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
-                        container.update_dataset("/MetaData/LookUpTable", lut_data)
+
+                        # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
+                        container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
 
                 # Get frame info
                 subnode_list = node_seq.getElementsByTagName("FrameInfo")

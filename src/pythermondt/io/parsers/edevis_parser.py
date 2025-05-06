@@ -8,6 +8,8 @@ from ...data.units import Units
 from ...utils import IOPathWrapper
 from .base_parser import BaseParser
 
+TAR_HEADER_SIZE = 512  # Size of the TAR header in bytes ==> needs to be skipped when reading the data
+
 
 class EdevisParser(BaseParser):
     supported_extensions = (".di", ".ITvisPulse", ".OTvis")
@@ -122,7 +124,7 @@ class EdevisParser(BaseParser):
                         # Reset file position to start
                         data_bytes.seek(0)
                         # Skip to LUT position
-                        data_bytes.seek(tar_offset_lut)
+                        data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
                         # TODO: Implement LUT extraction and storage
                         # This would depend on how the LUT is stored in the file
                         # For now, just store a placeholder
@@ -181,7 +183,9 @@ class EdevisParser(BaseParser):
                 # Read each frame
                 for j, offset in enumerate(frame_offsets):
                     # Seek to frame position
-                    data_bytes.seek(offset.item())
+                    data_bytes.seek(offset.item() + TAR_HEADER_SIZE + 28)
+
+                    # test_frame_offset(data_bytes, offset, frame_size_bytes, height, width, bit_depth)
 
                     # Read the entire frame at once and reshape
                     tdata[:, :, j] = np.frombuffer(

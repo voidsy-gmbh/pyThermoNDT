@@ -1,3 +1,4 @@
+import re
 import tarfile
 from xml.dom.minidom import Element, parseString
 
@@ -174,6 +175,19 @@ class EdevisParser(BaseParser):
                 bytes_per_pixel = bit_depth // 8
                 frame_size_bytes = width * height * bytes_per_pixel
 
+                # Each frame is stored in a separate file. Because of the block size of the tar file,
+                # we need to skip the header size of the tar file (512 bytes) and the size of the frame header
+                # Get first frame file
+                frame_files = [m for m in tar_file.getmembers() if re.match(r"^sequence0/f\d+\.bin$", m.name)]
+                if not frame_files:
+                    raise ValueError("No frame files found in the tar archive.")
+
+                # Determine the total size one frame file
+                total_size = frame_files[0].size
+
+                # Calculate the frame header size
+                header_size = total_size - frame_size_bytes
+
                 # Initialize temperature data array with the appropriate type
                 tdata = np.zeros((height, width, len(frame_nodes)), dtype=tdata_type[bit_depth])
 
@@ -183,7 +197,7 @@ class EdevisParser(BaseParser):
                 # Read each frame
                 for j, offset in enumerate(frame_offsets):
                     # Seek to frame position
-                    data_bytes.seek(offset.item() + TAR_HEADER_SIZE + 28)
+                    data_bytes.seek(offset.item() + TAR_HEADER_SIZE + header_size)
 
                     # test_frame_offset(data_bytes, offset, frame_size_bytes, height, width, bit_depth)
 

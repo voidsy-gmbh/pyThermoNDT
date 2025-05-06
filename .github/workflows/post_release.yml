@@ -12,3 +12,5 @@ jobs:
     with:
       bump-type: patch
       ref: main
+    secrets:
+      WRITE_KEY: ${{ secrets.WRITE_KEY }}

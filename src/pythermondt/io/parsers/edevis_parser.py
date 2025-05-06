@@ -121,15 +121,17 @@ class EdevisParser(BaseParser):
                     tar_offset_lut = int(node_seq_info.attributes["TarFileHeaderCalibrationOffset"].value)
 
                     # Extract and store the LUT if available
-                    if tar_offset_lut is not None:
+                    if tar_offset_lut is not None and bit_depth == 16:
                         # Reset file position to start
                         data_bytes.seek(0)
+
                         # Skip to LUT position
                         data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
-                        # TODO: Implement LUT extraction and storage
-                        # This would depend on how the LUT is stored in the file
-                        # For now, just store a placeholder
-                        container.update_dataset("/MetaData/LookUpTable", np.ones(1))
+
+                        # Extract LUT data
+                        lut_size = 2**16
+                        lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
+                        container.update_dataset("/MetaData/LookUpTable", lut_data)
 
                 # Get frame info
                 subnode_list = node_seq.getElementsByTagName("FrameInfo")

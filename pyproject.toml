@@ -98,7 +98,7 @@ quote-style = "double"
 
 # Bump Version
 [tool.bumpversion]
-current_version = "0.1.7dev"
+current_version = "0.1.8dev"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?P<release>dev)?"
 serialize = [
     "{major}.{minor}.{patch}{release}",

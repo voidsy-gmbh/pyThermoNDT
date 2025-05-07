@@ -37,18 +37,22 @@ class BaseReader(ABC):
 
     @property
     def backend(self) -> BaseBackend:
+        """The backend that the reader uses to read the data."""
         return self.__backend
 
     @property
     def parser(self) -> type[BaseParser] | None:
+        """The parser that the reader uses to parse the data."""
         return self.__parser
 
     @property
     def num_files(self) -> int | None:
+        """The number of files to read."""
         return self.__num_files
 
     @property
     def files(self) -> list[str]:
+        """List of files that the reader is able to read."""
         if self.__files_cache is None:
             self.__files_cache = self.backend.get_file_list(
                 extensions=self.__supported_extensions, num_files=self.num_files
@@ -78,6 +82,17 @@ class BaseReader(ABC):
             yield self.read_file(file)
 
     def read_file(self, file_path: str) -> DataContainer:
+        """Read a fiel from the specified path and return it as a DataContainer object.
+
+        Args:
+            file_path (str): The path to the file to be read.
+
+        Returns:
+            DataContainer: The data contained in the file, parsed and returned as a DataContainer object.
+
+        Raises:
+            ValueError: If the file type cannot be determined or if no parser is found for the file extension.
+        """
         # Get raw file data from backend
         file_data = self.backend.read_file(file_path)
 

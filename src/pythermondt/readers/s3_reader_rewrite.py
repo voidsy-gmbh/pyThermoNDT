@@ -8,7 +8,13 @@ class S3Reader(BaseReader):
         self,
         bucket: str,
         prefix: str = "",
+        cache_files: bool = False,
         parser: type[BaseParser] | None = None,
         num_files: int | None = None,
     ):
         super().__init__(S3Backend(bucket, prefix), parser, num_files)
+        self.__cache_files = cache_files
+
+    @property
+    def cache_files(self) -> bool:
+        return self.__cache_files

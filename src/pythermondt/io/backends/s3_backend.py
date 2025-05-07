@@ -53,7 +53,7 @@ class S3Backend(BaseBackend):
                 raise FileNotFoundError(f"File not found: {file_path}") from e
             raise
 
-    def write_file(self, bytes: IOPathWrapper, file_path: str) -> None:
+    def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         """Write file to S3.
 
         Parameters:
@@ -63,10 +63,10 @@ class S3Backend(BaseBackend):
         bucket, key = self._parse_path(file_path)
 
         # Reset file object position
-        bytes.file_obj.seek(0)
+        data.file_obj.seek(0)
 
         # Upload to S3
-        self.__client.upload_fileobj(bytes.file_obj, bucket, key)
+        self.__client.upload_fileobj(data.file_obj, bucket, key)
 
     def exists(self, file_path: str) -> bool:
         """Check if a file exists in S3.

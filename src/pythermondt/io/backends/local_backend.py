@@ -56,9 +56,9 @@ class LocalBackend(BaseBackend):
     def read_file(self, file_path: str) -> IOPathWrapper:
         return IOPathWrapper(file_path)
 
-    def write_file(self, bytes: IOPathWrapper, file_path: str) -> None:
+    def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         with open(file_path, "wb") as file:
-            file.write(bytes.file_obj.read())
+            file.write(data.file_obj.read())
 
     def exists(self, file_path: str) -> bool:
         return os.path.exists(file_path)

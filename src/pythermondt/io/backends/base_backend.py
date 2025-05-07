@@ -18,7 +18,7 @@ class BaseBackend(ABC):
         raise NotImplementedError("The method must be implemented by the subclass!")
 
     @abstractmethod
-    def write_file(self, bytes: IOPathWrapper, file_path: str) -> None:
+    def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         """Write a file to the specified path."""
         # Actual implementation of how to write one file
         raise NotImplementedError("The method must be implemented by the subclass!")

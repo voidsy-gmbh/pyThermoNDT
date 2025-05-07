@@ -27,15 +27,6 @@ class BaseReader(ABC):
         self.__files_cache = None
 
     @property
-    @abstractmethod
-    def paths_prefix(self) -> str:
-        """String that is prepended to all file paths.
-
-        Needed to distinguihs between different readers once they are combined in a single dataset.
-        """
-        raise NotImplementedError("The method must be implemented by the subclass!")
-
-    @property
     def backend(self) -> BaseBackend:
         """The backend that the reader uses to read the data."""
         return self.__backend

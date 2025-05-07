@@ -17,9 +17,5 @@ class LocalReader(BaseReader):
         self.__cache_files = cache_files
 
     @property
-    def paths_prefix(self) -> str:
-        return "local"
-
-    @property
     def cache_files(self) -> bool:
         return self.__cache_files

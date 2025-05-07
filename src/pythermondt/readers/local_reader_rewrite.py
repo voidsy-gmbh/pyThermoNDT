@@ -13,8 +13,19 @@ class LocalReader(BaseReader):
         parser: type[BaseParser] | None = None,
         num_files: int | None = None,
     ):
-        super().__init__(LocalBackend(pattern), parser, num_files)
+        # Initialize baseclass with parser
+        super().__init__(parser, num_files)
+
+        # Maintain state for what is needed to create the backend
+        self.__pattern = pattern
         self.__cache_files = cache_files
+
+    def _create_backend(self) -> LocalBackend:
+        """Create a new LocalBackend instance.
+
+        This method is called to create or recreate the backend when needed or after unpickling.
+        """
+        return LocalBackend(self.__pattern)
 
     @property
     def cache_files(self) -> bool:

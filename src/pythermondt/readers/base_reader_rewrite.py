@@ -9,26 +9,35 @@ from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supporte
 
 class BaseReader(ABC):
     @abstractmethod
-    def __init__(self, backend: BaseBackend, parser: type[BaseParser] | None = None, num_files: int | None = None):
+    def __init__(self, parser: type[BaseParser] | None = None, num_files: int | None = None):
         """Initialize an instance of the BaseReader class.
 
         Parameters:
-            backend (BaseBackend): The backend that the reader uses to read the data.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
         """
         # Assign private attributes
-        self.__backend = backend
         self.__parser = parser
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__num_files = num_files
         self.__files_cache = None
 
+    @abstractmethod
+    def _create_backend(self) -> BaseBackend:
+        """Create a new backend instance.
+
+        This method must be implemented by subclasses to create or
+        recreate their backend when needed or after unpickling.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
+
     @property
     def backend(self) -> BaseBackend:
         """The backend that the reader uses to read the data."""
+        if not hasattr(self, "_BaseReader__backend"):
+            self.__backend = self._create_backend()
         return self.__backend
 
     @property
@@ -49,6 +58,22 @@ class BaseReader(ABC):
                 extensions=self.__supported_extensions, num_files=self.num_files
             )
         return self.__files_cache
+
+    def __getstate__(self):
+        """Prepare object for pickling by removing the backend."""
+        state = self.__dict__.copy()
+        # Remove backend reference - will be recreated when needed
+        if "_BaseReader__backend" in state:
+            del state["_BaseReader__backend"]
+        # Clear files cache to force reloading
+        state["_BaseReader__files_cache"] = None
+        return state
+
+    def __setstate__(self, state):
+        """Restore object from pickled state."""
+        # Just restore the state dictionary - backend will be created
+        # lazily when first accessed
+        self.__dict__.update(state)
 
     def __str__(self):
         return (

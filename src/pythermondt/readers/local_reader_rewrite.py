@@ -13,9 +13,7 @@ class LocalReader(BaseReader):
         parser: type[BaseParser] | None = None,
         num_files: int | None = None,
     ):
-        backend = LocalBackend(pattern)
-        super().__init__(backend, parser)
-        self.__num_files = num_files
+        super().__init__(LocalBackend(pattern), parser, num_files)
         self.__cache_files = cache_files
 
     @property

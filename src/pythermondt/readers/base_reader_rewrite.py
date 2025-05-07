@@ -9,18 +9,21 @@ from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supporte
 
 class BaseReader(ABC):
     @abstractmethod
-    def __init__(self, backend: BaseBackend, parser: type[BaseParser] | None = None):
+    def __init__(self, backend: BaseBackend, parser: type[BaseParser] | None = None, num_files: int | None = None):
         """Initialize an instance of the BaseReader class.
 
         Parameters:
             backend (BaseBackend): The backend that the reader uses to read the data.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
+            num_files (int, optional): The number of files to read. If not specified, all files will be read.
+                Default is None.
         """
         # Assign private attributes
         self.__backend = backend
         self.__parser = parser
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
+        self.__num_files = num_files
         self.__files_cache = None
 
     @property
@@ -41,10 +44,14 @@ class BaseReader(ABC):
         return self.__parser
 
     @property
+    def num_files(self) -> int | None:
+        return self.__num_files
+
+    @property
     def files(self) -> list[str]:
         if self.__files_cache is None:
             self.__files_cache = self.backend.get_file_list(
-                extensions=self.__supported_extensions, num_files=self._LocalReader__num_files
+                extensions=self.__supported_extensions, num_files=self.num_files
             )
         return self.__files_cache
 

@@ -23,7 +23,7 @@ class BaseReader(ABC):
         self.__parser = parser
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__num_files = num_files
-        self.__files_cache = None
+        self.__files = None
 
     @abstractmethod
     def _create_backend(self) -> BaseBackend:
@@ -59,11 +59,9 @@ class BaseReader(ABC):
     @property
     def files(self) -> list[str]:
         """List of files that the reader is able to read."""
-        if self.__files_cache is None:
-            self.__files_cache = self.backend.get_file_list(
-                extensions=self.__supported_extensions, num_files=self.num_files
-            )
-        return self.__files_cache
+        if self.__files is None:
+            self.__files = self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+        return self.__files
 
     def __getstate__(self):
         """Prepare object for pickling by removing the backend."""

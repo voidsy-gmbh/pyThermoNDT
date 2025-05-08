@@ -3,13 +3,16 @@ import re
 import boto3
 
 from ..io import BaseParser, IOPathWrapper
+from ..io.backends import S3Backend
+from ..io.parsers import BaseParser
 from .base_reader import BaseReader
 
 
 class S3Reader(BaseReader):
     def __init__(
         self,
-        source: str,
+        bucket: str,
+        prefix: str = "",
         cache_files: bool = False,
         parser: type[BaseParser] | None = None,
         num_files: int | None = None,
@@ -57,41 +60,22 @@ class S3Reader(BaseReader):
             raise ValueError(f"The specified bucket: {bucket} does not exist for the current session: {boto3_session}.")
 
         # Write the bucket and prefix to the private attributes
+    ):
+        # Initialize baseclass with parser
+        super().__init__(parser, num_files)
+
+        # Maintain state for what is needed to create the backend
         self.__bucket = bucket
         self.__prefix = prefix
+        self.__cache_files = cache_files
 
-        # Call the constructor of the BaseReader class
-        super().__init__(source, cache_files, parser, num_files)
+    def _create_backend(self) -> S3Backend:
+        """Create a new S3Backend instance.
+
+        This method is called to create or recreate the backend when needed or after unpickling.
+        """
+        return S3Backend(self.__bucket, self.__prefix)
 
     @property
-    def remote_source(self) -> bool:
-        return True
-
-    def _read_file(self, path: str) -> IOPathWrapper:
-        # Extract the bucket and the key from the path
-        bucket = path.split("/")[2]
-        key = "/".join(path.split("/")[3:])
-
-        response = self.__client.get_object(Bucket=bucket, Key=key)
-        return IOPathWrapper(response["Body"].read())
-
-    def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        # Create a paginator for the list_objects_v2 method ==> The amount of objects to get with list_objects_v2 is
-        # limited to 1000 ==> requests are split into multiple pages which the paginator can iterate over
-        paginator = self.__client.get_paginator("list_objects_v2")
-
-        # Iterate over all pages and get the content of the objects
-        files: list[str] = []
-        for page in paginator.paginate(Bucket=self.__bucket, Prefix=self.__prefix):
-            if page.get("Contents") is not None:
-                files.extend([content["Key"] for content in page.get("Contents")])
-
-        # Filter the files based on the file extensions and append the prefix "s3://bucket-name/" to the file paths
-        files = [f"s3://{self.__bucket}/" + file for file in files if file.endswith(self.file_extensions)]
-
-        # Limit to the first num_files if specified
-        return files[:num_files] if num_files else files
-
-    def _close(self):
-        # Close the underlying endpoint connections of the client
-        self.__client.close()
+    def cache_files(self) -> bool:
+        return self.__cache_files

@@ -1,15 +1,15 @@
-import os
-import re
-from glob import glob
+from re import Pattern
 
 from ..io import BaseParser, IOPathWrapper
+from ..io.backends import LocalBackend
+from ..io.parsers import BaseParser
 from .base_reader import BaseReader
 
 
 class LocalReader(BaseReader):
     def __init__(
         self,
-        source: str,
+        pattern: Pattern | str,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
         num_files: int | None = None,
@@ -51,39 +51,20 @@ class LocalReader(BaseReader):
 
         # Call the constructor of the BaseReader class
         super().__init__(source, cache_files, parser, num_files)
+        # Initialize baseclass with parser
+        super().__init__(parser, num_files)
+
+        # Maintain state for what is needed to create the backend
+        self.__pattern = pattern
+        self.__cache_files = cache_files
+
+    def _create_backend(self) -> LocalBackend:
+        """Create a new LocalBackend instance.
+
+        This method is called to create or recreate the backend when needed or after unpickling.
+        """
+        return LocalBackend(self.__pattern)
 
     @property
-    def remote_source(self) -> bool:
-        return False
-
-    def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        # Resolve the source pattern based on the source type
-        match self.__source_type:
-            case "file":
-                file_paths = [self.source]
-
-            case "directory":
-                file_paths = sorted(glob(os.path.join(self.source, "*")))
-
-            case "regex":
-                file_paths = sorted(glob(self.source))
-
-            case _:
-                raise ValueError("Invalid source type.")
-
-        # Check if the found files match the specified file extension
-        file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extensions)]
-        if not file_paths:
-            raise ValueError("No files found. Please check the source expression and file extensions")
-
-        # Limit the number of files to the specified number
-        if num_files:
-            file_paths = file_paths[:num_files]
-
-        return file_paths
-
-    def _read_file(self, path: str) -> IOPathWrapper:
-        return IOPathWrapper(path)
-
-    def _close(self):
-        pass  # No need to close any resources for LocalReader
+    def cache_files(self) -> bool:
+        return self.__cache_files

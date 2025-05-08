@@ -10,20 +10,32 @@ from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supporte
 
 class BaseReader(ABC):
     @abstractmethod
-    def __init__(self, parser: type[BaseParser] | None = None, num_files: int | None = None):
+    def __init__(
+        self,
+        num_files: int | None = None,
+        download_remote_files: bool = False,
+        cache_files: bool = True,
+        parser: type[BaseParser] | None = None,
+    ):
         """Initialize an instance of the BaseReader class.
 
         Parameters:
-            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
-                the parser will be auto selected based on the file extension. Default is None.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
+            download_remote_files (bool, optional): Wether to download remote files to local storage. Recommended to set
+                to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
+            cache_files (bool, optional): Wether to cache the files list in memory. If set to False, changes to the
+                detected files will be reflected at runtime. Default is True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
+                the parser will be auto selected based on the file extension. Default is None.
         """
         # Assign private attributes
         self.__parser = parser
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__num_files = num_files
         self.__files = None
+        self.__cache_files = cache_files
+        self.__download_remote_files = download_remote_files
 
     @abstractmethod
     def _create_backend(self) -> BaseBackend:
@@ -38,6 +50,11 @@ class BaseReader(ABC):
     def remote_source(self) -> bool:
         """Return True if the reader is reading from a remote source, False otherwise."""
         return self.backend.remote_source
+
+    @property
+    def cache_files(self) -> bool:
+        """Return True if the reader caches the files/file-paths, False otherwise."""
+        return self.__cache_files
 
     @property
     def backend(self) -> BaseBackend:
@@ -59,8 +76,15 @@ class BaseReader(ABC):
     @property
     def files(self) -> list[str]:
         """List of files that the reader is able to read."""
+        # If caching is disabled return the file list from the backend
+        if not self.__cache_files:
+            return self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+
+        # If files have never been loaded, load them from the backend
         if self.__files is None:
             self.__files = self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+
+        # Return the cached files list
         return self.__files
 
     def __getstate__(self):

@@ -13,9 +13,10 @@ class S3Reader(BaseReader):
         self,
         bucket: str,
         prefix: str = "",
+        num_files: int | None = None,
+        download_remote_files: bool = False,
         cache_files: bool = False,
         parser: type[BaseParser] | None = None,
-        num_files: int | None = None,
         boto3_session: boto3.Session | None = None,
     ):
         """Initialize an instance of the S3Reader class.
@@ -62,12 +63,11 @@ class S3Reader(BaseReader):
         # Write the bucket and prefix to the private attributes
     ):
         # Initialize baseclass with parser
-        super().__init__(parser, num_files)
+        super().__init__(num_files, download_remote_files, cache_files, parser)
 
         # Maintain state for what is needed to create the backend
         self.__bucket = bucket
         self.__prefix = prefix
-        self.__cache_files = cache_files
 
     def _create_backend(self) -> S3Backend:
         """Create a new S3Backend instance.
@@ -75,7 +75,3 @@ class S3Reader(BaseReader):
         This method is called to create or recreate the backend when needed or after unpickling.
         """
         return S3Backend(self.__bucket, self.__prefix)
-
-    @property
-    def cache_files(self) -> bool:
-        return self.__cache_files

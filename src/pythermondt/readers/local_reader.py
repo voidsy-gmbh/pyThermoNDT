@@ -10,9 +10,9 @@ class LocalReader(BaseReader):
     def __init__(
         self,
         pattern: Pattern | str,
+        num_files: int | None = None,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
-        num_files: int | None = None,
     ):
         """Initialize an instance of the LocalReader class.
 
@@ -52,11 +52,10 @@ class LocalReader(BaseReader):
         # Call the constructor of the BaseReader class
         super().__init__(source, cache_files, parser, num_files)
         # Initialize baseclass with parser
-        super().__init__(parser, num_files)
+        super().__init__(num_files, False, cache_files, parser)
 
         # Maintain state for what is needed to create the backend
         self.__pattern = pattern
-        self.__cache_files = cache_files
 
     def _create_backend(self) -> LocalBackend:
         """Create a new LocalBackend instance.
@@ -64,7 +63,3 @@ class LocalReader(BaseReader):
         This method is called to create or recreate the backend when needed or after unpickling.
         """
         return LocalBackend(self.__pattern)
-
-    @property
-    def cache_files(self) -> bool:
-        return self.__cache_files

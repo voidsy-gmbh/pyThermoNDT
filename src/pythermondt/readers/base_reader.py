@@ -35,6 +35,11 @@ class BaseReader(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @property
+    def remote_source(self) -> bool:
+        """Return True if the reader is reading from a remote source, False otherwise."""
+        return self.backend.remote_source
+
+    @property
     def backend(self) -> BaseBackend:
         """The backend that the reader uses to read the data."""
         if not hasattr(self, "_BaseReader__backend"):

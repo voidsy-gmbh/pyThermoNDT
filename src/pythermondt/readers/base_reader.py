@@ -176,10 +176,8 @@ class BaseReader(ABC):
             # 2. Download if not exists
             if not os.path.exists(local_path):
                 # Download file directly to disk
-                print(f"Downloading {file_path} to {local_path}")
                 self.backend.download_file(file_path, local_path)
 
-            print(f"Reading {file_path} from {local_path}")
             file_data = IOPathWrapper(local_path)
 
         else:

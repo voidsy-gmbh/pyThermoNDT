@@ -46,6 +46,11 @@ class BaseReader(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
+    @abstractmethod
+    def _get_reader_params(self) -> str:
+        """Get a string representation of the reader parameters used to create the backend."""
+        raise NotImplementedError("Subclasses must implement this method")
+
     @property
     def remote_source(self) -> bool:
         """Return True if the reader is reading from a remote source, False otherwise."""
@@ -105,8 +110,9 @@ class BaseReader(ABC):
 
     def __str__(self):
         return (
-            f"{self.__class__.__name__}(backend={self.backend.__class__.__name__}"
-            f"{', parser=' + self.parser.__name__ if self.parser else ''})"
+            f"{self.__class__.__name__}({self._get_reader_params()}, num_files={self.num_files}, "
+            f"download_remote_files={self.__download_remote_files}, cache_files={self.cache_files}, "
+            f"parser={self.__parser.__name__ if self.__parser else None})"
         )
 
     def __getitem__(self, idx: int) -> DataContainer:

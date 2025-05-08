@@ -75,3 +75,7 @@ class S3Reader(BaseReader):
         This method is called to create or recreate the backend when needed or after unpickling.
         """
         return S3Backend(self.__bucket, self.__prefix)
+
+    def _get_reader_params(self) -> str:
+        """Get a string representation of the reader parameters used to create the backend."""
+        return f"bucket={self.__bucket}, prefix={self.__prefix}"

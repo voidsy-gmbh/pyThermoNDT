@@ -63,3 +63,7 @@ class LocalReader(BaseReader):
         This method is called to create or recreate the backend when needed or after unpickling.
         """
         return LocalBackend(self.__pattern)
+
+    def _get_reader_params(self) -> str:
+        """Get a string representation of the reader parameters used to create the backend."""
+        return f"pattern={self.__pattern}"

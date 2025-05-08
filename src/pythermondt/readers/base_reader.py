@@ -1,3 +1,4 @@
+import hashlib
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -6,6 +7,7 @@ from ..config import settings
 from ..data import DataContainer
 from ..io.backends import BaseBackend
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
+from ..utils import IOPathWrapper
 
 
 class BaseReader(ABC):
@@ -131,6 +133,27 @@ class BaseReader(ABC):
         for file in file_paths:
             yield self.read_file(file)
 
+    def _setup_cache_dir(self, reader_id: str) -> str:
+        """Step up the cache directory for the reader instance.
+
+        Parameters:
+            reader_id (str): A unique identifier for the reader instance.
+
+        Returns:
+            str: The path to the cache directory.
+        """
+        # Create base cache dir in users home directory
+        base_dir = os.path.join(os.path.expanduser("~"), ".pythermondt_cache")
+
+        # Hash the reader ID for a consistent directory name
+        dir_hash = hashlib.md5(reader_id.encode()).hexdigest()
+
+        # Create full path
+        cache_dir = os.path.join(base_dir, dir_hash, "raw")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        return cache_dir
+
     def read_file(self, file_path: str) -> DataContainer:
         """Read a fiel from the specified path and return it as a DataContainer object.
 
@@ -143,8 +166,25 @@ class BaseReader(ABC):
         Raises:
             ValueError: If the file type cannot be determined or if no parser is found for the file extension.
         """
-        # Get raw file data from backend
-        file_data = self.backend.read_file(file_path)
+        if self.remote_source and self.__download_remote_files:
+            # 1. Calculate deterministic local path
+            reader_id = f"{self.__class__.__name__}_{self._get_reader_params()}"
+            cache_dir = self._setup_cache_dir(reader_id)
+            local_filename = hashlib.md5(file_path.encode()).hexdigest() + os.path.splitext(file_path)[1]
+            local_path = os.path.join(cache_dir, local_filename)
+
+            # 2. Download if not exists
+            if not os.path.exists(local_path):
+                # Download file directly to disk
+                print(f"Downloading {file_path} to {local_path}")
+                self.backend.download_file(file_path, local_path)
+
+            print(f"Reading {file_path} from {local_path}")
+            file_data = IOPathWrapper(local_path)
+
+        else:
+            # Get raw file data from backend
+            file_data = self.backend.read_file(file_path)
 
         # If parser was specified during initialization, use it
         if self.__parser is not None:

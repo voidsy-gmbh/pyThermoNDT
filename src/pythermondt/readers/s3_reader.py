@@ -15,7 +15,7 @@ class S3Reader(BaseReader):
         prefix: str = "",
         num_files: int | None = None,
         download_remote_files: bool = False,
-        cache_files: bool = False,
+        cache_files: bool = True,
         parser: type[BaseParser] | None = None,
         boto3_session: boto3.Session | None = None,
     ):

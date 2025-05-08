@@ -88,6 +88,9 @@ class LocalBackend(BaseBackend):
         if extensions:
             all_files = [f for f in all_files if any(f.endswith(ext) for ext in extensions)]
 
+        # Sort for deterministic behavior
+        all_files.sort()
+
         # Limit number of results if specified
         if num_files is not None:
             all_files = all_files[:num_files]

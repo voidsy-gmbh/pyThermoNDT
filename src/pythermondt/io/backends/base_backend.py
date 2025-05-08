@@ -41,3 +41,11 @@ class BaseBackend(ABC):
         # Get list of files matching pattern/extensions
         # This centralizes file discovery logic
         raise NotImplementedError("The method must be implemented by the subclass!")
+
+    @abstractmethod
+    def download_file(self, source_path: str, destination_path: str) -> None:
+        """Directly download a file from the source to the destination path.
+
+        This is used for remote sources to download files directly to the local filesystem.
+        """
+        raise NotImplementedError("The method must be implemented by the subclass!")

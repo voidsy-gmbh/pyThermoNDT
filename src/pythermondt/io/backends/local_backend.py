@@ -96,3 +96,6 @@ class LocalBackend(BaseBackend):
             all_files = all_files[:num_files]
 
         return all_files
+
+    def download_file(self, source_path: str, destination_path: str) -> None:
+        raise NotImplementedError("Direct download is not supported for local files.")

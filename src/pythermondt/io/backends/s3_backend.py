@@ -134,6 +134,18 @@ class S3Backend(BaseBackend):
 
         return files
 
+    def download_file(self, source_path: str, destination_path: str) -> None:
+        """Download a file from S3 to local filesystem.
+
+        Parameters:
+            source_path (str): Source S3 path
+            destination_path (str): Destination local path
+        """
+        bucket, key = self._parse_path(source_path)
+
+        # Download the file
+        self.__client.download_file(bucket, key, destination_path)
+
     def _parse_path(self, path: str) -> tuple[str, str]:
         """Parse S3 path into bucket and key.
 

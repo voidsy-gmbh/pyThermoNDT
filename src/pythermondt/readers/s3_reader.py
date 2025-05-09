@@ -61,6 +61,28 @@ class S3Reader(BaseReader):
 
         # Write the bucket and prefix to the private attributes
     ):
+        """Initialize an instance of the S3Reader class.
+
+        Uses the S3Backend to read files from an specified S3 bucket. Before using the S3Reader, make sure to set up an
+        authentication method for AWS, according to the documentation:
+        https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration
+
+        Parameters:
+            bucket (str): The name of the S3 bucket.
+            prefix (str): The prefix (path) within the S3 bucket.
+            region_name (str, optional): The AWS region name, e.g. eu-central-1 used when creating new connections.
+                Default is None, which uses the default region from the AWS configuration.
+            profile_name (str, optional): The AWS profile name to use for authentication. Default is None, which uses
+                the default profile from the AWS configuration.
+            num_files (int, optional): The number of files to read. If not specified, all files will be read.
+                Default is None.
+            download_remote_files (bool, optional): Wether to download remote files to local storage. Recommended to set
+                to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
+            cache_files (bool, optional): Wether to cache the files list in memory. If set to False, changes to the
+                detected files will be reflected at runtime. Default is True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
+                the parser will be auto selected based on the file extension. Default is None.
+        """
         # Initialize baseclass with parser
         super().__init__(num_files, download_remote_files, cache_files, parser)
 

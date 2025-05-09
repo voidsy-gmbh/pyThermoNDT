@@ -85,6 +85,14 @@ class DatasetOps(BaseOps):
         """
         return [node.name for node in self.nodes.values() if isinstance(node, DataNode)]
 
+    def get_all_dataset_paths(self) -> list[str]:
+        """Get a list of all dataset paths in the DataContainer.
+
+        Returns:
+            List[str]: A list of paths to all datasets in the DataContainer.
+        """
+        return [path for path, node in self.nodes.items() if isinstance(node, DataNode)]
+
     def remove_dataset(self, path: str):
         """Removes a single dataset from a specified path in the DataContainer.
 

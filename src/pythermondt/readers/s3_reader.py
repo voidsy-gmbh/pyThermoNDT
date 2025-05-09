@@ -12,7 +12,7 @@ class S3Reader(BaseReader):
     def __init__(
         self,
         bucket: str,
-        prefix: str = "",
+        prefix: str,
         num_files: int | None = None,
         download_remote_files: bool = False,
         cache_files: bool = True,

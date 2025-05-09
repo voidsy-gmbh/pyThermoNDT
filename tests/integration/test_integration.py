@@ -5,7 +5,6 @@ import torch
 from torch.utils.data import DataLoader
 
 from pythermondt.data import DataContainer, ThermoDataset
-from pythermondt.data.datacontainer.utils import is_datanode
 from pythermondt.readers import LocalReader
 
 from ..utils import containers_equal
@@ -58,10 +57,10 @@ def test_pytorch_dataloader_integration(test_case: IntegrationTestCase):
     # Custom collate function to stack all datasets in the Datacontainer into a single tensor
     def collate_fn(batch: list[DataContainer]):
         # Get the dataset that appear in all container in the batch
-        paths = {path for container in batch for path, node in container.nodes.items() if is_datanode(node)}
+        paths = {path for container in batch for path in container.get_all_dataset_paths()}
 
-        # Extrac the datasets from the containers
-        return batch[0].get_datasets(*paths)
+        # Stack all datasets in the batch
+        return [torch.stack([container.get_dataset(path) for container in batch]) for path in paths]
 
     # Create readers
     source_reader = LocalReader(test_case.source_path)
@@ -75,9 +74,13 @@ def test_pytorch_dataloader_integration(test_case: IntegrationTestCase):
     source_dataloader = DataLoader(source_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn)
     expected_dataloader = DataLoader(expected_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn)
 
-    # Compare all containers that the DataLoader returns
+    # Compare all batches
     for i, (source_batch, expected_batch) in enumerate(zip(source_dataloader, expected_dataloader, strict=True)):
-        # Compare the tensors in the batch
-        assert all(
-            torch.equal(source, expected) for source, expected in zip(source_batch, expected_batch, strict=False)
-        ), f"Test case '{test_case.id}': DataLoader batches {i} are not equal"
+        # Assert the batches are the same length
+        assert len(source_batch) == len(expected_batch), f"Batch {i}: Different number of tensors"
+
+        # Compare each tensor in the batch
+        for j, (source_tensor, expected_tensor) in enumerate(zip(source_batch, expected_batch, strict=True)):
+            assert torch.equal(source_tensor, expected_tensor), (
+                f"Test case '{test_case.id}': Batch {i}, Tensor {j} not equal"
+            )

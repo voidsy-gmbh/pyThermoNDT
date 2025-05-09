@@ -57,7 +57,7 @@ def test_pytorch_dataloader_integration(test_case: IntegrationTestCase):
     # Custom collate function to stack all datasets in the DataContainer into a single tensor
     def collate_fn(batch: list[DataContainer]):
         # Get the dataset that appear in all container in the batch
-        paths = {path for container in batch for path in container.get_all_dataset_paths()}
+        paths = sorted({path for container in batch for path in container.get_all_dataset_paths()})
 
         # Stack all datasets in the batch
         return [torch.stack([container.get_dataset(path) for container in batch]) for path in paths]

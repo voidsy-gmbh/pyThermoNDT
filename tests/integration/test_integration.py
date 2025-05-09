@@ -54,7 +54,7 @@ def test_thermodataset_integration(test_case: IntegrationTestCase):
 def test_pytorch_dataloader_integration(test_case: IntegrationTestCase):
     """Test PyTorch DataLoader integration."""
 
-    # Custom collate function to stack all datasets in the Datacontainer into a single tensor
+    # Custom collate function to stack all datasets in the DataContainer into a single tensor
     def collate_fn(batch: list[DataContainer]):
         # Get the dataset that appear in all container in the batch
         paths = {path for container in batch for path in container.get_all_dataset_paths()}

@@ -92,9 +92,7 @@ class S3Backend(BaseBackend):
 
         For S3, we need to close the underlying boto3 client.
         """
-        # Close the boto3 client
-        if hasattr(self.__client, "_endpoint"):
-            self.__client._endpoint.http_session.close()
+        self.__client.close()
 
     def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
         """Get list of files from S3 with optional filtering.

@@ -22,7 +22,7 @@ jobs:
       # Step 2: Setup uv
       - name: Setup uv
         id: setup-uv
-        uses: astral-sh/setup-uv@v5.4.2
+        uses: astral-sh/setup-uv@v6.0.1
         with:
           python-version: ${{ matrix.python-version }}
           pyproject-file: "pyproject.toml"

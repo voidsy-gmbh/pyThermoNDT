@@ -43,7 +43,7 @@ jobs:
       # Step 3: Setup build environment for pip
       - name: Setup build environment for pip
         if: matrix.build_type == 'pip'
-        uses: astral-sh/setup-uv@v5.4.2
+        uses: astral-sh/setup-uv@v6.0.1
         with:
           enable-cache: false # Disable cache for pip build
 

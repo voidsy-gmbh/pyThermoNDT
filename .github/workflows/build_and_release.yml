@@ -28,6 +28,7 @@ jobs:
         uses: astral-sh/setup-uv@v6.0.1
         with:
           python-version: '3.12'
+          activate-environment: true
           enable-cache: false
 
       # Step 3: Install bump-my-version

@@ -45,6 +45,8 @@ jobs:
         if: matrix.build_type == 'pip'
         uses: astral-sh/setup-uv@v6.0.1
         with:
+          python-version: 3.12
+          activate-environment: true
           enable-cache: false # Disable cache for pip build
 
       # Step 4: Build conda package

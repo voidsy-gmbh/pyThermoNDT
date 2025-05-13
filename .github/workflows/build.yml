@@ -26,7 +26,7 @@ jobs:
       # Step 2: Setup build environment for conda
       - name: Setup build environment for conda
         if: matrix.build_type == 'conda'
-        uses: mamba-org/setup-micromamba@v1.11.0
+        uses: mamba-org/setup-micromamba@v2.0.4
         with:
           init-shell: bash
           environment-name: build-env

@@ -25,9 +25,10 @@ jobs:
       # Step 2: Setup uv
       - name: Setup uv
         id: setup-uv
-        uses: astral-sh/setup-uv@v5.4.2
+        uses: astral-sh/setup-uv@v6.0.1
         with:
           python-version: '3.12'
+          activate-environment: true
           enable-cache: false
 
       # Step 3: Install bump-my-version

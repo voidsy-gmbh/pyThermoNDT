@@ -1,4 +1,4 @@
-from .backends import BaseBackend
+from .backends import BaseBackend, LocalBackend, S3Backend
 from .parsers import BaseParser, HDF5Parser, SimulationParser
 from .utils import IOPathWrapper
 
@@ -8,4 +8,6 @@ __all__ = [
     "SimulationParser",
     "IOPathWrapper",
     "BaseBackend",
+    "LocalBackend",
+    "S3Backend",
 ]

@@ -1,8 +1,6 @@
 from re import Pattern
 
-from ..io import BaseParser, IOPathWrapper
-from ..io.backends import LocalBackend
-from ..io.parsers import BaseParser
+from ..io import BaseParser, LocalBackend
 from .base_reader import BaseReader
 
 

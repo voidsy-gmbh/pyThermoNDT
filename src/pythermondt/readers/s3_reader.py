@@ -1,7 +1,6 @@
 import boto3
 
-from ..io.backends import S3Backend
-from ..io.parsers import BaseParser
+from ..io import BaseParser, S3Backend
 from .base_reader import BaseReader
 
 

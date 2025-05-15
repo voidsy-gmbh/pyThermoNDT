@@ -17,7 +17,7 @@ class ThermoDataset(Dataset):
     iterate over the data using the __getitem__ method and it is also compatible with PyTorch dataloaders.
     """
 
-    def __init__(self, data_source: BaseReader | list[BaseReader], transform: ThermoTransform | None = None):
+    def __init__(self, data_source: BaseReader | Sequence[BaseReader], transform: ThermoTransform | None = None):
         """Initialize a custom PyTorch dataset from a list of readers.
 
         The sources are used to read the data and create the dataset. First the readers are grouped by type.
@@ -42,7 +42,7 @@ class ThermoDataset(Dataset):
             ValueError: If any of the readers of the same type do not find any files
         """
         # Convert single reader to list
-        data_source = data_source if isinstance(data_source, list) else [data_source]
+        data_source = [data_source] if isinstance(data_source, BaseReader) else list(data_source)
 
         # Validate the readers
         self._validate_readers(data_source)

@@ -11,7 +11,7 @@ from .writers import LocalWriter, S3Writer
 class Settings(BaseSettings):
     """Global settings for pyThermoNDT."""
 
-    cache_base: str = "."
+    download_dir: str = "."
 
     model_config = SettingsConfigDict(
         env_prefix="PYTHERMONDT_",

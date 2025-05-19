@@ -5,6 +5,8 @@ from collections.abc import Iterator
 
 from tqdm.auto import tqdm
 
+from pythermondt import settings
+
 from ..data import DataContainer
 from ..io.parsers import PARSER_REGISTRY, BaseParser, find_parser_for_extension
 from ..utils import IOPathWrapper
@@ -100,7 +102,11 @@ class BaseReader(ABC):
         file_names = [os.path.basename(file) for file in files]
 
         # Create the local directory for the cached files
-        self.__local_dir = os.path.join(os.getcwd(), ".pyThermoNDT_cache", self._create_safe_folder_name())
+        dir = settings.download_dir
+        expanded = os.path.expanduser(dir)
+        absolute = os.path.abspath(expanded)
+
+        self.__local_dir = os.path.join(absolute, ".pyThermoNDT_cache", self._create_safe_folder_name())
         if not os.path.isdir(self.__local_dir):
             os.makedirs(self.__local_dir)
 

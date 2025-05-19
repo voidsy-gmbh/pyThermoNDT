@@ -13,6 +13,7 @@ dependencies = [
     "tqdm>=4.65",
     "ipywidgets>=8.0",
     "ipykernel>=6.25",
+    "pydantic-settings>=2.6",
 
     # Data loading and visualization
     "h5py>=3.9",

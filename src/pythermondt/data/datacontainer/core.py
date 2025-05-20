@@ -1,6 +1,7 @@
+from io import BytesIO
+
 import torch
 
-from ...utils import IOPathWrapper
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
@@ -19,7 +20,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     for visualization of the data structure.
     """
 
-    def __init__(self, hdf5_data: IOPathWrapper | None = None):
+    def __init__(self, hdf5_data: BytesIO | None = None):
         """Initializes a DataContainer instance.
 
         By default, initializes an empty DataContainer.

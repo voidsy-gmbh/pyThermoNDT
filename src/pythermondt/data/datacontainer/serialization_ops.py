@@ -20,7 +20,7 @@ class SerializationOps(BaseOps):
         """Serializes the DataContainer instance to an HDF5 file.
 
         Returns:
-            io.BytesIO: The serialized DataContainer instance as a BytesIO object.
+            BytesIO: The serialized DataContainer instance as a BytesIO object.
         """
         hdf5_bytes = io.BytesIO()
 
@@ -83,7 +83,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         """Deserializes an HDF5 file into the DataContainer instance.
 
         Parameters:
-            hdf5_data (IOPathWrapper): The HDF5 file to deserialize.
+            hdf5_data (BytesIO): The HDF5 file to deserialize.
         """
         # Check if the IOPathWrapper object is empty
         if hdf5_data.getbuffer().nbytes == 0:

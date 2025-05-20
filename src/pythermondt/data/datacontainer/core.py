@@ -27,7 +27,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
 
         Parameters:
-            hdf5_data (IOPathWrapper | None): The HDF5 file to deserialize. Defaults to None.
+            hdf5_data (BytesIO | None): The HDF5 file to deserialize. Defaults to None.
         """
         super().__init__()
 

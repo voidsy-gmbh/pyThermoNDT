@@ -8,15 +8,11 @@ charset="utf-8"
 "pythermondt.io" [color="#27AE60", label=<pythermondt.io>, shape="box", style="filled"];
 "pythermondt.readers" [color="#E0E0E0", label=<pythermondt.readers>, shape="box", style="filled"];
 "pythermondt.transforms" [color="#BB6BD9", label=<pythermondt.transforms>, shape="box", style="filled"];
-"pythermondt.utils" [color="#2F80ED", label=<pythermondt.utils>, shape="box", style="filled"];
-"pythermondt.writers" [color="#F2994A", label=<pythermondt.writers>, shape="box", style="filled"];
+"pythermondt.writers" [color="#2F80ED", label=<pythermondt.writers>, shape="box", style="filled"];
 "pythermondt" -> "pythermondt.__pkginfo__" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.data" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.io" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.readers" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.transforms" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.writers" [arrowhead="open", arrowtail="none"];
-"pythermondt.data" -> "pythermondt.utils" [arrowhead="open", arrowtail="none"];
-"pythermondt.transforms" -> "pythermondt.utils" [arrowhead="open", arrowtail="none"];
-"pythermondt.utils" -> "pythermondt.io" [arrowhead="open", arrowtail="none"];
 }

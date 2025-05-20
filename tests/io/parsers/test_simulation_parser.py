@@ -7,7 +7,7 @@ import pytest
 
 from pythermondt.data import ThermoContainer
 from pythermondt.io.parsers import SimulationParser
-from pythermondt.utils import IOPathWrapper
+from pythermondt.io.utils import IOPathWrapper
 from tests.utils import containers_equal
 
 

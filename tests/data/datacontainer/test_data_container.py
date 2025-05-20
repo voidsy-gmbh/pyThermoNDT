@@ -1,9 +1,10 @@
+from io import BytesIO
+
 import pytest
 import torch
 from torch import Tensor
 
 from pythermondt.data import DataContainer
-from pythermondt.utils import IOPathWrapper
 
 from ...utils import containers_equal
 
@@ -95,7 +96,7 @@ def test_serialization(empty_container: DataContainer, sample_tensor: Tensor):
 
     # Serialize
     serialized = empty_container.serialize_to_hdf5()
-    assert isinstance(serialized, IOPathWrapper)
+    assert isinstance(serialized, BytesIO)
 
     # Deserialize
     new_container = DataContainer()

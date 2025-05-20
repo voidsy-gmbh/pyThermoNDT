@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 
+from ..config import settings
 from ..data import DataContainer
 from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
@@ -141,7 +142,7 @@ class BaseReader(ABC):
             str: The path to the cache directory.
         """
         # Create base cache dir in users home directory
-        base_dir = os.path.join(os.path.expanduser("~"), ".pythermondt_cache")
+        base_dir = os.path.join(settings.download_dir, ".pythermondt_cache")
 
         # Hash the reader ID for a consistent directory name
         dir_hash = hashlib.md5(reader_id.encode()).hexdigest()

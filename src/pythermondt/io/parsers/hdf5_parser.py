@@ -1,5 +1,5 @@
 from ...data import DataContainer
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 from .base_parser import BaseParser
 
 

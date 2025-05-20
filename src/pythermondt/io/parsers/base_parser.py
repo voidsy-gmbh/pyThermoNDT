@@ -1,7 +1,7 @@
 from typing import Protocol, runtime_checkable
 
 from ...data import DataContainer
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 
 
 @runtime_checkable

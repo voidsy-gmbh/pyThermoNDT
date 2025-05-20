@@ -1,4 +1,3 @@
-import io
 import json
 from collections.abc import ItemsView
 from io import BytesIO
@@ -22,7 +21,7 @@ class SerializationOps(BaseOps):
         Returns:
             BytesIO: The serialized DataContainer instance as a BytesIO object.
         """
-        hdf5_bytes = io.BytesIO()
+        hdf5_bytes = BytesIO()
 
         with h5py.File(hdf5_bytes, "w") as f:
             for path, node in self.nodes.items():

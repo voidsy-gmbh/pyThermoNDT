@@ -3,6 +3,7 @@ rankdir=BT
 charset="utf-8"
 "pythermondt.io.parsers.base_parser.BaseParser" [color="#EB5757", fontcolor="black", label=<{BaseParser|supported_extensions : tuple[str, ...]<br ALIGN="LEFT"/>|<I>parse</I>(data: IOPathWrapper): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.io.parsers.hdf5_parser.HDF5Parser" [color="#EB5757", fontcolor="black", label=<{HDF5Parser|supported_extensions : tuple<br ALIGN="LEFT"/>|parse(data: IOPathWrapper): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.io.utils.IOPathWrapper" [color="#F2994A", fontcolor="black", label=<{IOPathWrapper|file_obj : BytesIO<br ALIGN="LEFT"/>file_path : str<br ALIGN="LEFT"/>|close()<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.io.parsers.simulation_parser.SimulationParser" [color="#EB5757", fontcolor="black", label=<{SimulationParser|supported_extensions : tuple<br ALIGN="LEFT"/>|parse(data: IOPathWrapper): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.io.parsers.hdf5_parser.HDF5Parser" -> "pythermondt.io.parsers.base_parser.BaseParser" [arrowhead="empty", arrowtail="none"];
 "pythermondt.io.parsers.simulation_parser.SimulationParser" -> "pythermondt.io.parsers.base_parser.BaseParser" [arrowhead="empty", arrowtail="none"];

@@ -7,8 +7,8 @@ from tqdm.auto import tqdm
 
 from ..config import settings
 from ..data import DataContainer
+from ..io import IOPathWrapper
 from ..io.parsers import PARSER_REGISTRY, BaseParser, find_parser_for_extension
-from ..utils import IOPathWrapper
 
 
 class BaseReader(ABC):

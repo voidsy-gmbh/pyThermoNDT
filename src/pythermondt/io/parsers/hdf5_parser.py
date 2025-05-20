@@ -1,5 +1,5 @@
 from ...data import DataContainer
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 from .base_parser import BaseParser
 
 
@@ -22,4 +22,4 @@ class HDF5Parser(BaseParser):
             ValueError: If the given IOPathWrapper object is empty or does not contain a valid HDF5 file.
         """
         # Create a new DataContainer from the BytesIO object and return it
-        return DataContainer(data)
+        return DataContainer(data.file_obj)

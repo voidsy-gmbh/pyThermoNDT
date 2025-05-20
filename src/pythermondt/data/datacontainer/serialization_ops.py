@@ -1,12 +1,11 @@
-import io
 import json
 from collections.abc import ItemsView
+from io import BytesIO
 from typing import Any
 
 import h5py
 import numpy as np
 
-from ...utils import IOPathWrapper
 from .attribute_ops import AttributeOps
 from .base import BaseOps
 from .dataset_ops import DatasetOps
@@ -16,13 +15,13 @@ from .utils import validate_path
 
 
 class SerializationOps(BaseOps):
-    def serialize_to_hdf5(self) -> IOPathWrapper:
+    def serialize_to_hdf5(self) -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
 
         Returns:
-            io.BytesIO: The serialized DataContainer instance as a BytesIO object.
+            BytesIO: The serialized DataContainer instance as a BytesIO object.
         """
-        hdf5_bytes = io.BytesIO()
+        hdf5_bytes = BytesIO()
 
         with h5py.File(hdf5_bytes, "w") as f:
             for path, node in self.nodes.items():
@@ -51,7 +50,7 @@ class SerializationOps(BaseOps):
 
         # Reset the BytesIO object to the beginning and return it
         hdf5_bytes.seek(0)
-        return IOPathWrapper(hdf5_bytes)
+        return hdf5_bytes
 
     def _add_attributes(self, h5obj: h5py.Dataset | h5py.Group, attributes: ItemsView[str, AttributeTypes]):
         """Adds attributes to an HDF5 object (group or dataset).
@@ -75,23 +74,23 @@ class SerializationOps(BaseOps):
             path (str): The path where the HDF5 file should be saved.
         """
         with open(path, "wb") as file:
-            file.write(self.serialize_to_hdf5().file_obj.getvalue())
+            file.write(self.serialize_to_hdf5().getvalue())
 
 
 class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
-    def deserialize(self, hdf5_data: IOPathWrapper):
+    def deserialize(self, hdf5_data: BytesIO):
         """Deserializes an HDF5 file into the DataContainer instance.
 
         Parameters:
-            hdf5_data (IOPathWrapper): The HDF5 file to deserialize.
+            hdf5_data (BytesIO): The HDF5 file to deserialize.
         """
         # Check if the IOPathWrapper object is empty
-        if hdf5_data.file_obj.getbuffer().nbytes == 0:
+        if hdf5_data.getbuffer().nbytes == 0:
             raise ValueError("The given IOPathWrapper object is empty.")
 
         # Check if the IOPathWrapper object is a HDF5 file
         try:
-            h5py.File(hdf5_data.file_obj)
+            h5py.File(hdf5_data)
         except OSError as o:
             raise ValueError("The given IOPathWrapper object does not contain a valid HDF5 file.") from o
 
@@ -100,7 +99,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
             self.nodes["/"] = RootNode()
 
         # Open the HDF5 file in read mode
-        with h5py.File(hdf5_data.file_obj, "r") as f:
+        with h5py.File(hdf5_data, "r") as f:
             # Iterate over all items in the HDF5 file
             for item_name, item in f.items():
                 if isinstance(item, h5py.Group):
@@ -195,4 +194,4 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
         """
         with open(path, "rb") as file:
             hdf5_bytes = file.read()
-        self.deserialize(IOPathWrapper(hdf5_bytes))
+        self.deserialize(BytesIO(hdf5_bytes))

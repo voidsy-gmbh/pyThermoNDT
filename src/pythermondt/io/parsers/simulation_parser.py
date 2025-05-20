@@ -6,7 +6,7 @@ import pymatreader
 from scipy.io.matlab import MatReadError
 
 from ...data import DataContainer, ThermoContainer
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 from .base_parser import BaseParser
 
 

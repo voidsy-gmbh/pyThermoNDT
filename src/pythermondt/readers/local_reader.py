@@ -2,8 +2,7 @@ import os
 import re
 from glob import glob
 
-from ..io import BaseParser
-from ..utils import IOPathWrapper
+from ..io import BaseParser, IOPathWrapper
 from .base_reader import BaseReader
 
 

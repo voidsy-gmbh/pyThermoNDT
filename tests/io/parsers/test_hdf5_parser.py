@@ -5,7 +5,7 @@ import torch
 
 from pythermondt.data import DataContainer
 from pythermondt.io.parsers import HDF5Parser
-from pythermondt.utils import IOPathWrapper
+from pythermondt.io.utils import IOPathWrapper
 
 
 def test_hdf5_parser_empty_bytes():
@@ -32,7 +32,7 @@ def test_hdf5_parser_valid_container():
     serialized = original.serialize_to_hdf5()
 
     # Parse the serialized data
-    parsed = HDF5Parser.parse(serialized)
+    parsed = HDF5Parser.parse(IOPathWrapper(serialized))
 
     # Check that the parsed container has the expected structure
     assert "TestGroup" in parsed.get_all_groups()

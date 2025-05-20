@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
 
 

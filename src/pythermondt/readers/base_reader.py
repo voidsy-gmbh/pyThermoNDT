@@ -3,11 +3,9 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 
-from ..config import settings
 from ..data import DataContainer
-from ..io.backends import BaseBackend
+from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
-from ..utils import IOPathWrapper
 
 
 class BaseReader(ABC):

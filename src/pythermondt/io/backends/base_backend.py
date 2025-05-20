@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 
 
 class BaseBackend(ABC):

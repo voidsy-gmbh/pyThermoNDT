@@ -3,7 +3,7 @@ import re
 from glob import glob
 from re import Pattern
 
-from ...utils import IOPathWrapper
+from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
 
 

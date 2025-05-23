@@ -56,6 +56,9 @@ for thermal_data, ground_truth in dataloader:
     break
 ```
 
+## From here?
+pyThermoNDT is yours to use! You can start by exploring the [examples](examples/) directory for more detailed usage scenarios. The package is designed to be flexible and extensible, so feel free to modify and adapt it to your specific needs.
+
 ## Installation
 
 ### From Wheel Package (Recommended)

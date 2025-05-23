@@ -37,6 +37,13 @@ def random_split(
     Raises:
         ValueError: If lengths don't sum up to 1.0
         ValueError: If number of transforms doesn't match lengths
+
+    Example:
+        >>> from pythermondt import transforms as T
+        >>> # Create train/val/test splits with different transforms
+        >>> train_transform = T.Compose([T.ApplyLUT(), T.RandomCrop(96, 96)])
+        >>> val_transform = T.Compose([T.ApplyLUT(), T.CropFrames(96, 96)])
+        >>> train, val, test = random_split(dataset, [0.7, 0.2, 0.1], transforms=[train_transform, val_transform, None])
     """
     # Validate transforms if provided
     if transforms is not None and len(transforms) != len(lengths):

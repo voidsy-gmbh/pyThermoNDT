@@ -45,7 +45,6 @@ dataset = ThermoDataset([local_reader, s3_reader], transform=transform)
 dataset[0].analyse_interactive()
 
 # 3.) Use the dataset with a PyTorch DataLoader for batched access
-# Create a custom collate function to extract thermal data and ground truth
 collate_fn = container_collate('/Data/Tdata', '/GroundTruth/DefectMask')
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 

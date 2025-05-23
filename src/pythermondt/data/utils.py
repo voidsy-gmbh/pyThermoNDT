@@ -111,6 +111,7 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
     Raises:
         KeyError: If a specified dataset path doesn't exist in any container
         RuntimeError: If tensors have incompatible shapes for stacking
+        ValueError: If empty batch is provided
 
     Example:
         >>> from torch.utils.data import DataLoader
@@ -122,24 +123,27 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
 
     def collate_fn(batch: Sequence[DataContainer]) -> tuple[torch.Tensor, ...]:
         """Inner collate function that processes a batch of DataContainer objects."""
-        result = []
+        if not batch:
+            raise ValueError("Empty batch provided - cannot collate empty sequence")
 
-        for path in paths:
-            # Extract tensors from each container using the dataset path
-            tensors = []
-            for container in batch:
-                try:
-                    # Use get_dataset method to access data from DataContainer
-                    tensor = container.get_dataset(path)
-                    tensors.append(tensor)
-                except KeyError as exc:
-                    raise KeyError(f"Dataset path '{path}' not found in container") from exc
-
-            # Stack along batch dimension
+        # Use get_datasets method to efficiently extract all datasets from each container
+        all_tensors = []
+        for container in batch:
             try:
-                result.append(torch.stack(tensors, dim=0))
+                # Get all datasets from this container in one call
+                tensors = container.get_datasets(*paths)
+                all_tensors.append(tensors)
+            except KeyError as exc:
+                raise KeyError(f"One or more dataset paths not found in container: {exc}") from exc
+
+        # Stack tensors along batch dimension for each path
+        result = []
+        for path_idx in range(len(paths)):
+            try:
+                # Extract tensors for this path from all containers and stack them
+                result.append(torch.stack([tensors[path_idx] for tensors in all_tensors], dim=0))
             except RuntimeError as e:
-                raise RuntimeError(f"Cannot stack tensors for path '{path}': {e}") from e
+                raise RuntimeError(f"Cannot stack tensors for path '{paths[path_idx]}': {e}") from e
 
         return tuple(result)
 

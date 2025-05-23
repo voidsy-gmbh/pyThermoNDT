@@ -15,33 +15,45 @@ pyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 from torch.utils.data import DataLoader
 
 from pythermondt import transforms as T
-from pythermondt.data import ThermoDataset
+from pythermondt.data import ThermoDataset, container_collate
 from pythermondt.readers import LocalReader, S3Reader
 
 # Load data from different sources
 local_reader = LocalReader("path/to/data/*.hdf5", cache_files=True)
-s3_reader = S3Reader("s3://bucket-name/data.hdf5", cache_files=True)
-
-# Combine into a dataset (with caching for remote data)
-dataset = ThermoDataset([local_reader, s3_reader])
+s3_reader = S3Reader("s3://ffg-bp/example4/.hdf5", cache_files=True)
 
 # Create a transform pipeline
 transform = T.Compose([
     T.ApplyLUT(),           # Convert raw data to temperatures
     T.RemoveFlash(),        # Remove flash frames
     T.NonUniformSampling(64), # Resample data to 64 frames
+    T.CropFrames(96, 96), # Center crop the frames to 96x96
     T.MinMaxNormalize()     # Normalize data
 ])
 
-# Access and process first container
-container = dataset[0]
-processed = transform(container)
+# 1.) Access data using the reader interface
+container = local_reader[0]
+processed = transform(container) # Apply the transform to the container
 
 # Visualize results
 processed.show_frame(frame_number=10)
 
-# Create a PyTorch DataLoader for batch processing
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+# 2.) Combine multiple sources in a dataset with caching for remote data and applied transforms
+dataset = ThermoDataset([local_reader, s3_reader], transform=transform)
+
+# Analyse a datacontainer interactively
+dataset[0].analyse_interactive()
+
+# 3.) Use the dataset with a PyTorch DataLoader for batched access
+# Create a custom collate function to extract thermal data and ground truth
+collate_fn = container_collate('/Data/Tdata', '/GroundTruth/DefectMask')
+dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+
+# Run your training loop
+for thermal_data, ground_truth in dataloader:
+    print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [32, 64, 96, 96]
+    print(f"Ground truth shape: {ground_truth.shape}")    # Tensor of shape: [32, 96, 96]
+    break
 ```
 
 ## Installation

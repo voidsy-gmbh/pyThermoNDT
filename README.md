@@ -51,7 +51,7 @@ dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate
 
 # Run your training loop
 for thermal_data, ground_truth in dataloader:
-    print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [32, 64, 96, 96]
+    print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [32, 96, 96, 64]
     print(f"Ground truth shape: {ground_truth.shape}")    # Tensor of shape: [32, 96, 96]
     break
 ```

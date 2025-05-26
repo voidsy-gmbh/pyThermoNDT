@@ -2,7 +2,7 @@ from .datacontainer import DataContainer
 from .thermo_container import ThermoContainer
 from .thermo_dataset import ThermoDataset
 from .units import Units, generate_label, is_unit_info
-from .utils import random_split
+from .utils import container_collate, random_split
 
 __all__ = [
     "DataContainer",
@@ -11,5 +11,6 @@ __all__ = [
     "Units",
     "generate_label",
     "is_unit_info",
+    "container_collate",
     "random_split",
 ]

@@ -1,11 +1,12 @@
 import itertools
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import torch
 from torch import Generator, default_generator
 
 from ..transforms import ThermoTransform
+from .datacontainer import DataContainer
 from .thermo_dataset import IndexedThermoDataset, ThermoDataset
 
 
@@ -36,6 +37,13 @@ def random_split(
     Raises:
         ValueError: If lengths don't sum up to 1.0
         ValueError: If number of transforms doesn't match lengths
+
+    Example:
+        >>> from pythermondt import transforms as T
+        >>> # Create train/val/test splits with different transforms
+        >>> train_transform = T.Compose([T.ApplyLUT(), T.RandomCrop(96, 96)])
+        >>> val_transform = T.Compose([T.ApplyLUT(), T.CropFrames(96, 96)])
+        >>> train, val, test = random_split(dataset, [0.7, 0.2, 0.1], transforms=[train_transform, val_transform, None])
     """
     # Validate transforms if provided
     if transforms is not None and len(transforms) != len(lengths):
@@ -85,3 +93,58 @@ def random_split(
         IndexedThermoDataset(dataset, indices[offset - length : offset], transform)
         for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths), strict=False)
     ]
+
+
+def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]:
+    """Factory function for creating a collate function for DataContainer objects.
+
+    Returns a function that extracts specified dataset paths and stacks them along batch dimension.
+
+    Parameters:
+        *paths (str): Variable number of dataset paths to extract (e.g. '/Data/Tdata', '/GroundTruth/DefectMask')
+
+    Returns:
+        Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]: A collate function that takes a batch of
+            DataContainer objects and returns a tuple of tensors. The number of tensors in the tuple corresponds to the
+            number of dataset paths provided.
+
+    Raises:
+        KeyError: If a specified dataset path doesn't exist in any container
+        RuntimeError: If tensors have incompatible shapes for stacking
+        ValueError: If empty batch is provided
+
+    Example:
+        >>> from torch.utils.data import DataLoader
+        >>> collate_fn = container_collate("/Data/Tdata", "/GroundTruth/DefectMask")
+        >>> dataloader = DataLoader(dataset, batch_size=32, collate_fn=collate_fn)
+    """
+    if not paths:
+        raise ValueError("At least one path must be specified")
+
+    def collate_fn(batch: Sequence[DataContainer]) -> tuple[torch.Tensor, ...]:
+        """Inner collate function that processes a batch of DataContainer objects."""
+        if not batch:
+            raise ValueError("Empty batch provided - cannot collate empty sequence")
+
+        # Use get_datasets method to efficiently extract all datasets from each container
+        all_tensors = []
+        for container in batch:
+            try:
+                # Get all datasets from this container in one call
+                tensors = container.get_datasets(*paths)
+                all_tensors.append(tensors)
+            except KeyError as exc:
+                raise KeyError(f"One or more dataset paths not found in container: {exc}") from exc
+
+        # Stack tensors along batch dimension for each path
+        result = []
+        for path_idx in range(len(paths)):
+            try:
+                # Extract tensors for this path from all containers and stack them
+                result.append(torch.stack([tensors[path_idx] for tensors in all_tensors], dim=0))
+            except RuntimeError as e:
+                raise RuntimeError(f"Cannot stack tensors for path '{paths[path_idx]}': {e}") from e
+
+        return tuple(result)
+
+    return collate_fn

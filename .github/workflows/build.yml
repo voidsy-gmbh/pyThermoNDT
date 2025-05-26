@@ -43,7 +43,7 @@ jobs:
       # Step 3: Setup build environment for pip
       - name: Setup build environment for pip
         if: matrix.build_type == 'pip'
-        uses: astral-sh/setup-uv@v6.0.1
+        uses: astral-sh/setup-uv@v6.1.0
         with:
           python-version: 3.12
           activate-environment: true

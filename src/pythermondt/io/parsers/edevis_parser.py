@@ -28,7 +28,7 @@ class EdevisParser(BaseParser):
             DataContainer: The parsed data as a DataContainer object.
 
         Raises:
-            ValueError: If the given IOPathWrapper object is corupted
+            ValueError: If the given IOPathWrapper object is corrupted
         """
         # Check if the BytesIO object is empty
         if data.file_obj.getbuffer().nbytes == 0:

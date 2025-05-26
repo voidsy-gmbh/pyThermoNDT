@@ -34,4 +34,4 @@ repos:
     rev: v1.32.0
     hooks:
       - id: typos
-        exclude: ^docs/.*  # Exclude docs directory
+        args: [.github, ., -w]

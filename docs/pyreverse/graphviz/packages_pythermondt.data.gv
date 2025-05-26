@@ -62,5 +62,6 @@ charset="utf-8"
 "pythermondt.data.units.units" -> "pythermondt.data.units._unit" [arrowhead="open", arrowtail="none"];
 "pythermondt.data.units.utils" -> "pythermondt.data.units._unit" [arrowhead="open", arrowtail="none"];
 "pythermondt.data.units.utils" -> "pythermondt.data.units.units" [arrowhead="open", arrowtail="none"];
+"pythermondt.data.utils" -> "pythermondt.data.datacontainer" [arrowhead="open", arrowtail="none"];
 "pythermondt.data.utils" -> "pythermondt.data.thermo_dataset" [arrowhead="open", arrowtail="none"];
 }

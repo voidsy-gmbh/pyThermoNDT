@@ -40,7 +40,7 @@ charset="utf-8"
 "pythermondt.data.datacontainer.serialization_ops.SerializationOps" [color="#27AE60", fontcolor="black", label=<{SerializationOps|<br ALIGN="LEFT"/>|save_to_hdf5(path: str)<br ALIGN="LEFT"/>serialize_to_hdf5(): BytesIO<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.config.Settings" [color="#F2994A", fontcolor="black", label=<{Settings|download_dir : str<br ALIGN="LEFT"/>model_config<br ALIGN="LEFT"/>|ensure_exists(v: str): str<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.io.parsers.simulation_parser.SimulationParser" [color="#2F80ED", fontcolor="black", label=<{SimulationParser|supported_extensions : tuple<br ALIGN="LEFT"/>|parse(data: IOPathWrapper): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.transforms.preprocessing.SubstractFrame" [color="#EB5757", fontcolor="black", label=<{SubstractFrame|frame : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.preprocessing.SubtractFrame" [color="#EB5757", fontcolor="black", label=<{SubtractFrame|frame : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.data.thermo_container.ThermoContainer" [color="#EB5757", fontcolor="black", label=<{ThermoContainer|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.data.thermo_dataset.ThermoDataset" [color="#EB5757", fontcolor="black", label=<{ThermoDataset|files : list[str]<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.transforms.utils.ThermoTransform" [color="#EB5757", fontcolor="black", label=<{ThermoTransform|<br ALIGN="LEFT"/>|<I>forward</I>(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
@@ -84,14 +84,13 @@ charset="utf-8"
 "pythermondt.transforms.preprocessing.ApplyLUT" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.CropFrames" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.preprocessing.RemoveFlash" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
-"pythermondt.transforms.preprocessing.SubstractFrame" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
+"pythermondt.transforms.preprocessing.SubtractFrame" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.sampling.NonUniformSampling" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.sampling.SelectFrameRange" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.sampling.SelectFrames" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.utils.Compose" -> "pythermondt.transforms.utils.ThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.writers.local_writer.LocalWriter" -> "pythermondt.writers.base_writer.BaseWriter" [arrowhead="empty", arrowtail="none"];
 "pythermondt.writers.s3_writer.S3Writer" -> "pythermondt.writers.base_writer.BaseWriter" [arrowhead="empty", arrowtail="none"];
-"pythermondt.data.datacontainer.base.DataContainerBase.__NodeAccessor" -> "pythermondt.data.datacontainer.base.DataContainerBase" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__node_accessor", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="dimensionless", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="arbitrary", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="undefined", style="solid"];
@@ -99,6 +98,4 @@ charset="utf-8"
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="celsius", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="second", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="millisecond", style="solid"];
-"pythermondt.data.datacontainer.node.NodeType" -> "pythermondt.data.datacontainer.node.BaseNode" [arrowhead="odiamond", arrowtail="none", fontcolor="green", label="__type", style="solid"];
-"pythermondt.data.thermo_dataset.ThermoDataset" -> "pythermondt.data.thermo_dataset.IndexedThermoDataset" [arrowhead="odiamond", arrowtail="none", fontcolor="green", label="__dataset", style="solid"];
 }

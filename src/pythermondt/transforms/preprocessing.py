@@ -57,8 +57,8 @@ class ApplyLUT(ThermoTransform):
         return container
 
 
-class SubstractFrame(ThermoTransform):
-    """Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container."""
+class SubtractFrame(ThermoTransform):
+    """Subtracts 1 frame from all other frames in the Temperature data (Tdata) of the container."""
 
     def __init__(self, frame: int = 0):
         """Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.

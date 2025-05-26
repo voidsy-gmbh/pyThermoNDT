@@ -97,6 +97,13 @@ ignore = [
 docstring-code-format = true # Enable reformatting of code snippets in docstrings.
 quote-style = "double"
 
+# typos
+[tool.typos]
+files.extend-exclude = [
+    "*/docs/*",
+    "docs/*"
+]
+
 # Bump Version
 [tool.bumpversion]
 current_version = "0.1.9dev"

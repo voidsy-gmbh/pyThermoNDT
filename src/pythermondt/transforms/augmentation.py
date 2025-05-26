@@ -7,14 +7,14 @@ from .utils import ThermoTransform
 class RandomFlip(ThermoTransform):
     """Randomly flips all frames in the Temperature data (Tdata) of the container.
 
-    The flipping occures along the height (vertical flip) and/or the width (horizontal flip) of Tdata.
+    The flipping occurs along the height (vertical flip) and/or the width (horizontal flip) of Tdata.
     The probabilities of flipping along the height and width directions can be specified separately.
     """
 
     def __init__(self, p_height: float = 0.5, p_width: float = 0.5):
         """Randomly flips all frames in the Temperature data (Tdata) of the container.
 
-        The flipping occures along the height (vertical flip) and/or the width (horizontal flip) of Tdata.
+        The flipping occurs along the height (vertical flip) and/or the width (horizontal flip) of Tdata.
         The probabilities of flipping along height and width can be specified separately.
 
         Parameters:

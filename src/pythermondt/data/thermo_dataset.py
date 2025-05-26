@@ -26,7 +26,7 @@ class ThermoDataset(Dataset):
 
         **Note**: When combining readers, it is recommend that all readers enable file caching, especially in cases
         where files need to be fetched from a remote location and these files are changing at runtime. The readers
-        accomodate for this by raising an error if a file is not found and taking a snapshot of the files list when a
+        accommodate for this by raising an error if a file is not found and taking a snapshot of the files list when a
         iterator is created. The Dataset will catch these errors when trying to read the data and return an
         **empty Datacontainer**.
 

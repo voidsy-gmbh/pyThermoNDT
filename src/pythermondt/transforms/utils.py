@@ -25,7 +25,7 @@ class ThermoTransform(nn.Module, ABC):
 
     # Add type annotations to __call__ method, so that the type checker can infer the correct return type.
     # Otherwise, the return type will be inferred as 'Any'.
-    # __call__ does not have to be overriden, this is already implemented in the nn.Module class from PyTorch.
+    # __call__ does not have to be overridden, this is already implemented in the nn.Module class from PyTorch.
     # See: https://github.com/microsoft/pyright/issues/3249
     __call__: Callable[[DataContainer], DataContainer]
 

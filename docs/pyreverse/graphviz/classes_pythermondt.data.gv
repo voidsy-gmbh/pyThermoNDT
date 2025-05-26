@@ -46,7 +46,6 @@ charset="utf-8"
 "pythermondt.data.datacontainer.visualization_ops.VisualizationOps" -> "pythermondt.data.datacontainer.group_ops.GroupOps" [arrowhead="empty", arrowtail="none"];
 "pythermondt.data.thermo_container.ThermoContainer" -> "pythermondt.data.datacontainer.core.DataContainer" [arrowhead="empty", arrowtail="none"];
 "pythermondt.data.thermo_dataset.IndexedThermoDataset" -> "pythermondt.data.thermo_dataset.ThermoDataset" [arrowhead="empty", arrowtail="none"];
-"pythermondt.data.datacontainer.base.DataContainerBase.__NodeAccessor" -> "pythermondt.data.datacontainer.base.DataContainerBase" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__node_accessor", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="dimensionless", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="arbitrary", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="undefined", style="solid"];
@@ -54,6 +53,4 @@ charset="utf-8"
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="celsius", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="second", style="solid"];
 "pythermondt.data.units._unit.Unit" -> "pythermondt.data.units.units.Units" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="millisecond", style="solid"];
-"pythermondt.data.datacontainer.node.NodeType" -> "pythermondt.data.datacontainer.node.BaseNode" [arrowhead="odiamond", arrowtail="none", fontcolor="green", label="__type", style="solid"];
-"pythermondt.data.thermo_dataset.ThermoDataset" -> "pythermondt.data.thermo_dataset.IndexedThermoDataset" [arrowhead="odiamond", arrowtail="none", fontcolor="green", label="__dataset", style="solid"];
 }

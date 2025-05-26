@@ -108,7 +108,12 @@ check-file = false # Disable typo checking for .gv files, as they are generated 
 [tool.mypy]
 packages = ["pythermondt"]
 python_version = "3.10"
-disallow_untyped_defs = true
+warn_unused_configs = true
+ignore_missing_imports = true
+check_untyped_defs = true
+explicit_package_bases = true
+warn_unreachable = true
+warn_redundant_casts = true
 
 
 # Bump Version

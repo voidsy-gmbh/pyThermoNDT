@@ -94,7 +94,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.fig.canvas.mpl_connect("motion_notify_event", self.on_mouse_move)
             self.annotation_toggle.on_clicked(self.toggle_annotation)
 
-            # 6.) Initialze blitting for faster rendering (if possible)
+            # 6.) Initialize blitting for faster rendering (if possible)
             self.fig.canvas.draw_idle()
 
         def toggle_annotation(self, event):
@@ -143,7 +143,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             vmin = round(self.current_frame_data.min(), 8)
             vmax = round(self.current_frame_data.max(), 8)
 
-            # Directly set the image norm, because set_clim does call color sanitazion inside
+            # Directly set the image norm, because set_clim does call color sanitation inside
             # This can lead to wrong updates
             self.frame_img.norm = Normalize(vmin, vmax)
 

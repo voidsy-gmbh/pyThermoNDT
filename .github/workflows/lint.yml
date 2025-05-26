@@ -1,5 +1,5 @@
 name: Run Linters
-description: 'Reuseable workflow to run linting for pyThermoNDT'
+description: 'Reusable workflow to run linting for pyThermoNDT'
 
 on:
   workflow_dispatch:

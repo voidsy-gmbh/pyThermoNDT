@@ -61,10 +61,10 @@ class SubtractFrame(ThermoTransform):
     """Subtracts 1 frame from all other frames in the Temperature data (Tdata) of the container."""
 
     def __init__(self, frame: int = 0):
-        """Substracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
+        """Subtracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
 
         Parameters:
-            frame (int): Frame number that should be substracted from the Temperature data.
+            frame (int): Frame number that should be subtracted from the Temperature data.
                 Default is the initial frame (frame 0).
         """
         super().__init__()
@@ -91,7 +91,7 @@ class SubtractFrame(ThermoTransform):
         if self.frame >= tdata.shape[2]:
             raise IndexError("Index out of bounds. Frame number is bigger than the number of frames in the data.")
 
-        # Substract the frame from Tdata
+        # Subtract the frame from Tdata
         tdata = tdata - tdata[:, :, self.frame].unsqueeze(2)
 
         # Update the container and return it
@@ -156,7 +156,7 @@ class RemoveFlash(ThermoTransform):
         domain_values = domain_values[flash_end_idx:]
         excitation_signal = excitation_signal[flash_end_idx:]
 
-        # Fix time shift in domain values by substracting the first time step
+        # Fix time shift in domain values by subtracting the first time step
         domain_values = domain_values - domain_values[0]
 
         # Update the container and return it

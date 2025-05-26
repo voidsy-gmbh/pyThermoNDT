@@ -145,7 +145,7 @@ string should be avoided. If you really need to use the [CLI-Interface](https://
 
 When using the automated release workflow, the these steps should be followed:
 1. **Trigger a release:**
-   - Manually trigger the [Build and Release Pyhton Package workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/build_and_release.yml) on the `main` branch.
+   - Manually trigger the [Build and Release Python Package workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/build_and_release.yml) on the `main` branch.
    - This workflow:
      - Creates a `release/X.Y.Z` branch
      - Bumps the version number by removing the "dev" suffix

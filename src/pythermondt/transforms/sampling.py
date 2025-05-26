@@ -37,7 +37,7 @@ class SelectFrames(ThermoTransform):
         domain_values = domain_values[..., self.frame_indices]
         excitation_signal = excitation_signal[..., self.frame_indices]
 
-        # Fix time shift in domain values by substracting the first time step
+        # Fix time shift in domain values by subtracting the first time step
         domain_values = domain_values - domain_values[0]
 
         # Update Container and return
@@ -88,7 +88,7 @@ class SelectFrameRange(ThermoTransform):
         domain_values = domain_values[..., start:end]
         excitation_signal = excitation_signal[..., start:end]
 
-        # Fix time shift in domain values by substracting the first time step
+        # Fix time shift in domain values by subtracting the first time step
         domain_values = domain_values - domain_values[0]
 
         # Update Container and return

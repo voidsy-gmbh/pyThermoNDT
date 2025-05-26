@@ -16,7 +16,7 @@ def random_split(
     transforms: Sequence[ThermoTransform | None] | None = None,
     generator: Generator = default_generator,
 ) -> list[IndexedThermoDataset]:
-    """Split a dataset into random non-overlapping subsets of given lengths with optional transforms beeing applied.
+    """Split a dataset into random non-overlapping subsets of given lengths with optional transforms being applied.
 
     If a list of fractions that sum up to 1 is given, the lengths will be computed automatically as
     floor(frac * len(dataset)) for each fraction provided.
@@ -49,13 +49,13 @@ def random_split(
     if transforms is not None and len(transforms) != len(lengths):
         raise ValueError(f"Number of transforms: {len(transforms)} must match number of splits: {len(lengths)}")
 
-    # Validate lenghts
+    # Validate lengths
     if not all(value >= 0 for value in lengths):
         raise ValueError("All values in lengths must be greater or equal to 0")
 
     # If lengths are provided as fractions and not as absolute numbers
     if math.isclose(sum(lengths), 1) and sum(lengths) <= 1:
-        # Compute the lenghts of the subsets
+        # Compute the lengths of the subsets
         subset_lengths: list[int] = []
         for i, frac in enumerate(lengths):
             if frac < 0 or frac > 1:

@@ -22,7 +22,7 @@ class S3Reader(BaseReader):
 
         Parameters:
             source (str): The source of the data. This must be a valid S3 path, specified in the format: s3://bucket-name/Prefix/[.ext].
-                All files that start with the provided prefix will be read. Specifiy the file extension if you want to
+                All files that start with the provided prefix will be read. Specify the file extension if you want to
                 autoselect a parser based on the file extension.
             cache_files (bool, optional): If True, all the files are downloaded first and the paths are cached in
                 memory. This means the reader only checks for new files once, so changes to the file sources will not be

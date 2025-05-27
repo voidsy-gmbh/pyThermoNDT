@@ -39,7 +39,7 @@ class DataContainerBase:
 
             # Optionally check if the node is of the correct type
             node = self.__nodes[key]
-            if node_types and not any(isinstance(node, t) for t in node_types):
+            if node_types and not isinstance(node, node_types):
                 raise TypeError(f"Node at path '{key}' is not of type: {', '.join([t.__name__ for t in node_types])}.")
             return node
 

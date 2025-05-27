@@ -45,7 +45,7 @@ jobs:
 
       # Step 4: Run Ruff
       - name: Run Ruff
-        run: uv ruff check
+        run: ruff check
 
       # Step 5: Set Output Based on Lint Failure
       - name: Check license compatibility

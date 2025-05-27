@@ -56,6 +56,7 @@ jobs:
           echo "=== Licensecheck verbose ==="
           licensecheck --help
           licensecheck -f simple
+          licensecheck --requirements-paths .\pyproject.toml -0
 
       # Step 6: Set Output Based on Lint Success
       - id: set_output

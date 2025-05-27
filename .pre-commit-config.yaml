@@ -35,3 +35,12 @@ repos:
     hooks:
       - id: typos
         args: [.github, ., -w]
+
+-   repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        args: [--config-file=pyproject.toml]

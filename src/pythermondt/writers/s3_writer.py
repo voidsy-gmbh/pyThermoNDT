@@ -35,11 +35,11 @@ class S3Writer(BaseWriter):
             path = file_name
 
         # Serialize the DataContainer to a HDF5 file
-        file_obj = container.serialize_to_hdf5()
+        hdf5_buffer = container.serialize_to_hdf5()
 
         # Progress bar for uploading the file
         bar = tqdm(
-            total=file_obj.getbuffer().nbytes,
+            total=hdf5_buffer.getbuffer().nbytes,
             desc=f"Uploading file: {file_name}",
             unit="B",
             unit_scale=True,  # Scale to MB
@@ -58,7 +58,7 @@ class S3Writer(BaseWriter):
 
         # Try to upload the file
         try:
-            self.__client.upload_fileobj(file_obj, self.bucket, path, Callback=ProgressCallback(bar))
+            self.__client.upload_fileobj(hdf5_buffer, self.bucket, path, Callback=ProgressCallback(bar))
             bar.close()  # Close the progress bar
 
         except ClientError as e:

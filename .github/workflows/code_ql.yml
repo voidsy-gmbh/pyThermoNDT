@@ -49,7 +49,7 @@ jobs:
 
       # Step 5: Set Output Based on Lint Failure
       - name: Check license compatibility
-        run: licensecheck --zero
+        run: uv run licensecheck --zero
 
       # Step 6: Set Output Based on Lint Success
       - id: set_output

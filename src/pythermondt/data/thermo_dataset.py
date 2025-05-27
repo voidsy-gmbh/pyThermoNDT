@@ -74,8 +74,8 @@ class ThermoDataset(Dataset):
         for reader_type, readers in readers_by_type.items():
             # When there a multiple readers ==> check for duplicate files
             if len(readers) > 1:
-                all_files = set()
-                duplicate_files = set()
+                all_files: set[str] = set()
+                duplicate_files: set[str] = set()
 
                 for reader in readers:
                     # Check if the reader has found any files

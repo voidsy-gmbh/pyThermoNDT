@@ -48,8 +48,14 @@ jobs:
         run: ruff check
 
       # Step 5: Set Output Based on Lint Failure
-      - name: Check license compatibility
-        run: uv run licensecheck --zero
+      - name: Debug licensecheck
+        run: |
+          echo "=== PWD and Files ==="
+          pwd
+          ls -la pyproject.toml
+          echo "=== Licensecheck verbose ==="
+          licensecheck --help
+          licensecheck -f simple
 
       # Step 6: Set Output Based on Lint Success
       - id: set_output

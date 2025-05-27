@@ -48,8 +48,8 @@ jobs:
         run: ruff check
 
       # Step 5: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
-      - name: Debug licensecheck
-        run: licensecheck --requirements-paths pyproject.toml --show-only-failing --ignore-packages nvidia-* -0
+      - name: Perform licensecheck
+        run: licensecheck --requirements-paths pyproject.toml --ignore-packages nvidia-* -0
 
       # Step 6: Set Output Based on Lint Success
       - id: set_output

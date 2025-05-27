@@ -27,14 +27,31 @@ jobs:
         if: github.event.workflow == '.github/workflows/lint.yml'
         uses: actions/checkout@v4.2.2
 
-      # Step 2: Setup ruff
-      - name: Setup and run ruff
-        uses: astral-sh/ruff-action@v3.3.1
+      # Step 2: Setup uv
+      - name: Setup uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v6.1.0
         with:
-          args: "check"
-          version-file: requirements_dev.txt
+          python-version: 3.12
+          activate-environment: true
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/setup.py
 
-      # Step 3: Set Output Based on Lint Success
+      # Step 3 Sync dependencies if cache hit
+      - name: Sync dependencies
+        run: |
+          uv pip install -r ./requirements_dev.txt # Install dev dependencies
+
+      # Step 4: Run Ruff
+      - name: Run Ruff
+        run: uv ruff check
+
+      # Step 5: Set Output Based on Lint Failure
+      - name: Check license compatibility
+        run: licensecheck --zero
+
+      # Step 6: Set Output Based on Lint Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

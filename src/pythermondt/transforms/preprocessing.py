@@ -140,7 +140,7 @@ class RemoveFlash(ThermoTransform):
 
             case "max_temp":
                 # Find frame with maximum temperature value (flash end)
-                flash_end_idx = tdata.argmax(dim=2).max().item() + self.offset
+                flash_end_idx = int(tdata.argmax(dim=2).max().item()) + self.offset
 
             case _:
                 raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__['method'])}.")

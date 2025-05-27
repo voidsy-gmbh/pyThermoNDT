@@ -1,4 +1,4 @@
-name: Run Linters
+name: Run Code Quality Checks
 description: 'Reusable workflow to run linting for pyThermoNDT'
 
 on:

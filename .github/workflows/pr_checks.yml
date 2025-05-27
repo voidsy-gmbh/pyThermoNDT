@@ -11,8 +11,8 @@ jobs:
     with:
       ref: ${{ github.event.pull_request.head.sha }}
 
-  lint:
-    name: Run Linters
-    uses: ./.github/workflows/lint.yml
+  quality-checks:
+    name: Run Code Quality Checks
+    uses: ./.github/workflows/code_ql.yml
     with:
       ref: ${{ github.event.pull_request.head.sha }}

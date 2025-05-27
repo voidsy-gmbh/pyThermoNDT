@@ -106,8 +106,8 @@ class ThermoDataset(Dataset):
         This is done to achieve a fast and memory efficient mapping of reader and file index to the global index
         of the dataset. 1 Tensor is used to store the reader index and the other Tensor is used to store the file index.
         """
-        reader_indices = []
-        file_indices = []
+        reader_indices: list[int] = []
+        file_indices: list[int] = []
         for reader_idx, reader in enumerate(self.__readers):
             reader_indices.extend([reader_idx] * len(reader.files))
             file_indices.extend(range(len(reader.files)))

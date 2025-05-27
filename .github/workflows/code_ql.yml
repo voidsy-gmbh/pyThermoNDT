@@ -52,7 +52,7 @@ jobs:
         run: |
           echo "=== PWD and Files ==="
           pwd
-          ls -la pyproject.toml
+          ls
           echo "=== Licensecheck verbose ==="
           licensecheck --help
           licensecheck -f simple

@@ -74,8 +74,8 @@ class ThermoDataset(Dataset):
         for reader_type, readers in readers_by_type.items():
             # When there a multiple readers ==> check for duplicate files
             if len(readers) > 1:
-                all_files = set()
-                duplicate_files = set()
+                all_files: set[str] = set()
+                duplicate_files: set[str] = set()
 
                 for reader in readers:
                     # Check if the reader has found any files
@@ -106,8 +106,8 @@ class ThermoDataset(Dataset):
         This is done to achieve a fast and memory efficient mapping of reader and file index to the global index
         of the dataset. 1 Tensor is used to store the reader index and the other Tensor is used to store the file index.
         """
-        reader_indices = []
-        file_indices = []
+        reader_indices: list[int] = []
+        file_indices: list[int] = []
         for reader_idx, reader in enumerate(self.__readers):
             reader_indices.extend([reader_idx] * len(reader.files))
             file_indices.extend(range(len(reader.files)))

@@ -16,7 +16,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the attribute already exists.
         """
-        self.nodes(path, DataNode, GroupNode).add_attribute(key, value)
+        self.nodes(path, DataNode, GroupNode).add_attribute(key, value)  # type: ignore[union-attr]
 
     def add_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
         """Adds multiple attributes to the specified group or dataset in the DataContainer.
@@ -29,7 +29,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If any of the attributes already exists.
         """
-        self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)
+        self.nodes(path, DataNode, GroupNode).add_attributes(**attributes)  # type: ignore[union-attr]
 
     def add_unit(self, path: str, unit: Unit):
         """Adds the unit information to the specified dataset.
@@ -42,7 +42,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the unit already exists.
         """
-        self.nodes(path, DataNode).add_attribute("Unit", unit)
+        self.nodes(path, DataNode).add_attribute("Unit", unit)  # type: ignore[union-attr]
 
     def get_attribute(self, path: str, key: str) -> str | int | float | list | tuple | dict | Unit:
         """Get a single attribute from a specified group or dataset in the DataContainer.
@@ -58,7 +58,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the attribute does not exist.
         """
-        return self.nodes(path, DataNode, GroupNode).get_attribute(key)
+        return self.nodes(path, DataNode, GroupNode).get_attribute(key)  # type: ignore[union-attr]
 
     def get_attributes(self, path: str, *keys: str) -> tuple[str | int | float | list | tuple | dict | Unit, ...]:
         """Get multiple attributes from a specified group or dataset in the DataContainer.
@@ -89,7 +89,7 @@ class AttributeOps(BaseOps):
         Raises:
             KeyError: If the group or dataset does not exist.
         """
-        return dict(self.nodes(path, DataNode, GroupNode).attributes)
+        return dict(self.nodes(path, DataNode, GroupNode).attributes)  # type: ignore[union-attr]
 
     def get_unit(self, path: str) -> Unit:
         """Get the unit information from the specified dataset.
@@ -123,7 +123,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the attribute does not exist.
         """
-        self.nodes(path, DataNode, GroupNode).remove_attribute(key)
+        self.nodes(path, DataNode, GroupNode).remove_attribute(key)  # type: ignore[union-attr]
 
     def update_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | Unit):
         """Update an attribute in a specified group or dataset in the DataContainer.
@@ -137,7 +137,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If the attribute does not exist.
         """
-        self.nodes(path, DataNode, GroupNode).update_attribute(key, value)
+        self.nodes(path, DataNode, GroupNode).update_attribute(key, value)  # type: ignore[union-attr]
 
     def update_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
         """Update multiple attributes in a specified group or dataset in the DataContainer.
@@ -150,7 +150,7 @@ class AttributeOps(BaseOps):
             KeyError: If the group or dataset does not exist.
             KeyError: If any of the attributes do not exist.
         """
-        self.nodes(path, DataNode, GroupNode).update_attributes(**attributes)
+        self.nodes(path, DataNode, GroupNode).update_attributes(**attributes)  # type: ignore[union-attr]
 
     def update_unit(self, path: str, unit: Unit):
         """Update the unit information of the specified dataset.

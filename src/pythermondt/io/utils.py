@@ -15,8 +15,8 @@ class IOPathWrapper:
             source: Either a file path (str), file-like object, or bytes
         """
         self.__source = source
-        self.__file_obj = None
-        self.__temp_path = None
+        self.__file_obj: BytesIO | None = None
+        self.__temp_path: str | None = None
 
     @property
     def file_obj(self) -> BytesIO:

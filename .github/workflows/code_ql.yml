@@ -49,7 +49,11 @@ jobs:
       - name: Perform licensecheck
         run: licensecheck --requirements-paths pyproject.toml --ignore-packages nvidia-* -0
 
-      # Step 6: Set Output Based on Code Quality Checks Success
+      # Step 6: Run mypy
+      - name: Run mypy
+        run: mypy --config-file pyproject.toml
+
+      # Step 7: Set Output Based on Code Quality Checks Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

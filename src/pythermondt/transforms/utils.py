@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 
 import torch.nn as nn
 
@@ -27,7 +26,9 @@ class ThermoTransform(nn.Module, ABC):
     # Otherwise, the return type will be inferred as 'Any'.
     # __call__ does not have to be overridden, this is already implemented in the nn.Module class from PyTorch.
     # See: https://github.com/microsoft/pyright/issues/3249
-    __call__: Callable[[DataContainer], DataContainer]
+    def __call__(self, container: DataContainer) -> DataContainer:
+        """Override to provide proper type hints."""
+        return super().__call__(container)
 
 
 class Compose(ThermoTransform):
@@ -43,11 +44,9 @@ class Compose(ThermoTransform):
         """
         super().__init__()
 
-        # Check if all the provided transforms are valid
+        # Check if all the provided transforms are valid (Thermotransforms are already callable)
         if not all(isinstance(t, ThermoTransform) for t in transforms):
             raise TypeError("Not all transforms inherit from ThermoTransform.")
-        if not all(isinstance(t, Callable) for t in transforms):
-            raise TypeError("Not all transforms are callable.")
         self.transforms = transforms
 
     def forward(self, container: DataContainer) -> DataContainer:

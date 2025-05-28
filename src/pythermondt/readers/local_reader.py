@@ -82,7 +82,7 @@ class LocalReader(BaseReader):
 
         return file_paths
 
-    def _read_file(self, path: str) -> str:
+    def _read_file(self, path: str) -> IOPathWrapper:
         return IOPathWrapper(path)
 
     def _close(self):

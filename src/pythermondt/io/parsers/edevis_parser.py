@@ -6,7 +6,7 @@ import numpy as np
 
 from ...data import DataContainer, ThermoContainer
 from ...data.units import Units
-from ...utils import IOPathWrapper
+from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
 
 TAR_HEADER_SIZE = 512  # Size of the TAR header in bytes ==> needs to be skipped when reading the data

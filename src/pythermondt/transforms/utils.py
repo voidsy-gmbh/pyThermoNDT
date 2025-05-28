@@ -44,7 +44,7 @@ class Compose(ThermoTransform):
         """
         super().__init__()
 
-        # Check if all the provided transforms are valid
+        # Check if all the provided transforms are valid (Thermotransforms are already callable)
         if not all(isinstance(t, ThermoTransform) for t in transforms):
             raise TypeError("Not all transforms inherit from ThermoTransform.")
         self.transforms = transforms

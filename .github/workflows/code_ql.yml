@@ -34,10 +34,7 @@ jobs:
         with:
           python-version: 3.12
           activate-environment: true
-          cache-dependency-glob: |
-            **/pyproject.toml
-            **/requirements_dev.txt
-            **/setup.py
+          cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
 
       # Step 3 Sync dependencies if cache hit
       - name: Sync dependencies

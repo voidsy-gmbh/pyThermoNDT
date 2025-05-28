@@ -27,7 +27,7 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v6.1.0
         with:
-          python-version: '3.12'
+          python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
           enable-cache: false
 
@@ -111,10 +111,10 @@ jobs:
     with:
       ref: release/${{ needs.prepare.outputs.release_version }}
 
-  # Job 3: Lint the source code
-  lint:
+  # Job 3: Run Code Quality Checks on the code
+  quality-checks:
     needs: prepare
-    uses: ./.github/workflows/lint.yml
+    uses: ./.github/workflows/code_ql.yml
     with:
       ref: release/${{ needs.prepare.outputs.release_version }}
 
@@ -128,7 +128,7 @@ jobs:
 
   # Job 5: Release the package
   release:
-    needs: [prepare, build, test, lint]
+    needs: [prepare, build, test, quality-checks]
     runs-on: ubuntu-latest
     permissions:
       contents: write # TODO: Grant repository write access to be able to draft release. Replace with GitHub App in the future: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560

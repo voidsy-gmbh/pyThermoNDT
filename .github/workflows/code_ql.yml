@@ -32,7 +32,7 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v6.1.0
         with:
-          python-version: 3.12
+          python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
           cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
 

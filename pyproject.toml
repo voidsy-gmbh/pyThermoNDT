@@ -93,6 +93,19 @@ ignore = [
 docstring-code-format = true # Enable reformatting of code snippets in docstrings.
 quote-style = "double"
 
+# Pylint
+[tool.pylint]
+max-line-length = 120
+
+[tool.pylint.messages_control]
+disable = [
+    # Docstring warnings (handled by ruff with D100-D107 ignored)
+    "missing-module-docstring",     # C0114
+    "missing-class-docstring",      # C0115
+    "missing-function-docstring",   # C0116
+    "missing-docstring",           # General docstring warnings
+]
+
 # typos
 [tool.typos]
 [tool.typos.files]

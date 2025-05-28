@@ -20,7 +20,7 @@ class LocalReader(BaseReader):
             pattern (Pattern | str): The pattern to match files. Can be a string or a compiled regex pattern.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
-            cache_files (bool, optional): Wether to cache the files list in memory. If set to False, changes to the
+            cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
                 detected files will be reflected at runtime. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.

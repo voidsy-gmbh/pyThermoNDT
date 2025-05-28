@@ -1,0 +1,57 @@
+name: Run Code Quality Checks
+description: 'Reusable workflow for running code quality checks on pyThermoNDT'
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'The branch or tag to lint. Defaults to the reference of the workflow trigger'
+        type: string
+        default: ''
+
+jobs:
+  code_ql:
+    name: Run Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1.1: Checkout repository (workflow_call) (see https://dev.to/koseimori/conditional-branching-with-workflowdispatch-and-workflowcall-in-github-actions-oik)
+      - name: Checkout repository
+        if: github.event.workflow != '.github/workflows/code_ql.yml'
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ inputs.ref }}
+
+      # Step 1.2: Checkout repository (workflow_dispatch)
+      - name: Checkout repository
+        if: github.event.workflow == '.github/workflows/code_ql.yml'
+        uses: actions/checkout@v4.2.2
+
+      # Step 2: Setup uv
+      - name: Setup uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v6.1.0
+        with:
+          python-version: 3.12
+          activate-environment: true
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/setup.py
+
+      # Step 3 Sync dependencies if cache hit
+      - name: Sync dependencies
+        run: |
+          uv pip install -r ./requirements_dev.txt # Install dev dependencies
+
+      # Step 4: Run Ruff
+      - name: Run Ruff
+        run: ruff check
+
+      # Step 5: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
+      - name: Perform licensecheck
+        run: licensecheck --requirements-paths pyproject.toml --ignore-packages nvidia-* -0
+
+      # Step 6: Set Output Based on Code Quality Checks Success
+      - id: set_output
+        if: success()
+        run: echo "success=true" >> $GITHUB_OUTPUT

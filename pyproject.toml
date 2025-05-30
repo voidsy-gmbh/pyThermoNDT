@@ -119,7 +119,7 @@ warn_redundant_casts = true
 
 # Bump Version
 [tool.bumpversion]
-current_version = "0.1.9dev"
+current_version = "0.1.10dev"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?P<release>dev)?"
 serialize = [
     "{major}.{minor}.{patch}{release}",

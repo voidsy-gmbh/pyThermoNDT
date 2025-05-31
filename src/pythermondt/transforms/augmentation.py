@@ -1,10 +1,10 @@
 import torch
 
 from ..data import DataContainer
-from .utils import ThermoTransform
+from .base import RandomThermoTransform
 
 
-class RandomFlip(ThermoTransform):
+class RandomFlip(RandomThermoTransform):
     """Randomly flips all frames in the Temperature data (Tdata) of the container.
 
     The flipping occurs along the height (vertical flip) and/or the width (horizontal flip) of Tdata.
@@ -55,7 +55,7 @@ class RandomFlip(ThermoTransform):
         return container
 
 
-class GaussianNoise(ThermoTransform):
+class GaussianNoise(RandomThermoTransform):
     """Add Gaussian noise to the Temperature data in the container based on specified mean and standard deviation."""
 
     def __init__(self, mean: float = 0.0, std: float = 0.1):

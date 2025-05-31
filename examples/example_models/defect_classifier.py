@@ -1,7 +1,5 @@
-import torch
 from torch import nn
-from torch.nn import functional as F
-import logging
+
 
 class DefectClassifier3DCNN(nn.Module):
     def __init__(self, time_dim=32):

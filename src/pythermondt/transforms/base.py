@@ -8,7 +8,8 @@ from ..data import DataContainer
 class ThermoTransform(nn.Module, ABC):
     """Abstract base class that all deterministic transforms of PyThermoNDT must inherit from.
 
-    Initializes the module and sets up necessary configurations.
+    Initializes the module and sets up necessary configurations. These transforms are expected to produce deterministic
+    outputs given the same input, thus they can safely be cached for improved performance.
     """
 
     def __init__(self):

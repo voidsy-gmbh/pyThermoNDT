@@ -4,7 +4,7 @@ import torch
 
 from ..data import DataContainer
 from ..data.units import Units
-from .utils import ThermoTransform
+from .base import ThermoTransform
 
 
 class ApplyLUT(ThermoTransform):

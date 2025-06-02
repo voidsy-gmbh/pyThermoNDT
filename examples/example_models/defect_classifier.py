@@ -1,75 +1,47 @@
 from torch import nn
-
-
-class DefectClassifier3DCNN(nn.Module):
-    def __init__(self, time_dim=32):
+    
+class DoubleConv(nn.Module):
+    def __init__(self, in_channels, out_channels, dropout=False):
         super().__init__()
-        
-        # Add stronger regularization
-        self.features = nn.Sequential(
-            nn.Conv3d(1, 16, kernel_size=3, padding=1),
-            nn.BatchNorm3d(16),
-            nn.ReLU(),
-            nn.Dropout3d(0.1),  
-            nn.MaxPool3d(kernel_size=(2, 2, 2)),
-            
-            nn.Conv3d(16, 32, kernel_size=3, padding=1),
-            nn.BatchNorm3d(32),
-            nn.ReLU(),
-            nn.Dropout3d(0.1),
-            nn.MaxPool3d(kernel_size=(2, 2, 2)),
-            
-            nn.Conv3d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm3d(64),
-            nn.ReLU(),
-            nn.Dropout3d(0.2),
-            nn.MaxPool3d(kernel_size=(2, 2, 2)),
-            
-            nn.Conv3d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm3d(128),
-            nn.ReLU(),
-            nn.Dropout3d(0.2),
-            nn.AdaptiveAvgPool3d((2, 2, 2))
-        )
-        
-        # Add dropout to classifier
-        self.classifier = nn.Sequential(
-            nn.Linear(128 * 2 * 2 * 2, 64),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(64, 1)
-        )
+        layers = [
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        ]
+        if dropout:
+            layers.append(nn.Dropout(0.5))
+        self.double_conv = nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        logits = self.classifier(x)
-        return logits
-
-class Small3DCNN(nn.Module):
-    def __init__(self, time_dim=32, n_classes=2):
+        return self.double_conv(x)
+    
+class UNetClassifier(nn.Module):
+    """Defect classfier with UNet-like encoder and classification head."""
+    def __init__(self, time_channels: int):
         super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv3d(1, 3, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool3d(kernel_size=(2, 2, 2)),
-
-            nn.Conv3d(3, 6, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool3d(kernel_size=(2, 2, 2)),
-
-            nn.Conv3d(6, 12, kernel_size=3, padding=1),
-            nn.ReLU(),
-            # This will force the final dimension to (2,2,2)
-            nn.AdaptiveAvgPool3d((2,2,2))
-        )
         
+        # Use your successful UNet encoder
+        self.enc1 = DoubleConv(time_channels, 64)
+        self.enc2 = DoubleConv(64, 128) 
+        self.enc3 = DoubleConv(128, 256)
+        self.enc4 = DoubleConv(256, 512)
+        
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        # Classification head (instead of decoder)
         self.classifier = nn.Sequential(
-            nn.Linear(12*2*2*2 , n_classes),  # compute correct shape
+            nn.AdaptiveMaxPool2d((1, 1)),  # Global pool only at the end
+            nn.Flatten(),
+            nn.Linear(512, 1)
         )
-
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        return self.classifier(x)
-
+    
+    def forward(self, x):        
+        # Encoder
+        enc1 = self.enc1(x)
+        enc2 = self.enc2(self.pool(enc1))
+        enc3 = self.enc3(self.pool(enc2))
+        enc4 = self.enc4(self.pool(enc3))
+        
+        # Classify
+        return self.classifier(enc4)

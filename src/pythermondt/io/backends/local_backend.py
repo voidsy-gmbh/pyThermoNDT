@@ -70,19 +70,14 @@ class LocalBackend(BaseBackend):
     def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
         # Handle different pattern types
         all_files = []
-        if isinstance(self.pattern, str):
-            match self.__source_type:
-                case "file":
-                    all_files = [self.pattern]
-                case "directory":
-                    with os.scandir(self.pattern) as entries:
-                        all_files = [entry.path for entry in entries if entry.is_file()]
-                case "regex" | "pattern":
-                    all_files = glob(self.pattern)
-        elif isinstance(self.pattern, Pattern) and self.__source_type == "pattern":
-            all_files = glob(self.pattern.pattern)
-        else:
-            raise ValueError("Invalid source type.")
+        match self.__source_type:
+            case "file":
+                all_files = [self.pattern]
+            case "directory":
+                with os.scandir(self.pattern) as entries:
+                    all_files = [entry.path for entry in entries if entry.is_file()]
+            case "regex" | "pattern":
+                all_files = glob(self.pattern)
 
         # Filter by extension if provided
         if extensions:

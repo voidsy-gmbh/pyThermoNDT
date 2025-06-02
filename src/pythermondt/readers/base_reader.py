@@ -34,7 +34,7 @@ class BaseReader(ABC):
         self.__parser = parser
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__num_files = num_files
-        self.__files = None
+        self.__files: list[str] | None = None
         self.__cache_files = cache_files
         self.__download_remote_files = download_remote_files
 

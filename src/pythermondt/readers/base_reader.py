@@ -38,6 +38,10 @@ class BaseReader(ABC):
         self.__cache_files = cache_files
         self.__download_remote_files = download_remote_files
 
+        # Setup cache directory if remote files are downloaded
+        if self.__download_remote_files:
+            self._setup_cache_base_dir()
+
     @abstractmethod
     def _create_backend(self) -> BaseBackend:
         """Create a new backend instance.
@@ -132,6 +136,28 @@ class BaseReader(ABC):
         for file in file_paths:
             yield self.read_file(file)
 
+    def _setup_cache_base_dir(self):
+        """Setup the base cache directory in the configured download directory."""
+        # Create base cache dir in users home directory
+        base_dir = os.path.join(settings.download_dir, ".pythermondt_cache")
+        os.makedirs(base_dir, exist_ok=True)
+
+        # Add standard cache markers
+        # CACHEDIR.TAG
+        tag_file = os.path.join(base_dir, "CACHEDIR.TAG")
+        if not os.path.exists(tag_file):
+            with open(tag_file, "w") as f:
+                f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
+                f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
+                f.write("# For information about cache directory tags see https://bford.info/cachedir/\n")
+
+        # Create .gitignore file to ignore cache files in git
+        gitignore = os.path.join(base_dir, ".gitignore")
+        if not os.path.exists(gitignore):
+            with open(gitignore, "w") as f:
+                f.write("# Automatically created by pythermondt\n")
+                f.write("*\n")
+
     def _setup_cache_dir(self, reader_id: str) -> str:
         """Step up the cache directory for the reader instance.
 
@@ -151,26 +177,7 @@ class BaseReader(ABC):
         cache_dir = os.path.join(base_dir, dir_hash, "raw")
         os.makedirs(cache_dir, exist_ok=True)
 
-        # Add standard cache markers
-        self._create_cachedir_tag(base_dir)
-        self._create_gitignore(base_dir)
-
         return cache_dir
-
-    def _create_cachedir_tag(self, cache_dir: str):
-        tag_file = os.path.join(cache_dir, "CACHEDIR.TAG")
-        if not os.path.exists(tag_file):
-            with open(tag_file, "w") as f:
-                f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
-                f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
-                f.write("# For information about cache directory tags see https://bford.info/cachedir/\n")
-
-    def _create_gitignore(self, cache_dir: str):
-        gitignore = os.path.join(cache_dir, ".gitignore")
-        if not os.path.exists(gitignore):
-            with open(gitignore, "w") as f:
-                f.write("# Automatically created by pythermondt\n")
-                f.write("*\n")
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

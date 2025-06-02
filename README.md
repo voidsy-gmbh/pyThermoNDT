@@ -19,8 +19,8 @@ from pythermondt.data import ThermoDataset, container_collate
 from pythermondt.readers import LocalReader, S3Reader
 
 # Load data from different sources
-local_reader = LocalReader("path/to/data/*.hdf5", cache_files=True)
-s3_reader = S3Reader("s3://ffg-bp/example4/.hdf5", cache_files=True)
+local_reader = LocalReader("./examples/example_data/*.hdf5")
+s3_reader = S3Reader("ffg-bp", "example2_writing_data", download_remote_files=True)
 
 # Create a transform pipeline
 transform = T.Compose([
@@ -46,12 +46,12 @@ dataset[0].analyse_interactive()
 
 # 3.) Use the dataset with a PyTorch DataLoader for batched access
 collate_fn = container_collate('/Data/Tdata', '/GroundTruth/DefectMask')
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
 
 # Run your training loop
 for thermal_data, ground_truth in dataloader:
-    print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [32, 96, 96, 64]
-    print(f"Ground truth shape: {ground_truth.shape}")    # Tensor of shape: [32, 96, 96]
+    print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [4, 96, 96, 64]
+    print(f"Ground truth shape: {ground_truth.shape}")    # Tensor of shape: [4, 96, 96]
     break
 ```
 

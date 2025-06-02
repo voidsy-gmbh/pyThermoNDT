@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -44,10 +46,10 @@ class S3Backend(BaseBackend):
             FileNotFoundError: If file doesn't exist
         """
         bucket, key = self._parse_path(file_path)
-
         try:
-            response = self.__client.get_object(Bucket=bucket, Key=key)
-            return IOPathWrapper(response["Body"].read())
+            data = BytesIO()
+            self.__client.download_fileobj(bucket, key, data)
+            return IOPathWrapper(data)
         except ClientError as e:
             if e.response["Error"]["Code"] in ("NoSuchKey", "NoSuchBucket"):
                 raise FileNotFoundError(f"File not found: {file_path}") from e

@@ -17,7 +17,7 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
     
 class UNetClassifier(nn.Module):
-    """Defect classfier with UNet-like encoder and classification head."""
+    """Defect classifier with UNet-like encoder and classification head."""
     def __init__(self, time_channels: int):
         super().__init__()
         

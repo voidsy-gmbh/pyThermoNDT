@@ -192,7 +192,7 @@ class BaseReader(ABC):
 
         # Download missing files with progress
         if missing_files:
-            with tqdm(total=len(missing_files), desc="Downloading files") as pbar:
+            with tqdm(total=len(missing_files), desc=f"Downloading: {self.__class__.__name__}", unit="files") as pbar:
                 for remote_path in missing_files:
                     # Generate local filename
                     local_filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]

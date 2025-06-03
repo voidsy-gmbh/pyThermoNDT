@@ -12,7 +12,7 @@ class S3Reader(BaseReader):
         region_name: str | None = None,
         profile_name: str | None = None,
         num_files: int | None = None,
-        download_remote_files: bool = False,
+        download_files: bool = False,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
     ):
@@ -31,7 +31,7 @@ class S3Reader(BaseReader):
                 the default profile from the AWS configuration.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
-            download_remote_files (bool, optional): Whether to download remote files to local storage. Set this
+            download_files (bool, optional): Whether to download remote files to local storage. Set this
                 to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
             cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
                 detected files will be reflected at runtime. Default is True.
@@ -39,7 +39,7 @@ class S3Reader(BaseReader):
                 the parser will be auto selected based on the file extension. Default is None.
         """
         # Initialize baseclass with parser
-        super().__init__(num_files, download_remote_files, cache_files, parser)
+        super().__init__(num_files, download_files, cache_files, parser)
 
         # Maintain state for what is needed to create the backend
         self.__bucket = bucket

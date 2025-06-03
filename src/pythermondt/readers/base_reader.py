@@ -17,7 +17,7 @@ class BaseReader(ABC):
     def __init__(
         self,
         num_files: int | None = None,
-        download_remote_files: bool = False,
+        download_files: bool = False,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
     ):
@@ -26,7 +26,7 @@ class BaseReader(ABC):
         Parameters:
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
-            download_remote_files (bool, optional): Whether to download remote files to local storage. Set this
+            download_files (bool, optional): Whether to download remote files to local storage. Set this
                 to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
             cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
                 detected files will be reflected at runtime. Default is True.
@@ -39,10 +39,10 @@ class BaseReader(ABC):
         self.__num_files = num_files
         self.__files: list[str] | None = None
         self.__cache_files = cache_files
-        self.__download_remote_files = download_remote_files
+        self.__download_files = download_files
 
         # Setup cache directory if remote files are downloaded
-        if self.__download_remote_files:
+        if self.__download_files:
             self._setup_cache_base_dir()
 
     @abstractmethod
@@ -121,7 +121,7 @@ class BaseReader(ABC):
     def __str__(self):
         return (
             f"{self.__class__.__name__}({self._get_reader_params()}, num_files={self.num_files}, "
-            f"download_remote_files={self.__download_remote_files}, cache_files={self.cache_files}, "
+            f"download_remote_files={self.__download_files}, cache_files={self.cache_files}, "
             f"parser={self.__parser.__name__ if self.__parser else None})"
         )
 
@@ -161,7 +161,7 @@ class BaseReader(ABC):
 
     def _download_missing_files(self, remote_files: list[str]) -> list[str]:
         """Download missing files upfront, return local paths."""
-        if not self.remote_source or not self.__download_remote_files:
+        if not self.remote_source or not self.__download_files:
             return remote_files
 
         # Setup cache
@@ -264,7 +264,7 @@ class BaseReader(ABC):
         Raises:
             ValueError: If the file type cannot be determined or if no parser is found for the file extension.
         """
-        if self.remote_source and self.__download_remote_files:
+        if self.remote_source and self.__download_files:
             # If remote source and files are downloaded, use pre-downloaded local files
             file_data = IOPathWrapper(file_path)
         else:

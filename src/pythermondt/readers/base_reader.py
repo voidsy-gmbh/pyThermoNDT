@@ -65,6 +65,11 @@ class BaseReader(ABC):
         return self.backend.remote_source
 
     @property
+    def download_files(self) -> bool:
+        """Return True if the reader downloads remote files, False otherwise."""
+        return self.__download_files
+
+    @property
     def cache_files(self) -> bool:
         """Return True if the reader caches the files/file-paths, False otherwise."""
         return self.__cache_files

@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -135,6 +136,24 @@ class BaseReader(ABC):
 
         for file in file_paths:
             yield self.read_file(file)
+
+    def _get_manifest_path(self, cache_dir: str) -> str:
+        """Get path to manifest file."""
+        return os.path.join(cache_dir, "downloaded.json")
+
+    def _load_manifest(self, cache_dir: str) -> dict[str, str]:
+        """Load manifest: {remote_path: local_filename}."""
+        manifest_path = self._get_manifest_path(cache_dir)
+        if os.path.exists(manifest_path):
+            with open(manifest_path) as f:
+                return json.load(f)
+        return {}
+
+    def _save_manifest(self, cache_dir: str, manifest: dict[str, str]):
+        """Save manifest to disk."""
+        manifest_path = self._get_manifest_path(cache_dir)
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
 
     def _setup_cache_base_dir(self):
         """Setup the base cache directory in the configured download directory."""

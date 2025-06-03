@@ -4,6 +4,8 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 
+from tqdm.auto import tqdm
+
 from ..config import settings
 from ..data import DataContainer
 from ..io import BaseBackend, IOPathWrapper
@@ -190,8 +192,6 @@ class BaseReader(ABC):
 
         # Download missing files with progress
         if missing_files:
-            from tqdm.auto import tqdm
-
             with tqdm(total=len(missing_files), desc="Downloading files") as pbar:
                 for remote_path in missing_files:
                     # Generate local filename

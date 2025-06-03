@@ -47,10 +47,17 @@ class ThermoDataset(Dataset):
         # Check if the readers have found any files and if there are any duplicates
         # Check if all readers have enabled file caching
         for reader in readers:
+            # Check for stable file list during training
             if not reader.cache_files:
                 print(
-                    f"Warning: Reader {reader.__repr__()} does not have file caching enabled. "
-                    "This can lead to issues with changing files. Consider enabling file caching."
+                    f"Warning: {reader.__class__.__name__} has cache_files=False. File list may change during training."
+                )
+
+            # Check for efficient remote access
+            if reader.remote_source and not reader.download_files:
+                print(
+                    f"Warning: {reader.__class__.__name__} is remote but download_files=False. "
+                    f"This will be slower for repeated access."
                 )
 
         # Group all the readers by type

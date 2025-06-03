@@ -167,22 +167,26 @@ class BaseReader(ABC):
         cache_dir = self._setup_cache_dir(reader_id)
         manifest = self._load_manifest(cache_dir)
 
-        # Find missing files
-        missing_files = []
+        # Use sets for O(n) operations instead of O(n²)
+        remote_set = set(remote_files)
+        cached_set = set(manifest.keys())
+
+        # Get files that are in remote but not in cache
+        missing_files = list(remote_set - cached_set)
+
+        # Files that might be cached (need existence check)
+        potentially_cached = remote_set & cached_set
+
         local_paths = []
 
-        for remote_path in remote_files:
-            if remote_path in manifest:
-                # Already downloaded
-                local_filename = manifest[remote_path]
-                local_path = os.path.join(cache_dir, local_filename)
-                # Verify file still exists
-                if os.path.exists(local_path):
-                    local_paths.append(local_path)
-                    continue
-
-            # Need to download
-            missing_files.append(remote_path)
+        # Verify cached files still exist
+        for remote_path in potentially_cached:
+            local_filename = manifest[remote_path]
+            local_path = os.path.join(cache_dir, local_filename)
+            if os.path.exists(local_path):
+                local_paths.append(local_path)
+            else:
+                missing_files.append(remote_path)
 
         # Download missing files with progress
         if missing_files:

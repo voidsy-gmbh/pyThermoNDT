@@ -122,7 +122,7 @@ class BaseReader(ABC):
 
     def __getitem__(self, idx: int) -> DataContainer:
         if idx < 0 or idx >= len(self.files):
-            raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)})")
+            raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)}[")
         return self.read_file(self.files[idx])
 
     def __len__(self) -> int:

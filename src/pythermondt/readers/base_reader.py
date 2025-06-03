@@ -203,8 +203,7 @@ class BaseReader(ABC):
 
                     # Update manifest and results
                     manifest[remote_path] = local_filename
-                    if (pbar.n + 1) % 10 == 0:
-                        self._save_manifest(cache_dir, manifest)
+                    self._save_manifest(cache_dir, manifest)
                     local_paths.append(local_path)
                     pbar.update(1)
 

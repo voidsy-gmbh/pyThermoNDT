@@ -109,7 +109,7 @@ class RemoveFlash(ThermoTransform):
         - "excitation_signal": Detect the flash by finding the frame where the excitation signal goes from 1 back to 0.
         - "max_temp": Detect the flash by finding the frame with the maximum temperature value in it.
             May not work if the flash is not the hottest frame.
-        - "mean_temp_jump": Detect the flash by finding the largest temperature drop in the mean temperature.
+        - "mean_temp_drop": Detect the flash by finding the largest temperature drop in the mean temperature.
 
         Parameters:
             method (Literal["excitation_signal", "max_temp"]): Method to detect the flash.
@@ -143,7 +143,7 @@ class RemoveFlash(ThermoTransform):
                 # Find frame with maximum temperature value (flash end)
                 flash_end_idx = int(tdata.argmax(dim=2).max().item()) + self.offset
 
-            case "mean_temp_jump":
+            case "mean_temp_drop":
                 # Find largest temperature drop (flash end) ==> minimum of the temperature difference
                 mean_temps = tdata.mean(dim=(0, 1))
                 temp_diffs = torch.diff(mean_temps)

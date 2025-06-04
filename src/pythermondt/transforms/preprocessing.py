@@ -102,13 +102,17 @@ class SubtractFrame(ThermoTransform):
 class RemoveFlash(ThermoTransform):
     """Automatically detect the flash and remove all the frames before it."""
 
-    def __init__(self, method: Literal["excitation_signal", "max_temp"] = "excitation_signal", offset: int = 0):
+    def __init__(
+        self, method: Literal["excitation_signal", "max_temp", "mean_temp_drop"] = "excitation_signal", offset: int = 0
+    ):
         """Automatically detect the flash and remove all the frames before it.
 
         2 methods are available:
         - "excitation_signal": Detect the flash by finding the frame where the excitation signal goes from 1 back to 0.
         - "max_temp": Detect the flash by finding the frame with the maximum temperature value in it.
             May not work if the flash is not the hottest frame.
+        - "mean_temp_drop": Detect the flash by finding the largest temperature drop in the mean temperature over all
+            frames. This is the most reliable method if excitation signal is not available.
 
         Parameters:
             method (Literal["excitation_signal", "max_temp"]): Method to detect the flash.
@@ -141,6 +145,12 @@ class RemoveFlash(ThermoTransform):
             case "max_temp":
                 # Find frame with maximum temperature value (flash end)
                 flash_end_idx = int(tdata.argmax(dim=2).max().item()) + self.offset
+
+            case "mean_temp_drop":
+                # Find largest temperature drop (flash end) ==> minimum of the temperature difference
+                mean_temps = tdata.mean(dim=(0, 1))
+                temp_diffs = torch.diff(mean_temps)
+                flash_end_idx = temp_diffs.argmin().item() + self.offset  # Get the frame with biggest temperature drop
 
             case _:
                 raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__['method'])}.")

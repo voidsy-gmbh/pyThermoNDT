@@ -109,6 +109,7 @@ class RemoveFlash(ThermoTransform):
         - "excitation_signal": Detect the flash by finding the frame where the excitation signal goes from 1 back to 0.
         - "max_temp": Detect the flash by finding the frame with the maximum temperature value in it.
             May not work if the flash is not the hottest frame.
+        - "mean_temp_jump": Detect the flash by finding the largest temperature drop in the mean temperature.
 
         Parameters:
             method (Literal["excitation_signal", "max_temp"]): Method to detect the flash.

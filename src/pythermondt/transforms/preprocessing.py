@@ -149,8 +149,7 @@ class RemoveFlash(ThermoTransform):
                 # Find largest temperature drop (flash end) ==> minimum of the temperature difference
                 mean_temps = tdata.mean(dim=(0, 1))
                 temp_diffs = torch.diff(mean_temps)
-                end_idx = temp_diffs.argmin().item() + 1  # +1 to account for the diff reducing the length by 1
-                flash_end_idx = end_idx + self.offset
+                flash_end_idx = temp_diffs.argmin().item() + self.offset  # Get the frame with biggest temperature drop
 
             case _:
                 raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__['method'])}.")

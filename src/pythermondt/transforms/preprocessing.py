@@ -102,7 +102,9 @@ class SubtractFrame(ThermoTransform):
 class RemoveFlash(ThermoTransform):
     """Automatically detect the flash and remove all the frames before it."""
 
-    def __init__(self, method: Literal["excitation_signal", "max_temp"] = "excitation_signal", offset: int = 0):
+    def __init__(
+        self, method: Literal["excitation_signal", "max_temp", "mean_temp_drop"] = "excitation_signal", offset: int = 0
+    ):
         """Automatically detect the flash and remove all the frames before it.
 
         2 methods are available:

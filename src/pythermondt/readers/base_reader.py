@@ -179,7 +179,14 @@ class BaseReader(ABC):
                 f.write("*\n")
 
     def _ensure_file_cached(self, remote_path: str) -> str:
-        """Ensure a file is cached locally, return local path."""
+        """Ensure a file is cached locally, return local path.
+
+        Parameters:
+            remote_path (str): The path to the file on the remote source.
+
+        Returns:
+            str: The local path to the cached file.
+        """
         reader_id = f"{self.__class__.__name__}_{self._get_reader_params()}"
         reader_cache_dir, manifest_path = self._get_cache_paths(reader_id)
 

@@ -281,7 +281,7 @@ class BaseReader(ABC):
             return  # Nothing to download
 
         # Download files with progress bar
-        with tqdm(total=len(files_to_download), desc="Downloading files", unit="files") as pbar:
+        with tqdm(total=len(files_to_download), desc=f"{self.__class__.__name__}", unit="files") as pbar:
             for file_path in files_to_download:
                 # Generate filename
                 filename = hashlib.md5(file_path.encode()).hexdigest() + os.path.splitext(file_path)[1]

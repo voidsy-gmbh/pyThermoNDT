@@ -39,6 +39,12 @@ class ThermoDataset(Dataset):
         self.__readers = data_source
         self.__transform = transform
 
+        # Eagerly load files from all readers
+        for reader in self.__readers:
+            # Download files if remote and download_files is True
+            if reader.remote_source and reader.download_files:
+                reader.download()
+
         # Build the index map
         self._build_index()
 

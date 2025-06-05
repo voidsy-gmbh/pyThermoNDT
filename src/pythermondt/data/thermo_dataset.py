@@ -10,36 +10,24 @@ from .datacontainer import DataContainer
 
 
 class ThermoDataset(Dataset):
-    """Custom dataset class used for combining data, read from multiple readers.
+    """PyTorch dataset that combines multiple readers into a single dataset.
 
-    This dataset is used to combine multiple readers into a single dataset. The dataset can be used to read data from
-    multiple sources and apply a transform to the data. Like a normal PyTorch dataset, the dataset can be used to
-    iterate over the data using the __getitem__ method and it is also compatible with PyTorch dataloaders.
+    Automatically handles file indexing across different data sources (local, S3, etc.)
+    and applies transforms consistently. Compatible with PyTorch DataLoaders.
     """
 
     def __init__(self, data_source: BaseReader | Sequence[BaseReader], transform: ThermoTransform | None = None):
-        """Initialize a custom PyTorch dataset from a list of readers.
+        """Create dataset from one or more readers.
 
-        The sources are used to read the data and create the dataset. First the readers are grouped by type.
-        Then all readers of the same type are checked for duplicate files. If any duplicates are found, an error is
-        raised.
-
-        **Note**: When combining readers, it is recommend that all readers enable file caching, especially in cases
-        where files need to be fetched from a remote location and these files are changing at runtime. The readers
-        accommodate for this by raising an error if a file is not found and taking a snapshot of the files list when a
-        iterator is created. The Dataset will catch these errors when trying to read the data and return an
-        **empty Datacontainer**.
-
-        However, enabling file caching is still recommended to avoid issues with changing files, especially when using a
-        dataset for model training. A warning is printed if any reader does not have file caching enabled.
+        Files are discovered and downloaded (if remote) during initialization for
+        predictable performance during training.
 
         Parameters:
-            data_source (List[BaseReader]): List of readers to be used as a data source for the dataset
-            transform (ThermoTransform, optional): Optional transform to be directly applied to the data when it is read
+            data_source: Single reader or list of readers to combine
+            transform: Optional transform applied to each container when loaded
 
         Raises:
-            ValueError: If any of the readers of the same type find duplicate or invalid data
-            ValueError: If any of the readers of the same type do not find any files
+            ValueError: If duplicate files found or no files available
         """
         # Convert single reader to list
         data_source = [data_source] if isinstance(data_source, BaseReader) else list(data_source)
@@ -51,6 +39,12 @@ class ThermoDataset(Dataset):
         self.__readers = data_source
         self.__transform = transform
 
+        # Eagerly load files from all readers
+        for reader in self.__readers:
+            # Download files if remote and download_files is True
+            if reader.remote_source and reader.download_files:
+                reader.download()
+
         # Build the index map
         self._build_index()
 
@@ -59,10 +53,17 @@ class ThermoDataset(Dataset):
         # Check if the readers have found any files and if there are any duplicates
         # Check if all readers have enabled file caching
         for reader in readers:
+            # Check for stable file list during training
             if not reader.cache_files:
                 print(
-                    f"Warning: Reader {reader.__repr__()} does not have file caching enabled. "
-                    "This can lead to issues with changing files. Consider enabling file caching."
+                    f"Warning: {reader.__class__.__name__} has cache_files=False. File list may change during training."
+                )
+
+            # Check for efficient remote access
+            if reader.remote_source and not reader.download_files:
+                print(
+                    f"Warning: {reader.__class__.__name__} is remote but download_files=False. "
+                    f"This will be slower for repeated access."
                 )
 
         # Group all the readers by type

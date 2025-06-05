@@ -1,89 +1,43 @@
-import os
-import re
-from glob import glob
+from re import Pattern
 
-from ..io import BaseParser, IOPathWrapper
+from ..io import BaseParser, LocalBackend
 from .base_reader import BaseReader
 
 
 class LocalReader(BaseReader):
     def __init__(
         self,
-        source: str,
+        pattern: Pattern | str,
+        num_files: int | None = None,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
-        num_files: int | None = None,
     ):
         """Initialize an instance of the LocalReader class.
 
-        This class is used to read data from the local file system.
+        Uses the LocalBackend to read files from the local file system.
 
         Parameters:
-            source (str): The source of the data. This can either be a file path, a directory path, or a regular
-                expression.
-            cache_paths (bool, optional): If True, all the file paths are cached in memory. This means the reader only
-                checks for new files once, so changes to the file sources will not be noticed at runtime. Default is
-                True.
-            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data.
-                If not specified, the parser will be auto selected based on the file extension. Default is None.
-            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads
-                all files. Default is None.
+            pattern (Pattern | str): The pattern to match files. Can be a string or a compiled regex pattern.
+            num_files (int, optional): The number of files to read. If not specified, all files will be read.
+                Default is None.
+            cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
+                detected files will be reflected at runtime. Default is True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
+                the parser will be auto selected based on the file extension. Default is None.
         """
-        # Check if source is a valid regex pattern
-        try:
-            re.compile(source)
-            valid_regex = True
-        except re.error:
-            valid_regex = False
+        # Initialize baseclass with parser
+        super().__init__(num_files, False, cache_files, parser)
 
-        # Check if the provided source is either a file, a directory or a regex pattern
-        if os.path.isfile(source):
-            self.__source_type = "file"
+        # Maintain state for what is needed to create the backend
+        self.__pattern = pattern
 
-        elif os.path.isdir(source):
-            self.__source_type = "directory"
+    def _create_backend(self) -> LocalBackend:
+        """Create a new LocalBackend instance.
 
-        elif valid_regex:
-            self.__source_type = "regex"
+        This method is called to create or recreate the backend when needed or after unpickling.
+        """
+        return LocalBackend(self.__pattern)
 
-        else:
-            raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
-
-        # Call the constructor of the BaseReader class
-        super().__init__(source, cache_files, parser, num_files)
-
-    @property
-    def remote_source(self) -> bool:
-        return False
-
-    def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        # Resolve the source pattern based on the source type
-        match self.__source_type:
-            case "file":
-                file_paths = [self.source]
-
-            case "directory":
-                file_paths = sorted(glob(os.path.join(self.source, "*")))
-
-            case "regex":
-                file_paths = sorted(glob(self.source))
-
-            case _:
-                raise ValueError("Invalid source type.")
-
-        # Check if the found files match the specified file extension
-        file_paths = [f for f in file_paths if any(f.endswith(ext) for ext in self.file_extensions)]
-        if not file_paths:
-            raise ValueError("No files found. Please check the source expression and file extensions")
-
-        # Limit the number of files to the specified number
-        if num_files:
-            file_paths = file_paths[:num_files]
-
-        return file_paths
-
-    def _read_file(self, path: str) -> IOPathWrapper:
-        return IOPathWrapper(path)
-
-    def _close(self):
-        pass  # No need to close any resources for LocalReader
+    def _get_reader_params(self) -> str:
+        """Get a string representation of the reader parameters used to create the backend."""
+        return f"pattern={self.__pattern}"

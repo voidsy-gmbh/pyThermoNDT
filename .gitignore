@@ -1,6 +1,3 @@
-# Ignore pyThermoNDT cache files
-.pyThermoNDT_cache/
-
 # Ignore local dev files
 */local_dev/*
 local_dev/*

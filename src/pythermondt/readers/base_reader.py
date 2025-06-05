@@ -1,5 +1,6 @@
+import hashlib
+import json
 import os
-import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 
@@ -7,339 +8,327 @@ from tqdm.auto import tqdm
 
 from ..config import settings
 from ..data import DataContainer
-from ..io import IOPathWrapper
-from ..io.parsers import PARSER_REGISTRY, BaseParser, find_parser_for_extension
+from ..io import BaseBackend, IOPathWrapper
+from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
 
 class BaseReader(ABC):
-    """Base class for all readers. This class defines the interface for all readers, subclassing this class."""
-
     @abstractmethod
     def __init__(
         self,
-        source: str,
+        num_files: int | None = None,
+        download_files: bool = False,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
-        num_files: int | None = None,
     ):
-        """Constructor for the BaseReader class.
+        """Initialize an instance of the BaseReader class.
 
         Parameters:
-            source (str): The source of the data. This can be a file path, a directory path, a regular expression.
-                In case of cloud storage, this can be a URL.
-            cache_files (bool, optional): If True, the reader caches the file paths. If False, the reader retrieves the
-                file list each time. For cloud storage readers, this flag should also determine if the files are
-                downloaded to a local directory. Default is True.
-            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data.
-                If not specified, the parser will be auto selected based on the file extension. Default is None.
-            num_files (int, optional): Limit the number of files that the reader can read.
-                If None, the reader reads all files. Default is None.
+            num_files (int, optional): The number of files to read. If not specified, all files will be read.
+                Default is None.
+            download_files (bool, optional): Whether to download remote files to local storage. Set this
+                to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
+            cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
+                detected files will be reflected at runtime. Default is True.
+            parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
+                the parser will be auto selected based on the file extension. Default is None.
         """
-        # Extract file extension from the source
-        ext = re.findall(r"\.[a-zA-Z0-9]+$", source)
-
-        # Try to auto select the parser based on the file extension if no parser is specified
-        if parser is None:
-            # Auto select the parser based on the file extension
-            parser = find_parser_for_extension(ext[0]) if len(ext) > 0 else None
-
-            # Raise an error if no file extension is found
-            if not ext:
-                raise ValueError(
-                    f"Could not auto select a parser for the source: {source}. "
-                    f"Source does not contain a file extension."
-                )
-
-            # Try to auto select the parser based on the file extension
-            parser = find_parser_for_extension(ext[0])
-
-            if parser is None:
-                raise ValueError(
-                    f"Could not auto select a parser for the source: {source}. Please specify the parser manually."
-                )
-
-        # Write parser to private attribute
+        # Assign private attributes
         self.__parser = parser
-
-        # Set the file extensions based on what parser is used
-        self.__file_extensions = self.parser.supported_extensions
-        if self.parser not in PARSER_REGISTRY:
-            raise ValueError(
-                f"The specified Parser: {parser.__name__} is not supported by the {self.__class__.__name__} class."
-            )
-
-        # validate that the source expression does not contain an invalid file extension ==>
-        #  File extensions are defined by the parser
-        correct_parser = find_parser_for_extension(ext[0]) if len(ext) > 0 else self.parser
-
-        if correct_parser is None:
-            raise ValueError(
-                f"The source contains an invalid file extension: '({ext[0]})'! "
-                f"Use a file extensions that is supported by the {self.parser.__name__}: {self.file_extensions}"
-            )
-        elif correct_parser is not self.parser:
-            raise ValueError(
-                f"Wrong parser selected for the file extension: '({ext[0]})'! "
-                f"Use the {correct_parser.__name__} for this file extension instead"
-            )
-
-        # Set args
-        self.__source = source
         self.__num_files = num_files
-
-        # Set the cache_files flag and the cached_files attribute
         self.__cache_files = cache_files
-        self.__cached_paths: list[str] | None = None
+        self.__download_files = download_files
 
-        # If caching is on for a remote source ==> create a local directory for the cached files and download the files
-        if self.remote_source and self.__cache_files:
-            # Download the files to the cache
-            self._download_files_to_cache(self.files)
+        # Internal state
+        self.__files: list[str] | None = None
+        self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
+        self.__manifest_path: str | None = None
+        self.__reader_cache_dir: str | None = None
 
-    def _download_files_to_cache(self, files: list[str]):
-        # Extract the file names from the files provided
-        file_names = [os.path.basename(file) for file in files]
+    @abstractmethod
+    def _create_backend(self) -> BaseBackend:
+        """Create a new backend instance.
 
-        # Create the local directory for the cached files
-        dir = settings.download_dir
-        expanded = os.path.expanduser(dir)
-        absolute = os.path.abspath(expanded)
+        This method must be implemented by subclasses to create or
+        recreate their backend when needed or after unpickling.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
 
-        self.__local_dir = os.path.join(absolute, ".pyThermoNDT_cache", self._create_safe_folder_name())
-        if not os.path.isdir(self.__local_dir):
-            os.makedirs(self.__local_dir)
+    @abstractmethod
+    def _get_reader_params(self) -> str:
+        """Get a string representation of the reader parameters used to create the backend."""
+        raise NotImplementedError("Subclasses must implement this method")
 
-        # Collect the list of files that need to be downloaded
-        files_to_download = []
-        for file in files:
-            cached_path = os.path.join(self.__local_dir, os.path.basename(file))
-            if not os.path.isfile(cached_path):
-                files_to_download.append((cached_path, file))
+    @property
+    def remote_source(self) -> bool:
+        """Return True if the reader is reading from a remote source, False otherwise."""
+        return self.backend.remote_source
 
-        # Only proceed if there are files to download
-        if files_to_download:
-            # Define custom widgets and the progress bar
-            bar = tqdm(
-                total=len(files_to_download),
-                desc=f"Downloading Files for {self.__repr__()}",
-                unit="file" if len(files_to_download) == 1 else "files",
-                leave=True,  # Set to False if you don't want the bar to persist after completion
-            )
+    @property
+    def download_files(self) -> bool:
+        """Return True if the reader downloads remote files, False otherwise."""
+        return self.__download_files
 
-            # Download the files
-            with bar:
-                for cached_path, file in files_to_download:
-                    try:
-                        with open(cached_path, "wb") as f:
-                            f.write(self._read_file(file).file_obj.getbuffer())
-                    except Exception as e:
-                        print(f"Error downloading file: {file} - {e}")
-                    finally:
-                        bar.update(1)
+    @property
+    def cache_files(self) -> bool:
+        """Return True if the reader caches the files/file-paths, False otherwise."""
+        return self.__cache_files
 
-        # Set the cached paths to the local file paths
-        self.__cached_paths = [os.path.join(self.__local_dir, file_name) for file_name in file_names]
+    @property
+    def backend(self) -> BaseBackend:
+        """The backend that the reader uses to read the data."""
+        if not hasattr(self, "_BaseReader__backend"):
+            self.__backend = self._create_backend()
+        return self.__backend
+
+    @property
+    def parser(self) -> type[BaseParser] | None:
+        """The parser that the reader uses to parse the data."""
+        return self.__parser
+
+    @property
+    def num_files(self) -> int | None:
+        """The number of files to read."""
+        return self.__num_files
+
+    @property
+    def manifest_path(self) -> str:
+        """Path to the manifest file that stores downloaded files."""
+        if self.__manifest_path is None or self.__reader_cache_dir is None:
+            self.__reader_cache_dir, self.__manifest_path = self._setup_cache_dir()
+        return self.__manifest_path
+
+    @property
+    def reader_cache_dir(self) -> str:
+        """Path to the manifest file that stores downloaded files."""
+        if self.__manifest_path is None or self.__reader_cache_dir is None:
+            self.__reader_cache_dir, self.__manifest_path = self._setup_cache_dir()
+        return self.__reader_cache_dir
+
+    @property
+    def files(self) -> list[str]:
+        """List of files that the reader is able to read."""
+        # If caching is disabled return the file list from the backend
+        if not self.__cache_files:
+            return self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+
+        # If files have never been loaded, load them from the backend
+        if self.__files is None:
+            self.__files = self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+
+        # Return the cached files list
+        return self.__files
+
+    def __getstate__(self):
+        """Prepare object for pickling by removing the backend."""
+        state = self.__dict__.copy()
+        # Remove backend reference - will be recreated when needed
+        if "_BaseReader__backend" in state:
+            del state["_BaseReader__backend"]
+        # Clear files cache to force reloading
+        state["_BaseReader__files_cache"] = None
+        return state
+
+    def __setstate__(self, state):
+        """Restore object from pickled state."""
+        # Just restore the state dictionary - backend will be created
+        # lazily when first accessed
+        self.__dict__.update(state)
 
     def __str__(self):
         return (
-            f"{self.__class__.__name__}(parser={self.parser.__name__}, "
-            f"source={self.__source}, cache_paths={self.__cache_files})"
+            f"{self.__class__.__name__}({self._get_reader_params()}, num_files={self.num_files}, "
+            f"download_remote_files={self.__download_files}, cache_files={self.cache_files}, "
+            f"parser={self.__parser.__name__ if self.__parser else None})"
         )
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}(source={self.source})"
+    def __getitem__(self, idx: int) -> DataContainer:
+        if idx < 0 or idx >= len(self.files):
+            raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)}[")
+        return self.read_file(self.files[idx])
 
     def __len__(self) -> int:
-        """Returns the number of files that the reader can read."""
-        return self.num_files
-
-    def __getitem__(self, idx: int) -> DataContainer:
-        """Returns the parsed data in a DataContainer object at file path at the given index."""
-        if idx < 0 or idx >= len(self):
-            raise IndexError(f"Index out of range. Must be between 0 and {len(self)}")
-        return self.read(self.files[idx])
+        return len(self.files)
 
     def __iter__(self) -> Iterator[DataContainer]:
-        """Creates an iterator that reads and parses all the files in the reader.
-
-        In case caching is disabled, a snapshot of the file list is taken to avoid undefined behavior when the file list
-        changes during iteration. For maximum performance, its is recommend to enable caching when iterating over the
-        files.
-
-        Returns:
-            Iterator[DataContainer]: An iterator that yields the parsed data in DataContainer objects.
-        """
         # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
         # and caching is of
         file_paths = self.files
 
         for file in file_paths:
-            yield self.read(file)
+            yield self.read_file(file)
 
-    def __next__(self) -> DataContainer:
-        return next(iter(self))
+    def _load_manifest(self, manifest_path: str) -> dict[str, str]:
+        """Load manifest from disk."""
+        if os.path.exists(manifest_path):
+            with open(manifest_path) as f:
+                return json.load(f)
+        return {}
 
-    @property
-    def source(self) -> str:
-        """Returns the source of the reader."""
-        return self.__source
+    def _save_manifest(self, manifest_path: str, manifest: dict[str, str]):
+        """Save manifest to disk."""
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
 
-    @property
-    def parser(self) -> type[BaseParser]:
-        """Returns the parser class that the reader uses to parse the data."""
-        return self.__parser
-
-    @property
-    def cache_files(self) -> bool:
-        """Returns True if the reader caches the file paths, False otherwise."""
-        return self.__cache_files
-
-    @property
-    def file_extensions(self) -> tuple[str, ...]:
-        """Returns the file extensions that the reader can read."""
-        return self.__file_extensions
-
-    @property
-    def file_names(self) -> list[str]:
-        """Returns a list of all the file names that the reader can read."""
-        return [os.path.basename(path) for path in self.files]
-
-    @property
-    def num_files(self) -> int:
-        """Returns the number of files that the reader can read."""
-        return len(self.files)
-
-    @property
-    def files(self) -> list[str]:
-        """Returns a list of all the paths to the files that the reader can read."""
-        # If caching is off, return the file list directly
-        if not self.__cache_files:
-            return self._get_file_list(num_files=self.__num_files)
-
-        # If caching is on and files are not cached, cache the files and return them
-        if self.__cached_paths is None:
-            self.__cached_paths = self._get_file_list(num_files=self.__num_files)
-
-        # Else return the cached files
-        return self.__cached_paths
-
-    def _sanitize_string(self, s: str) -> str:
-        """Sanitizes a given string to be used as a folder name.
-
-        The string is processed by:
-        * replacing non-alphanumeric characters with underscores
-        * removing leading/trailing underscores.
-
-        Parameters:
-            s (str): The string to be sanitized.
+    def _setup_cache_dir(self) -> tuple[str, str]:
+        """Setup the cache directory in the configured download directory for this reader.
 
         Returns:
-            str: The sanitized string.
+            tuple[str, str]: A tuple containing reader cache directory and manifest path.
         """
-        # Replace non-alphanumeric characters (except underscores) with underscores
-        s = re.sub(r"[^\w\-_\. ]", "_", s)
-        # Replace multiple underscores with a single underscore
-        s = re.sub(r"_+", "_", s)
-        # Remove leading/trailing underscores
-        return s.strip("_")
+        # Create base cache dir in users home directory
+        base_dir = os.path.join(settings.download_dir, ".pythermondt_cache")
+        reader_id = f"{self.__class__.__name__}_{self._get_reader_params()}"
+        dir_hash = hashlib.md5(reader_id.encode()).hexdigest()
+        reader_cache_dir = os.path.join(base_dir, dir_hash)
+        manifest_path = os.path.join(reader_cache_dir, "downloaded.json")
 
-    def _create_safe_folder_name(self) -> str:
-        """Creates a safe folder name for the downloaded files.
+        # Ensure directories exist
+        os.makedirs(os.path.join(reader_cache_dir, "./raw"), exist_ok=True)
 
-        Used to create a folder name for the downloaded files, that is persistend and does not change between runs.
+        # Add standard cache markers
+        # CACHEDIR.TAG
+        tag_file = os.path.join(base_dir, "CACHEDIR.TAG")
+        if not os.path.exists(tag_file):
+            with open(tag_file, "w") as f:
+                f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
+                f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
+                f.write("# For information about cache directory tags see https://bford.info/cachedir/\n")
 
-        Returns:
-            str: The safe folder name.
-        """
-        safe_class_name = self._sanitize_string(self.__class__.__qualname__)
-        safe_source_expr = self._sanitize_string(self.source)
+        # Create .gitignore file to ignore cache files in git
+        gitignore = os.path.join(base_dir, ".gitignore")
+        if not os.path.exists(gitignore):
+            with open(gitignore, "w") as f:
+                f.write("# Automatically created by pythermondt\n")
+                f.write("*\n")
+        return reader_cache_dir, manifest_path
 
-        # limit the folder name to 255 characters
-        return f"{safe_class_name}_{safe_source_expr}"[:255]
-
-    @property
-    @abstractmethod
-    def remote_source(self) -> bool:
-        """Returns True if the reader reads files from a remote source, False otherwise.
-
-        This property must be implemented by the subclass.
-        """
-        raise NotImplementedError("Method must be implemented by subclass")
-
-    @abstractmethod
-    def _read_file(self, path: str) -> IOPathWrapper:
-        """Actual implementation of how a single file is read into memory.
-
-        This method must be implemented by the subclass.
-        """
-        raise NotImplementedError("Method must be implemented by subclass")
-
-    @abstractmethod
-    def _get_file_list(self, num_files: int | None = None) -> list[str]:
-        """Actual implementation of how the reader gets the list of files.
-
-        This method must be implemented by the subclass.
+    def _ensure_file_cached(self, remote_path: str) -> str:
+        """Ensure a file is cached locally, return local path.
 
         Parameters:
-            num_files (int, optional): Limit the number of files that the reader can read. If None, the reader reads
-                all files. Default is None.
-        """
-        raise NotImplementedError("Method must be implemented by subclass")
-
-    @abstractmethod
-    def _close(self):
-        """Closes any open connections or resources that the reader might have opened.
-
-        If the reader does not open any connections or resources, this method can be passed.
-        Must be implemented by the subclass.
-        """
-        raise NotImplementedError("Method must be implemented by subclass")
-
-    def read(self, path: str) -> DataContainer:
-        """Reads and parse the file at the given path into a DataContainer object using the specified parser.
-
-        Parameters:
-            path (str): The path to the file to be read.
+            remote_path (str): The path to the file on the remote source.
 
         Returns:
-            DataContainer: The parsed data in a DataContainer
+            str: The local path to the cached file.
+        """
+        # Load manifest
+        manifest = self._load_manifest(self.manifest_path)
+
+        # Check if already cached and exists
+        if remote_path in manifest:
+            relative_path = manifest[remote_path]
+            local_path = os.path.join(self.reader_cache_dir, relative_path)
+            if os.path.exists(local_path):
+                return local_path
+
+        # Download the file
+        filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
+        relative_path = f"./raw/{filename}"
+        local_path = os.path.join(self.reader_cache_dir, relative_path)
+
+        self.backend.download_file(remote_path, local_path)
+
+        # Update manifest
+        manifest[remote_path] = relative_path
+        self._save_manifest(self.manifest_path, manifest)
+
+        return local_path
+
+    def download(self, file_paths: list[str] | None = None) -> None:
+        """Trigger the download of files from the remotes source.
+
+        This method will download the specified files from the remote source if the reader is configured to do so.
+        The download will will only happen if the reader has a remote source and `download_files` flag is set to True.
+        Only files that are not already cached locally will be downloaded.
+
+        Parameters:
+            file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is
+                able to read will be downloaded. Default is None.
+        """
+        # If no remote source or download_files is False, do nothing
+        if not self.remote_source or not self.__download_files:
+            return
+
+        # If file_paths is None, download all files that the reader is able to read
+        paths_to_download = file_paths or self.files
+        if not paths_to_download:
+            return
+
+        # Get cache info once (not per file) from the manifest file
+        manifest = self._load_manifest(self.manifest_path)
+
+        # Use sets for efficient bulk comparison
+        requested_files = set(paths_to_download)
+        cached_files = set(manifest.keys())
+
+        # Find files that need downloading
+        potentially_cached = requested_files & cached_files
+        uncached_files = requested_files - cached_files
+
+        # Check which "cached" files actually exist on disk
+        missing_cached_files = set()
+        for file_path in potentially_cached:
+            relative_path = manifest[file_path]
+            local_path = os.path.join(self.reader_cache_dir, relative_path)
+            if not os.path.exists(local_path):
+                missing_cached_files.add(file_path)
+
+        # Combine files that need downloading
+        files_to_download = uncached_files | missing_cached_files
+
+        if not files_to_download:
+            return  # Nothing to download
+
+        # Download files with progress bar
+        with tqdm(total=len(files_to_download), desc=f"{self.__class__.__name__}", unit="files") as pbar:
+            for file_path in files_to_download:
+                # Generate filename
+                filename = hashlib.md5(file_path.encode()).hexdigest() + os.path.splitext(file_path)[1]
+                relative_path = f"./raw/{filename}"
+                local_path = os.path.join(self.reader_cache_dir, relative_path)
+
+                # Download
+                self.backend.download_file(file_path, local_path)
+
+                # Update and save manifest
+                manifest[file_path] = relative_path
+                self._save_manifest(self.manifest_path, manifest)
+                pbar.update(1)
+
+    def read_file(self, file_path: str) -> DataContainer:
+        """Read a file from the specified path and return it as a DataContainer object.
+
+        Args:
+            file_path (str): The path to the file to be read.
+
+        Returns:
+            DataContainer: The data contained in the file, parsed and returned as a DataContainer object.
 
         Raises:
-            FileNotFoundError: If the file is not found in the cached files. Clear the cache and try again.
-            Exception: If an error occurs while reading the file.
+            ValueError: If the file type cannot be determined or if no parser is found for the file extension.
         """
-        try:
-            # If the reader reads from a remote source and files are cached, read the file from the local directory
-            if self.remote_source and self.__cache_files and self.__cached_paths is not None:
-                return self.parser.parse(IOPathWrapper(path))
-        except FileNotFoundError:
-            raise FileNotFoundError("File not found in cached files. Clear the cache and try again.") from None
+        if self.remote_source and self.__download_files:
+            # If remote source and files are downloaded, use pre-downloaded local files
+            local_path = self._ensure_file_cached(file_path)
+            file_data = IOPathWrapper(local_path)
+        else:
+            # Read directly from backend
+            file_data = self.backend.read_file(file_path)
 
-        # Else read the file directly from the source
-        try:
-            return self.parser.parse(self._read_file(path))
-        except Exception as e:
-            raise Exception(f"Error reading file: {path} - {e}") from e
+        # If parser was specified during initialization, use it
+        if self.__parser is not None:
+            return self.__parser.parse(file_data)
 
-    def clear_cache(self):
-        """Clears the cached file paths.
+        # Otherwise, choose a parser based on file extension
+        _, ext = os.path.splitext(file_path)
+        if not ext:
+            raise ValueError(f"Cannot determine file type for {file_path} - no extension found")
 
-        Therefore the reader will check for new files on the next call of the files property.
-        """
-        # Clear cached paths
-        self.__cached_paths = None
+        # Find appropriate parser for this extension
+        parser_cls = find_parser_for_extension(ext)
+        if parser_cls is None:
+            raise ValueError(f"No parser found for file extension: {ext}")
 
-        # Delete the local directory if it exists
-        if self.remote_source and self.__cache_files and os.path.isdir(self.__local_dir):
-            for file in os.listdir(self.__local_dir):
-                os.remove(os.path.join(self.__local_dir, file))
-            os.rmdir(self.__local_dir)
-
-    def rebuild_cache(self):
-        """Rebuilds the cache by first clearing the cache and then downloading the files again."""
-        # Clear the cache
-        self.clear_cache()
-
-        # Rebuild the cache
-        if self.remote_source and self.__cache_files:
-            self._download_files_to_cache(self.files)
+        # Parse the file with the selected parser
+        return parser_cls.parse(file_data)

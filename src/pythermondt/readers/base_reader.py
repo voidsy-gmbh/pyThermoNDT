@@ -283,7 +283,17 @@ class BaseReader(ABC):
         # Download files with progress bar
         with tqdm(total=len(files_to_download), desc="Downloading files", unit="files") as pbar:
             for file_path in files_to_download:
-                self._ensure_file_cached(file_path)
+                # Generate filename
+                filename = hashlib.md5(file_path.encode()).hexdigest() + os.path.splitext(file_path)[1]
+                relative_path = f"./raw/{filename}"
+                local_path = os.path.join(self.reader_cache_dir, relative_path)
+
+                # Download
+                self.backend.download_file(file_path, local_path)
+
+                # Update and save manifest
+                manifest[file_path] = relative_path
+                self._save_manifest(self.manifest_path, manifest)
                 pbar.update(1)
 
     def read_file(self, file_path: str) -> DataContainer:

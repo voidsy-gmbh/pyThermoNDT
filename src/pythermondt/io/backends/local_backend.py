@@ -76,7 +76,7 @@ class LocalBackend(BaseBackend):
             case "directory":
                 with os.scandir(self.pattern) as entries:
                     all_files = [entry.path for entry in entries if entry.is_file()]
-            case "regex" | "pattern":
+            case "regex":
                 all_files = glob(self.pattern)
 
         # Filter by extension if provided

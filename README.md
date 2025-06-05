@@ -20,7 +20,7 @@ from pythermondt.readers import LocalReader, S3Reader
 
 # Load data from different sources
 local_reader = LocalReader("./examples/example_data/*.hdf5")
-s3_reader = S3Reader("ffg-bp", "example2_writing_data", download_remote_files=True)
+s3_reader = S3Reader("ffg-bp", "example2_writing_data", download_files=True)
 
 # Create a transform pipeline
 transform = T.Compose([

@@ -42,6 +42,8 @@ class BaseReader(ABC):
         # Internal state
         self.__files: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
+        self.__manifest_path: str | None = None
+        self.__reader_cache_dir: str | None = None
 
     @abstractmethod
     def _create_backend(self) -> BaseBackend:
@@ -88,6 +90,20 @@ class BaseReader(ABC):
     def num_files(self) -> int | None:
         """The number of files to read."""
         return self.__num_files
+
+    @property
+    def manifest_path(self) -> str:
+        """Path to the manifest file that stores downloaded files."""
+        if self.__manifest_path is None or self.__reader_cache_dir is None:
+            self.__reader_cache_dir, self.__manifest_path = self._setup_cache_dir()
+        return self.__manifest_path
+
+    @property
+    def reader_cache_dir(self) -> str:
+        """Path to the manifest file that stores downloaded files."""
+        if self.__manifest_path is None or self.__reader_cache_dir is None:
+            self.__reader_cache_dir, self.__manifest_path = self._setup_cache_dir()
+        return self.__reader_cache_dir
 
     @property
     def files(self) -> list[str]:
@@ -154,17 +170,21 @@ class BaseReader(ABC):
         with open(manifest_path, "w") as f:
             json.dump(manifest, f, indent=2)
 
-    def _setup_cache_dir(self):
-        """Setup the cache directory in the configured download directory for this reader."""
+    def _setup_cache_dir(self) -> tuple[str, str]:
+        """Setup the cache directory in the configured download directory for this reader.
+
+        Returns:
+            tuple[str, str]: A tuple containing reader cache directory and manifest path.
+        """
         # Create base cache dir in users home directory
         base_dir = os.path.join(settings.download_dir, ".pythermondt_cache")
         reader_id = f"{self.__class__.__name__}_{self._get_reader_params()}"
         dir_hash = hashlib.md5(reader_id.encode()).hexdigest()
-        self.__reader_cache_dir = os.path.join(base_dir, dir_hash)
-        self.__manifest_path = os.path.join(self.__reader_cache_dir, "downloaded.json")
+        reader_cache_dir = os.path.join(base_dir, dir_hash)
+        manifest_path = os.path.join(reader_cache_dir, "downloaded.json")
 
         # Ensure directories exist
-        os.makedirs(os.path.join(self.__reader_cache_dir, "./raw"), exist_ok=True)
+        os.makedirs(os.path.join(reader_cache_dir, "./raw"), exist_ok=True)
 
         # Add standard cache markers
         # CACHEDIR.TAG
@@ -181,6 +201,7 @@ class BaseReader(ABC):
             with open(gitignore, "w") as f:
                 f.write("# Automatically created by pythermondt\n")
                 f.write("*\n")
+        return reader_cache_dir, manifest_path
 
     def _ensure_file_cached(self, remote_path: str) -> str:
         """Ensure a file is cached locally, return local path.
@@ -192,25 +213,25 @@ class BaseReader(ABC):
             str: The local path to the cached file.
         """
         # Load manifest
-        manifest = self._load_manifest(self.__manifest_path)
+        manifest = self._load_manifest(self.manifest_path)
 
         # Check if already cached and exists
         if remote_path in manifest:
             relative_path = manifest[remote_path]
-            local_path = os.path.join(self.__reader_cache_dir, relative_path)
+            local_path = os.path.join(self.reader_cache_dir, relative_path)
             if os.path.exists(local_path):
                 return local_path
 
         # Download the file
         filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
         relative_path = f"./raw/{filename}"
-        local_path = os.path.join(self.__reader_cache_dir, relative_path)
+        local_path = os.path.join(self.reader_cache_dir, relative_path)
 
         self.backend.download_file(remote_path, local_path)
 
         # Update manifest
         manifest[remote_path] = relative_path
-        self._save_manifest(self.__manifest_path, manifest)
+        self._save_manifest(self.manifest_path, manifest)
 
         return local_path
 
@@ -235,7 +256,7 @@ class BaseReader(ABC):
             return
 
         # Get cache info once (not per file) from the manifest file
-        manifest = self._load_manifest(self.__manifest_path)
+        manifest = self._load_manifest(self.manifest_path)
 
         # Use sets for efficient bulk comparison
         requested_files = set(paths_to_download)
@@ -249,7 +270,7 @@ class BaseReader(ABC):
         missing_cached_files = set()
         for file_path in potentially_cached:
             relative_path = manifest[file_path]
-            local_path = os.path.join(self.__reader_cache_dir, relative_path)
+            local_path = os.path.join(self.reader_cache_dir, relative_path)
             if not os.path.exists(local_path):
                 missing_cached_files.add(file_path)
 

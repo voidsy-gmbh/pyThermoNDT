@@ -71,7 +71,7 @@ def split_transforms_for_caching(
 
 def _flatten_transforms(transforms: Sequence[_BaseTransform]) -> Sequence[_BaseTransform]:
     """Flatten nested Compose transforms into a single list."""
-    flattened = []
+    flattened: list[_BaseTransform] = []
     for transform in transforms:
         if isinstance(transform, Compose):
             # Recursively flatten nested Compose

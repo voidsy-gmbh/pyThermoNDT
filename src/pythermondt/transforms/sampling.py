@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import torch
 
 from ..data import DataContainer
-from .utils import ThermoTransform
+from .base import ThermoTransform
 
 
 class SelectFrames(ThermoTransform):

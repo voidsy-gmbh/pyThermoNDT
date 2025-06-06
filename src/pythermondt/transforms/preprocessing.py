@@ -4,7 +4,7 @@ import torch
 
 from ..data import DataContainer
 from ..data.units import Units
-from .utils import ThermoTransform
+from .base import ThermoTransform
 
 
 class ApplyLUT(ThermoTransform):
@@ -149,8 +149,8 @@ class RemoveFlash(ThermoTransform):
             case "mean_temp_drop":
                 # Find largest temperature drop (flash end) ==> minimum of the temperature difference
                 mean_temps = tdata.mean(dim=(0, 1))
-                temp_diffs = torch.diff(mean_temps)
-                flash_end_idx = temp_diffs.argmin().item() + self.offset  # Get the frame with biggest temperature drop
+                diffs = torch.diff(mean_temps)
+                flash_end_idx = int(diffs.argmin().item()) + self.offset  # Get the frame with biggest temperature drop
 
             case _:
                 raise ValueError(f"Invalid method. Choose between {get_args(self.__init__.__annotations__['method'])}.")

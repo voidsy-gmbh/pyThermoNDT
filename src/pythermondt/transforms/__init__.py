@@ -1,12 +1,15 @@
 from .augmentation import GaussianNoise, RandomFlip
+from .base import RandomThermoTransform, ThermoTransform
 from .normalization import MaxNormalize, MinMaxNormalize, ZScoreNormalize
 from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
 from .sampling import NonUniformSampling, SelectFrameRange, SelectFrames
-from .utils import Compose, ThermoTransform
+from .utils import Compose
 
 __all__ = [
-    "GaussianNoise",
-    "RandomFlip",
+    # Base classes
+    "ThermoTransform",
+    "RandomThermoTransform",
+    # Deterministic transforms
     "MaxNormalize",
     "MinMaxNormalize",
     "ZScoreNormalize",
@@ -17,6 +20,8 @@ __all__ = [
     "SelectFrameRange",
     "SelectFrames",
     "Compose",
-    "ThermoTransform",
     "CropFrames",
+    # Stochastic transforms
+    "GaussianNoise",
+    "RandomFlip",
 ]

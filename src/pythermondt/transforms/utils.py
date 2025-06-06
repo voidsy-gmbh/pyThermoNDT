@@ -19,7 +19,7 @@ class Compose(ThermoTransform):
 
         # Check if all the provided transforms are valid (Thermotransforms are already callable)
         if not all(isinstance(t, _BaseTransform) for t in transforms):
-            raise TypeError("Not all transforms inherit from ThermoTransform.")
+            raise TypeError("Not all transforms inherit from _BaseTransform.")
         self.transforms = transforms
 
     def forward(self, container: DataContainer) -> DataContainer:

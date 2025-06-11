@@ -1,9 +1,9 @@
 digraph "classes_pythermondt.readers" {
 rankdir=BT
 charset="utf-8"
-"pythermondt.readers.base_reader.BaseReader" [color="#F2994A", fontcolor="black", label=<{BaseReader|cache_files : bool<br ALIGN="LEFT"/>file_extensions : tuple[str, ...]<br ALIGN="LEFT"/>file_names : list[str]<br ALIGN="LEFT"/>files : list[str]<br ALIGN="LEFT"/>num_files : int<br ALIGN="LEFT"/>parser : type[BaseParser]<br ALIGN="LEFT"/>remote_source : bool<br ALIGN="LEFT"/>source : str<br ALIGN="LEFT"/>|clear_cache()<br ALIGN="LEFT"/>read(path: str): DataContainer<br ALIGN="LEFT"/>rebuild_cache()<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.readers.local_reader.LocalReader" [color="#F2994A", fontcolor="black", label=<{LocalReader|remote_source : bool<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
-"pythermondt.readers.s3_reader.S3Reader" [color="#F2994A", fontcolor="black", label=<{S3Reader|remote_source : bool<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.readers.base_reader.BaseReader" [color="#F2994A", fontcolor="black", label=<{BaseReader|backend : BaseBackend<br ALIGN="LEFT"/>cache_files : bool<br ALIGN="LEFT"/>download_files : bool<br ALIGN="LEFT"/>files : list[str]<br ALIGN="LEFT"/>manifest_path : str<br ALIGN="LEFT"/>num_files : int \| None<br ALIGN="LEFT"/>parser : type[BaseParser] \| None<br ALIGN="LEFT"/>reader_cache_dir : str<br ALIGN="LEFT"/>remote_source : bool<br ALIGN="LEFT"/>|download(file_paths: list[str] \| None): None<br ALIGN="LEFT"/>read_file(file_path: str): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.readers.local_reader.LocalReader" [color="#F2994A", fontcolor="black", label=<{LocalReader|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.readers.s3_reader.S3Reader" [color="#F2994A", fontcolor="black", label=<{S3Reader|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.readers.local_reader.LocalReader" -> "pythermondt.readers.base_reader.BaseReader" [arrowhead="empty", arrowtail="none"];
 "pythermondt.readers.s3_reader.S3Reader" -> "pythermondt.readers.base_reader.BaseReader" [arrowhead="empty", arrowtail="none"];
 }

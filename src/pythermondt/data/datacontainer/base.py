@@ -1,8 +1,9 @@
 from collections.abc import ItemsView, KeysView, ValuesView
+from sys import getsizeof
 from typing import TypeVar, overload
 
 from .node import DataNode, GroupNode, RootNode
-from .utils import split_path
+from .utils import format_bytes, split_path
 
 # Add typevars to make type hinting more readable
 NodeTypes = RootNode | GroupNode | DataNode
@@ -242,3 +243,32 @@ class BaseOps(DataContainerBase):
             return True
         except (KeyError, TypeError):
             return False
+
+    def memory_bytes(self) -> int:
+        """Returns the total memory size of the DataContainer in bytes.
+
+        This includes the memory size of all nodes and their attributes.
+        """
+        return getsizeof(self) + getsizeof(self.nodes) + sum(n.memory_bytes() for n in self.nodes.values())
+
+    def print_memory_usage(self):
+        """Print detailed memory usage breakdown by path."""
+        total_bytes = self.memory_bytes()
+
+        print(f"DataContainer Memory Usage: {format_bytes(total_bytes)}")
+        print("-" * 50)
+
+        # Collect node sizes
+        node_sizes = []
+        for path, node in self.nodes.items():
+            size_bytes = node.memory_bytes()
+            percentage = (size_bytes / total_bytes) * 100
+            node_sizes.append((path, size_bytes, percentage, node.type.value))
+
+        # Sort by size (largest first)
+        node_sizes.sort(key=lambda x: x[1], reverse=True)
+
+        # Print breakdown
+        for path, size_bytes, percentage, node_type in node_sizes:
+            size_str = format_bytes(size_bytes)
+            print(f"{path:<30} {size_str:>10} ({percentage:>5.1f}%) [{node_type}]")

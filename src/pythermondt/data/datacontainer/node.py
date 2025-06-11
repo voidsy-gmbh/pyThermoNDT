@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from collections.abc import ItemsView
 from enum import Enum
+from sys import getsizeof
 
+import objsize
 import torch
 from torch import Tensor
 
@@ -33,6 +35,10 @@ class BaseNode(ABC):
     @property
     def type(self) -> NodeType:
         return self.__type
+
+    def memory_bytes(self) -> int:
+        """Returns the memory size of the node in bytes."""
+        return getsizeof(self) + getsizeof(self.__name) + getsizeof(self.__type)
 
 
 class RootNode(BaseNode):
@@ -93,6 +99,10 @@ class AttributeNode(BaseNode, ABC):
     def clear_attributes(self) -> None:
         self.__attributes.clear()
 
+    def memory_bytes(self) -> int:
+        """Returns the memory size of the node in bytes."""
+        return super().memory_bytes() + objsize.get_deep_size(self.__attributes)
+
 
 class GroupNode(AttributeNode):
     def __init__(self, name: str):
@@ -115,6 +125,10 @@ class DataNode(AttributeNode):
     @data.deleter
     def data(self) -> None:
         self.__data = torch.empty(0)
+
+    def memory_bytes(self) -> int:
+        """Returns the memory size of the node in bytes."""
+        return super().memory_bytes() + getsizeof(self.__data) + self.data.element_size() * self.data.numel()
 
 
 # Test code

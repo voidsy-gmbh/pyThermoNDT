@@ -89,6 +89,60 @@ def test_data_node_update_attribute(data_node: DataNode):
         data_node.update_attribute("shape", "new_value")
 
 
+# Memory tests
+def test_root_node_memory_bytes(root_node: RootNode):
+    """Test memory calculation for RootNode."""
+    memory = root_node.memory_bytes()
+    assert isinstance(memory, int)
+    assert memory > 0
+
+
+def test_group_node_memory_bytes(group_node: GroupNode):
+    """Test memory calculation for GroupNode."""
+    memory = group_node.memory_bytes()
+    assert isinstance(memory, int)
+    assert memory > 0
+
+
+def test_group_node_memory_with_attributes(group_node: GroupNode):
+    """Test memory increases with attributes."""
+    memory_empty = group_node.memory_bytes()
+
+    group_node.add_attribute("test_attr", "test_value")
+    memory_with_attr = group_node.memory_bytes()
+
+    assert memory_with_attr > memory_empty
+
+
+def test_data_node_memory_bytes(data_node: DataNode):
+    """Test memory calculation for DataNode."""
+    memory = data_node.memory_bytes()
+    assert isinstance(memory, int)
+    assert memory > 0
+
+
+def test_data_node_memory_scales_with_tensor_size():
+    """Test memory scales with tensor size."""
+    small_tensor = torch.randn(2, 2)
+    large_tensor = torch.randn(10, 10)
+
+    small_node = DataNode("small", small_tensor)
+    large_node = DataNode("large", large_tensor)
+
+    small_memory = small_node.memory_bytes()
+    large_memory = large_node.memory_bytes()
+
+    assert large_memory > small_memory
+
+
+def test_data_node_empty_tensor_memory():
+    """Test memory calculation with empty tensor."""
+    empty_node = DataNode("empty")
+    memory = empty_node.memory_bytes()
+    assert isinstance(memory, int)
+    assert memory > 0
+
+
 # Node Type Enum tests
 def test_node_type_enum():
     """Test NodeType enum."""

@@ -1,4 +1,5 @@
 import pytest
+import torch
 
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.utils import split_path
@@ -77,12 +78,54 @@ def test_parent_exists(filled_container: DataContainer):
     assert filled_container._parent_exists("/NonExistentGroup/Child") is False
     assert filled_container._parent_exists("/TestGroup/NonExistentGroup/Child") is False
 
-    # Test root path
-    assert filled_container._parent_exists("/") is False
+    # Test root path    assert filled_container._parent_exists("/") is False
 
     # Test paths with non-GroupNode or non-RootNode parents
     assert filled_container._parent_exists("/TestGroup/TestDataset/Child") is False
     assert filled_container._parent_exists("/TestGroup/NestedGroup/TestDataset2/Child") is False
+
+
+def test_memory_bytes_empty_container(empty_container: DataContainer):
+    """Test memory calculation for empty container."""
+    memory = empty_container.memory_bytes()
+    assert isinstance(memory, int)
+    assert memory > 0
+
+
+def test_memory_bytes_filled_container(filled_container: DataContainer):
+    """Test memory calculation for filled container."""
+    memory = filled_container.memory_bytes()
+    assert isinstance(memory, int)
+    assert memory > 0
+
+
+def test_memory_increases_with_content(empty_container: DataContainer, filled_container: DataContainer):
+    """Test that memory increases with container content."""
+    empty_memory = empty_container.memory_bytes()
+    filled_memory = filled_container.memory_bytes()
+    assert filled_memory > empty_memory
+
+
+def test_memory_increases_with_large_tensors(empty_container: DataContainer):
+    """Test memory increases with large tensor data."""
+    small_tensor = torch.randn(5, 5)
+    large_tensor = torch.randn(100, 100)
+
+    empty_container.add_dataset("/", "small_data", small_tensor)
+    memory_small = empty_container.memory_bytes()
+
+    empty_container.add_dataset("/", "large_data", large_tensor)
+    memory_large = empty_container.memory_bytes()
+
+    assert memory_large > memory_small
+
+
+def test_print_memory_usage(filled_container: DataContainer, capsys):
+    """Test print_memory_usage output."""
+    filled_container.print_memory_usage()
+    captured = capsys.readouterr()
+    assert "DataContainer Memory Usage:" in captured.out
+    assert "B" in captured.out or "KB" in captured.out or "MB" in captured.out
 
 
 # Only run the tests in this file if it is run directly

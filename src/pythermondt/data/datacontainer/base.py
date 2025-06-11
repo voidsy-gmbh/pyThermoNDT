@@ -1,4 +1,5 @@
 from collections.abc import ItemsView, KeysView, ValuesView
+from sys import getsizeof
 from typing import TypeVar, overload
 
 from .node import DataNode, GroupNode, RootNode
@@ -242,3 +243,10 @@ class BaseOps(DataContainerBase):
             return True
         except (KeyError, TypeError):
             return False
+
+    def memory_bytes(self) -> int:
+        """Returns the total memory size of the DataContainer in bytes.
+
+        This includes the memory size of all nodes and their attributes.
+        """
+        return getsizeof(self) + getsizeof(self.nodes) + sum(n.memory_bytes() for n in self.nodes.values())

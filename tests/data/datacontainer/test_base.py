@@ -78,7 +78,8 @@ def test_parent_exists(filled_container: DataContainer):
     assert filled_container._parent_exists("/NonExistentGroup/Child") is False
     assert filled_container._parent_exists("/TestGroup/NonExistentGroup/Child") is False
 
-    # Test root path    assert filled_container._parent_exists("/") is False
+    # Test root path
+    assert filled_container._parent_exists("/") is False
 
     # Test paths with non-GroupNode or non-RootNode parents
     assert filled_container._parent_exists("/TestGroup/TestDataset/Child") is False

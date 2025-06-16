@@ -1,7 +1,7 @@
 import json
 from collections.abc import ItemsView
 from io import BytesIO
-from typing import Any
+from typing import Any, Literal
 
 import h5py
 import numpy as np
@@ -15,8 +15,13 @@ from .utils import validate_path
 
 
 class SerializationOps(BaseOps):
-    def serialize_to_hdf5(self) -> BytesIO:
+    def serialize_to_hdf5(self, compression: Literal["lzf", "gzip"] = "lzf") -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
+
+        Parameters:
+            compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
+                Default is "lzf" which is a fast compression method. If you want smaller files,
+                use "gzip" instead, but it is slower.
 
         Returns:
             BytesIO: The serialized DataContainer instance as a BytesIO object.
@@ -41,7 +46,7 @@ class SerializationOps(BaseOps):
                     array = node.data.numpy(force=True)
 
                     # Create the dataset in the HDF5 file and add attributes
-                    dataset = f.create_dataset(path, data=array, compression="gzip", compression_opts=9)
+                    dataset = f.create_dataset(path, data=array, compression="lzf", shuffle=True, fletcher32=True)
                     self._add_attributes(dataset, node.attributes)
 
                 # 4.) If the node is neither a group nor a dataset, raise an error

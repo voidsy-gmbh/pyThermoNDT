@@ -15,14 +15,14 @@ from .utils import validate_path
 
 
 class SerializationOps(BaseOps):
-    def serialize_to_hdf5(self, compression: Literal["lzf", "gzip"] = "lzf", compression_opt: int = 4) -> BytesIO:
+    def serialize_to_hdf5(self, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4) -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
 
         Parameters:
             compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
                 Default is "lzf" which is a fast compression method. If you want smaller files,
                 use "gzip" instead, but it is slower.
-            compression_opt (int): The compression level for gzip compression. Ignored if compression is "lzf".
+            compression_opts (int): The compression level for gzip compression. Ignored if compression is "lzf".
                 Default is 4, which is a good balance between speed and compression ratio.
 
         Returns:
@@ -52,7 +52,7 @@ class SerializationOps(BaseOps):
                         path,
                         data=array,
                         compression=compression,
-                        compression_opt=compression_opt,
+                        compression_opts=compression_opts,
                         shuffle=True,
                         fletcher32=True,
                     )
@@ -81,7 +81,7 @@ class SerializationOps(BaseOps):
             # Assign attribute to HDF5 object
             h5obj.attrs[key] = value
 
-    def save_to_hdf5(self, path: str, compression: Literal["lzf", "gzip"] = "lzf", compression_opt: int = 4):
+    def save_to_hdf5(self, path: str, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4):
         """Saves the serialized DataContainer to an HDF5 file at the specified path.
 
         Parameters:
@@ -89,11 +89,11 @@ class SerializationOps(BaseOps):
             compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
                 Default is "lzf" which is a fast compression method. If you want smaller files,
                 use "gzip" instead, but it is slower.
-            compression_opt (int): The compression level for gzip compression. Ignored if compression is "lzf".
+            compression_opts (int): The compression level for gzip compression. Ignored if compression is "lzf".
                 Default is 4, which is a good balance between speed and compression ratio.
         """
         with open(path, "wb") as file:
-            file.write(self.serialize_to_hdf5(compression, compression_opt).getvalue())
+            file.write(self.serialize_to_hdf5(compression, compression_opts).getvalue())
 
 
 class DeserializationOps(GroupOps, DatasetOps, AttributeOps):

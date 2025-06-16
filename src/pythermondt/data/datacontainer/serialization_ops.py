@@ -1,7 +1,7 @@
 import json
 from collections.abc import ItemsView
 from io import BytesIO
-from typing import Any
+from typing import Any, Literal
 
 import h5py
 import numpy as np
@@ -15,8 +15,15 @@ from .utils import validate_path
 
 
 class SerializationOps(BaseOps):
-    def serialize_to_hdf5(self) -> BytesIO:
+    def serialize_to_hdf5(self, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4) -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
+
+        Parameters:
+            compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
+                Default is "lzf" which is a fast compression method. If you want smaller files,
+                use "gzip" instead, but it is slower.
+            compression_opts (int): The compression level for gzip compression. Ignored if compression is "lzf".
+                Default is 4, which is a good balance between speed and compression ratio.
 
         Returns:
             BytesIO: The serialized DataContainer instance as a BytesIO object.
@@ -41,7 +48,13 @@ class SerializationOps(BaseOps):
                     array = node.data.numpy(force=True)
 
                     # Create the dataset in the HDF5 file and add attributes
-                    dataset = f.create_dataset(path, data=array, compression="gzip", compression_opts=9)
+                    dataset = f.create_dataset(
+                        path,
+                        data=array,
+                        compression=compression,
+                        compression_opts=None if compression == "lzf" else compression_opts,
+                        fletcher32=True,
+                    )
                     self._add_attributes(dataset, node.attributes)
 
                 # 4.) If the node is neither a group nor a dataset, raise an error
@@ -67,14 +80,19 @@ class SerializationOps(BaseOps):
             # Assign attribute to HDF5 object
             h5obj.attrs[key] = value
 
-    def save_to_hdf5(self, path: str):
+    def save_to_hdf5(self, path: str, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4):
         """Saves the serialized DataContainer to an HDF5 file at the specified path.
 
         Parameters:
             path (str): The path where the HDF5 file should be saved.
+            compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
+                Default is "lzf" which is a fast compression method. If you want smaller files,
+                use "gzip" instead, but it is slower.
+            compression_opts (int): The compression level for gzip compression. Ignored if compression is "lzf".
+                Default is 4, which is a good balance between speed and compression ratio.
         """
         with open(path, "wb") as file:
-            file.write(self.serialize_to_hdf5().getvalue())
+            file.write(self.serialize_to_hdf5(compression, compression_opts).getvalue())
 
 
 class DeserializationOps(GroupOps, DatasetOps, AttributeOps):

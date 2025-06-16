@@ -1,12 +1,16 @@
 import io
+from typing import Literal
 
 import pytest
 
 from pythermondt.data import DataContainer
 
 
+@pytest.mark.parametrize("compression", ["gzip", "lzf"])
 @pytest.mark.parametrize("container_fixture", ["empty_container", "filled_container", "complex_container"])
-def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRequest):
+def test_serialize_deserialize(
+    container_fixture: str, request: pytest.FixtureRequest, compression: Literal["gzip", "lzf"]
+):
     """Test serialization and deserialization of DataContainer.
 
     Parameters:
@@ -22,7 +26,7 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
     original_container = request.getfixturevalue(container_fixture)  # type: DataContainer
 
     # Serialize the DataContainer
-    hdf5_bytes = original_container.serialize_to_hdf5()
+    hdf5_bytes = original_container.serialize_to_hdf5(compression=compression)
 
     # Check if the serialized data is a bytes object and is not empty
     assert isinstance(hdf5_bytes, io.BytesIO)
@@ -35,8 +39,11 @@ def test_serialize_deserialize(container_fixture: str, request: pytest.FixtureRe
     assert deserialized_container == original_container
 
 
+@pytest.mark.parametrize("compression", ["gzip", "lzf"])
 @pytest.mark.parametrize("container_fixture", ["empty_container", "filled_container", "complex_container"])
-def test_serialize_file_operations(container_fixture: str, request: pytest.FixtureRequest, tmp_path):
+def test_serialize_file_operations(
+    container_fixture: str, request: pytest.FixtureRequest, compression: Literal["gzip", "lzf"], tmp_path
+):
     """Test save_to_hdf5 and load_from_hdf5 file operations."""
     # Create temporary file path
     file_path = tmp_path / "test.hdf5"
@@ -45,7 +52,7 @@ def test_serialize_file_operations(container_fixture: str, request: pytest.Fixtu
     original_container = request.getfixturevalue(container_fixture)  # type: DataContainer
 
     # Save container to file
-    original_container.save_to_hdf5(str(file_path))
+    original_container.save_to_hdf5(str(file_path), compression=compression)
 
     # Load into new container
     loaded_container = DataContainer()

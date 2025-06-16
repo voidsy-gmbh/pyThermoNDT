@@ -52,8 +52,7 @@ class SerializationOps(BaseOps):
                         path,
                         data=array,
                         compression=compression,
-                        compression_opts=compression_opts,
-                        shuffle=True,
+                        compression_opts=None if compression == "lzf" else compression_opts,
                         fletcher32=True,
                     )
                     self._add_attributes(dataset, node.attributes)

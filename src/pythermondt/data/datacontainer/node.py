@@ -129,32 +129,3 @@ class DataNode(AttributeNode):
     def memory_bytes(self) -> int:
         """Returns the memory size of the node in bytes."""
         return super().memory_bytes() + getsizeof(self.__data) + self.data.element_size() * self.data.numel()
-
-
-# Test code
-if __name__ == "__main__":
-    root = RootNode()
-    group = GroupNode("group1")
-    data = DataNode("data1", torch.randn(5, 5))
-
-    print(f"Root: {root.name}, {root.type}")
-    print(f"Group: {group.name}, {group.type}")
-    print(f"Data: {data.name}, {data.type}")
-
-    group.add_attribute("attr1", 10)
-    print(f"Group attribute: {group.get_attribute('attr1')}")
-
-    data.add_attribute("shape", list(data.data.shape))
-    print(f"Data attribute: {data.get_attribute('shape')}")
-
-    # Check if BaseNode and AttributeNode are abstract
-    for AbstractClass in (BaseNode, AttributeNode):
-        try:
-            test = AbstractClass("test", NodeType.ROOT)  # type: ignore
-            print(f"Warning: Successfully instantiated {AbstractClass.__name__}")
-        except TypeError as e:
-            print(f"Cannot instantiate {AbstractClass.__name__}: {e}")
-
-    print(f"Data tensor: {data.data}")
-    data.data = torch.zeros(3, 3)
-    print(f"Updated data tensor: {data.data}")

@@ -22,6 +22,20 @@ class Compose(ThermoTransform):
             raise TypeError("Not all transforms inherit from _BaseTransform.")
         self.transforms = transforms
 
+    def __str__(self) -> str:
+        """Custom repr for Compose - no type label, cleaner format."""
+        if not self.transforms:
+            return "Compose([])"
+
+        # Show transforms in a clean format
+        transform_strs = [str(t) for t in self.transforms]
+        if len(transform_strs) == 1:
+            return f"Compose([{transform_strs[0]}])"
+
+        # Multi-line format for multiple transforms
+        transforms_str = ",\n    ".join(transform_strs)
+        return f"Compose([\n    {transforms_str}\n])"
+
     def forward(self, container: DataContainer) -> DataContainer:
         for t in self.transforms:
             container = t(container)

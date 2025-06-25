@@ -30,7 +30,7 @@ class _BaseTransform(nn.Module, ABC):
         import inspect
 
         try:
-            sig = inspect.signature(self.__init__)
+            sig = inspect.signature(self.__class__.__init__)
             init_params = set(sig.parameters.keys()) - {"self"}
         except (ValueError, TypeError):
             init_params = set()

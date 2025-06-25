@@ -16,7 +16,7 @@ jobs:
         ssh-key: ${{ secrets.WRITE_KEY }}
 
     - name: Set up Python 3.12
-      uses: astral-sh/setup-uv@v6.1.0
+      uses: astral-sh/setup-uv@v6.3.0
       with:
         python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
         activate-environment: true

@@ -29,11 +29,11 @@ class Compose(ThermoTransform):
 
 
 def split_transforms_for_caching(
-    transforms: Sequence[_BaseTransform],
-) -> tuple[Sequence[_BaseTransform], Sequence[_BaseTransform]]:
+    transforms: Sequence[_BaseTransform] | Compose,
+) -> tuple[Compose, Compose]:
     """Split any composed transforms into deterministic and random transforms.
 
-    This function takes a sequence of transforms and splits them into two lists:
+    This function takes a sequence of transforms or a Compose object and splits them into two Compose objects:
     - Deterministic transforms
     - Random transforms and any transforms that follow them
 
@@ -41,16 +41,16 @@ def split_transforms_for_caching(
     split is applied to the individual transforms rather than the Compose container itself.
 
     Parameters:
-        transforms (Sequence[_BaseTransform]): A sequence of transforms to split.
+        transforms (Sequence[_BaseTransform] | Compose): A sequence of transforms or Compose object to split.
 
     Returns:
-        tuple[Sequence[_BaseTransform], Sequence[_BaseTransform]]:
-            A tuple containing two lists:
-            - The first list contains deterministic transforms.
-            - The second list contains random transforms and any transforms that follow them.
+        tuple[Compose, Compose]:
+            A tuple containing two Compose objects:
+            - The first contains deterministic transforms.
+            - The second contains random transforms and any transforms that follow them.
     """
     # Flatten nested Compose transforms first
-    flat_transforms = _flatten_transforms(transforms)
+    flat_transforms = _flatten_transforms(transforms.transforms if isinstance(transforms, Compose) else transforms)
 
     # Simple split on flattened list
     deterministic = []
@@ -66,7 +66,7 @@ def split_transforms_for_caching(
         else:
             deterministic.append(transform)
 
-    return deterministic, random_and_after
+    return Compose(deterministic), Compose(random_and_after)
 
 
 def _flatten_transforms(transforms: Sequence[_BaseTransform]) -> Sequence[_BaseTransform]:

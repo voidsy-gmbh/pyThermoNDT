@@ -20,6 +20,43 @@ class _BaseTransform(nn.Module, ABC):
         """
         raise NotImplementedError("Forward method must be implemented in the sub-class.")
 
+    def extra_repr(self) -> str:
+        """Return extra representation of transform parameters.
+
+        This follows PyTorch's pattern but makes it automatic.
+        Override this method if you need custom parameter formatting.
+        """
+        # Get init parameters by inspecting the constructor
+        import inspect
+
+        try:
+            sig = inspect.signature(self.__init__)
+            init_params = set(sig.parameters.keys()) - {"self"}
+        except (ValueError, TypeError):
+            init_params = set()
+
+        # Get attributes that match init parameters
+        params = []
+        for attr_name in sorted(init_params):
+            if hasattr(self, attr_name):
+                value = getattr(self, attr_name)
+                # Only include simple types that are likely parameters
+                if isinstance(value, (int, float, str, bool, list, tuple)):
+                    params.append(f"{attr_name}={value}")
+
+        return ", ".join(params)
+
+    def __str__(self) -> str:
+        """Get a string representation of the transform."""
+        class_name = self.__class__.__name__
+        transform_type = "Random" if isinstance(self, RandomThermoTransform) else "Deterministic"
+
+        extra_repr = self.extra_repr()
+        if extra_repr:
+            return f"{class_name}({extra_repr}) [{transform_type}]"
+        else:
+            return f"{class_name}() [{transform_type}]"
+
     # Add type annotations to __call__ method, so that the type checker can infer the correct return type.
     # Otherwise, the return type will be inferred as 'Any'.
     # __call__ does not have to be overridden, this is already implemented in the nn.Module class from PyTorch.

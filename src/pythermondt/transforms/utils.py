@@ -33,7 +33,7 @@ def split_transforms_for_caching(
 ) -> tuple[Compose, Compose]:
     """Split any composed transforms into deterministic and random transforms.
 
-    This function takes a sequence of transforms and splits them into two lists:
+    This function takes a sequence of transforms or a Compose object and splits them into two Compose objects:
     - Deterministic transforms
     - Random transforms and any transforms that follow them
 
@@ -41,13 +41,13 @@ def split_transforms_for_caching(
     split is applied to the individual transforms rather than the Compose container itself.
 
     Parameters:
-        transforms (Sequence[_BaseTransform]): A sequence of transforms to split.
+        transforms (Sequence[_BaseTransform] | Compose): A sequence of transforms or Compose object to split.
 
     Returns:
-        tuple[Sequence[_BaseTransform], Sequence[_BaseTransform]]:
-            A tuple containing two lists:
-            - The first list contains deterministic transforms.
-            - The second list contains random transforms and any transforms that follow them.
+        tuple[Compose, Compose]:
+            A tuple containing two Compose objects:
+            - The first contains deterministic transforms.
+            - The second contains random transforms and any transforms that follow them.
     """
     # Flatten nested Compose transforms first
     flat_transforms = _flatten_transforms(transforms.transforms if isinstance(transforms, Compose) else transforms)

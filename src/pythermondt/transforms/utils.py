@@ -43,7 +43,7 @@ class Compose(ThermoTransform):
 
 
 def split_transforms_for_caching(
-    transforms: Sequence[_BaseTransform] | Compose,
+    transforms: _BaseTransform | Sequence[_BaseTransform],
 ) -> tuple[Compose, Compose]:
     """Split any composed transforms into deterministic and random transforms.
 
@@ -55,7 +55,7 @@ def split_transforms_for_caching(
     split is applied to the individual transforms rather than the Compose container itself.
 
     Parameters:
-        transforms (Sequence[_BaseTransform] | Compose): A sequence of transforms or Compose object to split.
+        transforms (_BaseTransform | Sequence[_BaseTransform]): Transforms to split.
 
     Returns:
         tuple[Compose, Compose]:
@@ -64,7 +64,11 @@ def split_transforms_for_caching(
             - The second contains random transforms and any transforms that follow them.
     """
     # Flatten nested Compose transforms first
-    flat_transforms = _flatten_transforms(transforms.transforms if isinstance(transforms, Compose) else transforms)
+    if isinstance(transforms, Compose):
+        transforms = transforms.transforms
+    elif isinstance(transforms, _BaseTransform):
+        transforms = [transforms]
+    flat_transforms = _flatten_transforms(transforms)
 
     # Simple split on flattened list
     deterministic = []

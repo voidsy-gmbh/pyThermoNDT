@@ -57,8 +57,8 @@ class IndexedThermoDataset(BaseDataset):
         data = self._load_raw_data(idx)
 
         # Apply additional transform if specified
-        if self.__transform:
-            data = self.__transform(data)
+        if self.transform:
+            data = self.transform(data)
 
         return data
 

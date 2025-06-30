@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from pythermondt.data import DataContainer, ThermoDataset
+from pythermondt.data import DataContainer, IndexedThermoDataset, ThermoDataset
 from pythermondt.readers import LocalReader
 
 from ..utils import containers_equal
@@ -47,6 +47,29 @@ def test_thermodataset_integration(test_case: IntegrationTestCase):
         # Compare containers
         assert containers_equal(expected_container, source_container), (
             f"Test case '{test_case.id}': {source_dataset.files[i]} and {expected_dataset.files[i]} are not equal"
+        )
+
+
+@pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
+def test_indexed_thermodataset_integration(test_case: IntegrationTestCase):
+    """Test IndexedThermoDataset integration."""
+    # Create readers
+    source_reader = LocalReader(test_case.source_path)
+    expected_reader = LocalReader(test_case.expected_path)
+
+    # Create ThermoDataset objects
+    source_dataset = ThermoDataset(source_reader)
+    expected_dataset = ThermoDataset(expected_reader)
+
+    # Create IndexedThermoDataset objects
+    s_indexed_dataset = IndexedThermoDataset(source_dataset, indices=range(int(len(source_dataset) / 2)))
+    e_indexed_dataset = IndexedThermoDataset(expected_dataset, indices=range(int(len(expected_dataset) / 2)))
+
+    # Compare all containers in the indexed dataset
+    for i, (source_container, expected_container) in enumerate(zip(s_indexed_dataset, e_indexed_dataset, strict=True)):
+        # Compare containers
+        assert containers_equal(expected_container, source_container), (
+            f"Test case '{test_case.id}': {s_indexed_dataset.files[i]} and {e_indexed_dataset.files[i]} are not equal"
         )
 
 

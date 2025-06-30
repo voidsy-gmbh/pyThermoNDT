@@ -53,8 +53,12 @@ class IndexedThermoDataset(BaseDataset):
         Returns:
             DataContainer: Transformed data container
         """
-        # Load raw data
-        data = self._load_raw_data(idx)
+        # Validate index
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+
+        # Get data from parent (parent applies its complete chain)
+        data = self.__parent_dataset[self.__indices[idx]]
 
         # Apply additional transform if specified
         if self.transform:

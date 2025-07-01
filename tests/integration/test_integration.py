@@ -62,14 +62,26 @@ def test_indexed_thermodataset_integration(test_case: IntegrationTestCase):
     expected_dataset = ThermoDataset(expected_reader)
 
     # Create IndexedThermoDataset objects
-    s_indexed_dataset = IndexedThermoDataset(source_dataset, indices=range(int(len(source_dataset) / 2)))
-    e_indexed_dataset = IndexedThermoDataset(expected_dataset, indices=range(int(len(expected_dataset) / 2)))
+    indices = range(len(source_dataset) // 2)  # Index the first half of the dataset
+    s_indexed_dataset = IndexedThermoDataset(source_dataset, indices=indices)
+    e_indexed_dataset = IndexedThermoDataset(expected_dataset, indices=indices)
 
     # Compare all containers in the indexed dataset
     for i, (source_container, expected_container) in enumerate(zip(s_indexed_dataset, e_indexed_dataset, strict=True)):
         # Compare containers
         assert containers_equal(expected_container, source_container), (
             f"Test case '{test_case.id}': {s_indexed_dataset.files[i]} and {e_indexed_dataset.files[i]} are not equal"
+        )
+
+    # Check that the the containers in the indexed dataset match the original dataset
+    for i, (source_container, expected_container) in enumerate(zip(s_indexed_dataset, source_dataset, strict=False)):
+        assert containers_equal(expected_container, source_container), (
+            f"Test case '{test_case.id}': Container {i} in indexed dataset not equal to original dataset"
+        )
+
+    for i, (source_container, expected_container) in enumerate(zip(e_indexed_dataset, expected_dataset, strict=False)):
+        assert containers_equal(expected_container, source_container), (
+            f"Test case '{test_case.id}': Container {i} in indexed dataset not equal to original dataset"
         )
 
 

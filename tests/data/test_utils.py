@@ -2,7 +2,7 @@ import pytest
 import torch
 
 from pythermondt.data import DataContainer
-from pythermondt.data.utils import container_collate
+from pythermondt.dataset import container_collate
 
 
 def test_factory_function_returns_callable():

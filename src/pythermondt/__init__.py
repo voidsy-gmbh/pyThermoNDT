@@ -1,5 +1,6 @@
 from .__pkginfo__ import __version__
-from .data import ThermoContainer, ThermoDataset
+from .data import DataContainer, ThermoContainer
+from .dataset import IndexedThermoDataset, ThermoDataset
 from .io import HDF5Parser, SimulationParser
 from .readers import LocalReader, S3Reader
 from .transforms import augmentation, normalization, preprocessing, sampling, utils
@@ -7,8 +8,10 @@ from .writers import LocalWriter, S3Writer
 
 __all__ = [
     "__version__",
+    "DataContainer",
     "ThermoContainer",
     "ThermoDataset",
+    "IndexedThermoDataset",
     "HDF5Parser",
     "SimulationParser",
     "LocalReader",

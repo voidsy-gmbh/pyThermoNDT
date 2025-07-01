@@ -4,7 +4,8 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from pythermondt.data import DataContainer, IndexedThermoDataset, ThermoDataset, random_split
+from pythermondt.data import DataContainer
+from pythermondt.dataset import IndexedThermoDataset, ThermoDataset, random_split
 from pythermondt.readers import LocalReader
 
 from ..utils import containers_equal

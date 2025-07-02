@@ -50,10 +50,7 @@ def test_empty_reader(localreader_no_files):
         # directory -> file (file is contained in directory)
         ("./tests/assets/integration/simulation/", "./tests/assets/integration/simulation/source1.mat"),
         # glob -> glob (overlapping patterns)
-        pytest.param(
-            ("./tests/assets/integration/simulation/source*.mat", "./tests/assets/integration/simulation/*.mat"),
-            marks=pytest.mark.xfail(reason="Backend path normalization needed"),
-        ),
+        ("./tests/assets/integration/simulation/source*.mat", "./tests/assets/integration/simulation/*.mat"),
         # file -> glob (file matches different glob)
         pytest.param(
             ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source*.mat"),

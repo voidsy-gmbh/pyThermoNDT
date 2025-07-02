@@ -6,8 +6,9 @@ import torch
 from torch import Generator, default_generator
 
 from ..data import DataContainer
-from ..dataset import IndexedThermoDataset, ThermoDataset
 from ..transforms import ThermoTransform
+from .indexed_thermo_dataset import IndexedThermoDataset
+from .thermo_dataset import ThermoDataset
 
 
 def random_split(

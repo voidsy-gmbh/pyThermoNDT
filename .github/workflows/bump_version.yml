@@ -71,7 +71,7 @@ jobs:
       # Step 2: Setup uv
       - name: Setup uv
         id: setup-uv
-        uses: astral-sh/setup-uv@v6.3.0
+        uses: astral-sh/setup-uv@v6.3.1
         with:
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true

@@ -35,6 +35,10 @@ class ThermoDataset(BaseDataset):
         # Convert single reader to list
         data_source = [data_source] if isinstance(data_source, BaseReader) else list(data_source)
 
+        # Check if data_source is empty
+        if not data_source:
+            raise ValueError("No readers provided. Please provide at least one BaseReader instance or a list of them.")
+
         # Validate the readers
         self._validate_readers(data_source)
 

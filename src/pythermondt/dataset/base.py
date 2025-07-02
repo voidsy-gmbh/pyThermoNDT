@@ -37,8 +37,8 @@ class BaseDataset(Dataset, ABC):
 
     def get_transform_chain(self) -> _BaseTransform:
         """Walk up graph to build the complete sequence transforms for this dataset and compose it in a single one."""
-        transforms = collections.deque()
-        current = self
+        transforms: collections.deque[_BaseTransform] = collections.deque()
+        current: BaseDataset | None = self
 
         while current is not None:
             if current.transform:

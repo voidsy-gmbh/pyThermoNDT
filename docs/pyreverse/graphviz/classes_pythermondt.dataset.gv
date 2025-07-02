@@ -1,0 +1,9 @@
+digraph "classes_pythermondt.dataset" {
+rankdir=BT
+charset="utf-8"
+"pythermondt.dataset.base.BaseDataset" [color="#F2994A", fontcolor="black", label=<{BaseDataset|files : list[str]<br ALIGN="LEFT"/>parent : 'BaseDataset \| None'<br ALIGN="LEFT"/>transform : _BaseTransform \| None<br ALIGN="LEFT"/>|get_transform_chain(): _BaseTransform<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.dataset.indexed_thermo_dataset.IndexedThermoDataset" [color="#F2994A", fontcolor="black", label=<{IndexedThermoDataset|files : list[str]<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.dataset.thermo_dataset.ThermoDataset" [color="#F2994A", fontcolor="black", label=<{ThermoDataset|files : list[str]<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
+"pythermondt.dataset.indexed_thermo_dataset.IndexedThermoDataset" -> "pythermondt.dataset.base.BaseDataset" [arrowhead="empty", arrowtail="none"];
+"pythermondt.dataset.thermo_dataset.ThermoDataset" -> "pythermondt.dataset.base.BaseDataset" [arrowhead="empty", arrowtail="none"];
+}

@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 import torch
 
+from pythermondt.readers import LocalReader
+
 
 @pytest.fixture
 def sample_tensor():
@@ -49,3 +51,27 @@ def sample_empty_ndarray():
 def sample_eye_ndarray():
     """Identity ndarray fixture available to all tests."""
     return np.eye(3)
+
+
+@pytest.fixture
+def localreader_no_files():
+    """Fixture for a reader that has no files."""
+    return LocalReader(pattern="MadeUpPattern")
+
+
+@pytest.fixture
+def localreader_with_file():
+    """Fixture for a reader that has files."""
+    return LocalReader(pattern="./tests/assets/integration/simulation/source1.mat")
+
+
+@pytest.fixture
+def localreader_with_glob():
+    """Fixture for a reader that has files."""
+    return LocalReader(pattern="./tests/assets/integration/simulation/*.mat")
+
+
+@pytest.fixture
+def localreader_with_directory():
+    """Fixture for a reader that has files."""
+    return LocalReader(pattern="./tests/assets/integration/simulation/")

@@ -5,9 +5,10 @@ from collections.abc import Callable, Sequence
 import torch
 from torch import Generator, default_generator
 
+from ..data import DataContainer
 from ..transforms import ThermoTransform
-from .datacontainer import DataContainer
-from .thermo_dataset import IndexedThermoDataset, ThermoDataset
+from .indexed_thermo_dataset import IndexedThermoDataset
+from .thermo_dataset import ThermoDataset
 
 
 def random_split(

@@ -2,21 +2,21 @@ from collections.abc import Iterator, Sequence
 from itertools import chain
 
 import torch
-from torch.utils.data import Dataset
 
+from ..data import DataContainer
 from ..readers.base_reader import BaseReader
-from ..transforms import ThermoTransform
-from .datacontainer import DataContainer
+from ..transforms.utils import _BaseTransform
+from .base import BaseDataset
 
 
-class ThermoDataset(Dataset):
+class ThermoDataset(BaseDataset):
     """PyTorch dataset that combines multiple readers into a single dataset.
 
     Automatically handles file indexing across different data sources (local, S3, etc.)
     and applies transforms consistently. Compatible with PyTorch DataLoaders.
     """
 
-    def __init__(self, data_source: BaseReader | Sequence[BaseReader], transform: ThermoTransform | None = None):
+    def __init__(self, data_source: BaseReader | Sequence[BaseReader], transform: _BaseTransform | None = None):
         """Create dataset from one or more readers.
 
         Files are discovered and downloaded (if remote) during initialization for
@@ -29,15 +29,21 @@ class ThermoDataset(Dataset):
         Raises:
             ValueError: If duplicate files found or no files available
         """
+        # Initialize base with no parent (this is root) and given transform
+        super().__init__(parent=None, transform=transform)
+
         # Convert single reader to list
         data_source = [data_source] if isinstance(data_source, BaseReader) else list(data_source)
+
+        # Check if data_source is empty
+        if not data_source:
+            raise ValueError("No readers provided. Please provide at least one BaseReader instance or a list of them.")
 
         # Validate the readers
         self._validate_readers(data_source)
 
-        # Write the readers and transforms to the private attributes
+        # Write the readers to the private attributes
         self.__readers = data_source
-        self.__transform = transform
 
         # Eagerly load files from all readers
         for reader in self.__readers:
@@ -116,6 +122,21 @@ class ThermoDataset(Dataset):
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
 
+    def _load_raw_data(self, idx: int) -> DataContainer:
+        """Load raw data from readers - required by BaseDataset."""
+        # Extract reader and file index from the index map
+        r_idx = int(self.__reader_index[idx].item())
+        f_idx = int(self.__file_index[idx].item())
+
+        try:
+            return self.__readers[r_idx][f_idx]
+        except FileNotFoundError:
+            print(f"File not found for reader {self.__readers[r_idx].__class__.__name__} at index {f_idx}")
+            return DataContainer()
+        except Exception as e:
+            print(f"Error reading file for reader {self.__readers[r_idx].__class__.__name__} at index {f_idx}: {e}")
+            return DataContainer()
+
     @property
     def files(self) -> list[str]:
         return [file for reader in self.__readers for file in reader.files]
@@ -124,98 +145,18 @@ class ThermoDataset(Dataset):
         return sum([len(reader.files) for reader in self.__readers])
 
     def __getitem__(self, idx) -> DataContainer:
-        # Check if the index is valid
+        """Get data container at index with transforms applied."""
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
 
-        # Extract the reader and file index from the index map
-        reader_idx = int(self.__reader_index[idx].item())
-        file_idx = int(self.__file_index[idx].item())
+        # Load raw data
+        data = self._load_raw_data(idx)
 
-        # Try to read the file
-        try:
-            # Read the file from the reader
-            data = self.__readers[reader_idx][file_idx]
-
-            # Apply the transform if any is given
-            if self.__transform:
-                data = self.__transform(data)
-
-            return data
-
-        except FileNotFoundError:
-            print(f"File not found for reader {self.__readers[reader_idx].__repr__()} at index {file_idx}")
-
-        except Exception as e:
-            print(f"Error reading file for reader {self.__readers[reader_idx].__repr__()} at index {file_idx}: {e}")
-
-        # Return an empty DataContainer if the file could not be read
-        return DataContainer()
-
-    def __iter__(self) -> Iterator[DataContainer]:
-        return (self.__transform(data) if self.__transform else data for data in chain.from_iterable(self.__readers))
-
-
-class IndexedThermoDataset(ThermoDataset):
-    """Extension of ThermoDataset that supports indexing with optional additional transforms.
-
-    The IndexedThermoDataset maintains a subset of the parent dataset and allows for an additional transform to be
-    applied to the data. This can be useful when a subset of the data needs to be selected and a different transform
-    needs to be applied to the subset, e.g. for random splits of train, validation and test data. The
-    IndexedThermoDataset maintains the transform chain of the parent dataset and appends the additional transform to it.
-    """
-
-    def __init__(self, dataset: ThermoDataset, indices: Sequence[int], transform: ThermoTransform | None = None):
-        """Initialize an indexed dataset with optional additional transform.
-
-        Parameters:
-            dataset (ThermoDataset): Parent dataset to index into
-            indices (Sequence[int]): Sequence of indices to select from parent
-            transform (ThermoTransform, optional): Optional transform to apply after parent's transform
-
-        Raises:
-            IndexError: If any of the provided indices are out of range
-        """
-        # Validate the indices
-        if not all(0 <= i < len(dataset) for i in indices):
-            raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset) - 1}]")
-
-        # Store parent dataset and indices
-        self.__dataset = dataset  # Original dataset
-        self.__indices = indices  # Indices for subset
-        self.__transform = transform  # Additional transform
-
-    def __len__(self) -> int:
-        """Return length of indexed dataset."""
-        return len(self.__indices)
-
-    def __iter__(self) -> Iterator[DataContainer]:
-        """Return iterator over indexed subset."""
-        return (self[i] for i in range(len(self.__indices)))
-
-    def __getitem__(self, idx: int) -> DataContainer:
-        """Get an item with proper transform chain.
-
-        Args:
-            idx (int): Index into the subset
-
-        Returns:
-            DataContainer: Transformed data container
-        """
-        # Validate index
-        if idx < 0 or idx >= len(self):
-            raise IndexError("Index out of range")
-
-        # Get data using parent dataset's underlying logic ==> Apply parent transform
-        data = self.__dataset[self.__indices[idx]]
-
-        # Apply additional transform if specified
-        if self.__transform:
-            data = self.__transform(data)
+        # Apply transform if present
+        if self.transform:
+            data = self.transform(data)
 
         return data
 
-    @property
-    def files(self) -> list[str]:
-        """Return list of files corresponding to indexed subset."""
-        return [self.__dataset.files[i] for i in self.__indices]
+    def __iter__(self) -> Iterator[DataContainer]:
+        return (self.transform(data) if self.transform else data for data in chain.from_iterable(self.__readers))

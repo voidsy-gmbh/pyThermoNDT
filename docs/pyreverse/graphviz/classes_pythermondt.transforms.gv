@@ -16,7 +16,7 @@ charset="utf-8"
 "pythermondt.transforms.preprocessing.SubtractFrame" [color="#F2994A", fontcolor="black", label=<{SubtractFrame|frame : int<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.base.ThermoTransform" [color="#F2994A", fontcolor="black", label=<{ThermoTransform|<br ALIGN="LEFT"/>|}>, shape="record", style="filled"];
 "pythermondt.transforms.normalization.ZScoreNormalize" [color="#F2994A", fontcolor="black", label=<{ZScoreNormalize|eps : float<br ALIGN="LEFT"/>|forward(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.transforms.base._BaseTransform" [color="#F2994A", fontcolor="black", label=<{_BaseTransform|<br ALIGN="LEFT"/>|<I>forward</I>(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
+"pythermondt.transforms.base._BaseTransform" [color="#F2994A", fontcolor="black", label=<{_BaseTransform|<br ALIGN="LEFT"/>|extra_repr(): str<br ALIGN="LEFT"/><I>forward</I>(container: DataContainer): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
 "pythermondt.transforms.augmentation.GaussianNoise" -> "pythermondt.transforms.base.RandomThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.augmentation.RandomFlip" -> "pythermondt.transforms.base.RandomThermoTransform" [arrowhead="empty", arrowtail="none"];
 "pythermondt.transforms.base.RandomThermoTransform" -> "pythermondt.transforms.base._BaseTransform" [arrowhead="empty", arrowtail="none"];

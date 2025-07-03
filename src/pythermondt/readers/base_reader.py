@@ -238,9 +238,9 @@ class BaseReader(ABC):
     def download(self, file_paths: list[str] | None = None) -> None:
         """Trigger the download of files from the remotes source.
 
-        This method will download the specified files from the remote source if the reader is configured to do so.
-        The download will will only happen if the reader has a remote source and `download_files` flag is set to True.
-        Only files that are not already cached locally will be downloaded.
+        This method will download the specified files from the remote source and cache them locally in the reader's
+        cache directory. The download will will only happen if the reader has a remote source and only files that are
+        not already cached locally will be downloaded.
 
         Parameters:
             file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is

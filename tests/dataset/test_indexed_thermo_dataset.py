@@ -1,6 +1,7 @@
 import pytest
 
 from pythermondt.dataset import IndexedThermoDataset, ThermoDataset
+from pythermondt.transforms import ThermoTransform
 
 
 def test_basic_initialization(sample_dataset_single_file: ThermoDataset):
@@ -54,3 +55,14 @@ def test_duplicate_indices_allowed(sample_dataset_three_files: ThermoDataset):
 
     # Should create dataset with 4 items (allowing duplicates)
     assert len(indexed) == 4
+
+
+def test_transform_chain(sample_dataset_simple_transform: ThermoDataset, single_transform: ThermoTransform):
+    """Test that additional transform is applied after parent's transform."""
+    indexed = IndexedThermoDataset(sample_dataset_simple_transform, [0], transform=single_transform)
+
+    # Get the first item and check if the transform were applied correctly
+    data_child = indexed[0]
+    data_parent = sample_dataset_simple_transform[0]
+    assert data_child.get_attribute("/MetaData", "transformed") == 2  # Check if the transform was applied
+    assert data_parent.get_attribute("/MetaData", "transformed") == 1  # Check if parent's transform was applied

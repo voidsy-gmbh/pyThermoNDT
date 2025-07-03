@@ -66,3 +66,8 @@ def test_transform_chain(sample_dataset_simple_transform: ThermoDataset, single_
     data_parent = sample_dataset_simple_transform[0]
     assert data_child.get_attribute("/MetaData", "transformed") == 2  # Check if the transform was applied
     assert data_parent.get_attribute("/MetaData", "transformed") == 1  # Check if parent's transform was applied
+
+    # Check if transform chain is applied correctly
+    chain = indexed.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    assert chain(indexed.load_raw_data(0)) == data_child

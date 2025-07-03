@@ -31,8 +31,8 @@ class S3Reader(BaseReader):
                 the default profile from the AWS configuration.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
-            download_files (bool, optional): Whether to download remote files to local storage. Set this
-                to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
+            download_files (bool, optional): Whether to automatically cache remote files locally during operations.
+                When False, files are downloaded on-demand but not saved locally. Default is False.
             cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
                 detected files will be reflected at runtime. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,

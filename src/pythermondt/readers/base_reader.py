@@ -26,8 +26,8 @@ class BaseReader(ABC):
         Parameters:
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
-            download_files (bool, optional): Whether to download remote files to local storage. Set this
-                to True if frequent access to the same files is needed. Default is False to avoid unnecessary downloads.
+            download_files (bool, optional): Whether to automatically cache remote files locally during operations.
+                When False, files are downloaded on-demand but not saved locally. Default is False.
             cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
                 detected files will be reflected at runtime. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
@@ -236,11 +236,13 @@ class BaseReader(ABC):
         return local_path
 
     def download(self, file_paths: list[str] | None = None) -> None:
-        """Trigger the download of files from the remotes source.
+        """Trigger the download of files from the remote source.
 
         This method will download the specified files from the remote source and cache them locally in the reader's
-        cache directory. The download will will only happen if the reader has a remote source and only files that are
+        cache directory. The download will only happen if the reader has a remote source and only files that are
         not already cached locally will be downloaded.
+
+        **Note:** This works regardless of the `download_files` flag, set during reader initialization.
 
         Parameters:
             file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is

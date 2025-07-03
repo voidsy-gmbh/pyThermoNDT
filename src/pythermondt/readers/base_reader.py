@@ -246,8 +246,8 @@ class BaseReader(ABC):
             file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is
                 able to read will be downloaded. Default is None.
         """
-        # If no remote source or download_files is False, do nothing
-        if not self.remote_source or not self.__download_files:
+        # If no remote source, do nothing
+        if not self.remote_source:
             return
 
         # If file_paths is None, download all files that the reader is able to read

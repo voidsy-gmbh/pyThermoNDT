@@ -122,7 +122,7 @@ class ThermoDataset(BaseDataset):
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
 
-    def _load_raw_data(self, idx: int) -> DataContainer:
+    def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from readers - required by BaseDataset."""
         # Extract reader and file index from the index map
         r_idx = int(self.__reader_index[idx].item())
@@ -150,7 +150,7 @@ class ThermoDataset(BaseDataset):
             raise IndexError("Index out of range")
 
         # Load raw data
-        data = self._load_raw_data(idx)
+        data = self.load_raw_data(idx)
 
         # Apply transform if present
         if self.transform:

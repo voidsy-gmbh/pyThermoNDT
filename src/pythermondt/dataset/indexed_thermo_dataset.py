@@ -66,7 +66,7 @@ class IndexedThermoDataset(BaseDataset):
 
         return data
 
-    def _load_raw_data(self, idx: int) -> DataContainer:
+    def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from the parent dataset.
 
         Args:
@@ -80,7 +80,7 @@ class IndexedThermoDataset(BaseDataset):
             raise IndexError("Index out of range")
 
         # Load raw data using parent's logic
-        return self.__parent_dataset._load_raw_data(self.__indices[idx])
+        return self.__parent_dataset.load_raw_data(self.__indices[idx])
 
     @property
     def files(self) -> list[str]:

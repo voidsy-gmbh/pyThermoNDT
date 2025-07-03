@@ -52,6 +52,6 @@ class BaseDataset(Dataset, ABC):
         return Compose(list(transforms))
 
     @abstractmethod
-    def _load_raw_data(self, idx: int) -> DataContainer:
+    def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data at index - implemented by concrete classes."""
         pass

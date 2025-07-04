@@ -114,7 +114,6 @@ def test_transform_chain(local_reader_three_files: LocalReader, sample_transform
         assert chain(indexed3.load_raw_data(i)) == container
 
 
-@pytest.mark.xfail(reason="Cache building not implemented yet", strict=True)
 def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform):
     # Create the datasets
     dataset_no_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)

@@ -1,10 +1,11 @@
 import collections
+import copy
 from abc import ABC, abstractmethod
 
 from torch.utils.data import Dataset
 
 from ..data import DataContainer
-from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms
+from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms, split_transforms_for_caching
 
 
 class BaseDataset(Dataset, ABC):
@@ -17,6 +18,8 @@ class BaseDataset(Dataset, ABC):
         # Internal state for cache
         self.__cache_built = False
         self.__cache = []
+        self.__det_transforms = None
+        self.__runtime_transforms = None
 
     @abstractmethod
     def load_raw_data(self, idx: int) -> DataContainer:
@@ -48,7 +51,8 @@ class BaseDataset(Dataset, ABC):
             raise IndexError("Index out of range")
 
         if self.cache_built:
-            return self.load_raw_data(idx)  # Caching not implemented ==> just for tests
+            cpy = copy.deepcopy(self.__cache[idx])
+            return self.__runtime_transforms(cpy) if self.__runtime_transforms else cpy
 
         # Get the data
         data = self.load_raw_data(idx) if self.parent is None else self.parent[self._map_index(idx)]
@@ -95,4 +99,7 @@ class BaseDataset(Dataset, ABC):
         return Compose(list(transforms))
 
     def build_cache(self):
+        """Build the cache for this dataset."""
+        self.__det_transforms, self.__runtime_transforms = split_transforms_for_caching(self.get_transform_chain())
+        self.__cache = [self.__det_transforms(self.load_raw_data(i)) for i in range(len(self))]
         self.__cache_built = True

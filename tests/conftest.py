@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 import torch
 
-from pythermondt.readers import LocalReader
+from pythermondt import DataContainer, LocalReader
+from pythermondt.transforms import ThermoTransform
 
 
 @pytest.fixture
@@ -75,3 +76,24 @@ def localreader_with_glob():
 def localreader_with_directory():
     """Fixture for a reader that has files."""
     return LocalReader(pattern="./tests/assets/integration/simulation/")
+
+
+@pytest.fixture
+def simple_transform():
+    """Create a simple ThermoTransform that adds an attribute."""
+
+    class SimpleTransform(ThermoTransform):
+        """A simple transform that increments a 'transformed' attribute."""
+
+        def __init__(self, value: str):
+            super().__init__()
+            self.value = value
+
+        def forward(self, container: DataContainer) -> DataContainer:
+            if "transformed" in container.get_all_attributes("/MetaData"):
+                container.update_attribute("/MetaData", "transformed", self.value)
+            else:
+                container.add_attribute("/MetaData", "transformed", self.value)
+            return container
+
+    return SimpleTransform

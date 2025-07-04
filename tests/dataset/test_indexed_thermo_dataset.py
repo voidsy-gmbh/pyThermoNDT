@@ -3,6 +3,8 @@ import pytest
 from pythermondt import IndexedThermoDataset, LocalReader, ThermoDataset
 from pythermondt.transforms import ThermoTransform
 
+from ..utils import containers_equal
+
 
 def test_basic_initialization(sample_dataset_single_file: ThermoDataset):
     """Test basic IndexedThermoDataset initialization."""
@@ -90,7 +92,7 @@ def test_transform_chain(local_reader_three_files: LocalReader, simple_transform
     chain = dataset.get_transform_chain()
     assert isinstance(chain, ThermoTransform)
     for i, container in enumerate(dataset):
-        assert chain(dataset.load_raw_data(i)) == container
+        assert containers_equal(chain(dataset.load_raw_data(i)), container)
 
     # Check if transform chain is applied correctly in the child dataset
     chain = indexed.get_transform_chain()

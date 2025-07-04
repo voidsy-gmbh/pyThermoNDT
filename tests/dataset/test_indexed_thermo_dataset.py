@@ -63,19 +63,28 @@ def test_transform_chain(local_reader_three_files: LocalReader, simple_transform
     base_transform = simple_transform("base_level")
     first_transform = simple_transform("first_level")
     second_transform = simple_transform("second_level")
+    third_transform = simple_transform("third_level")
 
     # Create the datasets
     dataset = ThermoDataset(local_reader_three_files, transform=base_transform)
     indexed = IndexedThermoDataset(dataset, [0, 2], transform=first_transform)
-    indexed2 = IndexedThermoDataset(indexed, [1], transform=second_transform)
+    indexed2 = IndexedThermoDataset(indexed, [1, 0], transform=second_transform)
+    indexed3 = IndexedThermoDataset(indexed2, [1], transform=third_transform)
 
     # Get the first item and check if the transform were applied correctly
     data_parent = dataset[0]
     data_child = indexed[0]
     data_grand_child = indexed2[0]
+    data_grand_grand_child = indexed3[0]
     assert data_parent.get_attribute("/MetaData", "transformed") == ["base_level"]
     assert data_child.get_attribute("/MetaData", "transformed") == ["base_level", "first_level"]
     assert data_grand_child.get_attribute("/MetaData", "transformed") == ["base_level", "first_level", "second_level"]
+    assert data_grand_grand_child.get_attribute("/MetaData", "transformed") == [
+        "base_level",
+        "first_level",
+        "second_level",
+        "third_level",
+    ]
 
     # Check if transform chain is applied correctly in the parent dataset
     chain = dataset.get_transform_chain()
@@ -94,3 +103,9 @@ def test_transform_chain(local_reader_three_files: LocalReader, simple_transform
     assert isinstance(chain, ThermoTransform)
     for i, container in enumerate(indexed2):
         assert chain(indexed2.load_raw_data(i)) == container
+
+    # Check if transform chain is applied correctly in the grandchild dataset
+    chain = indexed3.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(indexed3):
+        assert chain(indexed3.load_raw_data(i)) == container

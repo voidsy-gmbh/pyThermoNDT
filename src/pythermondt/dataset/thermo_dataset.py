@@ -144,19 +144,5 @@ class ThermoDataset(BaseDataset):
     def __len__(self) -> int:
         return sum([len(reader.files) for reader in self.__readers])
 
-    def __getitem__(self, idx) -> DataContainer:
-        """Get data container at index with transforms applied."""
-        if idx < 0 or idx >= len(self):
-            raise IndexError("Index out of range")
-
-        # Load raw data
-        data = self.load_raw_data(idx)
-
-        # Apply transform if present
-        if self.transform:
-            data = self.transform(data)
-
-        return data
-
     def __iter__(self) -> Iterator[DataContainer]:
         return (self.transform(data) if self.transform else data for data in chain.from_iterable(self.__readers))

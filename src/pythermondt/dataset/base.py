@@ -15,6 +15,11 @@ class BaseDataset(Dataset, ABC):
         self.__transform = transform
 
     @abstractmethod
+    def load_raw_data(self, idx: int) -> DataContainer:
+        """Load raw data at index - implemented by concrete classes."""
+        pass
+
+    @abstractmethod
     def __len__(self) -> int:
         """Return length of dataset - implemented by concrete classes."""
         pass
@@ -25,6 +30,28 @@ class BaseDataset(Dataset, ABC):
         """Get the list of files associated with this dataset."""
         pass
 
+    def __getitem__(self, idx: int) -> DataContainer:
+        """Get an item while also applying the proper transform chain.
+
+        Args:
+            idx (int): Index of the data to retrieve
+
+        Returns:
+            DataContainer: Transformed data container
+        """
+        # Validate index
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+
+        # Get the data
+        data = self.load_raw_data(idx) if self.parent is None else self.parent[self._map_index(idx)]
+
+        # Apply additional transform if specified
+        if self.transform:
+            data = self.transform(data)
+
+        return data
+
     @property
     def parent(self) -> "BaseDataset | None":
         """Get parent dataset if available."""
@@ -34,6 +61,10 @@ class BaseDataset(Dataset, ABC):
     def transform(self) -> _BaseTransform | None:
         """Get the transform for this dataset."""
         return self.__transform
+
+    def _map_index(self, idx: int) -> int:
+        """Hook to map the index to the parent's index. Override in subclasses if needed."""
+        return idx
 
     def get_transform_chain(self) -> _BaseTransform:
         """Walk up graph to build the complete sequence transforms for this dataset and compose it in a single one."""
@@ -50,8 +81,3 @@ class BaseDataset(Dataset, ABC):
             current = current.parent
 
         return Compose(list(transforms))
-
-    @abstractmethod
-    def load_raw_data(self, idx: int) -> DataContainer:
-        """Load raw data at index - implemented by concrete classes."""
-        pass

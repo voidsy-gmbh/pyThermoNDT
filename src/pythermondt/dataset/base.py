@@ -14,6 +14,10 @@ class BaseDataset(Dataset, ABC):
         self.__parent = parent
         self.__transform = transform
 
+        # Internal state for cache
+        self.__cache_built = False
+        self.__cache = []
+
     @abstractmethod
     def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data at index - implemented by concrete classes."""
@@ -43,6 +47,9 @@ class BaseDataset(Dataset, ABC):
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
 
+        if self.cache_built:
+            return self.load_raw_data(idx)  # Caching not implemented ==> just for tests
+
         # Get the data
         data = self.load_raw_data(idx) if self.parent is None else self.parent[self._map_index(idx)]
 
@@ -61,6 +68,11 @@ class BaseDataset(Dataset, ABC):
     def transform(self) -> _BaseTransform | None:
         """Get the transform for this dataset."""
         return self.__transform
+
+    @property
+    def cache_built(self) -> bool:
+        """Check if the cache has been built."""
+        return self.__cache_built
 
     def _map_index(self, idx: int) -> int:
         """Hook to map the index to the parent's index. Override in subclasses if needed."""
@@ -81,3 +93,6 @@ class BaseDataset(Dataset, ABC):
             current = current.parent
 
         return Compose(list(transforms))
+
+    def build_cache(self):
+        self.__cache_built = True

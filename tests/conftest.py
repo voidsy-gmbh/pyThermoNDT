@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from pythermondt import DataContainer, LocalReader
-from pythermondt.transforms import ThermoTransform
+from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def localreader_with_directory():
 
 
 @pytest.fixture
-def simple_transform():
+def sample_transform():
     """Create a simple ThermoTransform that adds an attribute."""
 
     class SimpleTransform(ThermoTransform):
@@ -100,3 +100,41 @@ def simple_transform():
             return container
 
     return SimpleTransform
+
+
+@pytest.fixture
+def sample_random_transform():
+    """Create a simple ThermoTransform that adds an attribute."""
+
+    class SimpleRandomTransform(RandomThermoTransform):
+        """A simple transform that increments a 'transformed' attribute."""
+
+        def __init__(self):
+            super().__init__()
+
+        def forward(self, container: DataContainer) -> DataContainer:
+            if "transformed_random" in container.get_all_attributes("/MetaData"):
+                v = container.get_attribute("/MetaData", "transformed_random")
+                assert isinstance(v, list)
+                v = [*v, self.value]
+                container.update_attribute("/MetaData", "transformed_random", v)
+            else:
+                container.add_attribute("/MetaData", "transformed_random", [torch.rand(1).item()])
+            return container
+
+    return SimpleRandomTransform
+
+
+@pytest.fixture
+def sample_pipeline(sample_transform: type[ThermoTransform], sample_random_transform: type[RandomThermoTransform]):
+    """Create a transform pipeline with multiple levels of transforms."""
+    return Compose(
+        [
+            sample_transform("base_level"),
+            sample_transform("first_level"),
+            sample_transform("second_level"),
+            sample_random_transform(),
+            sample_transform("third_level"),
+            sample_transform("fourth_level"),
+        ]
+    )

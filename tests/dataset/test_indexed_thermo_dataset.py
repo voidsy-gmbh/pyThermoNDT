@@ -1,4 +1,5 @@
 import pytest
+import torch
 
 from pythermondt import IndexedThermoDataset, LocalReader, ThermoDataset
 from pythermondt.transforms import ThermoTransform
@@ -59,13 +60,13 @@ def test_duplicate_indices_allowed(sample_dataset_three_files: ThermoDataset):
     assert len(indexed) == 4
 
 
-def test_transform_chain(local_reader_three_files: LocalReader, simple_transform: type[ThermoTransform]):
+def test_transform_chain(local_reader_three_files: LocalReader, sample_transform: type[ThermoTransform]):
     """Test that additional transform is applied after parent's transform."""
     # Create transforms
-    base_transform = simple_transform("base_level")
-    first_transform = simple_transform("first_level")
-    second_transform = simple_transform("second_level")
-    third_transform = simple_transform("third_level")
+    base_transform = sample_transform("base_level")
+    first_transform = sample_transform("first_level")
+    second_transform = sample_transform("second_level")
+    third_transform = sample_transform("third_level")
 
     # Create the datasets
     dataset = ThermoDataset(local_reader_three_files, transform=base_transform)
@@ -111,3 +112,19 @@ def test_transform_chain(local_reader_three_files: LocalReader, simple_transform
     assert isinstance(chain, ThermoTransform)
     for i, container in enumerate(indexed3):
         assert chain(indexed3.load_raw_data(i)) == container
+
+
+@pytest.mark.xfail(reason="Cache building not implemented yet", strict=True)
+def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform):
+    # Create the datasets
+    dataset_no_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
+    dataset_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
+
+    dataset_cache.build_cache()
+
+    for idx in range(len(dataset_no_cache)):
+        torch.manual_seed(42)
+        cache = dataset_cache[idx]
+        torch.manual_seed(42)
+        no_cache = dataset_no_cache[idx]
+        assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"

@@ -91,9 +91,12 @@ def simple_transform():
 
         def forward(self, container: DataContainer) -> DataContainer:
             if "transformed" in container.get_all_attributes("/MetaData"):
-                container.update_attribute("/MetaData", "transformed", self.value)
+                v = container.get_attribute("/MetaData", "transformed")
+                assert isinstance(v, list)
+                v = [*v, self.value]
+                container.update_attribute("/MetaData", "transformed", v)
             else:
-                container.add_attribute("/MetaData", "transformed", self.value)
+                container.add_attribute("/MetaData", "transformed", [self.value])
             return container
 
     return SimpleTransform

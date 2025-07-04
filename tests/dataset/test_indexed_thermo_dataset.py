@@ -1,6 +1,6 @@
 import pytest
 
-from pythermondt.dataset import IndexedThermoDataset, ThermoDataset
+from pythermondt import IndexedThermoDataset, LocalReader, ThermoDataset
 from pythermondt.transforms import ThermoTransform
 
 
@@ -57,17 +57,40 @@ def test_duplicate_indices_allowed(sample_dataset_three_files: ThermoDataset):
     assert len(indexed) == 4
 
 
-def test_transform_chain(sample_dataset_simple_transform: ThermoDataset, single_transform: ThermoTransform):
+def test_transform_chain(local_reader_three_files: LocalReader, simple_transform: type[ThermoTransform]):
     """Test that additional transform is applied after parent's transform."""
-    indexed = IndexedThermoDataset(sample_dataset_simple_transform, [0], transform=single_transform)
+    # Create transforms
+    base_transform = simple_transform("base_level")
+    first_transform = simple_transform("first_level")
+    second_transform = simple_transform("second_level")
+
+    # Create the datasets
+    dataset = ThermoDataset(local_reader_three_files, transform=base_transform)
+    indexed = IndexedThermoDataset(dataset, [0, 2], transform=first_transform)
+    indexed2 = IndexedThermoDataset(indexed, [1], transform=second_transform)
 
     # Get the first item and check if the transform were applied correctly
+    data_parent = dataset[0]
     data_child = indexed[0]
-    data_parent = sample_dataset_simple_transform[0]
-    assert data_child.get_attribute("/MetaData", "transformed") == 2  # Check if the transform was applied
-    assert data_parent.get_attribute("/MetaData", "transformed") == 1  # Check if parent's transform was applied
+    data_grand_child = indexed2[0]
+    assert data_parent.get_attribute("/MetaData", "transformed") == ["base_level"]
+    assert data_child.get_attribute("/MetaData", "transformed") == ["base_level", "first_level"]
+    assert data_grand_child.get_attribute("/MetaData", "transformed") == ["base_level", "first_level", "second_level"]
 
-    # Check if transform chain is applied correctly
+    # Check if transform chain is applied correctly in the parent dataset
+    chain = dataset.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(dataset):
+        assert chain(dataset.load_raw_data(i)) == container
+
+    # Check if transform chain is applied correctly in the child dataset
     chain = indexed.get_transform_chain()
     assert isinstance(chain, ThermoTransform)
-    assert chain(indexed.load_raw_data(0)) == data_child
+    for i, container in enumerate(indexed):
+        assert chain(indexed.load_raw_data(i)) == container
+
+    # Check if transform chain is applied correctly in the grandchild dataset
+    chain = indexed2.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(indexed2):
+        assert chain(indexed2.load_raw_data(i)) == container

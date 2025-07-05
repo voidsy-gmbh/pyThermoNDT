@@ -255,7 +255,7 @@ class BaseOps(DataContainerBase):
         total_bytes = self.memory_bytes()
 
         print(f"DataContainer Memory Usage: {format_bytes(total_bytes)}")
-        print("-" * 50)
+        print("-" * len(f"DataContainer Memory Usage: {format_bytes(total_bytes)}"))
 
         # Collect node sizes
         node_sizes = []

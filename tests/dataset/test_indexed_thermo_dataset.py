@@ -1,3 +1,5 @@
+import time
+
 import pytest
 import torch
 
@@ -115,15 +117,36 @@ def test_transform_chain(local_reader_three_files: LocalReader, sample_transform
 
 
 def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform):
+    """Test building cache for IndexedThermoDataset and verify correctness and speedup."""
     # Create the datasets
-    dataset_no_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
-    dataset_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
+    dataset = ThermoDataset(local_reader_three_files)
+    subset_no_cache = IndexedThermoDataset(dataset, [0, 1], transform=sample_pipeline)
+    subset_cache = IndexedThermoDataset(dataset, [0, 1], transform=sample_pipeline)
 
-    dataset_cache.build_cache()
+    subset_cache.build_cache()
 
-    for idx in range(len(dataset_no_cache)):
+    # Check correctness
+    for idx in range(len(subset_no_cache)):
         torch.manual_seed(42)
-        cache = dataset_cache[idx]
+        cache = subset_cache[idx]
         torch.manual_seed(42)
-        no_cache = dataset_no_cache[idx]
+        no_cache = subset_no_cache[idx]
         assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
+
+    # Check speedup
+    torch.manual_seed(42)
+    start_no_cache = time.perf_counter()
+    for _ in subset_no_cache:
+        pass
+    duration_no_cache = time.perf_counter() - start_no_cache
+
+    torch.manual_seed(42)
+    start_cache = time.perf_counter()
+    for _ in subset_cache:
+        pass
+    duration_cache = time.perf_counter() - start_cache
+
+    # Cached access should be faster (allow some tolerance for small datasets)
+    assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
+        f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
+    )

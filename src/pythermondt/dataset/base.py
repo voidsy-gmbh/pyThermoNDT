@@ -3,6 +3,7 @@ import copy
 from abc import ABC, abstractmethod
 
 from torch.utils.data import Dataset
+from tqdm.auto import tqdm
 
 from ..data import DataContainer
 from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms, split_transforms_for_caching
@@ -82,6 +83,10 @@ class BaseDataset(Dataset, ABC):
         """Hook to map the index to the parent's index. Override in subclasses if needed."""
         return idx
 
+    def _load_cache_item(self, idx: int) -> DataContainer:
+        """Load a single item and apply deterministic transforms."""
+        return self.__det_transforms(self.load_raw_data(idx)) if self.__det_transforms else self.load_raw_data(idx)
+
     def get_transform_chain(self) -> _BaseTransform:
         """Walk up graph to build the complete sequence transforms for this dataset and compose it in a single one."""
         transforms: collections.deque[_BaseTransform] = collections.deque()
@@ -101,5 +106,5 @@ class BaseDataset(Dataset, ABC):
     def build_cache(self):
         """Build the cache for this dataset."""
         self.__det_transforms, self.__runtime_transforms = split_transforms_for_caching(self.get_transform_chain())
-        self.__cache = [self.__det_transforms(self.load_raw_data(i)) for i in range(len(self))]
+        self.__cache = [self._load_cache_item(i) for i in tqdm(range(len(self)), desc="Building cache", unit="files")]
         self.__cache_built = True

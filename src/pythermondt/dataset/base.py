@@ -1,11 +1,13 @@
 import collections
 import copy
+import sys
 from abc import ABC, abstractmethod
 
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
 
 from ..data import DataContainer
+from ..data.datacontainer.utils import format_bytes
 from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms, split_transforms_for_caching
 
 
@@ -86,6 +88,24 @@ class BaseDataset(Dataset, ABC):
     def _load_cache_item(self, idx: int) -> DataContainer:
         """Load a single item and apply deterministic transforms."""
         return self.__det_transforms(self.load_raw_data(idx)) if self.__det_transforms else self.load_raw_data(idx)
+
+    def memory_bytes(self) -> int:
+        """Calculate the memory usage of this dataset.
+
+        **Note:** If the cache has not been built, this will be small because the data is not loaded yet.
+
+        Returns:
+            int: Memory usage in bytes
+        """
+        return sum(c.memory_bytes() for c in self.__cache) + sys.getsizeof(self) + sys.getsizeof(self.__cache)
+
+    def print_memory_usage(self):
+        """Print the memory usage of this dataset."""
+        print(f"{self.__class__.__name__} Overview:")
+        print("-" * len(f"{self.__class__.__name__} Overview:"))
+        print(f"Currently there are {len(self.__cache)} items in the cache")
+        print(f"Total memory usage of the cache: {format_bytes(self.memory_bytes())}")
+        print("\n")
 
     def get_transform_chain(self) -> _BaseTransform:
         """Walk up graph to build the complete sequence transforms for this dataset and compose it in a single one."""

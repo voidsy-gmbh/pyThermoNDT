@@ -1,5 +1,4 @@
 from collections.abc import Iterator, Sequence
-from itertools import chain
 
 import torch
 
@@ -145,4 +144,4 @@ class ThermoDataset(BaseDataset):
         return sum([len(reader.files) for reader in self.__readers])
 
     def __iter__(self) -> Iterator[DataContainer]:
-        return (self.transform(data) if self.transform else data for data in chain.from_iterable(self.__readers))
+        return (self[i] for i in range(len(self)))

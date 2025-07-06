@@ -130,13 +130,31 @@ class BaseDataset(Dataset, ABC):
 
         return Compose(list(transforms))
 
-    def build_cache(self, multiprocess_safe: CacheMode = "immediate"):
+    def build_cache(self, mode: CacheMode = "immediate"):
         # fmt: off
         """Build an in-memory cache of preprocessed data for faster training.
 
         Automatically splits the transform pipeline at the first random transform:
         - Deterministic transforms are applied once and cached
         - Random transforms + subsequent operations run at runtime
+
+        Parameters:
+            mode: Cache building strategy
+                - "immediate": Build all items upfront in main process (default)
+                - "lazy": Create shared cache, workers fill on-demand
+
+        Cache Modes:
+            **Immediate:**
+            - All items preprocessed and cached immediately
+            - Fast training with num_workers=0
+            - Higher memory usage upfront
+            - Best for single-process workflows
+
+            **Lazy:**
+            - Empty shared cache, filled during training
+            - Enables DataLoader with num_workers > 0
+            - Parallel cache building by workers
+            - Best for multiprocess workflows
 
         Example with a common preprocessing pipeline:
             >>> train_pipeline = T.Compose([
@@ -148,19 +166,19 @@ class BaseDataset(Dataset, ABC):
             ...     T.GaussianNoise(std=25e-3),             # Runtime (random)
             ...     T.MinMaxNormalize(),                    # Runtime (after random)
             ... ])
-            >>> dataset.build_cache()  # Caches: ApplyLUT → SubtractFrame → RemoveFlash → NonUniformSampling
+
+            >>> # Single process development
+            >>> dataset.build_cache(mode="immediate")
+            >>> loader = DataLoader(dataset, num_workers=0)
+
+            >>> # Production training
+            >>> dataset.build_cache(mode="lazy")
+            >>> loader = DataLoader(dataset, num_workers=4)
 
         Benefits:
             - 3-5x faster data loading during training
             - Preserves randomness for data augmentation
             - Reduces repeated computation of expensive operations
-
-        Parameters:
-            multiprocess_safe (bool): If True, uses multiprocessing.Manager().list() for cache
-            to enable sharing between DataLoader worker processes. Default is False.
-
-        **Note:** When multiprocess_safe=True, cache can be shared with DataLoader workers but has IPC overhead.
-        For single-process usage, keep default False for best performance.
         """
         # fmt: on
         # Skip if cache already built
@@ -171,10 +189,14 @@ class BaseDataset(Dataset, ABC):
         self.__det_transforms, self.__runtime_transforms = split_transforms_for_caching(self.get_transform_chain())
         size = len(self)
 
-        if multiprocess_safe:
+        # Initialize the cache based on the mode
+        if mode == "immediate":
+            self.__cache = [self._load_cache_item(i) for i in tqdm(range(size), desc="Building cache", unit="files")]
+        elif mode == "lazy":
             from multiprocessing import Manager
 
             self.__cache = Manager().list([None] * size)
         else:
-            self.__cache = [self._load_cache_item(i) for i in tqdm(range(size), desc="Building cache", unit="files")]
+            raise ValueError(f"Invalid cache mode: {mode}. Use one of: {list(CacheMode.__args__)}.")
+
         self.__cache_built = True

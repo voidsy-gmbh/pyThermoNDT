@@ -3,6 +3,7 @@ import copy
 import sys
 from abc import ABC, abstractmethod
 from multiprocessing.managers import ListProxy
+from typing import Literal
 
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
@@ -10,6 +11,8 @@ from tqdm.auto import tqdm
 from ..data import DataContainer
 from ..data.datacontainer.utils import format_bytes
 from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms, split_transforms_for_caching
+
+CacheMode = Literal["immediate", "lazy"]
 
 
 class BaseDataset(Dataset, ABC):
@@ -127,7 +130,7 @@ class BaseDataset(Dataset, ABC):
 
         return Compose(list(transforms))
 
-    def build_cache(self, multiprocess_safe: bool = False):
+    def build_cache(self, multiprocess_safe: CacheMode = "immediate"):
         # fmt: off
         """Build an in-memory cache of preprocessed data for faster training.
 

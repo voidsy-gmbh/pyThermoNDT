@@ -60,7 +60,7 @@ class BaseDataset(Dataset, ABC):
         if self.cache_built:
             if self.__cache[idx] is None:
                 # Load the item if it was not cached
-                self.__cache[idx] = self._load_cache_item(idx)
+                data = self.__cache[idx] = self._load_cache_item(idx)
             data = copy.deepcopy(self.__cache[idx])
             return self.__runtime_transforms(data) if self.__runtime_transforms else data
 
@@ -104,13 +104,14 @@ class BaseDataset(Dataset, ABC):
         Returns:
             int: Memory usage in bytes
         """
-        return sum(c.memory_bytes() for c in self.__cache if c) + sys.getsizeof(self) + sys.getsizeof(self.__cache)
+        container_size = sum(c.memory_bytes() for c in self.__cache if isinstance(c, DataContainer))
+        return container_size + sys.getsizeof(self) + sys.getsizeof(self.__cache)
 
     def print_memory_usage(self):
         """Print the memory usage of this dataset."""
         print(f"{self.__class__.__name__} Overview:")
         print("-" * len(f"{self.__class__.__name__} Overview:"))
-        print(f"Currently there are {len(self.__cache)} items in the cache")
+        print(f"Currently there are {sum(1 for item in self.__cache if item)} items in the cache")
         print(f"Total memory usage of the cache: {format_bytes(self.memory_bytes())}")
         print("\n")
 

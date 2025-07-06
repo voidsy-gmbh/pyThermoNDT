@@ -2,6 +2,7 @@ import collections
 import copy
 import sys
 from abc import ABC, abstractmethod
+from multiprocessing.managers import ListProxy
 
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
@@ -20,7 +21,7 @@ class BaseDataset(Dataset, ABC):
 
         # Internal state for cache
         self.__cache_built = False
-        self.__cache = []
+        self.__cache: list | ListProxy = []
         self.__det_transforms = None
         self.__runtime_transforms = None
 
@@ -54,8 +55,11 @@ class BaseDataset(Dataset, ABC):
             raise IndexError("Index out of range")
 
         if self.cache_built:
-            cpy = copy.deepcopy(self.__cache[idx])
-            return self.__runtime_transforms(cpy) if self.__runtime_transforms else cpy
+            if self.__cache[idx] is None:
+                # Load the item if it was not cached
+                self.__cache[idx] = self._load_cache_item(idx)
+            data = copy.deepcopy(self.__cache[idx])
+            return self.__runtime_transforms(data) if self.__runtime_transforms else data
 
         # Get the data
         data = self.load_raw_data(idx) if self.parent is None else self.parent[self._map_index(idx)]
@@ -97,7 +101,7 @@ class BaseDataset(Dataset, ABC):
         Returns:
             int: Memory usage in bytes
         """
-        return sum(c.memory_bytes() for c in self.__cache) + sys.getsizeof(self) + sys.getsizeof(self.__cache)
+        return sum(c.memory_bytes() for c in self.__cache if c) + sys.getsizeof(self) + sys.getsizeof(self.__cache)
 
     def print_memory_usage(self):
         """Print the memory usage of this dataset."""
@@ -123,7 +127,7 @@ class BaseDataset(Dataset, ABC):
 
         return Compose(list(transforms))
 
-    def build_cache(self):
+    def build_cache(self, multiprocess_safe: bool = False):
         # fmt: off
         """Build an in-memory cache of preprocessed data for faster training.
 
@@ -147,8 +151,27 @@ class BaseDataset(Dataset, ABC):
             - 3-5x faster data loading during training
             - Preserves randomness for data augmentation
             - Reduces repeated computation of expensive operations
+
+        Parameters:
+            multiprocess_safe (bool): If True, uses multiprocessing.Manager().list() for cache
+            to enable sharing between DataLoader worker processes. Default is False.
+
+        **Note:** When multiprocess_safe=True, cache can be shared with DataLoader workers but has IPC overhead.
+        For single-process usage, keep default False for best performance.
         """
         # fmt: on
+        # Skip if cache already built
+        if self.__cache_built:
+            return
+
+        # Get the complete transform chain and split it into deterministic and runtime transforms
         self.__det_transforms, self.__runtime_transforms = split_transforms_for_caching(self.get_transform_chain())
-        self.__cache = [self._load_cache_item(i) for i in tqdm(range(len(self)), desc="Building cache", unit="files")]
+        size = len(self)
+
+        if multiprocess_safe:
+            from multiprocessing import Manager
+
+            self.__cache = Manager().list([None] * size)
+        else:
+            self.__cache = [self._load_cache_item(i) for i in tqdm(range(size), desc="Building cache", unit="files")]
         self.__cache_built = True

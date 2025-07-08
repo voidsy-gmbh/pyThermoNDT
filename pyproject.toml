@@ -144,5 +144,5 @@ replace = "__version__ = \"{new_version}\""
 
 [[tool.bumpversion.files]]
 filename = "conda/meta.yaml"
-search = "{{%% set version = \"{current_version}\" %%}}"
-replace = "{{%% set version = \"{new_version}\" %%}}"
+search = "{{% set version = \"{current_version}\" %}}"
+replace = "{{% set version = \"{new_version}\" %}}"

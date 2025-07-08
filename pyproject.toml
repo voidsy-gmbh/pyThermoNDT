@@ -141,3 +141,8 @@ values = [
 filename = "src/pythermondt/__pkginfo__.py"
 search = "__version__ = \"{current_version}\""
 replace = "__version__ = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "conda/meta.yaml"
+search = "{{%% set version = \"{current_version}\" %%}}"
+replace = "{{%% set version = \"{new_version}\" %%}}"

@@ -50,10 +50,20 @@ def get_all_supported_extensions() -> set[str]:
     return {ext for parser_cls in PARSER_REGISTRY for ext in parser_cls.supported_extensions}
 
 
+def get_all_parsers() -> list[type[BaseParser]]:
+    """Get all registered parsers.
+
+    Returns:
+        List of all parser classes
+    """
+    return PARSER_REGISTRY
+
+
 __all__ = [
     "BaseParser",
     "HDF5Parser",
     "SimulationParser",
     "find_parser_for_extension",
     "get_all_supported_extensions",
+    "get_all_parsers",
 ]

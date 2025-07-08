@@ -1,10 +1,24 @@
-from ...plugins import load_parser_plugins
+from importlib.metadata import entry_points
+
 from .base_parser import BaseParser
 from .hdf5_parser import HDF5Parser
 from .simulation_parser import SimulationParser
 
+
+def _load_parser_plugins() -> list[type[BaseParser]]:
+    """Load parser plugins via entry points."""
+    plugins = []
+    for ep in entry_points(group="pythermondt.parsers"):
+        try:
+            parser_cls = ep.load()
+            plugins.append(parser_cls)
+        except Exception as e:
+            print(f"Failed to load parser plugin {ep.name}: {e}")
+    return plugins
+
+
 # Parser registry of all available parsers
-PARSER_REGISTRY = [HDF5Parser, SimulationParser] + load_parser_plugins()
+PARSER_REGISTRY: list[type[BaseParser]] = [HDF5Parser, SimulationParser] + _load_parser_plugins()
 
 
 def find_parser_for_extension(extension: str) -> type[BaseParser] | None:

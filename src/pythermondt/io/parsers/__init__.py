@@ -56,7 +56,7 @@ def get_all_parsers() -> list[type[BaseParser]]:
     Returns:
         List of all parser classes
     """
-    return PARSER_REGISTRY
+    return PARSER_REGISTRY.copy()
 
 
 __all__ = [

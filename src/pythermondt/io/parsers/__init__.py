@@ -1,9 +1,10 @@
+from ...plugins import load_parser_plugins
 from .base_parser import BaseParser
 from .hdf5_parser import HDF5Parser
 from .simulation_parser import SimulationParser
 
 # Parser registry of all available parsers
-PARSER_REGISTRY = [HDF5Parser, SimulationParser]
+PARSER_REGISTRY = [HDF5Parser, SimulationParser] + load_parser_plugins()
 
 
 def find_parser_for_extension(extension: str) -> type[BaseParser] | None:

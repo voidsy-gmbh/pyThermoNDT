@@ -60,7 +60,7 @@ class BaseDataset(Dataset, ABC):
         if self.cache_built:
             if self.__cache[idx] is None:
                 # Load the item if it was not cached
-                data = self.__cache[idx] = self._load_cache_item(idx)
+                self.__cache[idx] = self._load_cache_item(idx)
             data = copy.deepcopy(self.__cache[idx])
             return self.__runtime_transforms(data) if self.__runtime_transforms else data
 

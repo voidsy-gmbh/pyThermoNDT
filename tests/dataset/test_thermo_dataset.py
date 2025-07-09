@@ -107,13 +107,14 @@ def test_no_false_positive_duplicates(paths: tuple[str, str]):
             raise
 
 
-def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform):
+@pytest.mark.parametrize("mode", ["immediate", "lazy"])
+def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str):
     """Test building cache for ThermoDataset and verify correctness and speedup."""
     # Create the datasets
     dataset_no_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
     dataset_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
 
-    dataset_cache.build_cache()
+    dataset_cache.build_cache(mode=mode)  # type: ignore[call-arg]
 
     # Check correctness
     for idx in range(len(dataset_no_cache)):
@@ -121,7 +122,11 @@ def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample
         cache = dataset_cache[idx]
         torch.manual_seed(42)
         no_cache = dataset_no_cache[idx]
-        assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
+        # If mode is lazy ==> datacontainer gets pickled and NaN values may not be equal: see https://bugs.python.org/issue43078
+        if mode == "lazy":
+            assert containers_equal(cache, no_cache, ignore_nan_inequality=True), f"Cache mismatch at index {idx}"
+        else:
+            assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
 
     # Check speedup
     torch.manual_seed(42)

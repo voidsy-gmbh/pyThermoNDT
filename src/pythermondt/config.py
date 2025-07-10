@@ -7,7 +7,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Global settings for pyThermoNDT."""
 
-    download_dir: str = Field(default="./", description="Base directory pythermondt will download files to.")
+    # Configuration parameters
+    download_dir: str = Field(default="./", description="Base directory where pythermondt will download files to.")
+    num_workers: int = Field(
+        default=os.cpu_count() or 1, description="Default number of workers used for parallel operations."
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="PYTHERMONDT_",

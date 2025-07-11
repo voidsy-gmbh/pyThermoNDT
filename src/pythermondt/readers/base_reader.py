@@ -274,7 +274,7 @@ class BaseReader(ABC):
             file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is
                 able to read will be downloaded. Default is None.
             num_workers (int, optional): Number of workers to use for downloading files. If None, the default number of
-                workers of pyThermoNDT will be used. Default is None.
+                workers of pyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
         """
         # If no remote source, do nothing
         if not self.remote_source:
@@ -314,7 +314,7 @@ class BaseReader(ABC):
         unit = "files"
         desc = f"{self.__class__.__name__} - Downloading files"
         num = len(to_download)
-        workers = num_workers or settings.num_workers
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
         worker_fn = partial(self._download_single_file, manifest=manifest)
         if workers > 1:
             # Use ThreadPool for parallel downloads

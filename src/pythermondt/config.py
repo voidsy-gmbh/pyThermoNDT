@@ -33,6 +33,13 @@ class Settings(BaseSettings):
 
         return absolute
 
+    @field_validator("num_workers", mode="before")
+    @classmethod
+    def validate_num_workers(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("num_workers must be at least 1")
+        return v
+
 
 # Global settings instance
 settings = Settings()

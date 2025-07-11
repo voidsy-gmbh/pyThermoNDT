@@ -129,6 +129,11 @@ class BaseReader(ABC):
         # Remove backend reference - will be recreated when needed
         if "_BaseReader__backend" in state:
             del state["_BaseReader__backend"]
+
+        # Remove lock as it cannot be pickled
+        if "_BaseReader__manifest_lock" in state:
+            del state["_BaseReader__manifest_lock"]
+
         # Clear files cache to force reloading
         state["_BaseReader__files_cache"] = None
         return state
@@ -138,6 +143,9 @@ class BaseReader(ABC):
         # Just restore the state dictionary - backend will be created
         # lazily when first accessed
         self.__dict__.update(state)
+
+        # Recreate thee lock
+        self.__manifest_lock = Lock()
 
     def __str__(self):
         return (

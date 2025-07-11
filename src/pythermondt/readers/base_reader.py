@@ -255,9 +255,11 @@ class BaseReader(ABC):
         # Download the file
         remote_path, relative_path = self._download_single_file(remote_path, manifest)
 
-        # Update manifest
-        manifest[remote_path] = relative_path
-        self._save_manifest(self.manifest_path, manifest)
+        # Update manifest only if the file was actually downloaded
+        if remote_path not in manifest or manifest[remote_path] != relative_path:
+            manifest = self._load_manifest(self.manifest_path)
+            manifest[remote_path] = relative_path
+            self._save_manifest(self.manifest_path, manifest)
 
         return os.path.join(self.reader_cache_dir, relative_path)
 

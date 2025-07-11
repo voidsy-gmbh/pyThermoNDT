@@ -3,6 +3,9 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from functools import partial
+from multiprocessing.pool import ThreadPool
+from threading import Lock
 
 from tqdm.auto import tqdm
 
@@ -43,6 +46,7 @@ class BaseReader(ABC):
         self.__files: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
+        self.__manifest_lock = Lock()
         self.__reader_cache_dir: str | None = None
 
     @abstractmethod
@@ -125,6 +129,11 @@ class BaseReader(ABC):
         # Remove backend reference - will be recreated when needed
         if "_BaseReader__backend" in state:
             del state["_BaseReader__backend"]
+
+        # Remove lock as it cannot be pickled
+        if "_BaseReader__manifest_lock" in state:
+            del state["_BaseReader__manifest_lock"]
+
         # Clear files cache to force reloading
         state["_BaseReader__files_cache"] = None
         return state
@@ -134,6 +143,9 @@ class BaseReader(ABC):
         # Just restore the state dictionary - backend will be created
         # lazily when first accessed
         self.__dict__.update(state)
+
+        # Recreate thee lock
+        self.__manifest_lock = Lock()
 
     def __str__(self):
         return (
@@ -159,16 +171,25 @@ class BaseReader(ABC):
             yield self.read_file(file)
 
     def _load_manifest(self, manifest_path: str) -> dict[str, str]:
-        """Load manifest from disk."""
-        if os.path.exists(manifest_path):
-            with open(manifest_path) as f:
-                return json.load(f)
-        return {}
+        """Load manifest from disk with thread safety."""
+        with self.__manifest_lock:
+            if os.path.exists(manifest_path):
+                try:
+                    with open(manifest_path) as f:
+                        return json.load(f)
+                except (json.JSONDecodeError, FileNotFoundError):
+                    return {}
+            return {}
 
     def _save_manifest(self, manifest_path: str, manifest: dict[str, str]):
-        """Save manifest to disk."""
-        with open(manifest_path, "w") as f:
-            json.dump(manifest, f, indent=2)
+        """Save manifest to disk with thread safety."""
+        with self.__manifest_lock:
+            os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
+            # Atomic write using temp file
+            temp_path = manifest_path + ".tmp"
+            with open(temp_path, "w") as f:
+                json.dump(manifest, f, indent=2)
+            os.replace(temp_path, manifest_path)
 
     def _setup_cache_dir(self) -> tuple[str, str]:
         """Setup the cache directory in the configured download directory for this reader.
@@ -203,6 +224,30 @@ class BaseReader(ABC):
                 f.write("*\n")
         return reader_cache_dir, manifest_path
 
+    def _download_single_file(self, remote_path: str, manifest: dict[str, str]) -> tuple[str, str]:
+        """Download a single file from the remote source and return its local path.
+
+        Parameters:
+            remote_path (str): The path to the file on the remote source.
+            manifest (dict[str, str]): The manifest dictionary containing the current state of downloaded files.
+
+        Returns:
+            tuple[str, str]: A tuple containing the relative local path to the downloaded file and its remote path.
+        """
+        # Check if already cached and exists
+        if remote_path in manifest:
+            relative_path = manifest[remote_path]
+            local_path = os.path.join(self.reader_cache_dir, relative_path)
+            if os.path.exists(local_path):
+                return remote_path, relative_path
+
+        # Download the file
+        filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
+        relative_path = f"./raw/{filename}"
+        local_path = os.path.join(self.reader_cache_dir, relative_path)
+        self.backend.download_file(remote_path, local_path)
+        return remote_path, relative_path
+
     def _ensure_file_cached(self, remote_path: str) -> str:
         """Ensure a file is cached locally, return local path.
 
@@ -215,27 +260,18 @@ class BaseReader(ABC):
         # Load manifest
         manifest = self._load_manifest(self.manifest_path)
 
-        # Check if already cached and exists
-        if remote_path in manifest:
-            relative_path = manifest[remote_path]
-            local_path = os.path.join(self.reader_cache_dir, relative_path)
-            if os.path.exists(local_path):
-                return local_path
-
         # Download the file
-        filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
-        relative_path = f"./raw/{filename}"
-        local_path = os.path.join(self.reader_cache_dir, relative_path)
+        remote_path, relative_path = self._download_single_file(remote_path, manifest)
 
-        self.backend.download_file(remote_path, local_path)
+        # Update manifest only if the file was actually downloaded
+        if remote_path not in manifest or manifest[remote_path] != relative_path:
+            manifest = self._load_manifest(self.manifest_path)
+            manifest[remote_path] = relative_path
+            self._save_manifest(self.manifest_path, manifest)
 
-        # Update manifest
-        manifest[remote_path] = relative_path
-        self._save_manifest(self.manifest_path, manifest)
+        return os.path.join(self.reader_cache_dir, relative_path)
 
-        return local_path
-
-    def download(self, file_paths: list[str] | None = None) -> None:
+    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:
         """Trigger the download of files from the remote source.
 
         This method will download the specified files from the remote source and cache them locally in the reader's
@@ -247,6 +283,8 @@ class BaseReader(ABC):
         Parameters:
             file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is
                 able to read will be downloaded. Default is None.
+            num_workers (int, optional): Number of workers to use for downloading files. If None, the default number of
+                workers of pyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
         """
         # If no remote source, do nothing
         if not self.remote_source:
@@ -277,26 +315,27 @@ class BaseReader(ABC):
                 missing_cached_files.add(file_path)
 
         # Combine files that need downloading
-        files_to_download = uncached_files | missing_cached_files
+        to_download = uncached_files | missing_cached_files
 
-        if not files_to_download:
+        if not to_download:
             return  # Nothing to download
 
         # Download files with progress bar
-        with tqdm(total=len(files_to_download), desc=f"{self.__class__.__name__}", unit="files") as pbar:
-            for file_path in files_to_download:
-                # Generate filename
-                filename = hashlib.md5(file_path.encode()).hexdigest() + os.path.splitext(file_path)[1]
-                relative_path = f"./raw/{filename}"
-                local_path = os.path.join(self.reader_cache_dir, relative_path)
+        unit = "files"
+        desc = f"{self.__class__.__name__} - Downloading files"
+        num = len(to_download)
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        worker_fn = partial(self._download_single_file, manifest=manifest)
+        if workers > 1:
+            # Use ThreadPool for parallel downloads
+            with ThreadPool(processes=workers) as pool:
+                results = dict(tqdm(pool.imap_unordered(worker_fn, to_download), total=num, desc=desc, unit=unit))
+        else:
+            results = dict(tqdm(map(worker_fn, to_download), total=num, desc=desc, unit=unit))
 
-                # Download
-                self.backend.download_file(file_path, local_path)
-
-                # Update and save manifest
-                manifest[file_path] = relative_path
-                self._save_manifest(self.manifest_path, manifest)
-                pbar.update(1)
+        # Single manifest update after all downloads
+        manifest.update(results)
+        self._save_manifest(self.manifest_path, manifest)
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

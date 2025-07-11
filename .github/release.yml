@@ -18,9 +18,10 @@ changelog:
       labels:
         - bug fix
 
-    - title: "✨ Enhancements"
+    - title: "⚡ Enhancements & Performance"
       labels:
         - enhancement
+        - performance
 
     - title: "🔨 Maintenance"
       labels:
@@ -28,15 +29,12 @@ changelog:
         - documentation
         - maintenance
         - refactor
-
-    - title: "⚡ CI & Automation"
-      labels:
         - "ci: testing"
         - "ci: linting"
         - "ci: code quality"
         - "ci: pre-commit"
         - "ci: general"
 
-    - title: "Other Changes"
+    - title: "📦 Other Changes"
       labels:
         - "*"

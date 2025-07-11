@@ -231,7 +231,7 @@ class BaseReader(ABC):
             relative_path = manifest[remote_path]
             local_path = os.path.join(self.reader_cache_dir, relative_path)
             if os.path.exists(local_path):
-                return remote_path, local_path
+                return remote_path, relative_path
 
         # Download the file
         filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]

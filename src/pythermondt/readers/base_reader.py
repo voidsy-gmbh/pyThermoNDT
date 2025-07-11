@@ -3,6 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
 
@@ -215,6 +216,30 @@ class BaseReader(ABC):
                 f.write("*\n")
         return reader_cache_dir, manifest_path
 
+    def _download_single_file(self, remote_path: str, manifest: dict[str, str]) -> tuple[str, str]:
+        """Download a single file from the remote source and return its local path.
+
+        Parameters:
+            remote_path (str): The path to the file on the remote source.
+            manifest (dict[str, str]): The manifest dictionary containing the current state of downloaded files.
+
+        Returns:
+            tuple[str, str]: A tuple containing the relative local path to the downloaded file and its remote path.
+        """
+        # Check if already cached and exists
+        if remote_path in manifest:
+            relative_path = manifest[remote_path]
+            local_path = os.path.join(self.reader_cache_dir, relative_path)
+            if os.path.exists(local_path):
+                return remote_path, local_path
+
+        # Download the file
+        filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
+        relative_path = f"./raw/{filename}"
+        local_path = os.path.join(self.reader_cache_dir, relative_path)
+        self.backend.download_file(remote_path, local_path)
+        return remote_path, relative_path
+
     def _ensure_file_cached(self, remote_path: str) -> str:
         """Ensure a file is cached locally, return local path.
 
@@ -227,25 +252,14 @@ class BaseReader(ABC):
         # Load manifest
         manifest = self._load_manifest(self.manifest_path)
 
-        # Check if already cached and exists
-        if remote_path in manifest:
-            relative_path = manifest[remote_path]
-            local_path = os.path.join(self.reader_cache_dir, relative_path)
-            if os.path.exists(local_path):
-                return local_path
-
         # Download the file
-        filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
-        relative_path = f"./raw/{filename}"
-        local_path = os.path.join(self.reader_cache_dir, relative_path)
-
-        self.backend.download_file(remote_path, local_path)
+        remote_path, relative_path = self._download_single_file(remote_path, manifest)
 
         # Update manifest
         manifest[remote_path] = relative_path
         self._save_manifest(self.manifest_path, manifest)
 
-        return local_path
+        return os.path.join(self.reader_cache_dir, relative_path)
 
     def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:
         """Trigger the download of files from the remote source.
@@ -301,12 +315,17 @@ class BaseReader(ABC):
         desc = f"{self.__class__.__name__} - Downloading files"
         num = len(to_download)
         workers = num_workers or settings.num_workers
+        worker_fn = partial(self._download_single_file, manifest=manifest)
         if workers > 1:
             # Use ThreadPool for parallel downloads
             with ThreadPool(processes=workers) as pool:
-                list(tqdm(pool.imap_unordered(self._ensure_file_cached, to_download), total=num, desc=desc, unit=unit))
+                results = dict(tqdm(pool.imap_unordered(worker_fn, to_download), total=num, desc=desc, unit=unit))
         else:
-            list(tqdm(map(self._ensure_file_cached, to_download), total=num, desc=desc, unit=unit))
+            results = dict(tqdm(map(worker_fn, to_download), total=num, desc=desc, unit=unit))
+
+        # Single manifest update after all downloads
+        manifest.update(results)
+        self._save_manifest(self.manifest_path, manifest)
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

@@ -2,7 +2,9 @@ import collections
 import copy
 import sys
 from abc import ABC, abstractmethod
+from multiprocessing import Manager
 from multiprocessing.managers import ListProxy
+from multiprocessing.pool import ThreadPool
 from typing import Literal
 
 from torch.utils.data import Dataset
@@ -183,16 +185,12 @@ class BaseDataset(Dataset, ABC):
             workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
             worker_fn = self._load_cache_item
             if workers > 1:
-                from multiprocessing.pool import ThreadPool
-
                 # Use ThreadPool for immediate cache building in parallel
                 with ThreadPool(processes=workers) as pool:
                     self.__cache = list(tqdm(pool.imap(worker_fn, range(num)), desc=desc, unit=unit, total=num))
             else:
                 self.__cache = [self._load_cache_item(i) for i in tqdm(range(num), desc=desc, unit=unit)]
         elif mode == "lazy":
-            from multiprocessing import Manager
-
             # Create a shared list for lazy loading using a list proxy
             self.__cache = Manager().list([None] * len(self))
         else:

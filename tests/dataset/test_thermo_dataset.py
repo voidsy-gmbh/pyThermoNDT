@@ -1,7 +1,12 @@
-import pytest
+import time
 
-from pythermondt.dataset import ThermoDataset
-from pythermondt.readers import LocalReader
+import pytest
+import torch
+
+from pythermondt import LocalReader, ThermoDataset
+from pythermondt.transforms import ThermoTransform
+
+from ..utils import containers_equal
 
 
 def test_basic_initialization(localreader_with_file: LocalReader):
@@ -100,3 +105,46 @@ def test_no_false_positive_duplicates(paths: tuple[str, str]):
         else:
             # Re-raise if it's a different ValueError (like no files found)
             raise
+
+
+@pytest.mark.parametrize("mode", ["immediate", "lazy"])
+@pytest.mark.parametrize("num_workers", [None, 1])
+def test_build_cache_thermodataset(
+    local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str, num_workers: int | None
+):
+    """Test building cache for ThermoDataset and verify correctness and speedup."""
+    # Create the datasets
+    dataset_no_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
+    dataset_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
+
+    dataset_cache.build_cache(mode=mode, num_workers=num_workers)  # type: ignore[call-arg]
+
+    # Check correctness
+    for idx in range(len(dataset_no_cache)):
+        torch.manual_seed(42)
+        cache = dataset_cache[idx]
+        torch.manual_seed(42)
+        no_cache = dataset_no_cache[idx]
+        # If mode is lazy ==> datacontainer gets pickled and NaN values may not be equal: see https://bugs.python.org/issue43078
+        if mode == "lazy":
+            assert containers_equal(cache, no_cache, ignore_nan_inequality=True), f"Cache mismatch at index {idx}"
+        else:
+            assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
+
+    # Check speedup
+    torch.manual_seed(42)
+    start_no_cache = time.perf_counter()
+    for _ in dataset_no_cache:
+        pass
+    duration_no_cache = time.perf_counter() - start_no_cache
+
+    torch.manual_seed(42)
+    start_cache = time.perf_counter()
+    for _ in dataset_cache:
+        pass
+    duration_cache = time.perf_counter() - start_cache
+
+    # Cached access should be faster (allow some tolerance for small datasets)
+    assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
+        f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
+    )

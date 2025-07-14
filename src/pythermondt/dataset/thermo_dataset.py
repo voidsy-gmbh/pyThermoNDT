@@ -1,5 +1,4 @@
 from collections.abc import Iterator, Sequence
-from itertools import chain
 
 import torch
 
@@ -122,7 +121,7 @@ class ThermoDataset(BaseDataset):
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
 
-    def _load_raw_data(self, idx: int) -> DataContainer:
+    def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from readers - required by BaseDataset."""
         # Extract reader and file index from the index map
         r_idx = int(self.__reader_index[idx].item())
@@ -144,19 +143,5 @@ class ThermoDataset(BaseDataset):
     def __len__(self) -> int:
         return sum([len(reader.files) for reader in self.__readers])
 
-    def __getitem__(self, idx) -> DataContainer:
-        """Get data container at index with transforms applied."""
-        if idx < 0 or idx >= len(self):
-            raise IndexError("Index out of range")
-
-        # Load raw data
-        data = self._load_raw_data(idx)
-
-        # Apply transform if present
-        if self.transform:
-            data = self.transform(data)
-
-        return data
-
     def __iter__(self) -> Iterator[DataContainer]:
-        return (self.transform(data) if self.transform else data for data in chain.from_iterable(self.__readers))
+        return (self[i] for i in range(len(self)))

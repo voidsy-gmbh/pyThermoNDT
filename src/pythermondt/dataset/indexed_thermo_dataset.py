@@ -44,29 +44,7 @@ class IndexedThermoDataset(BaseDataset):
         """Return iterator over indexed subset."""
         return (self[i] for i in range(len(self.__indices)))
 
-    def __getitem__(self, idx: int) -> DataContainer:
-        """Get an item with proper transform chain.
-
-        Args:
-            idx (int): Index into the subset
-
-        Returns:
-            DataContainer: Transformed data container
-        """
-        # Validate index
-        if idx < 0 or idx >= len(self):
-            raise IndexError("Index out of range")
-
-        # Get data from parent (parent applies its complete chain)
-        data = self.__parent_dataset[self.__indices[idx]]
-
-        # Apply additional transform if specified
-        if self.transform:
-            data = self.transform(data)
-
-        return data
-
-    def _load_raw_data(self, idx: int) -> DataContainer:
+    def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from the parent dataset.
 
         Args:
@@ -80,7 +58,11 @@ class IndexedThermoDataset(BaseDataset):
             raise IndexError("Index out of range")
 
         # Load raw data using parent's logic
-        return self.__parent_dataset._load_raw_data(self.__indices[idx])
+        return self.__parent_dataset.load_raw_data(self.__indices[idx])
+
+    def _map_index(self, idx: int) -> int:
+        """Map the index to the parent's index."""
+        return self.__indices[idx]
 
     @property
     def files(self) -> list[str]:

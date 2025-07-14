@@ -1,6 +1,12 @@
-import pytest
+import time
 
-from pythermondt.dataset import IndexedThermoDataset, ThermoDataset
+import pytest
+import torch
+
+from pythermondt import IndexedThermoDataset, LocalReader, ThermoDataset
+from pythermondt.transforms import ThermoTransform
+
+from ..utils import containers_equal
 
 
 def test_basic_initialization(sample_dataset_single_file: ThermoDataset):
@@ -54,3 +60,101 @@ def test_duplicate_indices_allowed(sample_dataset_three_files: ThermoDataset):
 
     # Should create dataset with 4 items (allowing duplicates)
     assert len(indexed) == 4
+
+
+def test_transform_chain(local_reader_three_files: LocalReader, sample_transform: type[ThermoTransform]):
+    """Test that additional transform is applied after parent's transform."""
+    # Create transforms
+    base_transform = sample_transform("base_level")
+    first_transform = sample_transform("first_level")
+    second_transform = sample_transform("second_level")
+    third_transform = sample_transform("third_level")
+
+    # Create the datasets
+    dataset = ThermoDataset(local_reader_three_files, transform=base_transform)
+    indexed = IndexedThermoDataset(dataset, [0, 2], transform=first_transform)
+    indexed2 = IndexedThermoDataset(indexed, [1, 0], transform=second_transform)
+    indexed3 = IndexedThermoDataset(indexed2, [1], transform=third_transform)
+
+    # Get the first item and check if the transform were applied correctly
+    data_parent = dataset[0]
+    data_child = indexed[0]
+    data_grand_child = indexed2[0]
+    data_grand_grand_child = indexed3[0]
+    assert data_parent.get_attribute("/MetaData", "transformed") == ["base_level"]
+    assert data_child.get_attribute("/MetaData", "transformed") == ["base_level", "first_level"]
+    assert data_grand_child.get_attribute("/MetaData", "transformed") == ["base_level", "first_level", "second_level"]
+    assert data_grand_grand_child.get_attribute("/MetaData", "transformed") == [
+        "base_level",
+        "first_level",
+        "second_level",
+        "third_level",
+    ]
+
+    # Check if transform chain is applied correctly in the parent dataset
+    chain = dataset.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(dataset):
+        assert containers_equal(chain(dataset.load_raw_data(i)), container)
+
+    # Check if transform chain is applied correctly in the child dataset
+    chain = indexed.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(indexed):
+        assert chain(indexed.load_raw_data(i)) == container
+
+    # Check if transform chain is applied correctly in the grandchild dataset
+    chain = indexed2.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(indexed2):
+        assert chain(indexed2.load_raw_data(i)) == container
+
+    # Check if transform chain is applied correctly in the grandchild dataset
+    chain = indexed3.get_transform_chain()
+    assert isinstance(chain, ThermoTransform)
+    for i, container in enumerate(indexed3):
+        assert chain(indexed3.load_raw_data(i)) == container
+
+
+@pytest.mark.parametrize("mode", ["immediate", "lazy"])
+@pytest.mark.parametrize("num_workers", [None, 1])
+def test_build_cache_thermodataset(
+    local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str, num_workers: int | None
+):
+    """Test building cache for IndexedThermoDataset and verify correctness and speedup."""
+    # Create the datasets
+    dataset = ThermoDataset(local_reader_three_files)
+    subset_no_cache = IndexedThermoDataset(dataset, [0, 1], transform=sample_pipeline)
+    subset_cache = IndexedThermoDataset(dataset, [0, 1], transform=sample_pipeline)
+
+    subset_cache.build_cache(mode=mode, num_workers=num_workers)  # type: ignore[call-arg]
+
+    # Check correctness
+    for idx in range(len(subset_no_cache)):
+        torch.manual_seed(42)
+        cache = subset_cache[idx]
+        torch.manual_seed(42)
+        no_cache = subset_no_cache[idx]
+        # If mode is lazy ==> datacontainer gets pickled and NaN values may not be equal: see https://bugs.python.org/issue43078
+        if mode == "lazy":
+            assert containers_equal(cache, no_cache, ignore_nan_inequality=True), f"Cache mismatch at index {idx}"
+        else:
+            assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
+
+    # Check speedup
+    torch.manual_seed(42)
+    start_no_cache = time.perf_counter()
+    for _ in subset_no_cache:
+        pass
+    duration_no_cache = time.perf_counter() - start_no_cache
+
+    torch.manual_seed(42)
+    start_cache = time.perf_counter()
+    for _ in subset_cache:
+        pass
+    duration_cache = time.perf_counter() - start_cache
+
+    # Cached access should be faster (allow some tolerance for small datasets)
+    assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
+        f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
+    )

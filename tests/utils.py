@@ -9,13 +9,16 @@ from pythermondt.io.parsers import find_parser_for_extension
 from pythermondt.readers import LocalReader
 
 
-def containers_equal(container1: DataContainer, container2: DataContainer, print_diff=True) -> bool:
+def containers_equal(
+    container1: DataContainer, container2: DataContainer, print_diff=True, ignore_nan_inequality=False
+) -> bool:
     """Compare two DataContainers and optionally print differences.
 
     Args:
-        container1: First DataContainer
-        container2: Second DataContainer
-        print_diff: Whether to print differences to stdout
+        container1 (DataContainer): First DataContainer
+        container2 (DataContainer): Second DataContainer
+        print_diff (bool): Whether to print differences to stdout
+        ignore_nan_inequality (bool): If True, different NaN values are considered equal
 
     Returns:
         True if containers are equal, False otherwise
@@ -58,7 +61,7 @@ def containers_equal(container1: DataContainer, container2: DataContainer, print
             # Compare attributes using DeepDiff
             attrs1 = dict(node1.attributes)
             attrs2 = dict(node2.attributes)
-            diff = DeepDiff(attrs1, attrs2)
+            diff = DeepDiff(attrs1, attrs2, ignore_nan_inequality=ignore_nan_inequality)
 
             # Handle diff output for different types
             if diff:

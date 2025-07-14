@@ -134,7 +134,7 @@ class BaseDataset(Dataset, ABC):
 
         return Compose(list(transforms))
 
-    def build_cache(self, mode: CacheMode = "immediate", num_workers: int | None = None):
+    def build_cache(self, mode: CacheMode = "lazy", num_workers: int | None = None):
         # fmt: off
         """Build an in-memory cache of preprocessed data for faster training.
 
@@ -142,10 +142,14 @@ class BaseDataset(Dataset, ABC):
         - Deterministic transforms are applied once and cached
         - Random transforms + subsequent operations run at runtime
 
+        Platform Considerations:
+            **Windows**: Use lazy mode to avoid memory issues due to cache duplication in forked processes
+            **Linux**: Both modes work efficiently - choose based on workflow preference
+
         Parameters:
-            mode: Cache building strategy
+            mode (CacheMode): Cache building strategy
+                - "lazy": Create shared cache, workers fill on-demand for faster startup (default)
                 - "immediate": Build all items upfront using a ThreadPool
-                - "lazy": Create shared cache, workers fill on-demand for faster startup
             num_workers (int, optional): Number of workers used for cache building. This setting only applies if `mode`
                 is "immediate". If num_workers is None, the global configuration of pyThermoNDT will be used.
                 If less than 1, it defaults to 1 worker. Default is None.
@@ -161,13 +165,13 @@ class BaseDataset(Dataset, ABC):
             ...     T.MinMaxNormalize(),                    # Runtime (after random)
             ... ])
 
-            >>> # Production: parallel cache building
-            >>> dataset.build_cache(mode="immediate", num_workers=8)
-            >>> loader = DataLoader(dataset, num_workers=8, persistent_workers=True)
-
-            >>> # Development: fast startup
+            >>> # Development: fast startup (default)
             >>> dataset.build_cache(mode="lazy")
             >>> loader = DataLoader(dataset, num_workers=4, persistent_workers=True)
+
+            >>> # Production: parallel cache building (Only recommended on linux)
+            >>> dataset.build_cache(mode="immediate", num_workers=8)
+            >>> loader = DataLoader(dataset, num_workers=8, persistent_workers=True)
         """
         # fmt: on
         # Skip if cache already built

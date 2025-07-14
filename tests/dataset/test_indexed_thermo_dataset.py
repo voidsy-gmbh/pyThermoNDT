@@ -117,14 +117,17 @@ def test_transform_chain(local_reader_three_files: LocalReader, sample_transform
 
 
 @pytest.mark.parametrize("mode", ["immediate", "lazy"])
-def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str):
+@pytest.mark.parametrize("num_workers", [None, 1])
+def test_build_cache_thermodataset(
+    local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str, num_workers: int | None
+):
     """Test building cache for IndexedThermoDataset and verify correctness and speedup."""
     # Create the datasets
     dataset = ThermoDataset(local_reader_three_files)
     subset_no_cache = IndexedThermoDataset(dataset, [0, 1], transform=sample_pipeline)
     subset_cache = IndexedThermoDataset(dataset, [0, 1], transform=sample_pipeline)
 
-    subset_cache.build_cache(mode=mode)  # type: ignore[call-arg]
+    subset_cache.build_cache(mode=mode, num_workers=num_workers)  # type: ignore[call-arg]
 
     # Check correctness
     for idx in range(len(subset_no_cache)):

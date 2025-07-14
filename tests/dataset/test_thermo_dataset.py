@@ -108,13 +108,16 @@ def test_no_false_positive_duplicates(paths: tuple[str, str]):
 
 
 @pytest.mark.parametrize("mode", ["immediate", "lazy"])
-def test_build_cache_thermodataset(local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str):
+@pytest.mark.parametrize("num_workers", [None, 1])
+def test_build_cache_thermodataset(
+    local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str, num_workers: int | None
+):
     """Test building cache for ThermoDataset and verify correctness and speedup."""
     # Create the datasets
     dataset_no_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
     dataset_cache = ThermoDataset(local_reader_three_files, transform=sample_pipeline)
 
-    dataset_cache.build_cache(mode=mode)  # type: ignore[call-arg]
+    dataset_cache.build_cache(mode=mode, num_workers=num_workers)  # type: ignore[call-arg]
 
     # Check correctness
     for idx in range(len(dataset_no_cache)):

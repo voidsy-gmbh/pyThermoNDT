@@ -28,8 +28,8 @@ class BaseDataset(Dataset, ABC):
         # Internal state for cache
         self.__cache_built = False
         self.__cache: list | ListProxy = []
-        self.__det_transforms = None
-        self.__runtime_transforms = None
+        self.__det_transforms: _BaseTransform | None = None
+        self.__runtime_transforms: _BaseTransform | None = None
 
     @abstractmethod
     def load_raw_data(self, idx: int) -> DataContainer:

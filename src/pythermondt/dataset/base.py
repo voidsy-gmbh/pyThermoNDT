@@ -8,6 +8,7 @@ from typing import Literal
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
 
+from ..config import settings
 from ..data import DataContainer
 from ..data.datacontainer.utils import format_bytes
 from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms, split_transforms_for_caching
@@ -173,15 +174,27 @@ class BaseDataset(Dataset, ABC):
 
         # Get the complete transform chain and split it into deterministic and runtime transforms
         self.__det_transforms, self.__runtime_transforms = split_transforms_for_caching(self.get_transform_chain())
-        size = len(self)
 
         # Initialize the cache based on the mode
         if mode == "immediate":
-            self.__cache = [self._load_cache_item(i) for i in tqdm(range(size), desc="Building cache", unit="files")]
+            unit = "files"
+            desc = f"{self.__class__.__name__} - Building cache"
+            num = len(self)
+            workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+            worker_fn = self._load_cache_item
+            if workers > 1:
+                from multiprocessing.pool import ThreadPool
+
+                # Use ThreadPool for immediate cache building in parallel
+                with ThreadPool(processes=workers) as pool:
+                    self.__cache = list(tqdm(pool.imap(worker_fn, range(num)), desc=desc, unit=unit, total=num))
+            else:
+                self.__cache = [self._load_cache_item(i) for i in tqdm(range(num), desc=desc, unit=unit)]
         elif mode == "lazy":
             from multiprocessing import Manager
 
-            self.__cache = Manager().list([None] * size)
+            # Create a shared list for lazy loading using a list proxy
+            self.__cache = Manager().list([None] * len(self))
         else:
             raise ValueError(f"Invalid cache mode: {mode}. Use one of: {list(CacheMode.__args__)}.")
 

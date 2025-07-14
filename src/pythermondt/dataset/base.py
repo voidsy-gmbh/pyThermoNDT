@@ -131,7 +131,7 @@ class BaseDataset(Dataset, ABC):
 
         return Compose(list(transforms))
 
-    def build_cache(self, mode: CacheMode = "immediate"):
+    def build_cache(self, mode: CacheMode = "immediate", num_workers: int | None = None):
         # fmt: off
         """Build an in-memory cache of preprocessed data for faster training.
 
@@ -141,21 +141,11 @@ class BaseDataset(Dataset, ABC):
 
         Parameters:
             mode: Cache building strategy
-                - "immediate": Build all items upfront in main process (default)
-                - "lazy": Create shared cache, workers fill on-demand
-
-        Cache Modes:
-            **Immediate:**
-            - All items preprocessed and cached immediately
-            - Fast training with num_workers=0
-            - Higher memory usage upfront
-            - Best for single-process workflows
-
-            **Lazy:**
-            - Empty shared cache, filled during training
-            - Enables DataLoader with num_workers > 0
-            - Parallel cache building by workers
-            - Best for multiprocess workflows
+                - "immediate": Build all items upfront using a ThreadPool
+                - "lazy": Create shared cache, workers fill on-demand for faster startup
+            num_workers (int, optional): Number of workers used for cache building. This setting only applies if `mode`
+                is "immediate". If num_workers is None, the global configuration of pyThermoNDT will be used.
+                If less than 1, it defaults to 1 worker. Default is None.
 
         Example with a common preprocessing pipeline:
             >>> train_pipeline = T.Compose([
@@ -168,18 +158,13 @@ class BaseDataset(Dataset, ABC):
             ...     T.MinMaxNormalize(),                    # Runtime (after random)
             ... ])
 
-            >>> # Single process development
-            >>> dataset.build_cache(mode="immediate")
-            >>> loader = DataLoader(dataset, num_workers=0)
+            >>> # Production: parallel cache building
+            >>> dataset.build_cache(mode="immediate", num_workers=8)
+            >>> loader = DataLoader(dataset, num_workers=8, persistent_workers=True)
 
-            >>> # Production training
+            >>> # Development: fast startup
             >>> dataset.build_cache(mode="lazy")
-            >>> loader = DataLoader(dataset, num_workers=4)
-
-        Benefits:
-            - 3-5x faster data loading during training
-            - Preserves randomness for data augmentation
-            - Reduces repeated computation of expensive operations
+            >>> loader = DataLoader(dataset, num_workers=4, persistent_workers=True)
         """
         # fmt: on
         # Skip if cache already built

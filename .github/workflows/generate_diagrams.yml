@@ -75,10 +75,13 @@ jobs:
     - name: Generate images from Mermaid files
       if: env.CHANGED == 'true'
       run: |
+        # Create puppeteer config for no-sandbox
+        echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
+
         for file in ${{ env.MERMAID_DIR }}/*.mmd; do
           filename=$(basename "$file" .mmd)
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" --backgroundColor transparent --puppeteerConfig '{"args":["--no-sandbox"]}'
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" --backgroundColor transparent --puppeteerConfig '{"args":["--no-sandbox"]}'
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" --backgroundColor transparent --puppeteerConfigFile puppeteer-config.json
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" --backgroundColor transparent --puppeteerConfigFile puppeteer-config.json
         done
 
     - name: Upload diagrams

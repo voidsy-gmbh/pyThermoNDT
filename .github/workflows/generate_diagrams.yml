@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CHANGED: false
-      COLOR_PALETTE: "#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED"
       MERMAID_DIR: ./docs/pyreverse/mermaid
       IMAGES_DIR: ./docs/pyreverse/images
 
@@ -43,18 +42,18 @@ jobs:
     - name: Generate Mermaid files for all major modules with Pyreverse
       run: |
         # Generate a top level overview of the project
-        pyreverse -p Overview -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" --max-depth 1 pythermondt
+        pyreverse -p Overview -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --max-depth 1 pythermondt
 
         # Generate detailed diagrams
-        pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt
-        pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.data
-        pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.dataset
-        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.readers
-        pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.transforms
-        pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.writers
-        pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.data.datacontainer
-        pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.data.units
-        pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.io
+        pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt
+        pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data
+        pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.dataset
+        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.readers
+        pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.transforms
+        pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.writers
+        pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer
+        pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.units
+        pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io
 
     - name: Check for New or Modified Mermaid Files
       id: files-check
@@ -91,8 +90,8 @@ jobs:
 
         for file in ${{ env.MERMAID_DIR }}/*.mmd; do
           filename=$(basename "$file" .mmd)
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" --backgroundColor transparent --puppeteerConfigFile puppeteer-config.json
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" --backgroundColor transparent --puppeteerConfigFile puppeteer-config.json
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" -b transparent --puppeteerConfigFile puppeteer-config.json
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" -b transparent --puppeteerConfigFile puppeteer-config.json
         done
 
     - name: Upload diagrams

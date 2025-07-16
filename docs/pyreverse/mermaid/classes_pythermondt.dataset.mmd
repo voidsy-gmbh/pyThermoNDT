@@ -1,0 +1,25 @@
+classDiagram
+  class BaseDataset {
+    cache_built : bool
+    files : list[str]
+    parent : 'BaseDataset | None'
+    transform : _BaseTransform | None
+    build_cache(mode: CacheMode, num_workers: int | None)
+    get_transform_chain() _BaseTransform
+    load_raw_data(idx: int)* DataContainer
+    memory_bytes() int
+    print_memory_usage()
+  }
+  style BaseDataset fill:#F2994A
+  class IndexedThermoDataset {
+    files : list[str]
+    load_raw_data(idx: int) DataContainer
+  }
+  style IndexedThermoDataset fill:#F2994A
+  class ThermoDataset {
+    files : list[str]
+    load_raw_data(idx: int) DataContainer
+  }
+  style ThermoDataset fill:#F2994A
+  IndexedThermoDataset --|> BaseDataset
+  ThermoDataset --|> BaseDataset

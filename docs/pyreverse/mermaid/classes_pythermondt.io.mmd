@@ -1,0 +1,59 @@
+classDiagram
+  class BaseBackend {
+    remote_source : bool
+    close()* None
+    download_file(source_path: str, destination_path: str)* None
+    exists(file_path: str)* bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
+    read_file(file_path: str)* IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str)* None
+  }
+  style BaseBackend fill:#F2994A
+  class BaseParser {
+    supported_extensions : tuple[str, ...]
+    parse(data: IOPathWrapper)* DataContainer
+  }
+  style BaseParser fill:#F2994A
+  class HDF5Parser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style HDF5Parser fill:#F2994A
+  class IOPathWrapper {
+    file_obj : BytesIO
+    file_path : str
+    close()
+  }
+  style IOPathWrapper fill:#F2994A
+  class LocalBackend {
+    pattern : str
+    remote_source : bool
+    close()* None
+    download_file(source_path: str, destination_path: str)* None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style LocalBackend fill:#F2994A
+  class S3Backend {
+    bucket : str
+    prefix : str
+    remote_source : bool
+    close() None
+    download_file(source_path: str, destination_path: str) None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style S3Backend fill:#F2994A
+  class SimulationParser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style SimulationParser fill:#F2994A
+  LocalBackend --|> BaseBackend
+  S3Backend --|> BaseBackend
+  HDF5Parser --|> BaseParser
+  SimulationParser --|> BaseParser

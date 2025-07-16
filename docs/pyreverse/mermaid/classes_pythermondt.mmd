@@ -1,0 +1,407 @@
+classDiagram
+  class ApplyLUT {
+    forward(container: DataContainer) DataContainer
+  }
+  style ApplyLUT fill:#2F80ED
+  class AttributeNode {
+    attributes : ItemsView[str, AttributeTypes]
+    add_attribute(key: str, value: AttributeTypes)
+    add_attributes()
+    clear_attributes() None
+    get_attribute(key: str) AttributeTypes
+    memory_bytes() int
+    remove_attribute(key: str) None
+    update_attribute(key: str, value: AttributeTypes) None
+    update_attributes()
+  }
+  style AttributeNode fill:#EB5757
+  class AttributeOps {
+    add_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
+    add_attributes(path: str)
+    add_unit(path: str, unit: Unit)
+    get_all_attributes(path: str) dict[str, str | int | float | list | tuple | dict | Unit]
+    get_attribute(path: str, key: str) str | int | float | list | tuple | dict | Unit
+    get_attributes(path: str) tuple[str | int | float | list | tuple | dict | Unit, ...]
+    get_unit(path: str) Unit
+    remove_attribute(path: str, key: str)
+    update_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
+    update_attributes(path: str)
+    update_unit(path: str, unit: Unit)
+  }
+  style AttributeOps fill:#EB5757
+  class BaseBackend {
+    remote_source : bool
+    close()* None
+    download_file(source_path: str, destination_path: str)* None
+    exists(file_path: str)* bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
+    read_file(file_path: str)* IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str)* None
+  }
+  style BaseBackend fill:#E0E0E0
+  class BaseDataset {
+    cache_built : bool
+    files : list[str]
+    parent : 'BaseDataset | None'
+    transform : _BaseTransform | None
+    build_cache(mode: CacheMode, num_workers: int | None)
+    get_transform_chain() _BaseTransform
+    load_raw_data(idx: int)* DataContainer
+    memory_bytes() int
+    print_memory_usage()
+  }
+  style BaseDataset fill:#27AE60
+  class BaseNode {
+    name : str
+    type : NodeType
+    memory_bytes() int
+  }
+  style BaseNode fill:#EB5757
+  class BaseOps {
+    memory_bytes() int
+    print_memory_usage()
+  }
+  style BaseOps fill:#EB5757
+  class BaseParser {
+    supported_extensions : tuple[str, ...]
+    parse(data: IOPathWrapper)* DataContainer
+  }
+  style BaseParser fill:#E0E0E0
+  class BaseReader {
+    backend : BaseBackend
+    cache_files : bool
+    download_files : bool
+    files : list[str]
+    manifest_path : str
+    num_files : int | None
+    parser : type[BaseParser] | None
+    reader_cache_dir : str
+    remote_source : bool
+    download(file_paths: list[str] | None, num_workers: int | None) None
+    read_file(file_path: str) DataContainer
+  }
+  style BaseReader fill:#BB6BD9
+  class BaseWriter {
+    write(container: DataContainer, file_name: str)*
+  }
+  style BaseWriter fill:#F2994A
+  class Compose {
+    transforms : Sequence[_BaseTransform]
+    forward(container: DataContainer) DataContainer
+  }
+  style Compose fill:#2F80ED
+  class CropFrames {
+    height : int
+    strategy : Literal['C', 'TL', 'TR', 'BL', 'BR']
+    width : int
+    forward(container: DataContainer) DataContainer
+  }
+  style CropFrames fill:#2F80ED
+  class DataContainer {
+  }
+  style DataContainer fill:#EB5757
+  class DataContainerBase {
+    nodes : NodeAccessor
+  }
+  style DataContainerBase fill:#EB5757
+  class DataNode {
+    data : Tensor
+    memory_bytes() int
+  }
+  style DataNode fill:#EB5757
+  class DatasetOps {
+    add_dataset(path: str, name: str, data: Tensor | ndarray | None)
+    add_datasets(path: str)
+    get_all_dataset_names() list[str]
+    get_all_dataset_paths() list[str]
+    get_dataset(path: str) Tensor
+    get_datasets() tuple[Tensor, ...]
+    remove_dataset(path: str)
+    update_dataset(path: str, data: Tensor | ndarray)
+    update_datasets()
+  }
+  style DatasetOps fill:#EB5757
+  class DeserializationOps {
+    deserialize(hdf5_data: BytesIO)
+    load_from_hdf5(path: str)
+  }
+  style DeserializationOps fill:#EB5757
+  class GaussianNoise {
+    mean : float
+    std : float
+    forward(container: DataContainer) DataContainer
+  }
+  style GaussianNoise fill:#2F80ED
+  class GroupNode {
+  }
+  style GroupNode fill:#EB5757
+  class GroupOps {
+    add_group(path: str, name: str)
+    get_all_groups() list[str]
+    remove_group(path: str)
+  }
+  style GroupOps fill:#EB5757
+  class HDF5Parser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style HDF5Parser fill:#E0E0E0
+  class IOPathWrapper {
+    file_obj : BytesIO
+    file_path : str
+    close()
+  }
+  style IOPathWrapper fill:#E0E0E0
+  class IndexedThermoDataset {
+    files : list[str]
+    load_raw_data(idx: int) DataContainer
+  }
+  style IndexedThermoDataset fill:#27AE60
+  class InteractiveAnalyzer {
+    annotation_toggle
+    clear_button
+    colorbar
+    colors : list
+    container : str
+    current_frame : int
+    current_frame_data
+    cursor_annotation_box
+    cursor_annotation_text
+    data_unit
+    domain_unit
+    domain_values
+    fig
+    frame_ax
+    frame_img
+    frame_slider
+    profile_ax
+    selected_points : list[tuple[int, int]]
+    tdata
+    clear_points(event)
+    on_click(event)
+    on_mouse_move(event)
+    toggle_annotation(event)
+    update_frame(frame_idx: float)
+  }
+  style InteractiveAnalyzer fill:#EB5757
+  class LocalBackend {
+    pattern : str
+    remote_source : bool
+    close()* None
+    download_file(source_path: str, destination_path: str)* None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style LocalBackend fill:#E0E0E0
+  class LocalReader {
+  }
+  style LocalReader fill:#BB6BD9
+  class LocalWriter {
+    destination_folder : str
+    write(container, file_name)
+  }
+  style LocalWriter fill:#F2994A
+  class MaxNormalize {
+    eps : float
+    forward(container: DataContainer) DataContainer
+  }
+  style MaxNormalize fill:#2F80ED
+  class MinMaxNormalize {
+    eps : float
+    forward(container: DataContainer) DataContainer
+  }
+  style MinMaxNormalize fill:#2F80ED
+  class NodeAccessor {
+    items() ItemsView[str, NodeTypes]
+    keys() KeysView[str]
+    values() ValuesView[NodeTypes]
+  }
+  style NodeAccessor fill:#EB5757
+  class NodeType {
+    name
+  }
+  style NodeType fill:#EB5757
+  class NonUniformSampling {
+    n_samples : int
+    tau : float | None
+    forward(container: DataContainer) DataContainer
+  }
+  style NonUniformSampling fill:#2F80ED
+  class ProgressCallback {
+    bar
+  }
+  style ProgressCallback fill:#F2994A
+  class RandomFlip {
+    p_height : float
+    p_width : float
+    forward(container: DataContainer) DataContainer
+  }
+  style RandomFlip fill:#2F80ED
+  class RandomThermoTransform {
+  }
+  style RandomThermoTransform fill:#2F80ED
+  class RemoveFlash {
+    method : Literal['excitation_signal', 'max_temp', 'mean_temp_drop']
+    offset : int
+    forward(container: DataContainer) DataContainer
+  }
+  style RemoveFlash fill:#2F80ED
+  class RootNode {
+  }
+  style RootNode fill:#EB5757
+  class S3Backend {
+    bucket : str
+    prefix : str
+    remote_source : bool
+    close() None
+    download_file(source_path: str, destination_path: str) None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style S3Backend fill:#E0E0E0
+  class S3Reader {
+  }
+  style S3Reader fill:#BB6BD9
+  class S3Writer {
+    bucket : str
+    destination_folder : str
+    write(container: DataContainer, file_name: str)
+  }
+  style S3Writer fill:#F2994A
+  class SelectFrameRange {
+    end : int | None
+    start : int | None
+    forward(container: DataContainer) DataContainer
+  }
+  style SelectFrameRange fill:#2F80ED
+  class SelectFrames {
+    frame_indices : list
+    forward(container: DataContainer) DataContainer
+  }
+  style SelectFrames fill:#2F80ED
+  class SerializationOps {
+    save_to_hdf5(path: str, compression: Literal['lzf', 'gzip'], compression_opts: int)
+    serialize_to_hdf5(compression: Literal['lzf', 'gzip'], compression_opts: int) BytesIO
+  }
+  style SerializationOps fill:#EB5757
+  class Settings {
+    download_dir : str
+    model_config
+    num_workers : int
+    ensure_exists(v: str) str
+    validate_num_workers(v: int) int
+  }
+  style Settings fill:#F2994A
+  class SimulationParser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style SimulationParser fill:#E0E0E0
+  class SubtractFrame {
+    frame : int
+    forward(container: DataContainer) DataContainer
+  }
+  style SubtractFrame fill:#2F80ED
+  class ThermoContainer {
+  }
+  style ThermoContainer fill:#EB5757
+  class ThermoDataset {
+    files : list[str]
+    load_raw_data(idx: int) DataContainer
+  }
+  style ThermoDataset fill:#27AE60
+  class ThermoTransform {
+  }
+  style ThermoTransform fill:#2F80ED
+  class Unit {
+    name : str
+    quantity : str
+    symbol : str
+  }
+  style Unit fill:#EB5757
+  class Units {
+    arbitrary
+    celsius
+    dimensionless
+    kelvin
+    millisecond
+    second
+    undefined
+    print_available_units()
+  }
+  style Units fill:#EB5757
+  class VisualizationOps {
+    analyse_interactive()
+    show_frame(frame_number: int, option: str, cmap: str)
+    show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
+  }
+  style VisualizationOps fill:#EB5757
+  class ZScoreNormalize {
+    eps : float
+    forward(container: DataContainer) DataContainer
+  }
+  style ZScoreNormalize fill:#2F80ED
+  class _BaseTransform {
+    extra_repr() str
+    forward(container: DataContainer)* DataContainer
+  }
+  style _BaseTransform fill:#2F80ED
+  AttributeOps --|> BaseOps
+  BaseOps --|> DataContainerBase
+  DataContainer --|> AttributeOps
+  DataContainer --|> DatasetOps
+  DataContainer --|> GroupOps
+  DataContainer --|> DeserializationOps
+  DataContainer --|> SerializationOps
+  DataContainer --|> VisualizationOps
+  DatasetOps --|> BaseOps
+  GroupOps --|> BaseOps
+  AttributeNode --|> BaseNode
+  DataNode --|> AttributeNode
+  GroupNode --|> AttributeNode
+  RootNode --|> BaseNode
+  DeserializationOps --|> AttributeOps
+  DeserializationOps --|> DatasetOps
+  DeserializationOps --|> GroupOps
+  SerializationOps --|> BaseOps
+  VisualizationOps --|> AttributeOps
+  VisualizationOps --|> DatasetOps
+  VisualizationOps --|> GroupOps
+  ThermoContainer --|> DataContainer
+  IndexedThermoDataset --|> BaseDataset
+  ThermoDataset --|> BaseDataset
+  LocalBackend --|> BaseBackend
+  S3Backend --|> BaseBackend
+  HDF5Parser --|> BaseParser
+  SimulationParser --|> BaseParser
+  LocalReader --|> BaseReader
+  S3Reader --|> BaseReader
+  GaussianNoise --|> RandomThermoTransform
+  RandomFlip --|> RandomThermoTransform
+  RandomThermoTransform --|> _BaseTransform
+  ThermoTransform --|> _BaseTransform
+  MaxNormalize --|> ThermoTransform
+  MinMaxNormalize --|> ThermoTransform
+  ZScoreNormalize --|> ThermoTransform
+  ApplyLUT --|> ThermoTransform
+  CropFrames --|> ThermoTransform
+  RemoveFlash --|> ThermoTransform
+  SubtractFrame --|> ThermoTransform
+  NonUniformSampling --|> ThermoTransform
+  SelectFrameRange --|> ThermoTransform
+  SelectFrames --|> ThermoTransform
+  Compose --|> ThermoTransform
+  LocalWriter --|> BaseWriter
+  S3Writer --|> BaseWriter
+  Unit --* Units : dimensionless
+  Unit --* Units : arbitrary
+  Unit --* Units : undefined
+  Unit --* Units : kelvin
+  Unit --* Units : celsius
+  Unit --* Units : second
+  Unit --* Units : millisecond
+  _BaseTransform --o Compose : transforms

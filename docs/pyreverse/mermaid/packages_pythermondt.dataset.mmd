@@ -1,0 +1,23 @@
+classDiagram
+  class dataset {
+  }
+  style dataset fill:#F2994A
+  class base {
+  }
+  style base fill:#F2994A
+  class indexed_thermo_dataset {
+  }
+  style indexed_thermo_dataset fill:#F2994A
+  class thermo_dataset {
+  }
+  style thermo_dataset fill:#F2994A
+  class utils {
+  }
+  style utils fill:#F2994A
+  dataset --> indexed_thermo_dataset
+  dataset --> thermo_dataset
+  dataset --> utils
+  indexed_thermo_dataset --> base
+  thermo_dataset --> base
+  utils --> indexed_thermo_dataset
+  utils --> thermo_dataset

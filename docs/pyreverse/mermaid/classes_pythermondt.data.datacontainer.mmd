@@ -1,0 +1,148 @@
+classDiagram
+  class AttributeNode {
+    attributes : ItemsView[str, AttributeTypes]
+    add_attribute(key: str, value: AttributeTypes)
+    add_attributes()
+    clear_attributes() None
+    get_attribute(key: str) AttributeTypes
+    memory_bytes() int
+    remove_attribute(key: str) None
+    update_attribute(key: str, value: AttributeTypes) None
+    update_attributes()
+  }
+  style AttributeNode fill:#F2994A
+  class AttributeOps {
+    add_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
+    add_attributes(path: str)
+    add_unit(path: str, unit: Unit)
+    get_all_attributes(path: str) dict[str, str | int | float | list | tuple | dict | Unit]
+    get_attribute(path: str, key: str) str | int | float | list | tuple | dict | Unit
+    get_attributes(path: str) tuple[str | int | float | list | tuple | dict | Unit, ...]
+    get_unit(path: str) Unit
+    remove_attribute(path: str, key: str)
+    update_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
+    update_attributes(path: str)
+    update_unit(path: str, unit: Unit)
+  }
+  style AttributeOps fill:#F2994A
+  class BaseNode {
+    name : str
+    type : NodeType
+    memory_bytes() int
+  }
+  style BaseNode fill:#F2994A
+  class BaseOps {
+    memory_bytes() int
+    print_memory_usage()
+  }
+  style BaseOps fill:#F2994A
+  class DataContainer {
+  }
+  style DataContainer fill:#F2994A
+  class DataContainerBase {
+    nodes : NodeAccessor
+  }
+  style DataContainerBase fill:#F2994A
+  class DataNode {
+    data : Tensor
+    memory_bytes() int
+  }
+  style DataNode fill:#F2994A
+  class DatasetOps {
+    add_dataset(path: str, name: str, data: Tensor | ndarray | None)
+    add_datasets(path: str)
+    get_all_dataset_names() list[str]
+    get_all_dataset_paths() list[str]
+    get_dataset(path: str) Tensor
+    get_datasets() tuple[Tensor, ...]
+    remove_dataset(path: str)
+    update_dataset(path: str, data: Tensor | ndarray)
+    update_datasets()
+  }
+  style DatasetOps fill:#F2994A
+  class DeserializationOps {
+    deserialize(hdf5_data: BytesIO)
+    load_from_hdf5(path: str)
+  }
+  style DeserializationOps fill:#F2994A
+  class GroupNode {
+  }
+  style GroupNode fill:#F2994A
+  class GroupOps {
+    add_group(path: str, name: str)
+    get_all_groups() list[str]
+    remove_group(path: str)
+  }
+  style GroupOps fill:#F2994A
+  class InteractiveAnalyzer {
+    annotation_toggle
+    clear_button
+    colorbar
+    colors : list
+    container : str
+    current_frame : int
+    current_frame_data
+    cursor_annotation_box
+    cursor_annotation_text
+    data_unit
+    domain_unit
+    domain_values
+    fig
+    frame_ax
+    frame_img
+    frame_slider
+    profile_ax
+    selected_points : list[tuple[int, int]]
+    tdata
+    clear_points(event)
+    on_click(event)
+    on_mouse_move(event)
+    toggle_annotation(event)
+    update_frame(frame_idx: float)
+  }
+  style InteractiveAnalyzer fill:#F2994A
+  class NodeAccessor {
+    items() ItemsView[str, NodeTypes]
+    keys() KeysView[str]
+    values() ValuesView[NodeTypes]
+  }
+  style NodeAccessor fill:#F2994A
+  class NodeType {
+    name
+  }
+  style NodeType fill:#F2994A
+  class RootNode {
+  }
+  style RootNode fill:#F2994A
+  class SerializationOps {
+    save_to_hdf5(path: str, compression: Literal['lzf', 'gzip'], compression_opts: int)
+    serialize_to_hdf5(compression: Literal['lzf', 'gzip'], compression_opts: int) BytesIO
+  }
+  style SerializationOps fill:#F2994A
+  class VisualizationOps {
+    analyse_interactive()
+    show_frame(frame_number: int, option: str, cmap: str)
+    show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
+  }
+  style VisualizationOps fill:#F2994A
+  AttributeOps --|> BaseOps
+  BaseOps --|> DataContainerBase
+  DataContainer --|> AttributeOps
+  DataContainer --|> DatasetOps
+  DataContainer --|> GroupOps
+  DataContainer --|> DeserializationOps
+  DataContainer --|> SerializationOps
+  DataContainer --|> VisualizationOps
+  DatasetOps --|> BaseOps
+  GroupOps --|> BaseOps
+  AttributeNode --|> BaseNode
+  DataNode --|> AttributeNode
+  GroupNode --|> AttributeNode
+  RootNode --|> BaseNode
+  DeserializationOps --|> AttributeOps
+  DeserializationOps --|> DatasetOps
+  DeserializationOps --|> GroupOps
+  SerializationOps --|> BaseOps
+  VisualizationOps --|> AttributeOps
+  VisualizationOps --|> DatasetOps
+  VisualizationOps --|> GroupOps

@@ -1,0 +1,18 @@
+classDiagram
+  class readers {
+  }
+  style readers fill:#F2994A
+  class base_reader {
+  }
+  style base_reader fill:#F2994A
+  class local_reader {
+  }
+  style local_reader fill:#F2994A
+  class s3_reader {
+  }
+  style s3_reader fill:#F2994A
+  readers --> base_reader
+  readers --> local_reader
+  readers --> s3_reader
+  local_reader --> base_reader
+  s3_reader --> base_reader

@@ -1,0 +1,237 @@
+classDiagram
+  class pythermondt {
+  }
+  style pythermondt fill:#F2994A
+  class __pkginfo__ {
+  }
+  style __pkginfo__ fill:#F2994A
+  class config {
+  }
+  style config fill:#F2994A
+  class data {
+  }
+  style data fill:#EB5757
+  class datacontainer {
+  }
+  style datacontainer fill:#EB5757
+  class attribute_ops {
+  }
+  style attribute_ops fill:#EB5757
+  class base {
+  }
+  style base fill:#EB5757
+  class core {
+  }
+  style core fill:#EB5757
+  class dataset_ops {
+  }
+  style dataset_ops fill:#EB5757
+  class group_ops {
+  }
+  style group_ops fill:#EB5757
+  class node {
+  }
+  style node fill:#EB5757
+  class serialization_ops {
+  }
+  style serialization_ops fill:#EB5757
+  class utils {
+  }
+  style utils fill:#EB5757
+  class visualization_ops {
+  }
+  style visualization_ops fill:#EB5757
+  class thermo_container {
+  }
+  style thermo_container fill:#EB5757
+  class units {
+  }
+  style units fill:#EB5757
+  class _unit {
+  }
+  style _unit fill:#EB5757
+  class units {
+  }
+  style units fill:#EB5757
+  class utils {
+  }
+  style utils fill:#EB5757
+  class dataset {
+  }
+  style dataset fill:#27AE60
+  class base {
+  }
+  style base fill:#27AE60
+  class indexed_thermo_dataset {
+  }
+  style indexed_thermo_dataset fill:#27AE60
+  class thermo_dataset {
+  }
+  style thermo_dataset fill:#27AE60
+  class utils {
+  }
+  style utils fill:#27AE60
+  class io {
+  }
+  style io fill:#E0E0E0
+  class backends {
+  }
+  style backends fill:#E0E0E0
+  class base_backend {
+  }
+  style base_backend fill:#E0E0E0
+  class local_backend {
+  }
+  style local_backend fill:#E0E0E0
+  class s3_backend {
+  }
+  style s3_backend fill:#E0E0E0
+  class parsers {
+  }
+  style parsers fill:#E0E0E0
+  class base_parser {
+  }
+  style base_parser fill:#E0E0E0
+  class hdf5_parser {
+  }
+  style hdf5_parser fill:#E0E0E0
+  class simulation_parser {
+  }
+  style simulation_parser fill:#E0E0E0
+  class utils {
+  }
+  style utils fill:#E0E0E0
+  class readers {
+  }
+  style readers fill:#BB6BD9
+  class base_reader {
+  }
+  style base_reader fill:#BB6BD9
+  class local_reader {
+  }
+  style local_reader fill:#BB6BD9
+  class s3_reader {
+  }
+  style s3_reader fill:#BB6BD9
+  class transforms {
+  }
+  style transforms fill:#2F80ED
+  class augmentation {
+  }
+  style augmentation fill:#2F80ED
+  class base {
+  }
+  style base fill:#2F80ED
+  class normalization {
+  }
+  style normalization fill:#2F80ED
+  class preprocessing {
+  }
+  style preprocessing fill:#2F80ED
+  class sampling {
+  }
+  style sampling fill:#2F80ED
+  class utils {
+  }
+  style utils fill:#2F80ED
+  class writers {
+  }
+  style writers fill:#F2994A
+  class base_writer {
+  }
+  style base_writer fill:#F2994A
+  class local_writer {
+  }
+  style local_writer fill:#F2994A
+  class s3_writer {
+  }
+  style s3_writer fill:#F2994A
+  pythermondt --> __pkginfo__
+  pythermondt --> config
+  pythermondt --> data
+  pythermondt --> dataset
+  pythermondt --> io
+  pythermondt --> readers
+  pythermondt --> transforms
+  pythermondt --> writers
+  data --> datacontainer
+  data --> thermo_container
+  data --> units
+  datacontainer --> core
+  datacontainer --> node
+  attribute_ops --> base
+  attribute_ops --> node
+  base --> node
+  base --> utils
+  core --> attribute_ops
+  core --> dataset_ops
+  core --> group_ops
+  core --> node
+  core --> serialization_ops
+  core --> utils
+  core --> visualization_ops
+  dataset_ops --> base
+  dataset_ops --> node
+  dataset_ops --> utils
+  group_ops --> base
+  group_ops --> node
+  group_ops --> utils
+  serialization_ops --> attribute_ops
+  serialization_ops --> base
+  serialization_ops --> dataset_ops
+  serialization_ops --> group_ops
+  serialization_ops --> node
+  serialization_ops --> utils
+  utils --> node
+  visualization_ops --> attribute_ops
+  visualization_ops --> dataset_ops
+  visualization_ops --> group_ops
+  thermo_container --> datacontainer
+  thermo_container --> units
+  units --> units
+  units --> _unit
+  units --> utils
+  units --> _unit
+  utils --> _unit
+  utils --> units
+  dataset --> indexed_thermo_dataset
+  dataset --> thermo_dataset
+  dataset --> utils
+  indexed_thermo_dataset --> base
+  thermo_dataset --> base
+  utils --> indexed_thermo_dataset
+  utils --> thermo_dataset
+  io --> backends
+  io --> parsers
+  io --> utils
+  backends --> base_backend
+  backends --> local_backend
+  backends --> s3_backend
+  local_backend --> base_backend
+  s3_backend --> base_backend
+  parsers --> base_parser
+  parsers --> hdf5_parser
+  parsers --> simulation_parser
+  hdf5_parser --> base_parser
+  simulation_parser --> base_parser
+  readers --> base_reader
+  readers --> local_reader
+  readers --> s3_reader
+  local_reader --> base_reader
+  s3_reader --> base_reader
+  transforms --> augmentation
+  transforms --> base
+  transforms --> normalization
+  transforms --> preprocessing
+  transforms --> sampling
+  transforms --> utils
+  augmentation --> base
+  normalization --> base
+  preprocessing --> base
+  sampling --> base
+  utils --> base
+  writers --> base_writer
+  writers --> local_writer
+  writers --> s3_writer
+  local_writer --> base_writer
+  s3_writer --> base_writer

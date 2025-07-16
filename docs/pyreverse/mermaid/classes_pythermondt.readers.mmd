@@ -1,0 +1,23 @@
+classDiagram
+  class BaseReader {
+    backend : BaseBackend
+    cache_files : bool
+    download_files : bool
+    files : list[str]
+    manifest_path : str
+    num_files : int | None
+    parser : type[BaseParser] | None
+    reader_cache_dir : str
+    remote_source : bool
+    download(file_paths: list[str] | None, num_workers: int | None) None
+    read_file(file_path: str) DataContainer
+  }
+  style BaseReader fill:#F2994A
+  class LocalReader {
+  }
+  style LocalReader fill:#F2994A
+  class S3Reader {
+  }
+  style S3Reader fill:#F2994A
+  LocalReader --|> BaseReader
+  S3Reader --|> BaseReader

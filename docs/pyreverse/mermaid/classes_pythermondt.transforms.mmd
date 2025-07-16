@@ -1,0 +1,99 @@
+classDiagram
+  class ApplyLUT {
+    forward(container: DataContainer) DataContainer
+  }
+  style ApplyLUT fill:#F2994A
+  class Compose {
+    transforms : Sequence[_BaseTransform]
+    forward(container: DataContainer) DataContainer
+  }
+  style Compose fill:#F2994A
+  class CropFrames {
+    height : int
+    strategy : Literal['C', 'TL', 'TR', 'BL', 'BR']
+    width : int
+    forward(container: DataContainer) DataContainer
+  }
+  style CropFrames fill:#F2994A
+  class GaussianNoise {
+    mean : float
+    std : float
+    forward(container: DataContainer) DataContainer
+  }
+  style GaussianNoise fill:#F2994A
+  class MaxNormalize {
+    eps : float
+    forward(container: DataContainer) DataContainer
+  }
+  style MaxNormalize fill:#F2994A
+  class MinMaxNormalize {
+    eps : float
+    forward(container: DataContainer) DataContainer
+  }
+  style MinMaxNormalize fill:#F2994A
+  class NonUniformSampling {
+    n_samples : int
+    tau : float | None
+    forward(container: DataContainer) DataContainer
+  }
+  style NonUniformSampling fill:#F2994A
+  class RandomFlip {
+    p_height : float
+    p_width : float
+    forward(container: DataContainer) DataContainer
+  }
+  style RandomFlip fill:#F2994A
+  class RandomThermoTransform {
+  }
+  style RandomThermoTransform fill:#F2994A
+  class RemoveFlash {
+    method : Literal['excitation_signal', 'max_temp', 'mean_temp_drop']
+    offset : int
+    forward(container: DataContainer) DataContainer
+  }
+  style RemoveFlash fill:#F2994A
+  class SelectFrameRange {
+    end : int | None
+    start : int | None
+    forward(container: DataContainer) DataContainer
+  }
+  style SelectFrameRange fill:#F2994A
+  class SelectFrames {
+    frame_indices : list
+    forward(container: DataContainer) DataContainer
+  }
+  style SelectFrames fill:#F2994A
+  class SubtractFrame {
+    frame : int
+    forward(container: DataContainer) DataContainer
+  }
+  style SubtractFrame fill:#F2994A
+  class ThermoTransform {
+  }
+  style ThermoTransform fill:#F2994A
+  class ZScoreNormalize {
+    eps : float
+    forward(container: DataContainer) DataContainer
+  }
+  style ZScoreNormalize fill:#F2994A
+  class _BaseTransform {
+    extra_repr() str
+    forward(container: DataContainer)* DataContainer
+  }
+  style _BaseTransform fill:#F2994A
+  GaussianNoise --|> RandomThermoTransform
+  RandomFlip --|> RandomThermoTransform
+  RandomThermoTransform --|> _BaseTransform
+  ThermoTransform --|> _BaseTransform
+  MaxNormalize --|> ThermoTransform
+  MinMaxNormalize --|> ThermoTransform
+  ZScoreNormalize --|> ThermoTransform
+  ApplyLUT --|> ThermoTransform
+  CropFrames --|> ThermoTransform
+  RemoveFlash --|> ThermoTransform
+  SubtractFrame --|> ThermoTransform
+  NonUniformSampling --|> ThermoTransform
+  SelectFrameRange --|> ThermoTransform
+  SelectFrames --|> ThermoTransform
+  Compose --|> ThermoTransform
+  _BaseTransform --o Compose : transforms

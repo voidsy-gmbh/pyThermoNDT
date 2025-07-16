@@ -1,0 +1,25 @@
+classDiagram
+  class Unit {
+    name : str
+    quantity : str
+    symbol : str
+  }
+  style Unit fill:#F2994A
+  class Units {
+    arbitrary
+    celsius
+    dimensionless
+    kelvin
+    millisecond
+    second
+    undefined
+    print_available_units()
+  }
+  style Units fill:#F2994A
+  Unit --* Units : dimensionless
+  Unit --* Units : arbitrary
+  Unit --* Units : undefined
+  Unit --* Units : kelvin
+  Unit --* Units : celsius
+  Unit --* Units : second
+  Unit --* Units : millisecond

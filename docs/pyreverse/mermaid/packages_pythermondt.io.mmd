@@ -1,0 +1,44 @@
+classDiagram
+  class io {
+  }
+  style io fill:#F2994A
+  class backends {
+  }
+  style backends fill:#F2994A
+  class base_backend {
+  }
+  style base_backend fill:#F2994A
+  class local_backend {
+  }
+  style local_backend fill:#F2994A
+  class s3_backend {
+  }
+  style s3_backend fill:#F2994A
+  class parsers {
+  }
+  style parsers fill:#F2994A
+  class base_parser {
+  }
+  style base_parser fill:#F2994A
+  class hdf5_parser {
+  }
+  style hdf5_parser fill:#F2994A
+  class simulation_parser {
+  }
+  style simulation_parser fill:#F2994A
+  class utils {
+  }
+  style utils fill:#F2994A
+  io --> backends
+  io --> parsers
+  io --> utils
+  backends --> base_backend
+  backends --> local_backend
+  backends --> s3_backend
+  local_backend --> base_backend
+  s3_backend --> base_backend
+  parsers --> base_parser
+  parsers --> hdf5_parser
+  parsers --> simulation_parser
+  hdf5_parser --> base_parser
+  simulation_parser --> base_parser

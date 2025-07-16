@@ -1,6 +1,6 @@
-# Contributing to pyThermoNDT
+# Contributing to PyThermoNDT
 
-Thank you for your interest in contributing to pyThermoNDT! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to PyThermoNDT! This document provides guidelines and instructions for contributing to the project.
 
 ## Pull Request Process
 
@@ -37,7 +37,7 @@ uv pip install -e .
 uv pip install -r requirements_dev.txt
 ```
 
-This creates a virtual environment called `venv` with all necessary dependencies and installs pyThermoNDT in editable mode. Changes to the source code will immediately be reflected without having to reinstall the package (see [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) for more information).
+This creates a virtual environment called `venv` with all necessary dependencies and installs PyThermoNDT in editable mode. Changes to the source code will immediately be reflected without having to reinstall the package (see [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) for more information).
 
 If you don't want to use uv, you can also use pip:
 

@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Global settings for pyThermoNDT."""
+    """Global settings for PyThermoNDT."""
 
     # Configuration parameters
     download_dir: str = Field(default="./", description="Base directory where pythermondt will download files to.")

@@ -1,5 +1,5 @@
 name: Run Code Quality Checks
-description: 'Reusable workflow for running code quality checks on pyThermoNDT'
+description: 'Reusable workflow for running code quality checks on PyThermoNDT'
 
 on:
   workflow_dispatch:

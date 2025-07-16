@@ -1,5 +1,5 @@
 name: Build
-description: 'Reusable workflow for building conda and pip packages for pyThermoNDT'
+description: 'Reusable workflow for building conda and pip packages for PyThermoNDT'
 
 on:
   workflow_dispatch:

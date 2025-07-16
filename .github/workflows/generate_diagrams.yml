@@ -85,14 +85,26 @@ jobs:
     - name: Generate images from Mermaid files
       if: env.CHANGED == 'true'
       run: |
-        # Create puppeteer config for no-sandbox
-        echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
+            # Create optimized puppeteer config for speed and CI compatibility
+            echo '{
+              "args": [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor"
+              ]
+            }' > puppeteer-config.json
 
-        for file in ${{ env.MERMAID_DIR }}/*.mmd; do
-          filename=$(basename "$file" .mmd)
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" -b transparent -t neutral --puppeteerConfigFile puppeteer-config.json
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" -b transparent -t neutral --puppeteerConfigFile puppeteer-config.json
-        done
+            # Generate PNG and SVG files in parallel for speed
+            find ${{ env.MERMAID_DIR }} -name "*.mmd" | xargs -I {} -P 4 bash -c '
+              file="{}"
+              filename=$(basename "$file" .mmd)
+              mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" -b transparent --puppeteerConfigFile puppeteer-config.json &
+              mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" -b transparent --puppeteerConfigFile puppeteer-config.json &
+              wait
+            '
 
     - name: Upload diagrams
       if: env.CHANGED == 'true'

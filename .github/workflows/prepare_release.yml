@@ -177,7 +177,7 @@ jobs:
 
           # Create the release
           gh release create ${{ needs.prepare.outputs.release_version }} \
-            --title "pyThermoNDT ${{ needs.prepare.outputs.release_version }}" \
+            --title "PyThermoNDT ${{ needs.prepare.outputs.release_version }}" \
             --notes "$NOTES" \
             --generate-notes \
             --notes-start-tag $(git tag --sort=-creatordate | head -n 1) \

@@ -8,23 +8,23 @@ classDiagram
     read_file(file_path: str)* IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str)* None
   }
-  style BaseBackend fill:#F2994A
+  style BaseBackend fill:#77AADD
   class BaseParser {
     supported_extensions : tuple[str, ...]
     parse(data: IOPathWrapper)* DataContainer
   }
-  style BaseParser fill:#F2994A
+  style BaseParser fill:#77AADD
   class HDF5Parser {
     supported_extensions : tuple
     parse(data: IOPathWrapper) DataContainer
   }
-  style HDF5Parser fill:#F2994A
+  style HDF5Parser fill:#77AADD
   class IOPathWrapper {
     file_obj : BytesIO
     file_path : str
     close()
   }
-  style IOPathWrapper fill:#F2994A
+  style IOPathWrapper fill:#77AADD
   class LocalBackend {
     pattern : str
     remote_source : bool
@@ -35,7 +35,7 @@ classDiagram
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
   }
-  style LocalBackend fill:#F2994A
+  style LocalBackend fill:#77AADD
   class S3Backend {
     bucket : str
     prefix : str
@@ -47,12 +47,12 @@ classDiagram
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
   }
-  style S3Backend fill:#F2994A
+  style S3Backend fill:#77AADD
   class SimulationParser {
     supported_extensions : tuple
     parse(data: IOPathWrapper) DataContainer
   }
-  style SimulationParser fill:#F2994A
+  style SimulationParser fill:#77AADD
   LocalBackend --|> BaseBackend
   S3Backend --|> BaseBackend
   HDF5Parser --|> BaseParser

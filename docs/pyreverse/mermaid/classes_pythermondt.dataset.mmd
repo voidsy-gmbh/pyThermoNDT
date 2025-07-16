@@ -10,16 +10,16 @@ classDiagram
     memory_bytes() int
     print_memory_usage()
   }
-  style BaseDataset fill:#F2994A
+  style BaseDataset fill:#77AADD
   class IndexedThermoDataset {
     files : list[str]
     load_raw_data(idx: int) DataContainer
   }
-  style IndexedThermoDataset fill:#F2994A
+  style IndexedThermoDataset fill:#77AADD
   class ThermoDataset {
     files : list[str]
     load_raw_data(idx: int) DataContainer
   }
-  style ThermoDataset fill:#F2994A
+  style ThermoDataset fill:#77AADD
   IndexedThermoDataset --|> BaseDataset
   ThermoDataset --|> BaseDataset

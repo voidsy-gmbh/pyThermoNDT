@@ -2,85 +2,85 @@ classDiagram
   class ApplyLUT {
     forward(container: DataContainer) DataContainer
   }
-  style ApplyLUT fill:#F2994A
+  style ApplyLUT fill:#77AADD
   class Compose {
     transforms : Sequence[_BaseTransform]
     forward(container: DataContainer) DataContainer
   }
-  style Compose fill:#F2994A
+  style Compose fill:#77AADD
   class CropFrames {
     height : int
     strategy : Literal['C', 'TL', 'TR', 'BL', 'BR']
     width : int
     forward(container: DataContainer) DataContainer
   }
-  style CropFrames fill:#F2994A
+  style CropFrames fill:#77AADD
   class GaussianNoise {
     mean : float
     std : float
     forward(container: DataContainer) DataContainer
   }
-  style GaussianNoise fill:#F2994A
+  style GaussianNoise fill:#77AADD
   class MaxNormalize {
     eps : float
     forward(container: DataContainer) DataContainer
   }
-  style MaxNormalize fill:#F2994A
+  style MaxNormalize fill:#77AADD
   class MinMaxNormalize {
     eps : float
     forward(container: DataContainer) DataContainer
   }
-  style MinMaxNormalize fill:#F2994A
+  style MinMaxNormalize fill:#77AADD
   class NonUniformSampling {
     n_samples : int
     tau : float | None
     forward(container: DataContainer) DataContainer
   }
-  style NonUniformSampling fill:#F2994A
+  style NonUniformSampling fill:#77AADD
   class RandomFlip {
     p_height : float
     p_width : float
     forward(container: DataContainer) DataContainer
   }
-  style RandomFlip fill:#F2994A
+  style RandomFlip fill:#77AADD
   class RandomThermoTransform {
   }
-  style RandomThermoTransform fill:#F2994A
+  style RandomThermoTransform fill:#77AADD
   class RemoveFlash {
     method : Literal['excitation_signal', 'max_temp', 'mean_temp_drop']
     offset : int
     forward(container: DataContainer) DataContainer
   }
-  style RemoveFlash fill:#F2994A
+  style RemoveFlash fill:#77AADD
   class SelectFrameRange {
     end : int | None
     start : int | None
     forward(container: DataContainer) DataContainer
   }
-  style SelectFrameRange fill:#F2994A
+  style SelectFrameRange fill:#77AADD
   class SelectFrames {
     frame_indices : list
     forward(container: DataContainer) DataContainer
   }
-  style SelectFrames fill:#F2994A
+  style SelectFrames fill:#77AADD
   class SubtractFrame {
     frame : int
     forward(container: DataContainer) DataContainer
   }
-  style SubtractFrame fill:#F2994A
+  style SubtractFrame fill:#77AADD
   class ThermoTransform {
   }
-  style ThermoTransform fill:#F2994A
+  style ThermoTransform fill:#77AADD
   class ZScoreNormalize {
     eps : float
     forward(container: DataContainer) DataContainer
   }
-  style ZScoreNormalize fill:#F2994A
+  style ZScoreNormalize fill:#77AADD
   class _BaseTransform {
     extra_repr() str
     forward(container: DataContainer)* DataContainer
   }
-  style _BaseTransform fill:#F2994A
+  style _BaseTransform fill:#77AADD
   GaussianNoise --|> RandomThermoTransform
   RandomFlip --|> RandomThermoTransform
   RandomThermoTransform --|> _BaseTransform

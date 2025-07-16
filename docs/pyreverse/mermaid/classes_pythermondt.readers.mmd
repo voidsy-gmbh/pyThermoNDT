@@ -12,12 +12,12 @@ classDiagram
     download(file_paths: list[str] | None, num_workers: int | None) None
     read_file(file_path: str) DataContainer
   }
-  style BaseReader fill:#F2994A
+  style BaseReader fill:#77AADD
   class LocalReader {
   }
-  style LocalReader fill:#F2994A
+  style LocalReader fill:#77AADD
   class S3Reader {
   }
-  style S3Reader fill:#F2994A
+  style S3Reader fill:#77AADD
   LocalReader --|> BaseReader
   S3Reader --|> BaseReader

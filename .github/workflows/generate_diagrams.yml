@@ -2,6 +2,12 @@ name: Generate Diagrams
 
 on:
   workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force regenerate all images (even if no .mmd files changed)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   generate-diagrams:
@@ -53,13 +59,18 @@ jobs:
     - name: Check for New or Modified Mermaid Files
       id: files-check
       run: |
-        NEW_OR_MODIFIED_FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd | wc -l)
-        if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
-          echo "New or modified .mmd files detected."
+        if [ "${{ inputs.force_regenerate }}" = "true" ]; then
+          echo "Force regenerate enabled - will rebuild all images."
           echo "CHANGED=true" >> $GITHUB_ENV
         else
-          echo "No new or modified .mmd files detected."
-          echo "CHANGED=false" >> $GITHUB_ENV
+          NEW_OR_MODIFIED_FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd | wc -l)
+          if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
+            echo "New or modified .mmd files detected."
+            echo "CHANGED=true" >> $GITHUB_ENV
+          else
+            echo "No new or modified .mmd files detected."
+            echo "CHANGED=false" >> $GITHUB_ENV
+          fi
         fi
 
     - name: Setup Node.js for Mermaid CLI

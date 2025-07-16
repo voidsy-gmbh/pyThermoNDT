@@ -1,5 +1,0 @@
-digraph "classes_Overview" {
-rankdir=BT
-charset="utf-8"
-"pythermondt.config.Settings" [color="#F2994A", fontcolor="black", label=<{Settings|download_dir : str<br ALIGN="LEFT"/>model_config<br ALIGN="LEFT"/>num_workers : int<br ALIGN="LEFT"/>|ensure_exists(v: str): str<br ALIGN="LEFT"/>validate_num_workers(v: int): int<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-}

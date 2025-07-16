@@ -1,9 +1,0 @@
-digraph "classes_pythermondt.dataset" {
-rankdir=BT
-charset="utf-8"
-"pythermondt.dataset.base.BaseDataset" [color="#F2994A", fontcolor="black", label=<{BaseDataset|cache_built : bool<br ALIGN="LEFT"/>files : list[str]<br ALIGN="LEFT"/>parent : 'BaseDataset \| None'<br ALIGN="LEFT"/>transform : _BaseTransform \| None<br ALIGN="LEFT"/>|build_cache(mode: CacheMode, num_workers: int \| None)<br ALIGN="LEFT"/>get_transform_chain(): _BaseTransform<br ALIGN="LEFT"/><I>load_raw_data</I>(idx: int): DataContainer<br ALIGN="LEFT"/>memory_bytes(): int<br ALIGN="LEFT"/>print_memory_usage()<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.dataset.indexed_thermo_dataset.IndexedThermoDataset" [color="#F2994A", fontcolor="black", label=<{IndexedThermoDataset|files : list[str]<br ALIGN="LEFT"/>|load_raw_data(idx: int): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.dataset.thermo_dataset.ThermoDataset" [color="#F2994A", fontcolor="black", label=<{ThermoDataset|files : list[str]<br ALIGN="LEFT"/>|load_raw_data(idx: int): DataContainer<br ALIGN="LEFT"/>}>, shape="record", style="filled"];
-"pythermondt.dataset.indexed_thermo_dataset.IndexedThermoDataset" -> "pythermondt.dataset.base.BaseDataset" [arrowhead="empty", arrowtail="none"];
-"pythermondt.dataset.thermo_dataset.ThermoDataset" -> "pythermondt.dataset.base.BaseDataset" [arrowhead="empty", arrowtail="none"];
-}

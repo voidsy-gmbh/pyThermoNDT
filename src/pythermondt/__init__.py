@@ -1,4 +1,5 @@
 from .__pkginfo__ import __version__
+from .config import settings
 from .data import DataContainer, ThermoContainer
 from .dataset import IndexedThermoDataset, ThermoDataset
 from .io import HDF5Parser, SimulationParser
@@ -23,6 +24,7 @@ __all__ = [
     "utils",
     "LocalWriter",
     "S3Writer",
+    "settings",
 ]
 
 # TODO: Implement logging instead of print statements according to this guide: https://docs.python.org/3/howto/logging.html

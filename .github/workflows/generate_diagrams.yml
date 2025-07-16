@@ -90,7 +90,6 @@ jobs:
 
         for file in ${{ env.MERMAID_DIR }}/*.mmd; do
           filename=$(basename "$file" .mmd)
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" -b transparent -t neutral --puppeteerConfigFile puppeteer-config.json
           mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" -b transparent -t neutral --puppeteerConfigFile puppeteer-config.json
         done
 
@@ -101,7 +100,6 @@ jobs:
         name: diagrams
         path: |
           ${{ env.MERMAID_DIR }}/*.mmd
-          ${{ env.IMAGES_DIR }}/*.png
           ${{ env.IMAGES_DIR }}/*.svg
 
     - name: Commit and Push Diagrams back to the repository

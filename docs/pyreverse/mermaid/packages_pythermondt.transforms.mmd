@@ -1,0 +1,33 @@
+classDiagram
+  class transforms {
+  }
+  style transforms fill:#77AADD
+  class augmentation {
+  }
+  style augmentation fill:#77AADD
+  class base {
+  }
+  style base fill:#77AADD
+  class normalization {
+  }
+  style normalization fill:#77AADD
+  class preprocessing {
+  }
+  style preprocessing fill:#77AADD
+  class sampling {
+  }
+  style sampling fill:#77AADD
+  class utils {
+  }
+  style utils fill:#77AADD
+  transforms --> augmentation
+  transforms --> base
+  transforms --> normalization
+  transforms --> preprocessing
+  transforms --> sampling
+  transforms --> utils
+  augmentation --> base
+  normalization --> base
+  preprocessing --> base
+  sampling --> base
+  utils --> base

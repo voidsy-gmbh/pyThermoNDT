@@ -1,0 +1,18 @@
+classDiagram
+  class writers {
+  }
+  style writers fill:#77AADD
+  class base_writer {
+  }
+  style base_writer fill:#77AADD
+  class local_writer {
+  }
+  style local_writer fill:#77AADD
+  class s3_writer {
+  }
+  style s3_writer fill:#77AADD
+  writers --> base_writer
+  writers --> local_writer
+  writers --> s3_writer
+  local_writer --> base_writer
+  s3_writer --> base_writer

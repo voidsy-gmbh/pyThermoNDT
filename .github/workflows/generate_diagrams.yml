@@ -5,9 +5,12 @@ on:
 
 jobs:
   generate-diagrams:
+    runs-on: ubuntu-latest
     env:
       CHANGED: false
-    runs-on: ubuntu-latest
+      COLOR_PALETTE: "#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED"
+      MERMAID_DIR: ./docs/pyreverse/mermaid
+      IMAGES_DIR: ./docs/pyreverse/images
 
     steps:
     - name: Checkout code
@@ -24,53 +27,56 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install git+https://github.com/pylint-dev/pylint.git # Install latest pylint version which also contains --max-depth option
+        uv pip install git+https://github.com/Julfried/pylint.git@fix-agg-comp
 
-    - name: Setup Graphviz
-      uses: ts-graphviz/setup-graphviz@v2.0.2
+    - name: Setup Node.js for Mermaid CLI
+      uses: actions/setup-node@v4.4.0
+      with:
+        node-version: '18'
+
+    - name: Install Mermaid CLI
+      run: npm install -g @mermaid-js/mermaid-cli
 
     - name: Create directories for diagrams
       run: |
-        mkdir -p ./docs/pyreverse/graphviz
-        mkdir -p ./docs/pyreverse/images
+        mkdir -p ${{ env.MERMAID_DIR }}
+        mkdir -p ${{ env.IMAGES_DIR }}
 
-    - name: Generate Graphviz files for all major modules with Pyreverse
+    - name: Generate Mermaid files for all major modules with Pyreverse
       run: |
-        # Define color palette for the diagrams
-        COLOR_PALETTE="#F2994A,#EB5757,#27AE60,#E0E0E0,#BB6BD9,#2F80ED"
-
         # Generate a top level overview of the project
-        pyreverse -p Overview -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" --max-depth 1 pythermondt
+        pyreverse -p Overview -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" --max-depth 1 pythermondt
 
-        # Generate diagrams
-        pyreverse -p pythermondt -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt
-        pyreverse -p pythermondt.data -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data
-        pyreverse -p pythermondt.dataset -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.dataset
-        pyreverse -p pythermondt.readers -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.readers
-        pyreverse -p pythermondt.transforms -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.transforms
-        pyreverse -p pythermondt.writers -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.writers
-        pyreverse -p pythermondt.data.datacontainer -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data.datacontainer
-        pyreverse -p pythermondt.data.units -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.data.units
-        pyreverse -p pythermondt.io -o gv -d ./docs/pyreverse/graphviz --colorized --max-color-depth 5 --source-roots ./src --color-palette="$COLOR_PALETTE" pythermondt.io
+        # Generate detailed diagrams
+        pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt
+        pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.data
+        pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.dataset
+        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.readers
+        pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.transforms
+        pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.writers
+        pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.data.datacontainer
+        pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.data.units
+        pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --color-palette="${{ env.COLOR_PALETTE }}" pythermondt.io
 
-
-    - name: Check for New or Modified Graphviz Files
+    - name: Check for New or Modified Mermaid Files
       id: files-check
       run: |
-        NEW_OR_MODIFIED_FILES=$(git status --porcelain ./docs/pyreverse/graphviz/*.gv | wc -l)
+        NEW_OR_MODIFIED_FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd | wc -l)
         if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
-          echo "New or modified .gv files detected."
+          echo "New or modified .mmd files detected."
           echo "CHANGED=true" >> $GITHUB_ENV
         else
-          echo "No new or modified .gv files detected."
+          echo "No new or modified .mmd files detected."
           echo "CHANGED=false" >> $GITHUB_ENV
         fi
 
-    - name: Generate diagrams from Graphviz files
+    - name: Generate images from Mermaid files
       if: env.CHANGED == 'true'
       run: |
-        for file in ./docs/pyreverse/graphviz/*.gv; do
-          dot -Tjpg "$file" -o "./docs/pyreverse/images/$(basename ${file%.gv}.jpg)"
+        for file in ${{ env.MERMAID_DIR }}/*.mmd; do
+          filename=$(basename "$file" .mmd)
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" --backgroundColor transparent
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" --backgroundColor transparent
         done
 
     - name: Upload diagrams
@@ -78,7 +84,10 @@ jobs:
       uses: actions/upload-artifact@v4.6.2
       with:
         name: diagrams
-        path: ./docs/pyreverse/images/*.jpg
+        path: |
+          ${{ env.MERMAID_DIR }}/*.mmd
+          ${{ env.IMAGES_DIR }}/*.png
+          ${{ env.IMAGES_DIR }}/*.svg
 
     - name: Commit and Push Diagrams back to the repository
       if: env.CHANGED == 'true'
@@ -86,5 +95,5 @@ jobs:
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         git add ./docs/pyreverse/*
-        git commit -m "Update pyreverse diagrams"
+        git commit -m "Update mermaid diagrams"
         git push

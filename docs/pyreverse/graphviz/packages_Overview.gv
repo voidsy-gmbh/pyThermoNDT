@@ -11,6 +11,7 @@ charset="utf-8"
 "pythermondt.transforms" [color="#2F80ED", label=<pythermondt.transforms>, shape="box", style="filled"];
 "pythermondt.writers" [color="#F2994A", label=<pythermondt.writers>, shape="box", style="filled"];
 "pythermondt" -> "pythermondt.__pkginfo__" [arrowhead="open", arrowtail="none"];
+"pythermondt" -> "pythermondt.config" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.data" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.dataset" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.io" [arrowhead="open", arrowtail="none"];

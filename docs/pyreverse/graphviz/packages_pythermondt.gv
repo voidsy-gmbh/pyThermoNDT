@@ -51,6 +51,7 @@ charset="utf-8"
 "pythermondt.writers.local_writer" [color="#BB6BD9", label=<pythermondt.writers.local_writer>, shape="box", style="filled"];
 "pythermondt.writers.s3_writer" [color="#BB6BD9", label=<pythermondt.writers.s3_writer>, shape="box", style="filled"];
 "pythermondt" -> "pythermondt.__pkginfo__" [arrowhead="open", arrowtail="none"];
+"pythermondt" -> "pythermondt.config" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.data" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.dataset" [arrowhead="open", arrowtail="none"];
 "pythermondt" -> "pythermondt.io" [arrowhead="open", arrowtail="none"];

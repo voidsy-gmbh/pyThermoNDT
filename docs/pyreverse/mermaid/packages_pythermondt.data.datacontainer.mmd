@@ -1,0 +1,60 @@
+classDiagram
+  class datacontainer {
+  }
+  style datacontainer fill:#77AADD
+  class attribute_ops {
+  }
+  style attribute_ops fill:#77AADD
+  class base {
+  }
+  style base fill:#77AADD
+  class core {
+  }
+  style core fill:#77AADD
+  class dataset_ops {
+  }
+  style dataset_ops fill:#77AADD
+  class group_ops {
+  }
+  style group_ops fill:#77AADD
+  class node {
+  }
+  style node fill:#77AADD
+  class serialization_ops {
+  }
+  style serialization_ops fill:#77AADD
+  class utils {
+  }
+  style utils fill:#77AADD
+  class visualization_ops {
+  }
+  style visualization_ops fill:#77AADD
+  datacontainer --> core
+  datacontainer --> node
+  attribute_ops --> base
+  attribute_ops --> node
+  base --> node
+  base --> utils
+  core --> attribute_ops
+  core --> dataset_ops
+  core --> group_ops
+  core --> node
+  core --> serialization_ops
+  core --> utils
+  core --> visualization_ops
+  dataset_ops --> base
+  dataset_ops --> node
+  dataset_ops --> utils
+  group_ops --> base
+  group_ops --> node
+  group_ops --> utils
+  serialization_ops --> attribute_ops
+  serialization_ops --> base
+  serialization_ops --> dataset_ops
+  serialization_ops --> group_ops
+  serialization_ops --> node
+  serialization_ops --> utils
+  utils --> node
+  visualization_ops --> attribute_ops
+  visualization_ops --> dataset_ops
+  visualization_ops --> group_ops

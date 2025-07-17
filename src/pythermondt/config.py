@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Global settings for PyThermoNDT."""
 
     # Configuration parameters
-    download_dir: str = Field(default="./", description="Base directory where pythermondt will download files to.")
+    download_dir: str = Field(default="./", description="Base directory where PyThermoNDT will download files to.")
     num_workers: int = Field(
         default=os.cpu_count() or 1, description="Default number of workers used for parallel operations."
     )

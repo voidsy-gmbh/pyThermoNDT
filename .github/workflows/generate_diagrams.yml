@@ -60,17 +60,23 @@ jobs:
       run: |
         if [ "${{ inputs.force_regenerate }}" = "true" ]; then
           echo "Force regenerate enabled - will rebuild all images."
+          FILES=$(find ${{ env.MERMAID_DIR }} -name "*.mmd" | tr '\n' ' ')
           echo "CHANGED=true" >> $GITHUB_ENV
         else
-          NEW_OR_MODIFIED_FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd | wc -l)
-          if [ "$NEW_OR_MODIFIED_FILES" -gt 0 ]; then
-            echo "New or modified .mmd files detected."
+          # Get list of changed .mmd files (added or modified)
+          FILES=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- "${{ env.MERMAID_DIR }}/*.mmd" 2>/dev/null | tr '\n' ' ' || echo "")
+
+          if [ -n "$FILES" ]; then
+            echo "Changed .mmd files detected: $FILES"
             echo "CHANGED=true" >> $GITHUB_ENV
           else
-            echo "No new or modified .mmd files detected."
+            echo "No changed .mmd files detected."
             echo "CHANGED=false" >> $GITHUB_ENV
           fi
         fi
+
+        # Write files list to step output
+        echo "files=$FILES" >> $GITHUB_OUTPUT
 
     - name: Setup Node.js for Mermaid CLI
       if: env.CHANGED == 'true'
@@ -88,9 +94,15 @@ jobs:
         # Create puppeteer config for no-sandbox
         echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
 
-        for file in ${{ env.MERMAID_DIR }}/*.mmd; do
-          filename=$(basename "$file" .mmd)
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" -b transparent -t neutral -s 5 --puppeteerConfigFile puppeteer-config.json
+        FILES="${{ steps.files-check.outputs.files }}"
+
+        for file in $FILES; do
+          if [ -f "$file" ]; then
+            filename=$(basename "$file" .mmd)
+            echo "Processing: $file"
+            mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" \
+              -b transparent -t neutral -s 5 --puppeteerConfigFile puppeteer-config.json
+          fi
         done
 
     - name: Upload diagrams

@@ -1,0 +1,22 @@
+classDiagram
+  class BaseWriter {
+    write(container: DataContainer, file_name: str)*
+  }
+  style BaseWriter fill:#77AADD
+  class LocalWriter {
+    destination_folder : str
+    write(container, file_name)
+  }
+  style LocalWriter fill:#77AADD
+  class ProgressCallback {
+    bar
+  }
+  style ProgressCallback fill:#77AADD
+  class S3Writer {
+    bucket : str
+    destination_folder : str
+    write(container: DataContainer, file_name: str)
+  }
+  style S3Writer fill:#77AADD
+  LocalWriter --|> BaseWriter
+  S3Writer --|> BaseWriter

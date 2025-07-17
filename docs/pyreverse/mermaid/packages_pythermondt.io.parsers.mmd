@@ -1,0 +1,18 @@
+classDiagram
+  class parsers {
+  }
+  style parsers fill:#77AADD
+  class base_parser {
+  }
+  style base_parser fill:#77AADD
+  class hdf5_parser {
+  }
+  style hdf5_parser fill:#77AADD
+  class simulation_parser {
+  }
+  style simulation_parser fill:#77AADD
+  parsers --> base_parser
+  parsers --> hdf5_parser
+  parsers --> simulation_parser
+  hdf5_parser --> base_parser
+  simulation_parser --> base_parser

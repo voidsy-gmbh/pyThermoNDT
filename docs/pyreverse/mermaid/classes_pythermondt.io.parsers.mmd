@@ -1,0 +1,18 @@
+classDiagram
+  class BaseParser {
+    supported_extensions : tuple[str, ...]
+    parse(data: IOPathWrapper)* DataContainer
+  }
+  style BaseParser fill:#77AADD
+  class HDF5Parser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style HDF5Parser fill:#77AADD
+  class SimulationParser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style SimulationParser fill:#77AADD
+  HDF5Parser --|> BaseParser
+  SimulationParser --|> BaseParser

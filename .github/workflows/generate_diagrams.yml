@@ -72,22 +72,25 @@ jobs:
           fi
         fi
 
-    - name: Pull Mermaid CLI Docker image
+    - name: Setup Node.js for Mermaid CLI
       if: env.CHANGED == 'true'
-      run: docker pull ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest
+      uses: actions/setup-node@v4.4.0
+      with:
+        node-version: '20'
+
+    - name: Install Mermaid CLI
+      if: env.CHANGED == 'true'
+      run: npm install -g @mermaid-js/mermaid-cli
 
     - name: Generate images from Mermaid files
       if: env.CHANGED == 'true'
       run: |
+        # Create puppeteer config for no-sandbox
+        echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
+
         for file in ${{ env.MERMAID_DIR }}/*.mmd; do
           filename=$(basename "$file" .mmd)
-          docker run --rm -u $(id -u):$(id -g) \
-            -v "${{ github.workspace }}/${{ env.MERMAID_DIR }}:/data" \
-            -v "${{ github.workspace }}/${{ env.IMAGES_DIR }}:/output" \
-            ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest \
-            -i "/data/$(basename "$file")" \
-            -o "/output/${filename}.svg" \
-            -b transparent -t neutral
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" -b transparent -t neutral --puppeteerConfigFile puppeteer-config.json
         done
 
     - name: Upload diagrams

@@ -1,0 +1,38 @@
+classDiagram
+  class AttributeNode {
+    attributes : ItemsView[str, AttributeTypes]
+    add_attribute(key: str, value: AttributeTypes)
+    add_attributes()
+    clear_attributes() None
+    get_attribute(key: str) AttributeTypes
+    memory_bytes() int
+    remove_attribute(key: str) None
+    update_attribute(key: str, value: AttributeTypes) None
+    update_attributes()
+  }
+  style AttributeNode fill:#77AADD
+  class BaseNode {
+    name : str
+    type : NodeType
+    memory_bytes() int
+  }
+  style BaseNode fill:#77AADD
+  class DataNode {
+    data : Tensor
+    memory_bytes() int
+  }
+  style DataNode fill:#77AADD
+  class GroupNode {
+  }
+  style GroupNode fill:#77AADD
+  class NodeType {
+    name
+  }
+  style NodeType fill:#77AADD
+  class RootNode {
+  }
+  style RootNode fill:#77AADD
+  AttributeNode --|> BaseNode
+  DataNode --|> AttributeNode
+  GroupNode --|> AttributeNode
+  RootNode --|> BaseNode

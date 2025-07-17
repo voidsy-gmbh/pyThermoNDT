@@ -56,7 +56,7 @@ jobs:
         pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io
 
         # Generate specialized diagrams
-        pyreverse -p Node_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer.node
+        pyreverse -p Node_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode ALL pythermondt.data.datacontainer.node
 
     - name: Check for New or Modified Mermaid Files
       id: files-check

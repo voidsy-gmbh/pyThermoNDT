@@ -1,6 +1,8 @@
 classDiagram
   class BaseParser {
     supported_extensions : tuple[str, ...]
+    \_\_init\_\_() None
+    \_\_init_subclass\_\_() None
     parse(data: IOPathWrapper)* DataContainer
   }
   style BaseParser fill:#77AADD

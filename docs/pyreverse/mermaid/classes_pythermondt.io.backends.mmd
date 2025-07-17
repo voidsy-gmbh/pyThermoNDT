@@ -12,6 +12,7 @@ classDiagram
   class LocalBackend {
     pattern : str
     remote_source : bool
+    \_\_init\_\_(pattern: Pattern | str) None
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
@@ -24,6 +25,7 @@ classDiagram
     bucket : str
     prefix : str
     remote_source : bool
+    \_\_init\_\_(bucket: str, prefix: str, session: boto3.Session | None) None
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool

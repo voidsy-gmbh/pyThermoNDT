@@ -63,8 +63,8 @@ jobs:
           FILES=$(find ${{ env.MERMAID_DIR }} -name "*.mmd" | tr '\n' ' ')
           echo "CHANGED=true" >> $GITHUB_ENV
         else
-          # Get list of changed .mmd files (added or modified)
-          FILES=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- "${{ env.MERMAID_DIR }}/*.mmd" 2>/dev/null | tr '\n' ' ' || echo "")
+          # Get list of new or modified .mmd files (uncommitted changes)
+          FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd 2>/dev/null | awk '{print $2}' | tr '\n' ' ' || echo "")
 
           if [ -n "$FILES" ]; then
             echo "Changed .mmd files detected: $FILES"

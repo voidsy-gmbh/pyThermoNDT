@@ -54,8 +54,8 @@ jobs:
         pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer
         pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.units
         pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io
-        pyreverse -p pythermondt.io.backends -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io.backends
-        pyreverse -p pythermondt.io.parsers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io.parsers
+        pyreverse -p pythermondt.io.backends -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.backends
+        pyreverse -p pythermondt.io.parsers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.parsers
 
         # Generate specialized diagrams
         pyreverse -p Node_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode ALL pythermondt.data.datacontainer.node

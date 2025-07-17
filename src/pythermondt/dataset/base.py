@@ -151,7 +151,7 @@ class BaseDataset(Dataset, ABC):
                 - "lazy": Create shared cache, workers fill on-demand for faster startup (default)
                 - "immediate": Build all items upfront using a ThreadPool
             num_workers (int, optional): Number of workers used for cache building. This setting only applies if `mode`
-                is "immediate". If num_workers is None, the global configuration of pyThermoNDT will be used.
+                is "immediate". If num_workers is None, the global configuration of PyThermoNDT will be used.
                 If less than 1, it defaults to 1 worker. Default is None.
 
         Example with a common preprocessing pipeline:

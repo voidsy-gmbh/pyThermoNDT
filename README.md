@@ -1,6 +1,6 @@
-# pyThermoNDT
+# PyThermoNDT
 
-pyThermoNDT is a Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications. It provides various methods to load, transform, visualize, and write thermographic data, making it easier and more efficient to work with thermal imaging in NDT contexts.
+PyThermoNDT is a Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications. It provides various methods to load, transform, visualize, and write thermographic data, making it easier and more efficient to work with thermal imaging in NDT contexts.
 
 ## Features
 
@@ -56,7 +56,7 @@ for thermal_data, ground_truth in dataloader:
 ```
 
 ## From here?
-pyThermoNDT is yours to use! You can start by exploring the [examples](examples/) directory for more detailed usage scenarios. The package is designed to be flexible and extensible, so feel free to modify and adapt it to your specific needs.
+PyThermoNDT is yours to use! You can start by exploring the [examples](examples/) directory for more detailed usage scenarios. The package is designed to be flexible and extensible, so feel free to modify and adapt it to your specific needs.
 
 ## Installation
 
@@ -68,7 +68,7 @@ pip install /path/to/downloaded/pythermondt-x.y.z-py3-none-any.whl
 ```
 
 ### From Source
-pyThermoNDT can be installed directly from the source code:
+PyThermoNDT can be installed directly from the source code:
 
 Clone the repository and install the package locally:
 
@@ -86,7 +86,7 @@ pip install git+https://github.com/voidsy-gmbh/pyThermoNDT.git
 
 ### From a local conda channel
 Download the latest conda install package (`.zip` file) from the [release page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and unzip it. The file contains a local conda channel
-with pyThermoNDT and its dependencies. To install pyThermoNDT from the local channel, run:
+with PyThermoNDT and its dependencies. To install PyThermoNDT from the local channel, run:
 
 ```bash
 conda config --add channels conda-forge # Recommended to resolve pip dependencies using conda

@@ -1,5 +1,5 @@
 name: Run Tests
-description: 'Reusable workflow to run all tests for pyThermoNDT'
+description: 'Reusable workflow to run all tests for PyThermoNDT'
 
 on:
   workflow_dispatch:

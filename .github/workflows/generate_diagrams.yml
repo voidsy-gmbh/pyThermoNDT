@@ -108,15 +108,6 @@ jobs:
           fi
         done
 
-    - name: Upload diagrams
-      if: env.CHANGED == 'true'
-      uses: actions/upload-artifact@v4.6.2
-      with:
-        name: diagrams
-        path: |
-          ${{ env.MERMAID_DIR }}/*.mmd
-          ${{ env.IMAGES_DIR }}/*.svg
-
     - name: Commit and Push Diagrams back to the repository
       if: env.CHANGED == 'true'
       run: |

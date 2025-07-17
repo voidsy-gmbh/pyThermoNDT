@@ -90,7 +90,7 @@ jobs:
 
         for file in ${{ env.MERMAID_DIR }}/*.mmd; do
           filename=$(basename "$file" .mmd)
-          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.svg" -b transparent -t neutral --puppeteerConfigFile puppeteer-config.json
+          mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" -b transparent -t neutral -s 3 --puppeteerConfigFile puppeteer-config.json
         done
 
     - name: Upload diagrams

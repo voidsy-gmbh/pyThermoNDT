@@ -1,20 +1,25 @@
 classDiagram
   class BaseWriter {
+    \_\_init\_\_()*
     write(container: DataContainer, file_name: str)*
   }
   style BaseWriter fill:#77AADD
   class LocalWriter {
     destination_folder : str
+    \_\_init\_\_(destination_folder: str)
     write(container, file_name)
   }
   style LocalWriter fill:#77AADD
   class ProgressCallback {
     bar
+    \_\_call\_\_(bytes_amount)
+    \_\_init\_\_(bar)
   }
   style ProgressCallback fill:#77AADD
   class S3Writer {
     bucket : str
     destination_folder : str
+    \_\_init\_\_(bucket: str, destination_folder: str, boto3_session: boto3.Session | None)
     write(container: DataContainer, file_name: str)
   }
   style S3Writer fill:#77AADD

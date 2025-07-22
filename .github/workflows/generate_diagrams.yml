@@ -48,7 +48,7 @@ jobs:
         pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt
         pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data
         pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.dataset
-        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.readers
+        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.readers
         pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.transforms
         pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.writers
         pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer

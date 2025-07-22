@@ -9,14 +9,23 @@ classDiagram
     parser : type[BaseParser] | None
     reader_cache_dir : str
     remote_source : bool
+    \_\_getitem\_\_(idx: int) DataContainer
+    \_\_getstate\_\_()
+    \_\_init\_\_(num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)*
+    \_\_iter\_\_() Iterator[DataContainer]
+    \_\_len\_\_() int
+    \_\_setstate\_\_(state)
+    \_\_str\_\_()
     download(file_paths: list[str] | None, num_workers: int | None) None
     read_file(file_path: str) DataContainer
   }
   style BaseReader fill:#77AADD
   class LocalReader {
+    \_\_init\_\_(pattern: Pattern | str, num_files: int | None, cache_files: bool, parser: type[BaseParser] | None)
   }
   style LocalReader fill:#77AADD
   class S3Reader {
+    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
   }
   style S3Reader fill:#77AADD
   LocalReader --|> BaseReader

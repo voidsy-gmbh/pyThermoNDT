@@ -1,5 +1,5 @@
 {% set name = "pythermondt" %}
-{% set version = "0.2.1dev" %}
+{% set version = "0.2.2dev" %}
 
 package:
   name: {{ name|lower }}

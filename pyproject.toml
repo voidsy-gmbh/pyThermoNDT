@@ -55,11 +55,6 @@ addopts = [
 testpaths = ["tests"]
 
 
-# UV
-[tool.uv]
-required-version = "~=0.7.0" # Pin uv to major version 0.7 for stability
-
-
 # Ruff
 [tool.ruff]
 line-length = 120

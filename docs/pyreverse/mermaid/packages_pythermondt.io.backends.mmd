@@ -1,0 +1,18 @@
+classDiagram
+  class backends {
+  }
+  style backends fill:#77AADD
+  class base_backend {
+  }
+  style base_backend fill:#77AADD
+  class local_backend {
+  }
+  style local_backend fill:#77AADD
+  class s3_backend {
+  }
+  style s3_backend fill:#77AADD
+  backends --> base_backend
+  backends --> local_backend
+  backends --> s3_backend
+  local_backend --> base_backend
+  s3_backend --> base_backend

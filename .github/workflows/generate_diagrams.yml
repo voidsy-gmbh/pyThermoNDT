@@ -48,15 +48,18 @@ jobs:
         pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt
         pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data
         pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.dataset
-        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.readers
+        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.readers
+        pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.writers
         pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.transforms
-        pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.writers
         pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer
         pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.units
         pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io
+        pyreverse -p pythermondt.io.backends -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.backends
+        pyreverse -p pythermondt.io.parsers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.parsers
 
         # Generate specialized diagrams
         pyreverse -p Node_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode ALL pythermondt.data.datacontainer.node
+        pyreverse -p Transform_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.transforms.base
 
     - name: Check for New or Modified Mermaid Files
       id: files-check

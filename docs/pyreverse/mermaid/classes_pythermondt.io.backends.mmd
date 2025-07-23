@@ -1,0 +1,38 @@
+classDiagram
+  class BaseBackend {
+    remote_source : bool
+    close()* None
+    download_file(source_path: str, destination_path: str)* None
+    exists(file_path: str)* bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
+    read_file(file_path: str)* IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str)* None
+  }
+  style BaseBackend fill:#77AADD
+  class LocalBackend {
+    pattern : str
+    remote_source : bool
+    \_\_init\_\_(pattern: Pattern | str) None
+    close()* None
+    download_file(source_path: str, destination_path: str)* None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style LocalBackend fill:#77AADD
+  class S3Backend {
+    bucket : str
+    prefix : str
+    remote_source : bool
+    \_\_init\_\_(bucket: str, prefix: str, session: boto3.Session | None) None
+    close() None
+    download_file(source_path: str, destination_path: str) None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style S3Backend fill:#77AADD
+  LocalBackend --|> BaseBackend
+  S3Backend --|> BaseBackend

@@ -1,0 +1,16 @@
+classDiagram
+  class RandomThermoTransform {
+  }
+  style RandomThermoTransform fill:#77AADD
+  class ThermoTransform {
+  }
+  style ThermoTransform fill:#77AADD
+  class _BaseTransform {
+    \_\_call\_\_(container: DataContainer) DataContainer
+    \_\_str\_\_() str
+    extra_repr() str
+    forward(container: DataContainer)* DataContainer
+  }
+  style _BaseTransform fill:#77AADD
+  RandomThermoTransform --|> _BaseTransform
+  ThermoTransform --|> _BaseTransform

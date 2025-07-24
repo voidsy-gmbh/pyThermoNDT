@@ -90,6 +90,9 @@ class LocalBackend(BaseBackend):
         if num_files is not None:
             all_files = all_files[:num_files]
 
+        # Normalize paths before returning
+        all_files = [os.path.normpath(f) for f in all_files]
+
         return all_files
 
     def download_file(self, source_path: str, destination_path: str) -> None:

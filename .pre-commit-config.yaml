@@ -24,14 +24,14 @@ repos:
     -   id: detect-private-key
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.11
+    rev: v0.12.4
     hooks:
     -   id: ruff-check
         args: [--fix]
     -   id: ruff-format
 
 -   repo: https://github.com/crate-ci/typos
-    rev: v1.32.0
+    rev: v1.34.0
     hooks:
       - id: typos
         args: [.github, ., -w]

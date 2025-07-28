@@ -113,7 +113,7 @@ def test_close_does_nothing(tmp_path):
     backend.close()  # Should not raise
 
 
-def test_download_file_not_implemented(tmp_path):
+def test_download_file_not_implemented(tmp_path: Path):
     """Test that download_file raises NotImplementedError."""
     backend = LocalBackend(str(tmp_path))
 
@@ -121,7 +121,7 @@ def test_download_file_not_implemented(tmp_path):
         backend.download_file("source.txt", "dest.txt")
 
 
-def test_get_file_list_single_file(tmp_path):
+def test_get_file_list_single_file(tmp_path: Path):
     """Test get_file_list with single file pattern."""
     test_file = tmp_path / "test.txt"
     test_file.write_text("content")
@@ -133,7 +133,7 @@ def test_get_file_list_single_file(tmp_path):
     assert files[0] == str(test_file).replace("\\", "/")
 
 
-def test_get_file_list_directory(tmp_path):
+def test_get_file_list_directory(tmp_path: Path):
     """Test get_file_list with directory pattern."""
     files = ["test1.txt", "test2.py", "test3.txt"]
     for filename in files:

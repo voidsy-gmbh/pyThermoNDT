@@ -36,10 +36,7 @@ def test_empty_reader(localreader_no_files):
     "paths",
     [
         # glob -> directory
-        pytest.param(
-            ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/"),
-            marks=pytest.mark.xfail(reason="Backend path normalization needed"),
-        ),
+        ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/"),
         ("./tests/assets/integration/simulation/", "./tests/assets/integration/simulation/"),
         # file -> directory (file is contained in directory)
         ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/"),
@@ -48,19 +45,13 @@ def test_empty_reader(localreader_no_files):
         # file -> file (same file)
         ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source1.mat"),
         # glob -> file (file matches glob pattern)
-        pytest.param(
-            ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/source1.mat"),
-            marks=pytest.mark.xfail(reason="Backend path normalization needed"),
-        ),
+        ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/source1.mat"),
         # directory -> file (file is contained in directory)
         ("./tests/assets/integration/simulation/", "./tests/assets/integration/simulation/source1.mat"),
         # glob -> glob (overlapping patterns)
         ("./tests/assets/integration/simulation/source*.mat", "./tests/assets/integration/simulation/*.mat"),
         # file -> glob (file matches different glob)
-        pytest.param(
-            ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source*.mat"),
-            marks=pytest.mark.xfail(reason="Backend path normalization needed"),
-        ),
+        ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source*.mat"),
     ],
 )
 def test_duplicate_files(paths: tuple[str, str]):

@@ -1,7 +1,6 @@
 import io
 import re
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -113,7 +112,7 @@ def test_close_does_nothing(tmp_path):
     backend.close()  # Should not raise
 
 
-def test_download_file_not_implemented(tmp_path):
+def test_download_file_not_implemented(tmp_path: Path):
     """Test that download_file raises NotImplementedError."""
     backend = LocalBackend(str(tmp_path))
 
@@ -121,29 +120,71 @@ def test_download_file_not_implemented(tmp_path):
         backend.download_file("source.txt", "dest.txt")
 
 
-def test_get_file_list_single_file(tmp_path):
+def test_get_file_list_single_file(tmp_path: Path):
     """Test get_file_list with single file pattern."""
     test_file = tmp_path / "test.txt"
     test_file.write_text("content")
 
     backend = LocalBackend(str(test_file))
-    files = backend.get_file_list()
 
-    assert len(files) == 1
-    assert files[0] == str(test_file).replace("\\", "/")
+    result = backend.get_file_list()
+    expected = [str(test_file)]
+
+    assert len(result) == 1
+    assert result == expected
 
 
-def test_get_file_list_directory(tmp_path):
+def test_get_file_list_directory(tmp_path: Path):
     """Test get_file_list with directory pattern."""
     files = ["test1.txt", "test2.py", "test3.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
+    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+
+    for path in paths:
+        path.write_text("content")
 
     backend = LocalBackend(str(tmp_path))
+
     result = backend.get_file_list()
+    expected = [str(p) for p in paths]  # Convert path objects to strings for comparison
 
     assert len(result) == 3
-    assert result == sorted(result)  # Should be sorted
+    assert result == expected
+
+
+def test_get_file_list_glob_pattern(tmp_path: Path):
+    """Test get_file_list with glob pattern."""
+    files = ["test1.txt", "test2.py", "other.txt"]
+    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+
+    for path in paths:
+        path.write_text("content")
+
+    pattern = str(tmp_path / "test*.txt")
+    backend = LocalBackend(pattern)
+
+    result = backend.get_file_list()
+    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
+
+    assert len(result) == 1
+    assert result == expected
+
+
+def test_get_file_list_regex_pattern(tmp_path: Path):
+    """Test get_file_list with a compiled regex pattern."""
+    files = ["test1.txt", "test2.py", "other.txt"]
+    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+
+    for path in paths:
+        path.write_text("content")
+
+    pattern = re.compile(str(tmp_path).replace("\\", "/") + r"/test*.txt")  # Compile a regex pattern to match test file
+    backend = LocalBackend(pattern)
+
+    result = backend.get_file_list()
+    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
+
+    assert len(result) == 1
+    assert result == expected
 
 
 @pytest.mark.parametrize(
@@ -179,35 +220,6 @@ def test_get_file_list_num_files_limit(tmp_path):
     result = backend.get_file_list(num_files=2)
 
     assert len(result) == 2
-
-
-def test_get_file_list_glob_pattern(tmp_path):
-    """Test get_file_list with glob pattern."""
-    files = ["test1.txt", "test2.py", "other.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    pattern = str(tmp_path / "test*.txt")
-    backend = LocalBackend(pattern)
-    result = backend.get_file_list()
-
-    assert len(result) == 1
-    assert "test1.txt" in result[0]
-
-
-@patch("pythermondt.io.backends.local_backend.glob")
-def test_get_file_list_regex_pattern(mock_glob, tmp_path):
-    """Test get_file_list with regex pattern."""
-    mock_glob.return_value = [str(tmp_path / "test1.txt"), str(tmp_path / "test2.txt")]
-
-    pattern = re.compile(r".*test.*\.txt$")
-    backend = LocalBackend(pattern)
-    result = backend.get_file_list()
-
-    assert len(result) == 2
-    # The pattern gets backslashes replaced with forward slashes
-    expected_pattern = pattern.pattern.replace("\\", "/")
-    mock_glob.assert_called_once_with(expected_pattern)
 
 
 def test_get_file_list_empty_directory(tmp_path):

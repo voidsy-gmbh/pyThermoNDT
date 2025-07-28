@@ -130,7 +130,7 @@ def test_get_file_list_single_file(tmp_path: Path):
     files = backend.get_file_list()
 
     assert len(files) == 1
-    assert files[0] == str(test_file).replace("\\", "/")
+    assert files[0] == str(test_file)
 
 
 def test_get_file_list_directory(tmp_path: Path):

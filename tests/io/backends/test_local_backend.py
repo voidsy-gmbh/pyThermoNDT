@@ -136,14 +136,16 @@ def test_get_file_list_single_file(tmp_path: Path):
 def test_get_file_list_directory(tmp_path: Path):
     """Test get_file_list with directory pattern."""
     files = ["test1.txt", "test2.py", "test3.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
+    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+
+    for path in paths:
+        path.write_text("content")
 
     backend = LocalBackend(str(tmp_path))
     result = backend.get_file_list()
 
     assert len(result) == 3
-    assert result == sorted(result)  # Should be sorted
+    assert result == [str(p) for p in paths]  # Convert path objects to strings for comparison
 
 
 @pytest.mark.parametrize(

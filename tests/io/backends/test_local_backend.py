@@ -126,10 +126,12 @@ def test_get_file_list_single_file(tmp_path: Path):
     test_file.write_text("content")
 
     backend = LocalBackend(str(test_file))
-    files = backend.get_file_list()
 
-    assert len(files) == 1
-    assert files[0] == str(test_file)
+    result = backend.get_file_list()
+    expected = [str(test_file)]
+
+    assert len(result) == 1
+    assert result == expected
 
 
 def test_get_file_list_directory(tmp_path: Path):
@@ -141,10 +143,12 @@ def test_get_file_list_directory(tmp_path: Path):
         path.write_text("content")
 
     backend = LocalBackend(str(tmp_path))
+
     result = backend.get_file_list()
+    expected = [str(p) for p in paths]  # Convert path objects to strings for comparison
 
     assert len(result) == 3
-    assert result == [str(p) for p in paths]  # Convert path objects to strings for comparison
+    assert result == expected
 
 
 def test_get_file_list_glob_pattern(tmp_path: Path):
@@ -157,10 +161,12 @@ def test_get_file_list_glob_pattern(tmp_path: Path):
 
     pattern = str(tmp_path / "test*.txt")
     backend = LocalBackend(pattern)
+
     result = backend.get_file_list()
+    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
 
     assert len(result) == 1
-    assert result[0] == str(tmp_path / "test1.txt")  # Only the file matching the pattern should be returned
+    assert result == expected
 
 
 def test_get_file_list_regex_pattern(tmp_path: Path):
@@ -171,14 +177,14 @@ def test_get_file_list_regex_pattern(tmp_path: Path):
     for path in paths:
         path.write_text("content")
 
-    pattern = re.compile(
-        str(tmp_path).replace("\\", "/") + r"/test*.txt"
-    )  # Compile a regex pattern to match test files
+    pattern = re.compile(str(tmp_path).replace("\\", "/") + r"/test*.txt")  # Compile a regex pattern to match test file
     backend = LocalBackend(pattern)
+
     result = backend.get_file_list()
+    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
 
     assert len(result) == 1
-    assert result[0] == str(tmp_path / "test1.txt")  # Only the file matching the pattern should be returned
+    assert result == expected
 
 
 @pytest.mark.parametrize(

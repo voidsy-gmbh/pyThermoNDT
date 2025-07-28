@@ -73,6 +73,7 @@ jobs:
         id: setup-uv
         uses: astral-sh/setup-uv@v6.4.3
         with:
+          version-file: requirements_dev.txt
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
           enable-cache: false

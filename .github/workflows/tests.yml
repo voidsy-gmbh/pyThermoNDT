@@ -33,8 +33,9 @@ jobs:
       # Step 2: Setup uv
       - name: Setup uv
         id: setup-uv
-        uses: astral-sh/setup-uv@v6.3.1
+        uses: astral-sh/setup-uv@v6.4.3
         with:
+          version-file: requirements_dev.txt
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}

@@ -1,7 +1,6 @@
 import io
 import re
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -148,6 +147,40 @@ def test_get_file_list_directory(tmp_path: Path):
     assert result == [str(p) for p in paths]  # Convert path objects to strings for comparison
 
 
+def test_get_file_list_glob_pattern(tmp_path: Path):
+    """Test get_file_list with glob pattern."""
+    files = ["test1.txt", "test2.py", "other.txt"]
+    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+
+    for path in paths:
+        path.write_text("content")
+
+    pattern = str(tmp_path / "test*.txt")
+    backend = LocalBackend(pattern)
+    result = backend.get_file_list()
+
+    assert len(result) == 1
+    assert result[0] == str(tmp_path / "test1.txt")  # Only the file matching the pattern should be returned
+
+
+def test_get_file_list_regex_pattern(tmp_path: Path):
+    """Test get_file_list with a compiled regex pattern."""
+    files = ["test1.txt", "test2.py", "other.txt"]
+    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+
+    for path in paths:
+        path.write_text("content")
+
+    pattern = re.compile(
+        str(tmp_path).replace("\\", "/") + r"/test*.txt"
+    )  # Compile a regex pattern to match test files
+    backend = LocalBackend(pattern)
+    result = backend.get_file_list()
+
+    assert len(result) == 1
+    assert result[0] == str(tmp_path / "test1.txt")  # Only the file matching the pattern should be returned
+
+
 @pytest.mark.parametrize(
     "extensions, expected_count",
     [
@@ -181,35 +214,6 @@ def test_get_file_list_num_files_limit(tmp_path):
     result = backend.get_file_list(num_files=2)
 
     assert len(result) == 2
-
-
-def test_get_file_list_glob_pattern(tmp_path):
-    """Test get_file_list with glob pattern."""
-    files = ["test1.txt", "test2.py", "other.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    pattern = str(tmp_path / "test*.txt")
-    backend = LocalBackend(pattern)
-    result = backend.get_file_list()
-
-    assert len(result) == 1
-    assert "test1.txt" in result[0]
-
-
-@patch("pythermondt.io.backends.local_backend.glob")
-def test_get_file_list_regex_pattern(mock_glob, tmp_path):
-    """Test get_file_list with regex pattern."""
-    mock_glob.return_value = [str(tmp_path / "test1.txt"), str(tmp_path / "test2.txt")]
-
-    pattern = re.compile(r".*test.*\.txt$")
-    backend = LocalBackend(pattern)
-    result = backend.get_file_list()
-
-    assert len(result) == 2
-    # The pattern gets backslashes replaced with forward slashes
-    expected_pattern = pattern.pattern.replace("\\", "/")
-    mock_glob.assert_called_once_with(expected_pattern)
 
 
 def test_get_file_list_empty_directory(tmp_path):

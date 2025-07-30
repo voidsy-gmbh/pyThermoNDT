@@ -103,7 +103,6 @@ disable = [
     "missing-module-docstring",     # C0114
     "missing-class-docstring",      # C0115
     "missing-function-docstring",   # C0116
-    "missing-docstring",           # General docstring warnings
     "fixme", # W0511
 ]
 

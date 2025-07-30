@@ -175,7 +175,7 @@ class BaseReader(ABC):
         with self.__manifest_lock:
             if os.path.exists(manifest_path):
                 try:
-                    with open(manifest_path) as f:
+                    with open(manifest_path, encoding="utf-8") as f:
                         return json.load(f)
                 except (json.JSONDecodeError, FileNotFoundError):
                     return {}
@@ -187,7 +187,7 @@ class BaseReader(ABC):
             os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
             # Atomic write using temp file
             temp_path = manifest_path + ".tmp"
-            with open(temp_path, "w") as f:
+            with open(temp_path, "w", encoding="utf-8") as f:
                 json.dump(manifest, f, indent=2)
             os.replace(temp_path, manifest_path)
 
@@ -211,7 +211,7 @@ class BaseReader(ABC):
         # CACHEDIR.TAG
         tag_file = os.path.join(base_dir, "CACHEDIR.TAG")
         if not os.path.exists(tag_file):
-            with open(tag_file, "w") as f:
+            with open(tag_file, "w", encoding="utf-8") as f:
                 f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
                 f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
                 f.write("# For information about cache directory tags see https://bford.info/cachedir/\n")
@@ -219,7 +219,7 @@ class BaseReader(ABC):
         # Create .gitignore file to ignore cache files in git
         gitignore = os.path.join(base_dir, ".gitignore")
         if not os.path.exists(gitignore):
-            with open(gitignore, "w") as f:
+            with open(gitignore, "w", encoding="utf-8") as f:
                 f.write("# Automatically created by pythermondt\n")
                 f.write("*\n")
         return reader_cache_dir, manifest_path

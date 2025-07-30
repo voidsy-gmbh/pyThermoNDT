@@ -20,9 +20,9 @@ class NodeType(Enum):
 
 class BaseNode(ABC):
     @abstractmethod
-    def __init__(self, name: str, type: NodeType) -> None:
+    def __init__(self, name: str, node_type: NodeType) -> None:
         self.__name: str = name
-        self.__type: NodeType = type
+        self.__node_type: NodeType = node_type
 
     @property
     def name(self) -> str:
@@ -34,11 +34,11 @@ class BaseNode(ABC):
 
     @property
     def type(self) -> NodeType:
-        return self.__type
+        return self.__node_type
 
     def memory_bytes(self) -> int:
         """Returns the memory size of the node in bytes."""
-        return getsizeof(self) + getsizeof(self.__name) + getsizeof(self.__type)
+        return getsizeof(self) + getsizeof(self.__name) + getsizeof(self.__node_type)
 
 
 class RootNode(BaseNode):
@@ -48,8 +48,8 @@ class RootNode(BaseNode):
 
 class AttributeNode(BaseNode, ABC):
     @abstractmethod
-    def __init__(self, name: str, type: NodeType) -> None:
-        super().__init__(name, type)
+    def __init__(self, name: str, node_type: NodeType) -> None:
+        super().__init__(name, node_type)
         self.__attributes: dict[str, AttributeTypes] = {}
 
     @property

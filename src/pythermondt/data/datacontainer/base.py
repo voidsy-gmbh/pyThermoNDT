@@ -87,7 +87,7 @@ class NodeAccessor:
 
         # If it's a group, remove all child nodes as well to avoid orphaned nodes
         if isinstance(self.__nodes[key], GroupNode):
-            child_keys = [k for k in self.__nodes.keys() if k.startswith(key + "/")]
+            child_keys = [k for k in self.__nodes if k.startswith(key + "/")]
             for child_key in child_keys:
                 del self.__nodes[child_key]
 

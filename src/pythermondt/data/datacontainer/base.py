@@ -46,8 +46,6 @@ class NodeAccessor:
     def __set_node(self, key: str, value: NodeTypes) -> None:
         # Block any overwrites by default ==> updating nodes is handled using __get_node
         # by overriding .data attribute in Node classes
-        if key in self.__nodes:
-            raise KeyError(f"Node at path '{key}' already exists. Use a different path or delete the existing node.")
 
         # Special handling for root nodes
         if isinstance(value, RootNode):
@@ -61,6 +59,9 @@ class NodeAccessor:
 
             self.__nodes[key] = value
             return
+
+        if key in self.__nodes:
+            raise KeyError(f"Node at path '{key}' already exists. Use a different path or delete the existing node.")
 
         # Split path in parent and child and check if parent exists
         parent, _ = split_path(key)

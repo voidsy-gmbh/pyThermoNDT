@@ -38,7 +38,7 @@ class S3Writer(BaseWriter):
         hdf5_buffer = container.serialize_to_hdf5()
 
         # Progress bar for uploading the file
-        bar = tqdm(
+        pbar = tqdm(
             total=hdf5_buffer.getbuffer().nbytes,
             desc=f"Uploading file: {file_name}",
             unit="B",
@@ -50,16 +50,16 @@ class S3Writer(BaseWriter):
 
         # Callback for progress bar
         class ProgressCallback:
-            def __init__(self, bar):
-                self.bar = bar
+            def __init__(self, progress_bar: tqdm):
+                self.progress_bar = progress_bar
 
             def __call__(self, bytes_amount):
-                self.bar.update(bytes_amount)
+                self.progress_bar.update(bytes_amount)
 
         # Try to upload the file
         try:
-            self.__client.upload_fileobj(hdf5_buffer, self.bucket, path, Callback=ProgressCallback(bar))
-            bar.close()  # Close the progress bar
+            self.__client.upload_fileobj(hdf5_buffer, self.bucket, path, Callback=ProgressCallback(pbar))
+            pbar.close()  # Close the progress bar
 
         except ClientError as e:
             error_code = e.response["Error"]["Code"]

@@ -71,9 +71,8 @@ class S3Writer(BaseWriter):
                 "InvalidToken",
             ]:
                 raise PermissionError("Invalid AWS credentials") from e
-            elif error_code == "AccessDenied":
+            if error_code == "AccessDenied":
                 raise PermissionError("Access denied. Check your AWS permissions for this resource.") from e
-            elif error_code == "NoSuchBucket":
+            if error_code == "NoSuchBucket":
                 raise FileNotFoundError(f"The bucket '{self.bucket}' does not exist") from e
-            else:
-                raise RuntimeError(f"Failed to upload file: {e}") from e
+            raise RuntimeError(f"Failed to upload file: {e}") from e

@@ -71,8 +71,7 @@ class NodeAccessor:
                     "RootNode does not exist in this container. "
                     "Check container initialization and ensure that a RootNode exists!"
                 )
-            else:
-                raise KeyError(f"Parent node at path '{parent}' does not exist.")
+            raise KeyError(f"Parent node at path '{parent}' does not exist.")
 
         # Also check if parent is a RootNode or GroupNode
         if not isinstance(self.__nodes[parent], (RootNode, GroupNode)):

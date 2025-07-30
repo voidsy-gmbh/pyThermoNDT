@@ -104,6 +104,7 @@ disable = [
     "missing-class-docstring",      # C0115
     "missing-function-docstring",   # C0116
     "fixme", # W0511
+    "line-too-long", # C0301 ==> this is handled by ruff
 ]
 
 # typos

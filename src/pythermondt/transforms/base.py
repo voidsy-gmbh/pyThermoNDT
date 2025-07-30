@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC, abstractmethod
 
 from torch import nn
@@ -27,8 +28,6 @@ class _BaseTransform(nn.Module, ABC):
         Override this method if you need custom parameter formatting.
         """
         # Get init parameters by inspecting the constructor
-        import inspect
-
         try:
             sig = inspect.signature(self.__class__.__init__)
             init_params = set(sig.parameters.keys()) - {"self"}

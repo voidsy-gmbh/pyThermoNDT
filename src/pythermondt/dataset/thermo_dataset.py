@@ -123,18 +123,24 @@ class ThermoDataset(BaseDataset):
 
     def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from readers - required by BaseDataset."""
+        # Validate index first
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+
         # Extract reader and file index from the index map
         r_idx = int(self.__reader_index[idx].item())
         f_idx = int(self.__file_index[idx].item())
 
         try:
             return self.__readers[r_idx][f_idx]
-        except FileNotFoundError:
-            print(f"File not found for reader {self.__readers[r_idx].__class__.__name__} at index {f_idx}")
-            return DataContainer()
-        except Exception as e:
-            print(f"Error reading file for reader {self.__readers[r_idx].__class__.__name__} at index {f_idx}: {e}")
-            return DataContainer()
+        except (FileNotFoundError, OSError, PermissionError) as e:
+            # File system errors
+            msg = f"{self.__readers[r_idx].__class__.__name__}: Cannot read file '{self.files[idx]}' at index {f_idx}"
+            raise RuntimeError(msg) from e
+        except ValueError as e:
+            # Parser/extension errors from BaseReader
+            msg = f"{self.__readers[r_idx].__class__.__name__}: Cannot parse file '{self.files[idx]}' at index {f_idx}"
+            raise ValueError(msg) from e
 
     @property
     def files(self) -> list[str]:

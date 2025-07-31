@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np  # noqa: F401
 import torch
+from matplotlib import ticker
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider

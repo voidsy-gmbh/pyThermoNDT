@@ -47,7 +47,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         return returnstring
 
     # Overwrite the __eq__ method to provide a comparison between two DataContainer instances
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object) -> bool:  # pylint: disable=too-many-return-statements
         """Compare two DataContainers for equality.
 
         Containers are equal if they have:

@@ -47,11 +47,10 @@ class IOPathWrapper:
 
         # Create temporary file if needed
         if not self.__temp_path or not os.path.exists(self.__temp_path):
-            temp = tempfile.NamedTemporaryFile(delete=False)
-            self.file_obj.seek(0)
-            temp.write(self.file_obj.getbuffer())
-            temp.close()
-            self.__temp_path = temp.name
+            with tempfile.NamedTemporaryFile(delete=False) as temp:
+                self.file_obj.seek(0)
+                temp.write(self.file_obj.getbuffer())
+                self.__temp_path = temp.name
 
         return self.__temp_path
 

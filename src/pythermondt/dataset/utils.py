@@ -139,12 +139,12 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
 
         # Stack tensors along batch dimension for each path
         result = []
-        for path_idx in range(len(paths)):
+        for i, path in enumerate(paths):
             try:
                 # Extract tensors for this path from all containers and stack them
-                result.append(torch.stack([tensors[path_idx] for tensors in all_tensors], dim=0))
+                result.append(torch.stack([tensors[i] for tensors in all_tensors], dim=0))
             except RuntimeError as e:
-                raise RuntimeError(f"Cannot stack tensors for path '{paths[path_idx]}': {e}") from e
+                raise RuntimeError(f"Cannot stack tensors for path '{path}': {e}") from e
 
         return tuple(result)
 

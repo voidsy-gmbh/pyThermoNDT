@@ -43,6 +43,7 @@ class BaseReader(ABC):
         self.__download_files = download_files
 
         # Internal state
+        self.__backend: BaseBackend | None = None
         self.__files: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
@@ -81,7 +82,7 @@ class BaseReader(ABC):
     @property
     def backend(self) -> BaseBackend:
         """The backend that the reader uses to read the data."""
-        if not hasattr(self, "_BaseReader__backend"):
+        if not self.__backend:
             self.__backend = self._create_backend()
         return self.__backend
 
@@ -128,11 +129,11 @@ class BaseReader(ABC):
         state = self.__dict__.copy()
         # Remove backend reference - will be recreated when needed
         if "_BaseReader__backend" in state:
-            del state["_BaseReader__backend"]
+            state["_BaseReader__backend"] = None
 
         # Remove lock as it cannot be pickled
         if "_BaseReader__manifest_lock" in state:
-            del state["_BaseReader__manifest_lock"]
+            state["_BaseReader__manifest_lock"] = None
 
         # Clear files cache to force reloading
         state["_BaseReader__files_cache"] = None
@@ -144,7 +145,7 @@ class BaseReader(ABC):
         # lazily when first accessed
         self.__dict__.update(state)
 
-        # Recreate thee lock
+        # Recreate the lock
         self.__manifest_lock = Lock()
 
     def __str__(self):

@@ -77,13 +77,13 @@ class ThermoDataset(BaseDataset):
             readers_by_type[type(reader)] = readers_by_type.get(type(reader), []) + [reader]
 
         # Check if any of the readers that are of the same type find duplicate or invalid data
-        for reader_type, readers in readers_by_type.items():
+        for reader_type, readers_objects in readers_by_type.items():
             # When there a multiple readers ==> check for duplicate files
-            if len(readers) > 1:
+            if len(readers_objects) > 1:
                 all_files: set[str] = set()
                 duplicate_files: set[str] = set()
 
-                for reader in readers:
+                for reader in readers_objects:
                     # Check if the reader has found any files
                     if not reader.files:
                         raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")

@@ -60,8 +60,8 @@ class IOPathWrapper:
         if self.__temp_path and os.path.exists(self.__temp_path):
             try:
                 os.remove(self.__temp_path)
-            except Exception:
-                pass
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"Warning: Failed to remove temporary file {self.__temp_path}: {e}")
             self.__temp_path = None
 
     def __del__(self):

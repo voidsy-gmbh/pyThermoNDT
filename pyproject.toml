@@ -95,6 +95,9 @@ quote-style = "double"
 
 # Pylint
 [tool.pylint.messages_control]
+enable = [
+    "useless-suppression"
+]
 disable = [
     # Docstring warnings (handled by ruff with D100-D107 ignored)
     "missing-module-docstring",     # C0114

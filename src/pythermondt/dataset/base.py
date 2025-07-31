@@ -69,7 +69,7 @@ class BaseDataset(Dataset, ABC):
 
         # Apply additional transform if specified
         if self.transform:
-            data = self.transform(data)
+            data = self.transform(data)  # pylint: disable=not-callable
 
         return data
 

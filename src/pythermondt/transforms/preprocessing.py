@@ -134,7 +134,7 @@ class RemoveFlash(ThermoTransform):
             case "excitation_signal":
                 # Find frame where excitation signal goes from 1 back to 0 (flash end)
                 flash_end_idx = None
-                for i in range(len(excitation_signal)):
+                for i in range(1, len(excitation_signal)):  # Start at 1
                     if excitation_signal[i - 1] == 1 and excitation_signal[i] == 0:
                         flash_end_idx = i + self.offset
                         break

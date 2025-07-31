@@ -272,7 +272,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         return os.path.join(self.reader_cache_dir, relative_path)
 
-    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:
+    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
         """Trigger the download of files from the remote source.
 
         This method will download the specified files from the remote source and cache them locally in the reader's

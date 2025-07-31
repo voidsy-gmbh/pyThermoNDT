@@ -15,7 +15,7 @@ from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
 
-class BaseReader(ABC):
+class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     @abstractmethod
     def __init__(
         self,

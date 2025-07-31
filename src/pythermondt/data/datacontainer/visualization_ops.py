@@ -13,7 +13,7 @@ from .group_ops import GroupOps
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
-    class InteractiveAnalyzer:
+    class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.
 

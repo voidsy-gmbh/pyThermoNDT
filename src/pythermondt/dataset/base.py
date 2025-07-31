@@ -34,18 +34,15 @@ class BaseDataset(Dataset, ABC):
     @abstractmethod
     def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data at index - implemented by concrete classes."""
-        pass
 
     @abstractmethod
     def __len__(self) -> int:
         """Return length of dataset - implemented by concrete classes."""
-        pass
 
     @property
     @abstractmethod
     def files(self) -> list[str]:
         """Get the list of files associated with this dataset."""
-        pass
 
     def __getitem__(self, idx: int) -> DataContainer:
         """Get an item while also applying the proper transform chain.

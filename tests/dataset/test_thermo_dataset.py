@@ -99,7 +99,7 @@ def test_no_false_positive_duplicates(paths: tuple[str, str]):
 
 
 @pytest.mark.parametrize("mode", ["immediate", "lazy"])
-@pytest.mark.parametrize("num_workers", [None, 1])
+@pytest.mark.parametrize("num_workers", [None, 0, 1, -1])
 def test_build_cache_thermodataset(
     local_reader_three_files: LocalReader, sample_pipeline: ThermoTransform, mode: str, num_workers: int | None
 ):

@@ -118,7 +118,7 @@ class NodeAccessor:
 
 class DataContainerBase:
     def __init__(self):
-        if self.__class__ is DataContainerBase:
+        if type(self) is DataContainerBase:
             raise TypeError(f"{self.__class__.__name__} is a base class and cannot be instantiated directly.")
         self.__node_accessor = NodeAccessor()
 

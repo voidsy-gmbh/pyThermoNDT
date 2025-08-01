@@ -107,8 +107,7 @@ def split_path(path: str) -> tuple[str, str]:
     parent, child = path.rsplit("/", 1)
     if path.count("/") == 1:
         return "/", child
-    else:
-        return parent, child
+    return parent, child
 
 
 def generate_key(path: str, name: str) -> tuple[str, str, str]:

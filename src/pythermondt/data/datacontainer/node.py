@@ -20,9 +20,9 @@ class NodeType(Enum):
 
 class BaseNode(ABC):
     @abstractmethod
-    def __init__(self, name: str, type: NodeType) -> None:
+    def __init__(self, name: str, node_type: NodeType) -> None:
         self.__name: str = name
-        self.__type: NodeType = type
+        self.__node_type: NodeType = node_type
 
     @property
     def name(self) -> str:
@@ -34,11 +34,11 @@ class BaseNode(ABC):
 
     @property
     def type(self) -> NodeType:
-        return self.__type
+        return self.__node_type
 
     def memory_bytes(self) -> int:
         """Returns the memory size of the node in bytes."""
-        return getsizeof(self) + getsizeof(self.__name) + getsizeof(self.__type)
+        return getsizeof(self) + getsizeof(self.__name) + getsizeof(self.__node_type)
 
 
 class RootNode(BaseNode):
@@ -48,8 +48,8 @@ class RootNode(BaseNode):
 
 class AttributeNode(BaseNode, ABC):
     @abstractmethod
-    def __init__(self, name: str, type: NodeType) -> None:
-        super().__init__(name, type)
+    def __init__(self, name: str, node_type: NodeType) -> None:
+        super().__init__(name, node_type)
         self.__attributes: dict[str, AttributeTypes] = {}
 
     @property
@@ -57,7 +57,7 @@ class AttributeNode(BaseNode, ABC):
         return self.__attributes.items()
 
     def add_attribute(self, key: str, value: AttributeTypes):
-        if key in self.__attributes.keys():
+        if key in self.__attributes:
             raise KeyError(
                 f"Attribute with key '{key}' in node '{self.name}' already exists. "
                 "Use 'update_attribute' to update the value."
@@ -69,17 +69,17 @@ class AttributeNode(BaseNode, ABC):
             self.add_attribute(key, value)
 
     def get_attribute(self, key: str) -> AttributeTypes:
-        if key not in self.__attributes.keys():
+        if key not in self.__attributes:
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist.")
         return self.__attributes[key]
 
     def remove_attribute(self, key: str) -> None:
-        if key not in self.__attributes.keys():
+        if key not in self.__attributes:
             raise KeyError(f"Attribute with key '{key}' in node '{self.name}' does not exist.")
         del self.__attributes[key]
 
     def update_attribute(self, key: str, value: AttributeTypes) -> None:
-        if key not in self.__attributes.keys():
+        if key not in self.__attributes:
             raise KeyError(
                 f"Attribute with key '{key}' in node '{self.name}' does not exist. "
                 f"Use 'add_attribute' to add a new attribute."
@@ -129,32 +129,3 @@ class DataNode(AttributeNode):
     def memory_bytes(self) -> int:
         """Returns the memory size of the node in bytes."""
         return super().memory_bytes() + getsizeof(self.__data) + self.data.element_size() * self.data.numel()
-
-
-# Test code
-if __name__ == "__main__":
-    root = RootNode()
-    group = GroupNode("group1")
-    data = DataNode("data1", torch.randn(5, 5))
-
-    print(f"Root: {root.name}, {root.type}")
-    print(f"Group: {group.name}, {group.type}")
-    print(f"Data: {data.name}, {data.type}")
-
-    group.add_attribute("attr1", 10)
-    print(f"Group attribute: {group.get_attribute('attr1')}")
-
-    data.add_attribute("shape", list(data.data.shape))
-    print(f"Data attribute: {data.get_attribute('shape')}")
-
-    # Check if BaseNode and AttributeNode are abstract
-    for AbstractClass in (BaseNode, AttributeNode):
-        try:
-            test = AbstractClass("test", NodeType.ROOT)  # type: ignore
-            print(f"Warning: Successfully instantiated {AbstractClass.__name__}")
-        except TypeError as e:
-            print(f"Cannot instantiate {AbstractClass.__name__}: {e}")
-
-    print(f"Data tensor: {data.data}")
-    data.data = torch.zeros(3, 3)
-    print(f"Updated data tensor: {data.data}")

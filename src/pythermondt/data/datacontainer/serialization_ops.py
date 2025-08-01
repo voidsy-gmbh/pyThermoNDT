@@ -37,7 +37,7 @@ class SerializationOps(BaseOps):
                     continue
 
                 # 2.) If the node is a group, create a group in the HDF5 file and add attributes
-                elif isinstance(node, GroupNode):
+                if isinstance(node, GroupNode):
                     group = f.create_group(path)
                     self._add_attributes(group, node.attributes)
 

@@ -20,7 +20,7 @@ class DatasetOps(BaseOps):
             KeyError: If the parent group does not exist.
             KeyError: If the dataset already exists.
         """
-        key, parent, child = generate_key(path, name)
+        key, _, _ = generate_key(path, name)
 
         # Convert the numpy array to a PyTorch tensor ==> internally, the data is stored as a PyTorch tensor
         if isinstance(data, ndarray):

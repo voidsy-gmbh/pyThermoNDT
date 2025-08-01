@@ -77,13 +77,13 @@ class ThermoDataset(BaseDataset):
             readers_by_type[type(reader)] = readers_by_type.get(type(reader), []) + [reader]
 
         # Check if any of the readers that are of the same type find duplicate or invalid data
-        for reader_type, readers in readers_by_type.items():
+        for reader_type, readers_objects in readers_by_type.items():
             # When there a multiple readers ==> check for duplicate files
-            if len(readers) > 1:
+            if len(readers_objects) > 1:
                 all_files: set[str] = set()
                 duplicate_files: set[str] = set()
 
-                for reader in readers:
+                for reader in readers_objects:
                     # Check if the reader has found any files
                     if not reader.files:
                         raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
@@ -123,25 +123,31 @@ class ThermoDataset(BaseDataset):
 
     def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from readers - required by BaseDataset."""
+        # Validate index first
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+
         # Extract reader and file index from the index map
         r_idx = int(self.__reader_index[idx].item())
         f_idx = int(self.__file_index[idx].item())
 
         try:
             return self.__readers[r_idx][f_idx]
-        except FileNotFoundError:
-            print(f"File not found for reader {self.__readers[r_idx].__class__.__name__} at index {f_idx}")
-            return DataContainer()
-        except Exception as e:
-            print(f"Error reading file for reader {self.__readers[r_idx].__class__.__name__} at index {f_idx}: {e}")
-            return DataContainer()
+        except (FileNotFoundError, OSError, PermissionError) as e:
+            # File system errors
+            msg = f"{self.__readers[r_idx].__class__.__name__}: Cannot read file '{self.files[idx]}' at index {f_idx}"
+            raise RuntimeError(msg) from e
+        except ValueError as e:
+            # Parser/extension errors from BaseReader
+            msg = f"{self.__readers[r_idx].__class__.__name__}: Cannot parse file '{self.files[idx]}' at index {f_idx}"
+            raise ValueError(msg) from e
 
     @property
     def files(self) -> list[str]:
         return [file for reader in self.__readers for file in reader.files]
 
     def __len__(self) -> int:
-        return sum([len(reader.files) for reader in self.__readers])
+        return sum(len(reader.files) for reader in self.__readers)
 
     def __iter__(self) -> Iterator[DataContainer]:
         return (self[i] for i in range(len(self)))

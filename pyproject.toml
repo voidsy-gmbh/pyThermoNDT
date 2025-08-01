@@ -93,6 +93,32 @@ ignore = [
 docstring-code-format = true # Enable reformatting of code snippets in docstrings.
 quote-style = "double"
 
+# Pylint
+[tool.pylint.messages_control]
+# Config general
+source-roots = ["src"]
+fail-on = "I" # Fail on informatioal messages aswell ==> to catch useless suppressions
+py-version = "3.10" # Set Python version to 3.10
+
+# Configure messages
+enable = [
+    "useless-suppression"
+]
+disable = [
+    # Docstring warnings (handled by ruff with D100-D107 ignored)
+    "missing-module-docstring",     # C0114
+    "missing-class-docstring",      # C0115
+    "missing-function-docstring",   # C0116
+    "fixme", # W0511
+    "line-too-long", # C0301 ==> this is handled by ruff aswell
+]
+
+[tool.pylint.design]
+max-parents = 12 # Increase because mixin classes have more parents
+min-public-methods = 1 # Set to 1 because static parser classes have only 1 public method
+max-args = 10 # Some Reader classes have many arguments to configure
+max-positional-arguments = 10 # Some Reader classes require many positional arguments to configure
+
 # typos
 [tool.typos]
 [tool.typos.files]

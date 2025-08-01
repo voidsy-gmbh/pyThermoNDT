@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC, abstractmethod
 
 from torch import nn
@@ -27,8 +28,6 @@ class _BaseTransform(nn.Module, ABC):
         Override this method if you need custom parameter formatting.
         """
         # Get init parameters by inspecting the constructor
-        import inspect
-
         try:
             sig = inspect.signature(self.__class__.__init__)
             init_params = set(sig.parameters.keys()) - {"self"}
@@ -54,8 +53,7 @@ class _BaseTransform(nn.Module, ABC):
         extra_repr = self.extra_repr()
         if extra_repr:
             return f"{class_name}({extra_repr}) [{transform_type}]"
-        else:
-            return f"{class_name}() [{transform_type}]"
+        return f"{class_name}() [{transform_type}]"
 
     # Add type annotations to __call__ method, so that the type checker can infer the correct return type.
     # Otherwise, the return type will be inferred as 'Any'.
@@ -73,8 +71,6 @@ class ThermoTransform(_BaseTransform):
     outputs given the same input, thus they can safely be cached for improved performance.
     """
 
-    pass
-
 
 class RandomThermoTransform(_BaseTransform):
     """Abstract base class that all random/stochastic transforms of PyThermoNDT must inherit from.
@@ -82,5 +78,3 @@ class RandomThermoTransform(_BaseTransform):
     Initializes the module and sets up necessary configurations. These transforms are expected to produce random outputs
     given the same input, thus they should NOT be cached for improved performance.
     """
-
-    pass

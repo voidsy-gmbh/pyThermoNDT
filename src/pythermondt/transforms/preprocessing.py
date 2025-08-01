@@ -170,11 +170,13 @@ class RemoveFlash(ThermoTransform):
         domain_values = domain_values - domain_values[0]
 
         # Update the container and return it
+        # pylint: disable=duplicate-code
         container.update_datasets(
             ("/Data/Tdata", tdata),
             ("/MetaData/DomainValues", domain_values),
             ("/MetaData/ExcitationSignal", excitation_signal),
         )
+        # pylint: enable=duplicate-code
         return container
 
 

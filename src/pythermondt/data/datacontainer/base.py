@@ -46,8 +46,6 @@ class NodeAccessor:
     def __set_node(self, key: str, value: NodeTypes) -> None:
         # Block any overwrites by default ==> updating nodes is handled using __get_node
         # by overriding .data attribute in Node classes
-        if key in self.__nodes:
-            raise KeyError(f"Node at path '{key}' already exists. Use a different path or delete the existing node.")
 
         # Special handling for root nodes
         if isinstance(value, RootNode):
@@ -62,6 +60,9 @@ class NodeAccessor:
             self.__nodes[key] = value
             return
 
+        if key in self.__nodes:
+            raise KeyError(f"Node at path '{key}' already exists. Use a different path or delete the existing node.")
+
         # Split path in parent and child and check if parent exists
         parent, _ = split_path(key)
         if parent not in self.__nodes:
@@ -70,8 +71,7 @@ class NodeAccessor:
                     "RootNode does not exist in this container. "
                     "Check container initialization and ensure that a RootNode exists!"
                 )
-            else:
-                raise KeyError(f"Parent node at path '{parent}' does not exist.")
+            raise KeyError(f"Parent node at path '{parent}' does not exist.")
 
         # Also check if parent is a RootNode or GroupNode
         if not isinstance(self.__nodes[parent], (RootNode, GroupNode)):
@@ -87,7 +87,7 @@ class NodeAccessor:
 
         # If it's a group, remove all child nodes as well to avoid orphaned nodes
         if isinstance(self.__nodes[key], GroupNode):
-            child_keys = [k for k in self.__nodes.keys() if k.startswith(key + "/")]
+            child_keys = [k for k in self.__nodes if k.startswith(key + "/")]
             for child_key in child_keys:
                 del self.__nodes[child_key]
 
@@ -118,7 +118,7 @@ class NodeAccessor:
 
 class DataContainerBase:
     def __init__(self):
-        if type(self) is DataContainerBase:
+        if self.__class__ is DataContainerBase:
             raise TypeError(f"{self.__class__.__name__} is a base class and cannot be instantiated directly.")
         self.__node_accessor = NodeAccessor()
 

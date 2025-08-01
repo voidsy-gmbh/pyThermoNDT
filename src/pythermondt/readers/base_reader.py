@@ -15,7 +15,7 @@ from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
 
-class BaseReader(ABC):
+class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     @abstractmethod
     def __init__(
         self,
@@ -43,6 +43,7 @@ class BaseReader(ABC):
         self.__download_files = download_files
 
         # Internal state
+        self.__backend: BaseBackend | None = None
         self.__files: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
@@ -81,7 +82,7 @@ class BaseReader(ABC):
     @property
     def backend(self) -> BaseBackend:
         """The backend that the reader uses to read the data."""
-        if not hasattr(self, "_BaseReader__backend"):
+        if not self.__backend:
             self.__backend = self._create_backend()
         return self.__backend
 
@@ -128,11 +129,11 @@ class BaseReader(ABC):
         state = self.__dict__.copy()
         # Remove backend reference - will be recreated when needed
         if "_BaseReader__backend" in state:
-            del state["_BaseReader__backend"]
+            state["_BaseReader__backend"] = None
 
         # Remove lock as it cannot be pickled
         if "_BaseReader__manifest_lock" in state:
-            del state["_BaseReader__manifest_lock"]
+            state["_BaseReader__manifest_lock"] = None
 
         # Clear files cache to force reloading
         state["_BaseReader__files_cache"] = None
@@ -144,7 +145,7 @@ class BaseReader(ABC):
         # lazily when first accessed
         self.__dict__.update(state)
 
-        # Recreate thee lock
+        # Recreate the lock
         self.__manifest_lock = Lock()
 
     def __str__(self):
@@ -175,7 +176,7 @@ class BaseReader(ABC):
         with self.__manifest_lock:
             if os.path.exists(manifest_path):
                 try:
-                    with open(manifest_path) as f:
+                    with open(manifest_path, encoding="utf-8") as f:
                         return json.load(f)
                 except (json.JSONDecodeError, FileNotFoundError):
                     return {}
@@ -187,7 +188,7 @@ class BaseReader(ABC):
             os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
             # Atomic write using temp file
             temp_path = manifest_path + ".tmp"
-            with open(temp_path, "w") as f:
+            with open(temp_path, "w", encoding="utf-8") as f:
                 json.dump(manifest, f, indent=2)
             os.replace(temp_path, manifest_path)
 
@@ -211,7 +212,7 @@ class BaseReader(ABC):
         # CACHEDIR.TAG
         tag_file = os.path.join(base_dir, "CACHEDIR.TAG")
         if not os.path.exists(tag_file):
-            with open(tag_file, "w") as f:
+            with open(tag_file, "w", encoding="utf-8") as f:
                 f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
                 f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
                 f.write("# For information about cache directory tags see https://bford.info/cachedir/\n")
@@ -219,7 +220,7 @@ class BaseReader(ABC):
         # Create .gitignore file to ignore cache files in git
         gitignore = os.path.join(base_dir, ".gitignore")
         if not os.path.exists(gitignore):
-            with open(gitignore, "w") as f:
+            with open(gitignore, "w", encoding="utf-8") as f:
                 f.write("# Automatically created by pythermondt\n")
                 f.write("*\n")
         return reader_cache_dir, manifest_path
@@ -271,7 +272,7 @@ class BaseReader(ABC):
 
         return os.path.join(self.reader_cache_dir, relative_path)
 
-    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:
+    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
         """Trigger the download of files from the remote source.
 
         This method will download the specified files from the remote source and cache them locally in the reader's

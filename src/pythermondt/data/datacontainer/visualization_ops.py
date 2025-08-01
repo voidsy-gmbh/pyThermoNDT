@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np  # noqa: F401
 import torch
+from matplotlib import ticker
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
@@ -13,7 +13,7 @@ from .group_ops import GroupOps
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
-    class InteractiveAnalyzer:
+    class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.
 
@@ -97,7 +97,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # 6.) Initialize blitting for faster rendering (if possible)
             self.fig.canvas.draw_idle()
 
-        def toggle_annotation(self, event):
+        def toggle_annotation(self, event):  # pylint: disable=unused-argument
             """Toggle cursor annotation on/off."""
             # Hide annotation if disabled
             if not self.annotation_toggle.get_status()[0]:
@@ -182,7 +182,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             self.fig.canvas.draw_idle()
 
-        def clear_points(self, event):
+        def clear_points(self, event):  # pylint: disable=unused-argument
             """Clear all selected points and profiles."""
             self.selected_points.clear()
             self.profile_ax.clear()

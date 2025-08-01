@@ -12,8 +12,8 @@ def _load_parser_plugins() -> list[type[BaseParser]]:
         try:
             parser_cls = ep.load()
             plugins.append(parser_cls)
-        except Exception as e:
-            print(f"Failed to load parser plugin {ep.name}: {e}")
+        except Exception as e:  # pylint: disable=broad-except
+            print(f"Warning: Failed to load parser plugin '{ep.name}': {e}")
     return plugins
 
 

@@ -41,11 +41,13 @@ class SelectFrames(ThermoTransform):
         domain_values = domain_values - domain_values[0]
 
         # Update Container and return
+        # pylint: disable=duplicate-code
         container.update_datasets(
             ("/Data/Tdata", tdata),
             ("/MetaData/DomainValues", domain_values),
             ("/MetaData/ExcitationSignal", excitation_signal),
         )
+        # pylint: enable=duplicate-code
         return container
 
 

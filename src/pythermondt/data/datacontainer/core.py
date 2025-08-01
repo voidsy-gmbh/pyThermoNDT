@@ -26,7 +26,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         By default, initializes an empty DataContainer.
         If a serialized HDF5 file is provided, the DataContainer is initialized with the data from the BytesIO object.
 
-        Parameters:
+        Args:
             hdf5_data (BytesIO | None): The HDF5 file to deserialize. Defaults to None.
         """
         super().__init__()
@@ -59,7 +59,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         that have undergone stochastic transforms (e.g. GaussianNoise) will not be equal
         since their data differs.
 
-        Parameters:
+        Args:
             other (object): The other object to compare with.
 
         Returns:

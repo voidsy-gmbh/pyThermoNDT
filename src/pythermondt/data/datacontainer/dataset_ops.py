@@ -11,7 +11,7 @@ class DatasetOps(BaseOps):
     def add_dataset(self, path: str, name: str, data: Tensor | ndarray | None = None):
         """Adds a single dataset to a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the parent group.
             name (str): The name of the dataset to add.
             data (Tensor, optional): The data to store in the dataset. If None, an empty dataset is created.
@@ -34,7 +34,7 @@ class DatasetOps(BaseOps):
     def add_datasets(self, path: str, **datasets: Tensor | ndarray | None):
         """Adds multiple datasets to a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the parent group.
             **datasets (Dict[str, Optional[Tensor | ndarray]]): The datasets to add, provided as a dictionary.
                 The specified key will become the name of the dataset.
@@ -49,7 +49,7 @@ class DatasetOps(BaseOps):
     def get_dataset(self, path: str) -> Tensor:
         """Get a single dataset from a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the dataset
 
         Returns:
@@ -64,7 +64,7 @@ class DatasetOps(BaseOps):
     def get_datasets(self, *paths: str) -> tuple[Tensor, ...]:
         """Get multiple datasets from specified paths in the DataContainer.
 
-        Parameters:
+        Args:
             *paths (str): Variable number of paths to the datasets.
                 Can be provided as separate arguments or unpacked from a list.
 
@@ -96,7 +96,7 @@ class DatasetOps(BaseOps):
     def remove_dataset(self, path: str):
         """Removes a single dataset from a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the dataset
 
         Raises:
@@ -110,7 +110,7 @@ class DatasetOps(BaseOps):
     def update_dataset(self, path: str, data: Tensor | ndarray):
         """Updates a single dataset at a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the dataset.
             data (Tensor): The new data to store in the dataset.
 
@@ -126,7 +126,7 @@ class DatasetOps(BaseOps):
     def update_datasets(self, *updates: tuple[str, Tensor | ndarray]):
         """Update multiple datasets in the DataContainer.
 
-        Parameters:
+        Args:
             *updates (Tuple[str, Tensor | ndarray]): Variable number of (path, data) tuples.
                 Can be provided as separate tuples or unpacked from a list.
 

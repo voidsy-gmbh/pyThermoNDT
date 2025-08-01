@@ -17,7 +17,7 @@ class IndexedThermoDataset(BaseDataset):
     def __init__(self, dataset: BaseDataset, indices: Sequence[int], transform: ThermoTransform | None = None):
         """Initialize an indexed dataset with optional additional transform.
 
-        Parameters:
+        Args:
             dataset (ThermoDataset): Parent dataset to index into
             indices (Sequence[int]): Sequence of indices to select from parent
             transform (ThermoTransform, optional): Optional transform to apply after parent's transform

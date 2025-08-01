@@ -13,7 +13,7 @@ class LocalBackend(BaseBackend):
 
         This class is used to read data from local files, or directories, using the standard Python file I/O operations.
 
-        Parameters:
+        Args:
             pattern (Pattern | str): The source of the data. This must be a valid file path, directory path, or a regex
                 pattern. If a regex pattern is provided, it will be used to determine the files using glob.
         """

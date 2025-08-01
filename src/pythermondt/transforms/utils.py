@@ -54,7 +54,7 @@ def split_transforms_for_caching(
     Nested Compose transforms are flattened before splitting, so that the
     split is applied to the individual transforms rather than the Compose container itself.
 
-    Parameters:
+    Args:
         transforms (_BaseTransform | Sequence[_BaseTransform]): Transforms to split.
 
     Returns:

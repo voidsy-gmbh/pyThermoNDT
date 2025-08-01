@@ -16,7 +16,7 @@ class LocalReader(BaseReader):
 
         Uses the LocalBackend to read files from the local file system.
 
-        Parameters:
+        Args:
             pattern (Pattern | str): The pattern to match files. Can be a string or a compiled regex pattern.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.

@@ -24,7 +24,7 @@ PARSER_REGISTRY: list[type[BaseParser]] = [HDF5Parser, SimulationParser] + _load
 def find_parser_for_extension(extension: str) -> type[BaseParser] | None:
     """Find a parser that supports the given file extension.
 
-    Parameters:
+    Args:
         extension: File extension (with or without leading dot)
 
     Returns:

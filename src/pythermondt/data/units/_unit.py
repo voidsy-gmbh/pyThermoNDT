@@ -12,7 +12,7 @@ class Unit(TypedDict):
 def is_unit_info(obj: Any) -> TypeGuard[Unit]:
     """TypeGuard to check if an object is a valid UnitInfo.
 
-    Parameters:
+    Args:
         obj (Any): The object to check.
 
     Returns:

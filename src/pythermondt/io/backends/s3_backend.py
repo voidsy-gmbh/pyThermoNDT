@@ -36,7 +36,7 @@ class S3Backend(BaseBackend):
     def read_file(self, file_path: str) -> IOPathWrapper:
         """Read a file from S3.
 
-        Parameters:
+        Args:
             file_path (str): Path to file, either full S3 URI or key within bucket
 
         Returns:
@@ -58,7 +58,7 @@ class S3Backend(BaseBackend):
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         """Write file to S3.
 
-        Parameters:
+        Args:
             data (IOPathWrapper): File data to write
             file_path (str): Destination path
         """
@@ -73,7 +73,7 @@ class S3Backend(BaseBackend):
     def exists(self, file_path: str) -> bool:
         """Check if a file exists in S3.
 
-        Parameters:
+        Args:
             file_path (str): Path to check
 
         Returns:
@@ -99,7 +99,7 @@ class S3Backend(BaseBackend):
     def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
         """Get list of files from S3 with optional filtering.
 
-        Parameters:
+        Args:
             extensions (tuple[str, ...], optional): Filter by file extensions
             num_files (int, optional): Limit number of files returned
 
@@ -137,7 +137,7 @@ class S3Backend(BaseBackend):
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Download a file from S3 to local filesystem.
 
-        Parameters:
+        Args:
             source_path (str): Source S3 path
             destination_path (str): Destination local path
         """
@@ -151,7 +151,7 @@ class S3Backend(BaseBackend):
 
         Handles both s3://bucket/key format and relative paths.
 
-        Parameters:
+        Args:
             path (str): Path to parse
 
         Returns:

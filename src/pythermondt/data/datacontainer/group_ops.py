@@ -7,7 +7,7 @@ class GroupOps(BaseOps):
     def add_group(self, path: str, name: str):
         """Adds a single group to a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the parent group.
             name (str): The name of the group to add.
 
@@ -29,7 +29,7 @@ class GroupOps(BaseOps):
     def remove_group(self, path: str):
         """Removes a single group from a specified path in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the parent group.
 
         Raises:

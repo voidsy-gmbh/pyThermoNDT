@@ -164,7 +164,7 @@ class BaseOps(DataContainerBase):
     def _path_exists(self, key: str) -> bool:
         """Check if a path exists in the DataContainer.
 
-        Parameters:
+        Args:
             key (str): The path to check.
 
         Returns:
@@ -179,7 +179,7 @@ class BaseOps(DataContainerBase):
     def _is_datanode(self, key: str) -> bool:
         """Check if a DataNode exists at the given path.
 
-        Parameters:
+        Args:
             key (str): The path to check.
 
         Returns:
@@ -194,7 +194,7 @@ class BaseOps(DataContainerBase):
     def _is_groupnode(self, key: str) -> bool:
         """Check if a GroupNode exists at the given path.
 
-        Parameters:
+        Args:
             key (str): The path to check.
 
         Returns:
@@ -209,7 +209,7 @@ class BaseOps(DataContainerBase):
     def _is_rootnode(self, key: str) -> bool:
         """Check if a RootNode exists at the given path.
 
-        Parameters:
+        Args:
             key (str): The path to check.
 
         Returns:
@@ -226,7 +226,7 @@ class BaseOps(DataContainerBase):
 
         If the path itself is the root path, it returns False.
 
-        Parameters:
+        Args:
             key (str): The path to check.
 
         Returns:

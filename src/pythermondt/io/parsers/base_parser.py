@@ -41,7 +41,7 @@ class BaseParser(Protocol):
 
         Subclasses must implement this method.
 
-        Parameters:
+        Args:
             data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.
 
         Returns:

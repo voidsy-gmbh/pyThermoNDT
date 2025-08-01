@@ -7,7 +7,7 @@ from .node import BaseNode, DataNode, GroupNode, NodeType, RootNode
 def is_rootnode(node: BaseNode) -> "TypeGuard[RootNode]":
     """Checks if the given node is a RootNode.
 
-    Parameters:
+    Args:
         node (BaseNode): The node to check.
 
     Returns:
@@ -19,7 +19,7 @@ def is_rootnode(node: BaseNode) -> "TypeGuard[RootNode]":
 def is_groupnode(node: BaseNode) -> "TypeGuard[GroupNode]":
     """Checks if the given node is a GroupNode.
 
-    Parameters:
+    Args:
         node (BaseNode): The node to check.
 
     Returns:
@@ -31,7 +31,7 @@ def is_groupnode(node: BaseNode) -> "TypeGuard[GroupNode]":
 def is_datanode(node: BaseNode) -> "TypeGuard[DataNode]":
     """Checks if the given node is a DataNode.
 
-    Parameters:
+    Args:
         node (BaseNode): The node to check.
 
     Returns:
@@ -43,7 +43,7 @@ def is_datanode(node: BaseNode) -> "TypeGuard[DataNode]":
 def validate_path(path: str, name: str = "") -> str:
     """Validates and normalizes the given HDF5 path.
 
-    Parameters:
+    Args:
         path (str): The path to validate and normalize.
         name (str, optional): The name of the group or dataset to add to the path. Defaults to "".
 
@@ -82,7 +82,7 @@ def validate_path(path: str, name: str = "") -> str:
 def validate_paths(paths: list[str]) -> tuple[str, ...]:
     """Validates and normalizes the given list of HDF5 paths.
 
-    Parameters:
+    Args:
         paths (List[str]): The list of paths to validate and normalize.
 
     Returns:
@@ -97,7 +97,7 @@ def validate_paths(paths: list[str]) -> tuple[str, ...]:
 def split_path(path: str) -> tuple[str, str]:
     """Splits the given HDF5 path into the parent path and the name of the group or dataset.
 
-    Parameters:
+    Args:
         path (str): The path to split.
 
     Returns:
@@ -116,7 +116,7 @@ def generate_key(path: str, name: str) -> tuple[str, str, str]:
     First the path is validated and normalized, then it is split into the parent path and the name of the
     group or dataset.
 
-    Parameters:
+    Args:
         path (str): The path to generate the key for.
         name (str): The name of the group or dataset.
 

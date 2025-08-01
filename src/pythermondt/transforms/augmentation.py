@@ -17,7 +17,7 @@ class RandomFlip(RandomThermoTransform):
         The flipping occurs along the height (vertical flip) and/or the width (horizontal flip) of Tdata.
         The probabilities of flipping along height and width can be specified separately.
 
-        Parameters:
+        Args:
             p_height (float, optional): Probability of flipping along the height (vertical flip), in the range [0, 1].
                 Default is 0.5.
             p_width (float, optional): Probability of flipping along the width (horizontal flip), in the range [0, 1].
@@ -61,7 +61,7 @@ class GaussianNoise(RandomThermoTransform):
     def __init__(self, mean: float = 0.0, std: float = 0.1):
         """Initializes the GaussianNoise transformation with specified mean and standard deviation.
 
-        Parameters:
+        Args:
             mean (float): Mean of the Gaussian noise. Default is 0.0.
             std (float): Standard deviation of the Gaussian noise. Default is 1.0.
 

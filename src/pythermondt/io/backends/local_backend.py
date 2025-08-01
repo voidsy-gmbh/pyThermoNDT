@@ -17,20 +17,18 @@ class LocalBackend(BaseBackend):
             recursive (bool): If True, the pattern will be applied recursively to all subdirectories. This will only
                 be effective if the pattern is a directory path or a glob pattern. Defaults to False.
         """
-        # Replace backslashes with forward slashes to avoid escaping issues on windows
-        pattern_str = pattern.replace("\\", "/")
-
         # Determine the type of the source based on the provided pattern
         self.__source_type = None
-        if os.path.isfile(pattern_str):
+        if os.path.isfile(pattern):
             self.__source_type = "file"
-        elif os.path.isdir(pattern_str):
+        elif os.path.isdir(pattern):
             self.__source_type = "directory"
         else:
+            # Escape the pattern for globbing
             self.__source_type = "glob"
 
         # Internal state
-        self.__pattern_str = pattern_str
+        self.__pattern_str = pattern
         self.__recursive = recursive
 
     @property

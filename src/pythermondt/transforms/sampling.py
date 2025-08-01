@@ -12,7 +12,7 @@ class SelectFrames(ThermoTransform):
     def __init__(self, frame_indices: int | Sequence[int]):
         """Select a subset of frames from the data container specified by a single index or a list of indices.
 
-        Parameters:
+        Args:
             frame_indices (int | Sequence[int]): Single index or list of indices to select frames.
         """
         super().__init__()
@@ -57,7 +57,7 @@ class SelectFrameRange(ThermoTransform):
     def __init__(self, start: int | None = None, end: int | None = None):
         """Select a range of frames from the data container, by specifying their start and end index.
 
-        Parameters:
+        Args:
             start (int, optional): Start index of the frame range. Default is None, which means the start index is 0.
             end (int, optional): End index of the frame range, which is inclusiv.
                 Default is None, which means the end index is the last frame.
@@ -117,7 +117,7 @@ class NonUniformSampling(ThermoTransform):
         Efficient defect reconstruction from temporal non-uniform pulsed
         thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
 
-        Parameters:
+        Args:
             n_samples (int): Number of samples to select from the original data.
             tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
                           If None, will be approxmated automatically using binary search to satisfy

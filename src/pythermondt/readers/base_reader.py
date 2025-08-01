@@ -26,7 +26,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     ):
         """Initialize an instance of the BaseReader class.
 
-        Parameters:
+        Args:
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
             download_files (bool, optional): Whether to automatically cache remote files locally during operations.
@@ -228,7 +228,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def _download_single_file(self, remote_path: str, manifest: dict[str, str]) -> tuple[str, str]:
         """Download a single file from the remote source and return its local path.
 
-        Parameters:
+        Args:
             remote_path (str): The path to the file on the remote source.
             manifest (dict[str, str]): The manifest dictionary containing the current state of downloaded files.
 
@@ -252,7 +252,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def _ensure_file_cached(self, remote_path: str) -> str:
         """Ensure a file is cached locally, return local path.
 
-        Parameters:
+        Args:
             remote_path (str): The path to the file on the remote source.
 
         Returns:
@@ -281,7 +281,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         **Note:** This works regardless of the `download_files` flag, set during reader initialization.
 
-        Parameters:
+        Args:
             file_paths (list[str], optional): List of file paths to download. If None, all files that the reader is
                 able to read will be downloaded. Default is None.
             num_workers (int, optional): Number of workers to use for downloading files. If None, the global

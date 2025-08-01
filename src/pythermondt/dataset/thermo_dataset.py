@@ -21,7 +21,7 @@ class ThermoDataset(BaseDataset):
         Files are discovered and downloaded (if remote) during initialization for
         predictable performance during training.
 
-        Parameters:
+        Args:
             data_source: Single reader or list of readers to combine
             transform: Optional transform applied to each container when loaded
 

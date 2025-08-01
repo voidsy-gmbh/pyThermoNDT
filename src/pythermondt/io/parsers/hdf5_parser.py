@@ -12,7 +12,7 @@ class HDF5Parser(BaseParser):
 
         The IOPathWrapper object must contain a serialized DataContainer object in HDF5 format.
 
-        Parameters:
+        Args:
             data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.
 
         Returns:

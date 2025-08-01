@@ -18,7 +18,7 @@ class SerializationOps(BaseOps):
     def serialize_to_hdf5(self, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4) -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
 
-        Parameters:
+        Args:
             compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
                 Default is "lzf" which is a fast compression method. If you want smaller files,
                 use "gzip" instead, but it is slower.
@@ -68,7 +68,7 @@ class SerializationOps(BaseOps):
     def _add_attributes(self, h5obj: h5py.Dataset | h5py.Group, attributes: ItemsView[str, AttributeTypes]):
         """Adds attributes to an HDF5 object (group or dataset).
 
-        Parameters:
+        Args:
             h5obj (h5py.Group or h5py.Dataset): The HDF5 object to add attributes to.
             attributes (Dict[str, str | int | float | list | tuple | dict]): The attributes to add.
         """
@@ -83,7 +83,7 @@ class SerializationOps(BaseOps):
     def save_to_hdf5(self, path: str, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4):
         """Saves the serialized DataContainer to an HDF5 file at the specified path.
 
-        Parameters:
+        Args:
             path (str): The path where the HDF5 file should be saved.
             compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
                 Default is "lzf" which is a fast compression method. If you want smaller files,
@@ -99,7 +99,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
     def deserialize(self, hdf5_data: BytesIO):
         """Deserializes an HDF5 file into the DataContainer instance.
 
-        Parameters:
+        Args:
             hdf5_data (BytesIO): The HDF5 file to deserialize.
         """
         # Check if the IOPathWrapper object is empty
@@ -132,7 +132,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
     def _process_group(self, path: str, name: str, group: h5py.Group):
         """Processes and adds one group and its subgroups and datasets to the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the parent where the group should be added.
             name (str): The name of the group.
             group (h5py.Group): The group to process.
@@ -158,7 +158,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
     def _process_dataset(self, path: str, name: str, dataset: h5py.Dataset):
         """Processes and adds a dataset to the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the parent group where the dataset should be added.
             name (str): The name of the dataset.
             dataset (h5py.Dataset): The dataset to process.
@@ -173,7 +173,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
     def _process_attributes(self, path: str, attributes: dict[str, Any]):
         """Processes and adds attributes to a node in the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path to the node.
             attributes (Dict[str, Any]): The attributes to add to the node.
         """
@@ -207,7 +207,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
     def load_from_hdf5(self, path: str):
         """Loads an HDF5 file from the specified path and deserializes it into the DataContainer.
 
-        Parameters:
+        Args:
             path (str): The path of the HDF5 file to load.
         """
         with open(path, "rb") as file:

@@ -5,7 +5,7 @@ from .units import Units
 def generate_label(unit: Unit) -> str:
     """Generates a label from a UnitInfo object.
 
-    Parameters:
+    Args:
         unit (UnitInfo): The UnitInfo object to generate the label from.
 
     Returns:

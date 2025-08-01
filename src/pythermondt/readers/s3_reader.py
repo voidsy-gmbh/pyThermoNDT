@@ -22,7 +22,7 @@ class S3Reader(BaseReader):
         authentication method for AWS, according to the documentation:
         https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration
 
-        Parameters:
+        Args:
             bucket (str): The name of the S3 bucket.
             prefix (str): The prefix (path) within the S3 bucket.
             region_name (str, optional): The AWS region name, e.g. eu-central-1 used when creating new connections.

@@ -63,7 +63,7 @@ class SubtractFrame(ThermoTransform):
     def __init__(self, frame: int = 0):
         """Subtracts 1 frame from all other frames in the Temperature data (Tdata) of the container.
 
-        Parameters:
+        Args:
             frame (int): Frame number that should be subtracted from the Temperature data.
                 Default is the initial frame (frame 0).
         """
@@ -114,7 +114,7 @@ class RemoveFlash(ThermoTransform):
         - "mean_temp_drop": Detect the flash by finding the largest temperature drop in the mean temperature over all
             frames. This is the most reliable method if excitation signal is not available.
 
-        Parameters:
+        Args:
             method (Literal["excitation_signal", "max_temp"]): Method to detect the flash.
                 Default is "excitation_signal".
             offset (int): Offset in frames to add to the detected flash end. Default is 0.
@@ -186,7 +186,7 @@ class CropFrames(ThermoTransform):
     def __init__(self, height: int, width: int, method: Literal["C", "TL", "TR", "BL", "BR"] = "C"):
         """Crops the frames and the mask in the container to the specified height and width.
 
-        Parameters:
+        Args:
             height (int): Height of the cropped frames.
             width (int): Width of the cropped frames.
             method (optional, Literal["C", "TL", "TR", "BL", "BR"]): Cropping strategy. Default is "C" (center).

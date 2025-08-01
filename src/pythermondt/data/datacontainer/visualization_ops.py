@@ -17,7 +17,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.
 
-            Parameters:
+            Args:
                 parent (VisualizationOps): The parent container for the interactive analysis.
             """
             # 1.) Retrieve data from the container
@@ -204,7 +204,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     def show_frame(self, frame_number: int, option: str = "", cmap: str = "plasma"):
         """Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
-        Parameters:
+        Args:
             frame_number (int): The frame number to visualize.
             option (str): The visualization option to apply.
                 Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
@@ -262,7 +262,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         The X-axis of the plot is labeled according to the domaintype attribute, reflecting the dataset's domain
         (e.g., time, frequency). The Y-axis is generically labeled as 'Temperature in K'.
 
-        Parameters:
+        Args:
             pixel_pos_x (int): The X-coordinate (column index) of the pixel.
                 Must be within the dataset's second dimension range.
             pixel_pos_y (int): The Y-coordinate (row index) of the pixel.

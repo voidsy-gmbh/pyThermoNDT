@@ -143,7 +143,7 @@ class BaseDataset(Dataset, ABC):
             **Windows**: Use lazy mode to avoid memory issues due to cache duplication in forked processes
             **Linux**: Both modes work efficiently - choose based on workflow preference
 
-        Parameters:
+        Args:
             mode (CacheMode): Cache building strategy
                 - "lazy": Create shared cache, workers fill on-demand for faster startup (default)
                 - "immediate": Build all items upfront using a ThreadPool

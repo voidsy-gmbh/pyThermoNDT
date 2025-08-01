@@ -25,7 +25,7 @@ def random_split(
     After computing the lengths, if there are any remainders, 1 count will be distributed in round-robin fashion to the
     lengths until there are no remainders left.
 
-    Parameters:
+    Args:
         dataset (Dataset): Dataset to be split
         lengths (Sequence[float]): Fractions for each split that sum up to 1.0.
         transforms (Sequence[ThermoTransform | None], optional): Optional sequence of transforms for each split.
@@ -101,7 +101,7 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
 
     Returns a function that extracts specified dataset paths and stacks them along batch dimension.
 
-    Parameters:
+    Args:
         *paths (str): Variable number of dataset paths to extract (e.g. '/Data/Tdata', '/GroundTruth/DefectMask')
 
     Returns:

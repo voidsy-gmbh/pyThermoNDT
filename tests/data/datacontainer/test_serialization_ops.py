@@ -17,9 +17,10 @@ def test_serialize_deserialize(
 ):
     """Test serialization and deserialization of DataContainer.
 
-    Parameters:
+    Args:
         container_fixture: Name of the fixture to test
         request: Pytest fixture request object to get the fixture
+        compression: Compression method to use for serialization
 
     Tests:
         1. Serialization to HDF5 bytes
@@ -84,7 +85,7 @@ def test_serialize_invalid_hdf5():
 def test_pickle_serialize_deserialize(container_fixture: str, request: pytest.FixtureRequest):
     """Test that DataContainer can be pickled and unpickled.
 
-    Parameters:
+    Args:
         container_fixture: Name of the fixture to test
         request: Pytest fixture request object to get the fixture
 
@@ -115,7 +116,7 @@ def test_pickle_serialize_deserialize(container_fixture: str, request: pytest.Fi
 def test_pickle_protocols(container_fixture: str, request: pytest.FixtureRequest, protocol: int):
     """Test pickling with different pickle protocols.
 
-    Parameters:
+    Args:
         container_fixture: Name of the fixture to test
         request: Pytest fixture request object to get the fixture
         protocol: Pickle protocol version to test
@@ -141,7 +142,7 @@ def test_pickle_protocols(container_fixture: str, request: pytest.FixtureRequest
 def test_pickle_file_operations(container_fixture: str, request: pytest.FixtureRequest, tmp_path):
     """Test pickle file save and load operations.
 
-    Parameters:
+    Args:
         container_fixture: Name of the fixture to test
         request: Pytest fixture request object to get the fixture
         tmp_path: Pytest temporary directory fixture

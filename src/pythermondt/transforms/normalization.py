@@ -16,7 +16,7 @@ class MinMaxNormalize(ThermoTransform):
         This is done by subtracting the min value from the data and dividing by the difference between the max and
         min values.
 
-        Parameters:
+        Args:
             eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
         """
         super().__init__()
@@ -48,7 +48,7 @@ class MaxNormalize(ThermoTransform):
     def __init__(self, eps: float = 1e-12):
         """Normalizes the Temperature data (Tdata) in the container to range [0, 1], by using the max value of the data.
 
-        Parameters:
+        Args:
             eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
         """
         super().__init__()
@@ -79,7 +79,7 @@ class ZScoreNormalize(ThermoTransform):
     def __init__(self, eps: float = 1e-12):
         """Normalizes the Temperature data (Tdata) in the container to have mean 0 and standard deviation 1.
 
-        Parameters:
+        Args:
             eps (float): Small value added to the denominator to avoid division by zero. Default is 1e-12.
         """
         super().__init__()

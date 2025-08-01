@@ -10,7 +10,7 @@ class S3Writer(BaseWriter):
     def __init__(self, bucket: str, destination_folder: str, boto3_session: boto3.Session | None = None):
         """Instantiates a new HDF5Writer.
 
-        Parameters:
+        Args:
             bucket (str): The name of the bucket to write to.
             destination_folder (str): The destination folder where the DataContainers should be written to.
             boto3_session (boto3.Session, optional): The boto3 session to be used for the S3 client.

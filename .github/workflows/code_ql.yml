@@ -46,15 +46,19 @@ jobs:
       - name: Run Ruff
         run: ruff check
 
-      # Step 5: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
+      # Step 5: Run Pylint
+      - name: Run Pylint
+        run: pylint --source-roots src --jobs 0 pythermondt
+
+      # Step 6: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
       - name: Perform licensecheck
         run: licensecheck --requirements-paths pyproject.toml --ignore-packages nvidia-* -0
 
-      # Step 6: Run mypy
+      # Step 7: Run mypy
       - name: Run mypy
         run: mypy --config-file pyproject.toml
 
-      # Step 7: Set Output Based on Code Quality Checks Success
+      # Step 8: Set Output Based on Code Quality Checks Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

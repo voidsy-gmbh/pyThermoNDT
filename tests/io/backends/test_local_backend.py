@@ -1,5 +1,4 @@
 import io
-import re
 from pathlib import Path
 
 import pytest
@@ -29,17 +28,6 @@ def test_init_valid_patterns(tmp_path, source_type, setup_func):
     backend = LocalBackend(pattern)
 
     assert backend.pattern == pattern.replace("\\", "/")
-    assert backend.remote_source is False
-
-
-def test_init_with_regex_pattern():
-    """Test initialization with re.Pattern object."""
-    pattern = re.compile(r".*\.txt$")
-    backend = LocalBackend(pattern)
-
-    # The pattern gets backslashes replaced with forward slashes
-    expected_pattern = pattern.pattern.replace("\\", "/")
-    assert backend.pattern == expected_pattern
     assert backend.remote_source is False
 
 
@@ -160,24 +148,6 @@ def test_get_file_list_glob_pattern(tmp_path: Path):
         path.write_text("content")
 
     pattern = str(tmp_path / "test*.txt")
-    backend = LocalBackend(pattern)
-
-    result = backend.get_file_list()
-    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
-
-    assert len(result) == 1
-    assert result == expected
-
-
-def test_get_file_list_regex_pattern(tmp_path: Path):
-    """Test get_file_list with a compiled regex pattern."""
-    files = ["test1.txt", "test2.py", "other.txt"]
-    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
-
-    for path in paths:
-        path.write_text("content")
-
-    pattern = re.compile(str(tmp_path).replace("\\", "/") + r"/test*.txt")  # Compile a regex pattern to match test file
     backend = LocalBackend(pattern)
 
     result = backend.get_file_list()

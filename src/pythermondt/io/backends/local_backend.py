@@ -1,49 +1,37 @@
 import os
-import re
 from glob import glob
-from re import Pattern
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
 
 
 class LocalBackend(BaseBackend):
-    def __init__(self, pattern: Pattern | str) -> None:
+    def __init__(self, pattern: str, recursive: bool = False) -> None:
         """Initialize an instance of the LocalBackend class.
 
         This class is used to read data from local files, or directories, using the standard Python file I/O operations.
 
         Args:
-            pattern (Pattern | str): The source of the data. This must be a valid file path, directory path, or a regex
-                pattern. If a regex pattern is provided, it will be used to determine the files using glob.
+            pattern (str): The pattern that will be used to match files to read. This can either be a file path, a
+                directory path, or a glob pattern.
+            recursive (bool): If True, the pattern will be applied recursively to all subdirectories. This will only
+                be effective if the pattern is a directory path or a glob pattern. Defaults to False.
         """
-        # Convert pattern to string if it is a re.Pattern object
-        pattern_str = pattern.pattern if isinstance(pattern, Pattern) else pattern
-
         # Replace backslashes with forward slashes to avoid escaping issues on windows
-        pattern_str = pattern_str.replace("\\", "/")
+        pattern_str = pattern.replace("\\", "/")
 
-        # Determine the type of the source pattern
-        # Check if source is a valid regex pattern
-        try:
-            re.compile(pattern_str)
-            valid_regex = True
-        except re.error:
-            valid_regex = False
-
-        # Check if the provided source is either a file, a directory or a regex pattern
-        if isinstance(pattern_str, str):
-            if os.path.isfile(pattern_str):
-                self.__source_type = "file"
-            elif os.path.isdir(pattern_str):
-                self.__source_type = "directory"
-            elif valid_regex:
-                self.__source_type = "regex"
-            else:
-                raise ValueError("The provided source must either be a file, a directory or a valid regex pattern.")
+        # Determine the type of the source based on the provided pattern
+        self.__source_type = None
+        if os.path.isfile(pattern_str):
+            self.__source_type = "file"
+        elif os.path.isdir(pattern_str):
+            self.__source_type = "directory"
         else:
-            raise ValueError("The provided source must be a string or a regex pattern.")
+            self.__source_type = "glob"
+
+        # Internal state
         self.__pattern_str = pattern_str
+        self.__recursive = recursive
 
     @property
     def remote_source(self) -> bool:
@@ -74,10 +62,9 @@ class LocalBackend(BaseBackend):
             case "file":
                 all_files = [self.pattern]
             case "directory":
-                with os.scandir(self.pattern) as entries:
-                    all_files = [entry.path for entry in entries if entry.is_file()]
-            case "regex":
-                all_files = glob(self.pattern)
+                all_files = glob(os.path.join(self.pattern, "**"), recursive=self.__recursive)
+            case "glob":
+                all_files = glob(self.pattern, recursive=self.__recursive)
 
         # Filter by extension if provided
         if extensions:

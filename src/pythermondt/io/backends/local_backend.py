@@ -62,7 +62,10 @@ class LocalBackend(BaseBackend):
             case "file":
                 all_files = [self.pattern]
             case "directory":
-                all_files = glob(os.path.join(self.pattern, "**"), recursive=self.__recursive)
+                if self.__recursive:
+                    all_files = [os.path.join(root, name) for root, _, names in os.walk(self.pattern) for name in names]
+                else:
+                    all_files = [f.path for f in os.scandir(self.pattern) if f.is_file()]
             case "glob":
                 all_files = glob(self.pattern, recursive=self.__recursive)
 

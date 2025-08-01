@@ -95,6 +95,11 @@ quote-style = "double"
 
 # Pylint
 [tool.pylint.messages_control]
+# Config general
+source-roots = ["src"]
+fail-on = "I" # Fail on informatioal messages aswell ==> to catch useless suppressions
+
+# Configure messages
 enable = [
     "useless-suppression"
 ]

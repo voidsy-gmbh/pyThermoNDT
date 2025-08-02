@@ -1,7 +1,7 @@
 import os
 from glob import glob
 
-from ..utils import IOPathWrapper
+from ..utils import IOPathWrapper, is_valid_glob_pattern
 from .base_backend import BaseBackend
 
 
@@ -23,9 +23,10 @@ class LocalBackend(BaseBackend):
             self.__source_type = "file"
         elif os.path.isdir(pattern):
             self.__source_type = "directory"
-        else:
-            # Escape the pattern for globbing
+        elif is_valid_glob_pattern(pattern):
             self.__source_type = "glob"
+        else:
+            raise ValueError(f"Invalid pattern: {pattern}. Must be a file path, directory path, or valid glob pattern.")
 
         # Internal state
         self.__pattern_str = pattern

@@ -1,4 +1,5 @@
 import io
+import os
 from pathlib import Path
 
 import pytest
@@ -15,14 +16,14 @@ def _create_test_file(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "source_type, setup_func",
+    "setup_func",
     [
-        ("file", _create_test_file),
-        ("directory", lambda tmp_path: str(tmp_path)),
-        ("glob_pattern", lambda tmp_path: str(tmp_path / "*.txt")),
+        _create_test_file,
+        lambda tmp_path: str(tmp_path),
+        lambda tmp_path: str(tmp_path / "*.txt"),
     ],
 )
-def test_init_valid_patterns(tmp_path, source_type, setup_func):
+def test_init_valid_patterns(tmp_path, setup_func):
     """Test LocalBackend initialization with valid patterns."""
     pattern = setup_func(tmp_path)
     backend = LocalBackend(pattern)
@@ -31,17 +32,19 @@ def test_init_valid_patterns(tmp_path, source_type, setup_func):
     assert backend.remote_source is False
 
 
-def test_init_invalid_integer():
-    """Test that integer input raises AttributeError."""
-    with pytest.raises(AttributeError, match="'int' object has no attribute 'replace'"):
-        LocalBackend(123)  # type: ignore
+@pytest.mark.parametrize("pattern", [123, None, 3.14, ["invalid"], {"key": "value"}, None])
+def test_init_invalid_pattern_type(pattern):
+    """Test that invalid pattern types raise ValueError."""
+    with pytest.raises(ValueError, match=f"Invalid pattern type: {type(pattern)}. Must be a string."):
+        LocalBackend(pattern)
 
 
-def test_init_nonexistent_path_as_regex():
-    """Test that non-existent paths are treated as regex patterns."""
-    # This should not raise an error as it's treated as a valid regex
-    backend = LocalBackend("/nonexistent/path")
-    assert backend.pattern == "/nonexistent/path"
+@pytest.mark.parametrize("pattern", ["", "nonexistent/path", "noexistent/file.txt", "nonexistent/*.md"])
+def test_init_nonexistent_pattern(pattern):
+    """Test that non-existent paths are treated as valid but return empty file list."""
+    backend = LocalBackend(pattern)
+    assert backend.pattern == pattern
+    assert len(backend.get_file_list()) == 0  # Should return empty list for non-existent path
 
 
 def test_read_file(tmp_path):
@@ -326,3 +329,75 @@ def test_concurrent_access(tmp_path):
     content2 = backend2.read_file(str(test_file))
 
     assert content1.file_obj.read() == content2.file_obj.read()
+
+
+def test_recursive_directory_traversal(tmp_path):
+    """Test recursive directory traversal."""
+    # Create nested structure
+    nested = tmp_path / "level1" / "level2"
+    nested.mkdir(parents=True)
+
+    (tmp_path / "root.txt").write_text("content")
+    (tmp_path / "level1" / "l1.txt").write_text("content")
+    (nested / "l2.txt").write_text("content")
+
+    # Test non-recursive
+    backend = LocalBackend(str(tmp_path), recursive=False)
+    files = backend.get_file_list()
+    assert len(files) == 1  # Only root.txt
+
+    # Test recursive
+    backend_recursive = LocalBackend(str(tmp_path), recursive=True)
+    files_recursive = backend_recursive.get_file_list()
+    assert len(files_recursive) == 3  # All files
+
+
+def test_recursive_glob_pattern(tmp_path):
+    """Test recursive glob patterns."""
+    nested = tmp_path / "subdir"
+    nested.mkdir()
+
+    (tmp_path / "test1.txt").write_text("content")
+    (nested / "test2.txt").write_text("content")
+
+    pattern = str(tmp_path / "**/*.txt")
+
+    # Non-recursive should find only direct matches
+    backend = LocalBackend(pattern, recursive=False)
+    files = backend.get_file_list()
+    assert len(files) == 1
+
+    # Recursive should find all matches
+    backend_recursive = LocalBackend(pattern, recursive=True)
+    files_recursive = backend_recursive.get_file_list()
+    assert len(files_recursive) == 2
+
+
+def test_permission_denied_directory(tmp_path, monkeypatch):
+    """Test handling of permission denied errors."""
+
+    # Mock os.path.isdir to return True, but os.scandir to raise PermissionError
+    def mock_scandir(path):
+        raise PermissionError("Permission denied")
+
+    monkeypatch.setattr(os, "scandir", mock_scandir)
+    monkeypatch.setattr(os.path, "isdir", lambda x: True)
+
+    backend = LocalBackend(str(tmp_path))
+
+    # Should handle permission errors gracefully
+    with pytest.raises(PermissionError):
+        backend.get_file_list()
+
+
+def test_pattern_with_special_characters(tmp_path):
+    """Test patterns with special filesystem characters."""
+    special_chars = ["spaces in name", "file&with&ampersand", "file(with)parens"]
+
+    for char_name in special_chars:
+        test_file = tmp_path / f"test_{char_name}.txt"
+        test_file.write_text("content")
+
+    backend = LocalBackend(str(tmp_path))
+    files = backend.get_file_list()
+    assert len(files) == len(special_chars)

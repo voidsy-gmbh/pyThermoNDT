@@ -17,6 +17,10 @@ class LocalBackend(BaseBackend):
             recursive (bool): If True, the pattern will be applied recursively to all subdirectories. This will only
                 be effective if the pattern is a directory path or a glob pattern. Defaults to False.
         """
+        # Validate the pattern
+        if not isinstance(pattern, str):
+            raise ValueError(f"Invalid pattern type: {type(pattern)}. Must be a string.")
+
         # Determine the type of the source based on the provided pattern
         self.__source_type = None
         if os.path.isfile(pattern):
@@ -26,7 +30,8 @@ class LocalBackend(BaseBackend):
         elif is_valid_glob_pattern(pattern):
             self.__source_type = "glob"
         else:
-            raise ValueError(f"Invalid pattern: {pattern}. Must be a file path, directory path, or valid glob pattern.")
+            msg = f"Invalid pattern: {pattern}. Must either be a file path, directory path, or valid glob pattern."
+            raise ValueError(msg)
 
         # Internal state
         self.__pattern_str = pattern

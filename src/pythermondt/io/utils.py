@@ -73,8 +73,6 @@ class IOPathWrapper:
 
 def is_valid_glob_pattern(pattern: str) -> bool:
     """Check if the provided pattern is a valid glob pattern."""
-    if not isinstance(pattern, str):
-        return False
     regex = fnmatch.translate(pattern)
     try:
         re.compile(regex)

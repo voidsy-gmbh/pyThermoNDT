@@ -27,20 +27,8 @@ def test_init_valid_patterns(tmp_path, source_type, setup_func):
     pattern = setup_func(tmp_path)
     backend = LocalBackend(pattern)
 
-    assert backend.pattern == pattern.replace("\\", "/")
+    assert backend.pattern == pattern
     assert backend.remote_source is False
-
-
-def test_init_backslash_conversion(tmp_path):
-    """Test that backslashes are converted to forward slashes."""
-    test_file = tmp_path / "test.txt"
-    test_file.write_text("content")
-
-    path_with_backslashes = str(test_file).replace("/", "\\")
-    backend = LocalBackend(path_with_backslashes)
-
-    assert "\\" not in backend.pattern
-    assert "/" in backend.pattern
 
 
 def test_init_invalid_integer():

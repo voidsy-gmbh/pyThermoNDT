@@ -32,14 +32,14 @@ def test_init_valid_patterns(tmp_path, setup_func):
     assert backend.remote_source is False
 
 
-@pytest.mark.parametrize("pattern", [123, None, 3.14, ["invalid"], {"key": "value"}, None])
+@pytest.mark.parametrize("pattern", [123, None, 3.14, ["invalid"], {"key": "value"}])
 def test_init_invalid_pattern_type(pattern):
     """Test that invalid pattern types raise ValueError."""
     with pytest.raises(ValueError, match=f"Invalid pattern type: {type(pattern)}. Must be a string."):
         LocalBackend(pattern)
 
 
-@pytest.mark.parametrize("pattern", ["", "nonexistent/path", "noexistent/file.txt", "nonexistent/*.md"])
+@pytest.mark.parametrize("pattern", ["", "nonexistent/path", "nonexistent/file.txt", "nonexistent/*.md"])
 def test_init_nonexistent_pattern(pattern):
     """Test that non-existent paths are treated as valid but return empty file list."""
     backend = LocalBackend(pattern)

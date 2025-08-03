@@ -11,9 +11,9 @@ classDiagram
   }
   style LocalWriter fill:#77AADD
   class ProgressCallback {
-    bar
+    progress_bar
     \_\_call\_\_(bytes_amount)
-    \_\_init\_\_(bar)
+    \_\_init\_\_(progress_bar: tqdm)
   }
   style ProgressCallback fill:#77AADD
   class S3Writer {

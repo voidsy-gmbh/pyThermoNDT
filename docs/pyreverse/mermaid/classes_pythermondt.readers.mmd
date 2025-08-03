@@ -21,7 +21,7 @@ classDiagram
   }
   style BaseReader fill:#77AADD
   class LocalReader {
-    \_\_init\_\_(pattern: Pattern | str, num_files: int | None, cache_files: bool, parser: type[BaseParser] | None)
+    \_\_init\_\_(pattern: str, recursive: bool, num_files: int | None, cache_files: bool, parser: type[BaseParser] | None)
   }
   style LocalReader fill:#77AADD
   class S3Reader {

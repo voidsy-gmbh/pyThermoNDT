@@ -2,7 +2,7 @@ classDiagram
   class AttributeNode {
     \_\_attributes : dict[str, AttributeTypes]
     attributes : ItemsView[str, AttributeTypes]
-    \_\_init\_\_(name: str, type: NodeType)* None
+    \_\_init\_\_(name: str, node_type: NodeType)* None
     add_attribute(key: str, value: AttributeTypes)
     add_attributes()
     clear_attributes() None
@@ -15,10 +15,10 @@ classDiagram
   style AttributeNode fill:#77AADD
   class BaseNode {
     \_\_name : str
-    \_\_type
+    \_\_node_type
     name : str
     type : NodeType
-    \_\_init\_\_(name: str, type: NodeType)* None
+    \_\_init\_\_(name: str, node_type: NodeType)* None
     memory_bytes() int
   }
   style BaseNode fill:#77AADD
@@ -45,4 +45,4 @@ classDiagram
   DataNode --|> AttributeNode
   GroupNode --|> AttributeNode
   RootNode --|> BaseNode
-  NodeType --o BaseNode : \_\_type
+  NodeType --o BaseNode : \_\_node_type

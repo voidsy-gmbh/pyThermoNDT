@@ -13,13 +13,13 @@ TAR_HEADER_SIZE = 512  # Size of the TAR header in bytes ==> needs to be skipped
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = (".di", ".ITvisPulse", ".OTvis")
+    supported_extensions = (".OTvis",)
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:
         """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
-        The IOPathWrapper object must contain a .di, .ITvisPulse or OTvis file with Measurement data from Edevis.
+        The IOPathWrapper object must contain a .OTvis file with Measurement data from Edevis.
 
         Parameters:
             data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.

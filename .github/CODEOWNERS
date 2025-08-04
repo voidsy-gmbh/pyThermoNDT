@@ -1,0 +1,11 @@
+# Global code owners for dependency management
+# These files require review from designated maintainers to ensure
+# dependency changes are properly vetted for security and compatibility
+
+# Python project configuration and dependencies
+pyproject.toml @Julfried
+requirements*.txt @Julfried
+
+# Additional dependency-related files
+environment.yml @Julfried
+conda/meta.yaml @Julfried

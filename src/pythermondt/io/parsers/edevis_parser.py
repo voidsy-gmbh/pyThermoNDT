@@ -183,7 +183,9 @@ class EdevisParser(BaseParser):
                     # Dynamically calculate the frame header size
                     header_size = file_size - frame_size_bytes
 
-                    # Pre-allocate arrays for better performance
+                    # Pre-allocate variables and arrays for better performance
+                    domain_unit = None
+                    frame_unit = None
                     num_frames = len(frames)
                     domain_values = torch.zeros(num_frames, dtype=torch.float32)
                     frame_data = torch.zeros((height, width, num_frames), dtype=frame_dtype[bit_depth])
@@ -213,6 +215,7 @@ class EdevisParser(BaseParser):
                                 frame_data[:, :, i] = torch.frombuffer(buffer, dtype=frame_dtype[bit_depth]).reshape(
                                     height, width
                                 )
+                                frame_unit = Units.arbitrary  # Complex images do not have a specific unit
 
                             case _:
                                 msg = (
@@ -223,9 +226,12 @@ class EdevisParser(BaseParser):
                                 raise ValueError(msg)
 
                     # Update container
-                    container.update_dataset("/MetaData/DomainValues", domain_values)
-                    container.update_unit("/MetaData/DomainValues", domain_unit)
-                    container.update_dataset("/Data/Tdata", frame_data)
+                    if domain_values and domain_unit:
+                        container.update_dataset("/MetaData/DomainValues", domain_values)
+                        container.update_unit("/MetaData/DomainValues", domain_unit)
+                    if frame_data and frame_unit:
+                        container.update_dataset("/Data/Tdata", frame_data)
+                        container.update_unit("/Data/Tdata", frame_unit)
 
                 # # Create a simple excitation signal based on pulse length and domain values
                 # # TODO: This is a simplified approach - actual signal might need more processing

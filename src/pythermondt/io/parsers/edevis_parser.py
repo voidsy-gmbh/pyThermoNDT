@@ -78,8 +78,6 @@ class EdevisParser(BaseParser):
                     "ExcitationDeviceSelection",
                 ]
                 metadata = extract_metadata_from_xml(file_info, target_fields)
-                if metadata:
-                    container.add_attributes("/MetaData", **metadata)
 
                 # Process the Sequence data
                 sequences = {int(seq.attrib.get("id", -1)): seq for seq in xml_data.findall("Sequence")}
@@ -96,31 +94,22 @@ class EdevisParser(BaseParser):
                     if sequence_info is None:
                         raise ValueError(f"Sequence {id} seems corrupted! No SequenceInfo node found.")
 
-                    target_fields = ["CameraManufacturer", "CameraName", "Lens"]
-                    metadata = extract_metadata_from_xml(sequence_info, target_fields)
-                    if metadata:
-                        container.add_attributes("/MetaData", **metadata)
+                    target_fields = [
+                        "CameraManufacturer",
+                        "CameraName",
+                        "Lens",
+                        "FrameCount",
+                        "FrameRate",
+                        "Window",
+                        "MaxFrameRate",
+                        "MaxWindow",
+                        "DataType",
+                        "BitDepth",
+                        "IntegrationTime",
+                    ]
+                    metadata.update(extract_metadata_from_xml(sequence_info, target_fields))
 
                 # # Extract metadata
-                # # Frame count
-                # frame_count = int(get_element_text(node_seq_info, "FrameCount"))
-
-                # # Window dimensions
-                # window_str = get_element_text(node_seq_info, "Window")
-                # width = int(window_str.split(",")[2])
-                # height = int(window_str.split(",")[3])
-
-                # # Frame rate
-                # frame_rate_str = get_element_text(node_seq_info, "FrameRate")
-                # frame_rate = int(frame_rate_str.split("H")[0])
-
-                # # Data type (e.g., dft: 13, raw: 2)
-                # data_type_str = get_element_text(node_seq_info, "DataType")
-                # data_type = int(data_type_str)
-
-                # # Bit depth
-                # bit_depth = int(get_element_text(node_seq_info, "BitDepth"))
-
                 # # Excitation amplitude
                 # amplitude_str = get_element_text(node_seq_info, "ExcitationAmplitude")
                 # amplitude = float(amplitude_str.split(" %")[0])
@@ -248,6 +237,9 @@ class EdevisParser(BaseParser):
                 #     excitation_signal[domain_values <= pulse_length] = 1
 
                 # container.update_dataset("/MetaData/ExcitationSignal", excitation_signal)
+                # Add metadata to the container
+                if metadata:
+                    container.add_attributes("/MetaData", **metadata)
 
                 # Return the container
                 return container
@@ -260,7 +252,7 @@ def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | 
     """Extracts the target fields from the XML root element.
 
     Will iterate through all the children of the XML root element and extract the text
-    for the specified target fields.
+    for the specified target fields. Fields that are not found will be skipped without error.
 
     Args:
         xml_root (Element): The root element of the XML document.
@@ -275,7 +267,6 @@ def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | 
 
     # If target is not that long, directly calling find is more efficient
     if 0 < len(target) < 10:
-        print("Using direct find for target fields:", target)
         for field in target:
             element = xml_root.find(field)
             if element is not None and element.text:

@@ -96,15 +96,10 @@ class EdevisParser(BaseParser):
                     if sequence_info is None:
                         raise ValueError(f"Sequence {id} seems corrupted! No SequenceInfo node found.")
 
-                    for info in sequence_info:
-                        # Skip empty entries
-                        if info.tag is None or info.text is None:
-                            continue
-
-                        # Match attributes to extract
-                        match info.tag:
-                            case _:
-                                pass  # TODO: Add more attributes to extract from the SequenceInfo node
+                    target_fields = ["CameraManufacturer", "CameraName", "Lens"]
+                    metadata = extract_metadata_from_xml(sequence_info, target_fields)
+                    if metadata:
+                        container.add_attributes("/MetaData", **metadata)
 
                 # # Get the sequence info node
                 # subnode_list = node_seq.getElementsByTagName("SequenceInfo")

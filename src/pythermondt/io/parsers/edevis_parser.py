@@ -1,6 +1,8 @@
 import tarfile
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from io import BytesIO
+from xml.etree.ElementTree import Element
 
 from ...data import DataContainer, ThermoContainer
 from ...io.utils import IOPathWrapper
@@ -62,34 +64,22 @@ class EdevisParser(BaseParser):
                 if file_info is None:
                     raise ValueError("File seems corrupted! No FileInfo node found.")
 
-                for info in file_info:
-                    # Skip empty entries
-                    if info.tag is None or info.text is None:
-                        print("Skipping empty entry in FileInfo")
-                        continue
-
-                    # Match attributes to extract
-                    match info.tag:
-                        case "UniqueIdentifier":
-                            container.add_attributes("/MetaData", UniqueIdentifier=info.text)
-                        case "CreationDate":
-                            container.add_attributes("/MetaData", CreationDate=info.text)
-                        case "CreatingVersion":
-                            container.add_attributes("/MetaData", CreatingVersion=info.text)
-                        case "ModuleName":
-                            container.add_attributes("/MetaData", ModuleName=info.text)
-                        case "ModuleType":
-                            container.add_attributes("/MetaData", ModuleType=info.text)
-                        case "SensorType":
-                            container.add_attributes("/MetaData", SensorType=info.text)
-                        case "MeasurementMode":
-                            container.add_attributes("/MetaData", MeasurementMode=info.text)
-                        case "IntegrationTime":
-                            container.add_attributes("/MetaData", IntegrationTime=info.text)
-                        case "CameraSynchronization":
-                            container.add_attributes("/MetaData", CameraSynchronization=info.text)
-                        case "ExcitationDeviceSelection":
-                            container.add_attributes("/MetaData", ExcitationDeviceSelection=info.text)
+                # Extract target fields from FileInfo
+                target_fields = [
+                    "UniqueIdentifier",
+                    "CreationDate",
+                    "CreatingVersion",
+                    "ModuleName",
+                    "ModuleType",
+                    "SensorType",
+                    "MeasurementMode",
+                    "IntegrationTime",
+                    "CameraSynchronization",
+                    "ExcitationDeviceSelection",
+                ]
+                metadata = extract_metadata_from_xml(file_info, target_fields)
+                if metadata:
+                    container.add_attributes("/MetaData", **metadata)
 
                 # Process the Sequence data
                 sequences = {int(seq.attrib.get("id", -1)): seq for seq in xml_data.findall("Sequence")}
@@ -109,7 +99,6 @@ class EdevisParser(BaseParser):
                     for info in sequence_info:
                         # Skip empty entries
                         if info.tag is None or info.text is None:
-                            print("Skipping empty entry in SequenceInfo")
                             continue
 
                         # Match attributes to extract
@@ -277,3 +266,30 @@ class EdevisParser(BaseParser):
 
         except Exception as e:
             raise ValueError(f"Error parsing Edevis file: {str(e)}") from e
+
+
+def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | None) -> dict[str, str]:
+    """Extracts the target fields from the XML root element.
+
+    Will iterate through all the children of the XML root element and extract the text
+    for the specified target fields.
+
+    Args:
+        xml_root (Element): The root element of the XML document.
+        target_fields (Sequence[str] | None): A sequence of target field names to extract.
+            If None, all fields will be extracted.
+
+    Returns:
+        dict[str, str]: A dictionary containing the extracted field names and their corresponding text values.
+    """
+    target = set(target_fields) if target_fields else set()  # Convert to set for faster lookup
+    metadata = {}
+    for field in xml_root:
+        if (field.tag in target or len(target) == 0) and field.text:
+            metadata[field.tag] = field.text.strip()
+
+        # Stop iteration if all target fields are found
+        if len(metadata) == len(target):
+            break
+
+    return metadata

@@ -89,6 +89,9 @@ class EdevisParser(BaseParser):
                     raise ValueError("File seems corrupted! No Sequence node found.")
 
                 for id, sequence in sequences.items():
+                    # Add the sequence ID to the metadata
+                    metadata["SequenceID"] = id
+
                     # Process sequence info
                     sequence_info = sequence.find("SequenceInfo")
                     if sequence_info is None:
@@ -237,6 +240,7 @@ class EdevisParser(BaseParser):
                 #     excitation_signal[domain_values <= pulse_length] = 1
 
                 # container.update_dataset("/MetaData/ExcitationSignal", excitation_signal)
+
                 # Add metadata to the container
                 if metadata:
                     container.add_attributes("/MetaData", **metadata)
@@ -248,7 +252,7 @@ class EdevisParser(BaseParser):
             raise ValueError(f"Error parsing Edevis file: {str(e)}") from e
 
 
-def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | None) -> dict[str, str]:
+def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | None) -> dict:
     """Extracts the target fields from the XML root element.
 
     Will iterate through all the children of the XML root element and extract the text

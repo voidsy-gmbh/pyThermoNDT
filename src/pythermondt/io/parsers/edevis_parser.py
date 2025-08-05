@@ -101,13 +101,6 @@ class EdevisParser(BaseParser):
                     if metadata:
                         container.add_attributes("/MetaData", **metadata)
 
-                # # Get the sequence info node
-                # subnode_list = node_seq.getElementsByTagName("SequenceInfo")
-                # if not subnode_list:
-                #     raise ValueError("No SequenceInfo node found in the file.")
-
-                # node_seq_info = subnode_list[0]
-
                 # # Extract metadata
                 # # Frame count
                 # frame_count = int(get_element_text(node_seq_info, "FrameCount"))
@@ -279,12 +272,23 @@ def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | 
     """
     target = set(target_fields) if target_fields else set()  # Convert to set for faster lookup
     metadata = {}
-    for field in xml_root:
-        if (field.tag in target or len(target) == 0) and field.text:
-            metadata[field.tag] = field.text.strip()
 
-        # Stop iteration if all target fields are found
-        if len(metadata) == len(target):
-            break
+    # If target is not that long, directly calling find is more efficient
+    if 0 < len(target) < 10:
+        print("Using direct find for target fields:", target)
+        for field in target:
+            element = xml_root.find(field)
+            if element is not None and element.text:
+                metadata[field] = element.text.strip()
+
+    # For longer target lists, or when target is empty, iterate through all children
+    else:
+        for field in xml_root:
+            if (field.tag in target or len(target) == 0) and field.text:
+                metadata[field.tag] = field.text.strip()
+
+            # Stop iteration if all target fields are found
+            if len(metadata) == len(target):
+                break
 
     return metadata

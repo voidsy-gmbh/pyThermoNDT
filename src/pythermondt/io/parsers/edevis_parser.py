@@ -122,25 +122,26 @@ class EdevisParser(BaseParser):
                     height = int(metadata["Window"].split(",")[3])
 
                     # Extract the LUT if available
-                    tar_offset_lut = None
-                    if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
-                        tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
+                    # TODO: Test lut extraction
+                    # tar_offset_lut = None
+                    # if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
+                    #     tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
 
-                        # Extract and store the LUT if available
-                        if tar_offset_lut is not None and metadata["BitDepth"] == 16:
-                            # Reset file position to start
-                            data_bytes.seek(0)
+                    #     # Extract and store the LUT if available
+                    #     if tar_offset_lut is not None and metadata["BitDepth"] == 16:
+                    #         # Reset file position to start
+                    #         data_bytes.seek(0)
 
-                            # Skip to LUT position
-                            data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
+                    #         # Skip to LUT position
+                    #         data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
 
-                            # Extract LUT data
-                            lut_size = 2**16
-                            lut_data = torch.asarray(data_bytes.read(lut_size * 4), dtype=torch.float32, copy=True)
-                            # lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
+                    #         # Extract LUT data
+                    #         lut_size = 2**16
+                    #         lut_data = torch.asarray(data_bytes.read(lut_size * 4), dtype=torch.float32, copy=True)
+                    #         # lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
 
-                            # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
-                            container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
+                    #         # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
+                    #         container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
 
                     # Get frame info
                     frame_info = sequence.find("FrameInfo")

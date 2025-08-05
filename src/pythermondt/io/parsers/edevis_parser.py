@@ -4,7 +4,9 @@ from collections.abc import Sequence
 from io import BytesIO
 from xml.etree.ElementTree import Element
 
-from ...data import DataContainer, ThermoContainer
+import torch
+
+from ...data import DataContainer, ThermoContainer, Units
 from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
 
@@ -112,125 +114,113 @@ class EdevisParser(BaseParser):
                     ]
                     metadata.update(extract_metadata_from_xml(sequence_info, target_fields))
 
-                # # Extract metadata
-                # # Excitation amplitude
-                # amplitude_str = get_element_text(node_seq_info, "ExcitationAmplitude")
-                # amplitude = float(amplitude_str.split(" %")[0])
+                    # Determine width and height from the sequence info
+                    if "Window" not in metadata:
+                        raise ValueError(f"Sequence {id} seems corrupted! No Window node found in SequenceInfo.")
+                    width = int(metadata["Window"].split(",")[2]) - int(metadata["Window"].split(",")[0])
+                    height = int(metadata["Window"].split(",")[3]) - int(metadata["Window"].split(",")[1])
 
-                # # Excitation pulse length
-                # pulse_str = get_element_text(node_seq_info, "ExcitationPulseLength")
-                # pulse_length = float(pulse_str.split("s")[0])
+                    # Extract the LUT if available
+                    tar_offset_lut = None
+                    if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
+                        tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
 
-                # # Store metadata in container
-                # container.add_attributes(
-                #     "/MetaData",
-                #     FrameCount=frame_count,
-                #     Width=width,
-                #     Height=height,
-                #     FrameRate=frame_rate,
-                #     DataType=data_type,
-                #     BitDepth=bit_depth,
-                #     ExcitationAmplitude=amplitude,
-                #     ExcitationPulseLength=pulse_length,
-                # )
+                        # Extract and store the LUT if available
+                        if tar_offset_lut is not None and metadata["BitDepth"] == 16:
+                            # Reset file position to start
+                            data_bytes.seek(0)
 
-                # # Get LUT offset if available
-                # tar_offset_lut = None
-                # if "TarFileHeaderCalibrationOffset" in node_seq_info.attributes:
-                #     tar_offset_lut = int(node_seq_info.attributes["TarFileHeaderCalibrationOffset"].value)
+                            # Skip to LUT position
+                            data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
 
-                #     # Extract and store the LUT if available
-                #     if tar_offset_lut is not None and bit_depth == 16:
-                #         # Reset file position to start
-                #         data_bytes.seek(0)
+                            # Extract LUT data
+                            lut_size = 2**16
+                            lut_data = torch.asarray(data_bytes.read(lut_size * 4), dtype=torch.float32, copy=True)
+                            # lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
 
-                #         # Skip to LUT position
-                #         data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
+                            # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
+                            container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
 
-                #         # Extract LUT data
-                #         lut_size = 2**16
-                #         lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
+                    # Get frame info
+                    frame_info = sequence.find("FrameInfo")
+                    if frame_info is None:
+                        raise ValueError(f"Sequence {id} seems corrupted! No FrameInfo node found.")
 
-                #         # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
-                #         container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
+                    # Find all frames in FrameInfo node
+                    frames = frame_info.findall("Frame")
+                    if not frames:
+                        raise ValueError(f"Sequence {id} seems corrupted! No Frame nodes found in FrameInfo.")
 
-                # # Get frame info
-                # subnode_list = node_seq.getElementsByTagName("FrameInfo")
-                # if not subnode_list:
-                #     raise ValueError("No FrameInfo node found in the file.")
+                    # Get DataType and BitDepth to determine how to process the data
+                    data_type = int(metadata.get("DataType", -1))
+                    bit_depth = int(metadata.get("BitDepth", -1))
+                    if bit_depth not in (16, 32, 64):
+                        raise ValueError(f"Unsupported BitDepth: {bit_depth}. Supported values are 16, 32, or 64.")
 
-                # node_frame_info = subnode_list[0]
-                # frame_nodes = node_frame_info.getElementsByTagName("Frame")
+                    # Map bit depth to corresponding torch data type
+                    tdata_type = {16: torch.uint16, 32: torch.float32, 64: torch.float64}
 
-                # # Initialize arrays for frame offsets and domain values
-                # frame_offsets = np.zeros(len(frame_nodes), dtype=np.int64)
-                # domain_values = np.zeros(len(frame_nodes), dtype=float)
+                    # Each frame is stored in a separate file. Because of the block size of the tar file,
+                    # we need to skip the header size of the tar file (512 bytes) and the size of the frame header
+                    # The frame header size is not explicitly given, so we need to calculate it based on the frame size
+                    # Get the size of the first frame to be able to dynamically calculate the frame header size
+                    first_frame_idx = frames[0].findtext("FrameIndex", default=None)
+                    try:
+                        file_size = tar_file.getmember(f"sequence{id}/f{first_frame_idx}.bin").size
+                    except KeyError as e:
+                        msg = f"Frames in Sequence {id} seem corrupted! Frame file f{first_frame_idx}.bin not found."
+                        raise ValueError(msg) from e
 
-                # # Extract frame offsets and domain values
-                # for j, frame_node in enumerate(frame_nodes):
-                #     frame_offsets[j] = int(frame_node.attributes["TarFileHeaderDataOffset"].value)
+                    # Calculate bytes per pixel and frame size
+                    bytes_per_pixel = bit_depth // 8
+                    frame_size_bytes = width * height * bytes_per_pixel
 
-                #     if data_type == 13:  # Fourier (frequency domain)
-                #         freq_str = get_element_text(frame_node, "FourierFrequency")
-                #         domain_values[j] = float(freq_str.split("Hz")[0])
-                #         # Set unit to hertz for frequency domain
-                #         container.update_unit("/MetaData/DomainValues", Units.hertz)
-                #     elif data_type == 2:  # Raw (time domain)
-                #         time_str = get_element_text(frame_node, "FrameTime")
-                #         domain_values[j] = float(time_str.split("s")[0])
-                #         # Set unit to second for time domain
-                #         container.update_unit("/MetaData/DomainValues", Units.second)
-                #     else:
-                #         raise ValueError(f"Unsupported data type: {data_type}")
+                    # Dynamically calculate the frame header size
+                    header_size = file_size - frame_size_bytes
 
-                # # Store domain values
-                # container.update_dataset("/MetaData/DomainValues", domain_values)
+                    # Pre-allocate arrays for better performance
+                    num_frames = len(frames)
+                    domain_values = torch.zeros(num_frames, dtype=torch.float32)
+                    frame_data = torch.zeros((height, width, num_frames), dtype=tdata_type[bit_depth])
 
-                # # Extract and store frame data
-                # # Map bit depth to corresponding numpy data type
-                # tdata_type = {16: np.uint16, 32: np.float32, 64: np.float64}
+                    for i, frame in enumerate(frames):
+                        # Extract frame attributes
+                        offset = int(frame.attrib.get("TarFileHeaderDataOffset", -1))
 
-                # # Check if the bit depth is supported
-                # if bit_depth not in tdata_type:
-                #     raise ValueError(f"Unsupported bit depth: {bit_depth}")
+                        # Handle different data types
+                        match data_type:
+                            case 0:  # Shearography Image
+                                raise NotImplementedError("Shearography Image data type is not implemented yet.")
+                            case 2:  # Intensisty Image
+                                raise NotImplementedError("Intensity Image data type is not implemented yet.")
+                            case 5:  # Temperature Image
+                                raise NotImplementedError("Temperature Image data type is not implemented yet.")
+                            case 13:  # Complex Image
+                                # Read domain values from the data
+                                domain_str = frame.findtext("FourierFrequency", default=None)
+                                domain_unit = Units.hertz
+                                if domain_str:
+                                    domain_values[i] = float(domain_str.strip().split("Hz")[0])
 
-                # # Calculate bytes per pixel and frame size
-                # bytes_per_pixel = bit_depth // 8
-                # frame_size_bytes = width * height * bytes_per_pixel
+                                # Read frame data
+                                data_bytes.seek(offset + TAR_HEADER_SIZE + header_size)
+                                buffer = bytearray(data_bytes.read(frame_size_bytes))
+                                frame_data[:, :, i] = torch.frombuffer(buffer, dtype=tdata_type[bit_depth]).reshape(
+                                    height, width
+                                )
 
-                # # Each frame is stored in a separate file. Because of the block size of the tar file,
-                # # we need to skip the header size of the tar file (512 bytes) and the size of the frame header
-                # # Get first frame file
-                # frame_files = [m for m in tar_file.getmembers() if re.match(r"^sequence0/f\d+\.bin$", m.name)]
-                # if not frame_files:
-                #     raise ValueError("No frame files found in the tar archive.")
+                            case _:
+                                msg = (
+                                    f"Unsupported DataType: {data_type}. "
+                                    "Supported values are 0 (Shearography), 2 (Intensity), "
+                                    "5 (Temperature), or 13 (Complex)."
+                                )
+                                raise ValueError(msg)
 
-                # # Determine the total size one frame file
-                # total_size = frame_files[0].size
-
-                # # Calculate the frame header size
-                # header_size = total_size - frame_size_bytes
-
-                # # Initialize temperature data array with the appropriate type
-                # tdata = np.zeros((height, width, len(frame_nodes)), dtype=tdata_type[bit_depth])
-
-                # # Reset file position
-                # data_bytes.seek(0)
-
-                # # Read each frame
-                # for j, offset in enumerate(frame_offsets):
-                #     # Seek to frame position
-                #     data_bytes.seek(offset.item() + TAR_HEADER_SIZE + header_size)
-
-                #     # test_frame_offset(data_bytes, offset, frame_size_bytes, height, width, bit_depth)
-
-                #     # Read the entire frame at once and reshape
-                #     tdata[:, :, j] = np.frombuffer(
-                #         data_bytes.read(frame_size_bytes), dtype=tdata_type[bit_depth]
-                #     ).reshape(height, width)
-
-                # # Store temperature data
-                # container.update_dataset("/Data/Tdata", tdata)
+                    # Update container
+                    container.update_dataset("/MetaData/DomainValues", domain_values)
+                    container.update_unit("/MetaData/DomainValues", domain_unit)
+                    container.update_dataset("/Data/Tdata", frame_data)
 
                 # # Create a simple excitation signal based on pulse length and domain values
                 # # TODO: This is a simplified approach - actual signal might need more processing

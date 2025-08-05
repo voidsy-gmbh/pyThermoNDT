@@ -160,7 +160,10 @@ class EdevisParser(BaseParser):
                         raise ValueError(f"Unsupported BitDepth: {bit_depth}. Supported values are 16, 32, or 64.")
 
                     # Map bit depth to corresponding torch data type
-                    tdata_type = {16: torch.uint16, 32: torch.float32, 64: torch.float64}
+                    if data_type == 13:  # Complex images need complex dtypes
+                        frame_dtype = {32: torch.complex32, 64: torch.complex64, 128: torch.complex128}
+                    else:
+                        frame_dtype = {16: torch.uint16, 32: torch.float32, 64: torch.float64}
 
                     # Each frame is stored in a separate file. Because of the block size of the tar file,
                     # we need to skip the header size of the tar file (512 bytes) and the size of the frame header
@@ -183,7 +186,7 @@ class EdevisParser(BaseParser):
                     # Pre-allocate arrays for better performance
                     num_frames = len(frames)
                     domain_values = torch.zeros(num_frames, dtype=torch.float32)
-                    frame_data = torch.zeros((height, width, num_frames), dtype=tdata_type[bit_depth])
+                    frame_data = torch.zeros((height, width, num_frames), dtype=frame_dtype[bit_depth])
 
                     for i, frame in enumerate(frames):
                         # Extract frame attributes
@@ -207,7 +210,7 @@ class EdevisParser(BaseParser):
                                 # Read frame data
                                 data_bytes.seek(offset + TAR_HEADER_SIZE + header_size)
                                 buffer = bytearray(data_bytes.read(frame_size_bytes))
-                                frame_data[:, :, i] = torch.frombuffer(buffer, dtype=tdata_type[bit_depth]).reshape(
+                                frame_data[:, :, i] = torch.frombuffer(buffer, dtype=frame_dtype[bit_depth]).reshape(
                                     height, width
                                 )
 

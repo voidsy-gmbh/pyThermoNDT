@@ -117,8 +117,9 @@ class EdevisParser(BaseParser):
                     # Determine width and height from the sequence info
                     if "Window" not in metadata:
                         raise ValueError(f"Sequence {id} seems corrupted! No Window node found in SequenceInfo.")
-                    width = int(metadata["Window"].split(",")[2]) - int(metadata["Window"].split(",")[0])
-                    height = int(metadata["Window"].split(",")[3]) - int(metadata["Window"].split(",")[1])
+                    # Window is in format "X_start,Y_Start, Width,Height"
+                    width = int(metadata["Window"].split(",")[2])
+                    height = int(metadata["Window"].split(",")[3])
 
                     # Extract the LUT if available
                     tar_offset_lut = None

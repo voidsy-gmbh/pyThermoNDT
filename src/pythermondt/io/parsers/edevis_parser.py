@@ -156,8 +156,20 @@ class EdevisParser(BaseParser):
                     # Get DataType and BitDepth to determine how to process the data
                     data_type = int(metadata.get("DataType", -1))
                     bit_depth = int(metadata.get("BitDepth", -1))
-                    if bit_depth not in (16, 32, 64):
-                        raise ValueError(f"Unsupported BitDepth: {bit_depth}. Supported values are 16, 32, or 64.")
+
+                    # Define supported bit depths for each data type
+                    supported_bit_depths = {
+                        13: [32, 64, 128],  # Complex images
+                        "default": [16, 32, 64],  # Other data types
+                    }
+
+                    # Validate bit depth
+                    valid_depths = supported_bit_depths.get(data_type, supported_bit_depths["default"])
+                    if bit_depth not in valid_depths:
+                        raise ValueError(
+                            f"Unsupported BitDepth: {bit_depth} for DataType: {data_type}. "
+                            f"Supported values are {valid_depths}."
+                        )
 
                     # Map bit depth to corresponding torch data type
                     if data_type == 13:  # Complex images need complex dtypes

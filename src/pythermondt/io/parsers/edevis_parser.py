@@ -20,7 +20,7 @@ class EdevisParser(BaseParser):
     def parse(data: IOPathWrapper) -> DataContainer:
         """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
-        The IOPathWrapper object must contain a .OTvis file with Measurement data from Edevis.
+        The IOPathWrapper object must contain a .di or .OTvis file with Measurement data from Edevis.
 
         Parameters:
             data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.
@@ -172,7 +172,7 @@ class EdevisParser(BaseParser):
                         )
 
                     # Map bit depth to corresponding torch data type
-                    if data_type == 13:  # Complex images need complex dtypes
+                    if data_type == COMPLEX_IMAGE_DATA_TYPE:  # Complex images need complex dtypes
                         frame_dtype = {32: torch.complex32, 64: torch.complex64, 128: torch.complex128}
                     else:
                         frame_dtype = {16: torch.uint16, 32: torch.float32, 64: torch.float64}
@@ -214,7 +214,13 @@ class EdevisParser(BaseParser):
                                 raise NotImplementedError("Intensity Image data type is not implemented yet.")
                             case 5:  # Temperature Image
                                 raise NotImplementedError("Temperature Image data type is not implemented yet.")
-                            case 13:  # Complex Image
+                            case SHEAROGRAPHY_IMAGE:  # Shearography Image
+                                raise NotImplementedError("Shearography Image data type is not implemented yet.")
+                            case INTENSITY_IMAGE:  # Intensity Image
+                                raise NotImplementedError("Intensity Image data type is not implemented yet.")
+                            case TEMPERATURE_IMAGE:  # Temperature Image
+                                raise NotImplementedError("Temperature Image data type is not implemented yet.")
+                            case COMPLEX_IMAGE:  # Complex Image
                                 # Read domain values from the data
                                 domain_str = frame.findtext("FourierFrequency", default=None)
                                 domain_unit = Units.hertz

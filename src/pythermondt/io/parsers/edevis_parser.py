@@ -21,7 +21,7 @@ class DataType(IntEnum):
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = (".di", ".OTvis")
+    supported_extensions = (".di", ".OTvis", ".ITvisPulse")
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
@@ -127,28 +127,6 @@ class EdevisParser(BaseParser):
                     width = int(metadata["Window"].split(",")[2])
                     height = int(metadata["Window"].split(",")[3])
 
-                    # Extract the LUT if available
-                    # TODO: Test lut extraction
-                    # tar_offset_lut = None
-                    # if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
-                    #     tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
-
-                    #     # Extract and store the LUT if available
-                    #     if tar_offset_lut is not None and metadata["BitDepth"] == 16:
-                    #         # Reset file position to start
-                    #         data_bytes.seek(0)
-
-                    #         # Skip to LUT position
-                    #         data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
-
-                    #         # Extract LUT data
-                    #         lut_size = 2**16
-                    #         lut_data = torch.asarray(data_bytes.read(lut_size * 4), dtype=torch.float32, copy=True)
-                    #         # lut_data = np.frombuffer(data_bytes.read(lut_size * 4), dtype=np.float32).copy()
-
-                    #         # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
-                    #         container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
-
                     # Get frame info
                     frame_info = sequence.find("FrameInfo")
                     if frame_info is None:
@@ -162,6 +140,28 @@ class EdevisParser(BaseParser):
                     # Get DataType and BitDepth to determine how to process the data
                     data_type = int(metadata.get("DataType", -1))
                     bit_depth = int(metadata.get("BitDepth", -1))
+
+                    # Extract the LUT if available
+                    # TODO: Test lut extraction
+                    tar_offset_lut = None
+                    if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
+                        tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
+
+                        # Extract and store the LUT if available
+                        if tar_offset_lut and bit_depth == 16:
+                            # Reset file position to start
+                            data_bytes.seek(0)
+
+                            # Skip to LUT position
+                            data_bytes.seek(tar_offset_lut + TAR_HEADER_SIZE)
+
+                            # Extract LUT data
+                            lut_size = 2**16  # If bit_depth is 16 ==> UINT16 ==> 65536 entries
+                            buffer = bytearray(data_bytes.read(lut_size * 4))  # 4 bytes per LUT entry assuming float32
+                            lut_data = torch.frombuffer(buffer, dtype=torch.float32)
+
+                            # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
+                            container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
 
                     # Define supported bit depths for each data type
                     supported_bit_depths = {

@@ -98,14 +98,14 @@ class EdevisParser(BaseParser):
                 if len(sequences) == 0:
                     raise ValueError("File seems corrupted! No Sequence node found.")
 
-                for id, sequence in sequences.items():
+                for seq_id, sequence in sequences.items():
                     # Add the sequence ID to the metadata
-                    metadata["SequenceID"] = id
+                    metadata["SequenceID"] = seq_id
 
                     # Process sequence info
                     sequence_info = sequence.find("SequenceInfo")
                     if sequence_info is None:
-                        raise ValueError(f"Sequence {id} seems corrupted! No SequenceInfo node found.")
+                        raise ValueError(f"Sequence {seq_id} seems corrupted! No SequenceInfo node found.")
 
                     target_fields = [
                         "CameraManufacturer",
@@ -124,7 +124,7 @@ class EdevisParser(BaseParser):
 
                     # Determine width and height from the sequence info
                     if "Window" not in metadata:
-                        raise ValueError(f"Sequence {id} seems corrupted! No Window node found in SequenceInfo.")
+                        raise ValueError(f"Sequence {seq_id} seems corrupted! No Window node found in SequenceInfo.")
                     # Window is in format "X_start,Y_Start, Width,Height"
                     width = int(metadata["Window"].split(",")[2])
                     height = int(metadata["Window"].split(",")[3])
@@ -154,12 +154,12 @@ class EdevisParser(BaseParser):
                     # Get frame info
                     frame_info = sequence.find("FrameInfo")
                     if frame_info is None:
-                        raise ValueError(f"Sequence {id} seems corrupted! No FrameInfo node found.")
+                        raise ValueError(f"Sequence {seq_id} seems corrupted! No FrameInfo node found.")
 
                     # Find all frames in FrameInfo node
                     frames = frame_info.findall("Frame")
                     if not frames:
-                        raise ValueError(f"Sequence {id} seems corrupted! No Frame nodes found in FrameInfo.")
+                        raise ValueError(f"Sequence {seq_id} seems corrupted! No Frame nodes found in FrameInfo.")
 
                     # Get DataType and BitDepth to determine how to process the data
                     data_type = int(metadata.get("DataType", -1))
@@ -189,11 +189,11 @@ class EdevisParser(BaseParser):
                     # we need to skip the header size of the tar file (512 bytes) and the size of the frame header
                     # The frame header size is not explicitly given, so we need to calculate it based on the frame size
                     # Get the size of the first frame to be able to dynamically calculate the frame header size
-                    first_frame_idx = frames[0].findtext("FrameIndex", default=None)
+                    first_idx = frames[0].findtext("FrameIndex", default=None)
                     try:
-                        file_size = tar_file.getmember(f"sequence{id}/f{first_frame_idx}.bin").size
+                        file_size = tar_file.getmember(f"sequence{seq_id}/f{first_idx}.bin").size
                     except KeyError as e:
-                        msg = f"Frames in Sequence {id} seem corrupted! Frame file f{first_frame_idx}.bin not found."
+                        msg = f"Frames in Sequence {seq_id} seem corrupted! Frame file f{first_idx}.bin not found."
                         raise ValueError(msg) from e
 
                     # Calculate bytes per pixel and frame size

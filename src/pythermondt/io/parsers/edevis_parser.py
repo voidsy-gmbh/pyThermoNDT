@@ -226,10 +226,10 @@ class EdevisParser(BaseParser):
                                 raise ValueError(msg)
 
                     # Update container
-                    if domain_values and domain_unit:
+                    if domain_unit:
                         container.update_dataset("/MetaData/DomainValues", domain_values)
                         container.update_unit("/MetaData/DomainValues", domain_unit)
-                    if frame_data and frame_unit:
+                    if frame_unit:
                         container.update_dataset("/Data/Tdata", frame_data)
                         container.update_unit("/Data/Tdata", frame_unit)
 

@@ -2,7 +2,6 @@ import tarfile
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 from enum import IntEnum
-from io import BytesIO
 from xml.etree.ElementTree import Element
 
 import torch
@@ -65,12 +64,11 @@ class EdevisParser(BaseParser):
                 if content_extracted is None:
                     raise ValueError("File seems corrupted! content.xml not found.")
 
-                # Extract and parse XML data
-                xml_content = content_extracted.read()
-                xml_data = ET.parse(BytesIO(xml_content))
+                # Parse the extracted content.xml
+                content = ET.parse(content_extracted)
 
                 # Extract metadata from FileInfo
-                file_info = xml_data.find("FileInfo")
+                file_info = content.find("FileInfo")
                 if file_info is None:
                     raise ValueError("File seems corrupted! No FileInfo node found.")
 
@@ -90,7 +88,7 @@ class EdevisParser(BaseParser):
                 metadata = extract_metadata_from_xml(file_info, target_fields)
 
                 # Process the Sequence data
-                sequences = {int(seq.attrib.get("id", -1)): seq for seq in xml_data.findall("Sequence")}
+                sequences = {int(seq.attrib.get("id", -1)): seq for seq in content.findall("Sequence")}
 
                 # TODO: For now only the first sequence is processed ==> Extend to support multiple sequences in future
                 sequences = {id: seq for id, seq in sequences.items() if id == 0}

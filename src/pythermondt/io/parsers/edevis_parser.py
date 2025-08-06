@@ -1,6 +1,7 @@
 import tarfile
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
+from enum import IntEnum
 from io import BytesIO
 from xml.etree.ElementTree import Element
 
@@ -11,6 +12,13 @@ from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
 
 TAR_HEADER_SIZE = 512  # Size of the TAR header in bytes ==> needs to be skipped when reading the data
+
+
+class DataType(IntEnum):
+    SHEAROGRAPHY_IMAGE = 0
+    INTENSITY_IMAGE = 2
+    TEMPERATURE_IMAGE = 5
+    COMPLEX_IMAGE = 13
 
 
 class EdevisParser(BaseParser):
@@ -172,7 +180,7 @@ class EdevisParser(BaseParser):
                         )
 
                     # Map bit depth to corresponding torch data type
-                    if data_type == COMPLEX_IMAGE_DATA_TYPE:  # Complex images need complex dtypes
+                    if data_type == DataType.COMPLEX_IMAGE:  # Complex images need complex dtypes
                         frame_dtype = {32: torch.complex32, 64: torch.complex64, 128: torch.complex128}
                     else:
                         frame_dtype = {16: torch.uint16, 32: torch.float32, 64: torch.float64}
@@ -208,19 +216,13 @@ class EdevisParser(BaseParser):
 
                         # Handle different data types
                         match data_type:
-                            case 0:  # Shearography Image
+                            case DataType.SHEAROGRAPHY_IMAGE:
                                 raise NotImplementedError("Shearography Image data type is not implemented yet.")
-                            case 2:  # Intensisty Image
+                            case DataType.INTENSITY_IMAGE:
                                 raise NotImplementedError("Intensity Image data type is not implemented yet.")
-                            case 5:  # Temperature Image
+                            case DataType.TEMPERATURE_IMAGE:
                                 raise NotImplementedError("Temperature Image data type is not implemented yet.")
-                            case SHEAROGRAPHY_IMAGE:  # Shearography Image
-                                raise NotImplementedError("Shearography Image data type is not implemented yet.")
-                            case INTENSITY_IMAGE:  # Intensity Image
-                                raise NotImplementedError("Intensity Image data type is not implemented yet.")
-                            case TEMPERATURE_IMAGE:  # Temperature Image
-                                raise NotImplementedError("Temperature Image data type is not implemented yet.")
-                            case COMPLEX_IMAGE:  # Complex Image
+                            case DataType.COMPLEX_IMAGE:
                                 # Read domain values from the data
                                 domain_str = frame.findtext("FourierFrequency", default=None)
                                 domain_unit = Units.hertz
@@ -236,12 +238,8 @@ class EdevisParser(BaseParser):
                                 frame_unit = Units.arbitrary  # Complex images do not have a specific unit
 
                             case _:
-                                msg = (
-                                    f"Unsupported DataType: {data_type}. "
-                                    "Supported values are 0 (Shearography), 2 (Intensity), "
-                                    "5 (Temperature), or 13 (Complex)."
-                                )
-                                raise ValueError(msg)
+                                types = ", ".join(f"{t.value} ({t.name})" for t in DataType)
+                                raise ValueError(f"Unsupported DataType: {data_type}. Supported values are {types}.")
 
                     # Update container
                     if domain_unit:

@@ -14,7 +14,7 @@ TAR_HEADER_SIZE = 512  # Size of the TAR header in bytes ==> needs to be skipped
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = (".OTvis",)
+    supported_extensions = (".di", ".OTvis")
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:

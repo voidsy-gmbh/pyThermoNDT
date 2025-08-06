@@ -24,7 +24,7 @@ class EdevisParser(BaseParser):
     supported_extensions = (".di", ".OTvis")
 
     @staticmethod
-    def parse(data: IOPathWrapper) -> DataContainer:
+    def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
         The IOPathWrapper object must contain a .di or .OTvis file with Measurement data from Edevis.

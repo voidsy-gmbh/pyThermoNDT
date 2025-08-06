@@ -286,16 +286,16 @@ def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | 
 
     # If target is not that long, directly calling find is more efficient
     if 0 < len(target) < 10:
-        for field in target:
-            element = xml_root.find(field)
+        for field_name in target:
+            element = xml_root.find(field_name)
             if element is not None and element.text:
-                metadata[field] = element.text.strip()
+                metadata[field_name] = element.text.strip()
 
     # For longer target lists, or when target is empty, iterate through all children
     else:
-        for field in xml_root:
-            if (field.tag in target or len(target) == 0) and field.text:
-                metadata[field.tag] = field.text.strip()
+        for child_element in xml_root:
+            if (child_element.tag in target or len(target) == 0) and child_element.text:
+                metadata[child_element.tag] = child_element.text.strip()
 
             # Stop iteration if all target fields are found
             if len(metadata) == len(target):

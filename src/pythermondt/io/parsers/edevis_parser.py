@@ -72,6 +72,19 @@ class EdevisParser(BaseParser):
                 if file_info is None:
                     raise ValueError("File seems corrupted! No FileInfo node found.")
 
+                excitation_fields = [
+                    "ExcitationSignalType",
+                    "ExcitationFrequency",
+                    "ExcitationDelay",
+                    "ExcitationPulseLength",
+                    "ExcitationAmplitude",
+                    "ExcitationPeriods",
+                    "ExcitationPhaseShift",
+                    "ExcitationOnTime",
+                    "ExcitationAsymmetry",
+                    "ExcitationArbitrarySource",
+                ]
+
                 # Extract target fields from FileInfo
                 target_fields = [
                     "UniqueIdentifier",
@@ -84,6 +97,7 @@ class EdevisParser(BaseParser):
                     "IntegrationTime",
                     "CameraSynchronization",
                     "ExcitationDeviceSelection",
+                    *excitation_fields,
                 ]
                 metadata = extract_metadata_from_xml(file_info, target_fields)
 
@@ -117,6 +131,7 @@ class EdevisParser(BaseParser):
                         "DataType",
                         "BitDepth",
                         "IntegrationTime",
+                        *excitation_fields,
                     ]
                     metadata.update(extract_metadata_from_xml(sequence_info, target_fields))
 

@@ -143,7 +143,7 @@ jobs:
 
       # Step 2: Download artifacts from previous job
       - name: Download artifacts from build job
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@v5.0.0
         with:
           path: artifacts
 

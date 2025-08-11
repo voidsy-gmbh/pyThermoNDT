@@ -7,4 +7,4 @@ deepdiff==8.5.0
 licensecheck==2025.1.0
 mypy==1.17.1
 uv~=0.8.4
-pylint==3.3.7
+pylint==3.3.8

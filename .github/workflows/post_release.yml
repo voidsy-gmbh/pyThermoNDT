@@ -14,3 +14,35 @@ jobs:
       ref: main
     secrets:
       WRITE_KEY: ${{ secrets.WRITE_KEY }}
+
+  # Job 2: Publish the package
+  publish-package:
+    name: Publish the package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download wheel from github release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the release tag from the event
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+
+          # Download the wheel file from the release
+          gh release download "$RELEASE_TAG" \
+            --repo ${{ github.repository }} \
+            --pattern "*.whl" \
+            --dir ./dist
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6.4.3
+        with:
+          version-file: requirements_dev.txt
+          enable-cache: false
+
+      - name: Publish the package
+        env:
+          UV_PUBLISH_USERNAME: dummy
+          UV_PUBLISH_URL: ${{ secrets.PUBLISH_URL }}
+          UV_PUBLISH_PASSWORD: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+        run: |
+          uv publish ./dist/*.whl

@@ -110,7 +110,7 @@ class NonUniformSampling(ThermoTransform):
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
-    def __init__(self, n_samples: int, tau: float | None = None, precision: float = 1e-2):
+    def __init__(self, n_samples: int, tau: float | None = None, interpolate: bool = True, precision: float = 1e-2):
         """Implement a non-uniform sampling strategy for the data container.
 
         The implementation is based on the following paper:
@@ -120,14 +120,19 @@ class NonUniformSampling(ThermoTransform):
         Args:
             n_samples (int): Number of samples to select from the original data.
             tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
-                          If None, will be approxmated automatically using binary search to satisfy
-                          the minimum time step constraint from Equation (25) of the paper. Default is None.
+                If None, will be approxmated automatically using binary search to satisfy the minimum time step
+                constraint from Equation (25) of the paper. Default is None.
+            interpolate (bool, optional): Whether to apply interpolation after non-uniform sampling. If True,
+                the downsampled data will be interpolated to match the exact time steps calculated according to
+                Equation (6) of the paper. If False, the transform will try to match the nearest time steps in the
+                original data using torch.searchsorted. Defaults to True.
             precision (float, optional): Precision used for the binary search. Default is 1e-2, which is sufficient for
                 most applications.
         """
         super().__init__()
         self.n_samples = n_samples
         self.tau = tau
+        self.interpolate = interpolate
         self.precision = precision
 
     def _calculate_tau(self, t_end: float, dt_min: float, n_t: int) -> float:
@@ -187,16 +192,21 @@ class NonUniformSampling(ThermoTransform):
         k = torch.arange(self.n_samples)
         t_k = tau * ((t_end / tau + 1) ** (k / (self.n_samples - 1)) - 1)
 
-        # Find the indices of the closest time steps in the domain values
-        indices = torch.searchsorted(domain_values, t_k)
+        if self.interpolate:
+            raise NotImplementedError(
+                "Interpolation is not implemented yet. Please set interpolate=False to use the nearest time steps."
+            )
+        else:
+            # Find the indices of the closest time steps in the domain values
+            indices = torch.searchsorted(domain_values, t_k)
 
-        # Clamp indices to the valid range
-        indices = torch.clamp(indices, 0, n_samples_original - 1)
+            # Clamp indices to the valid range
+            indices = torch.clamp(indices, 0, n_samples_original - 1)
 
-        # Select the frames according to the indices
-        tdata = tdata[..., indices]
-        domain_values = domain_values[indices]
-        excitation_signal = excitation_signal[indices]
+            # Select the frames according to the indices
+            tdata = tdata[..., indices]
+            domain_values = domain_values[indices]
+            excitation_signal = excitation_signal[indices]
 
         # Update Container and return
         container.update_datasets(

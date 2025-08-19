@@ -127,7 +127,7 @@ class NonUniformSampling(ThermoTransform):
         self.n_samples = n_samples
         self.tau = tau
 
-    def _calculate_tau(self, t_end: float, dt_min: float, n_samples_original: int) -> float:
+    def _calculate_tau(self, t_end: float, dt_min: float, n_t: int) -> float:
         """Calculate minimum tau according to equation (25) using binary search."""
         low = dt_min  # use dt_min as lower bound
         high = t_end  # use t_end as a upper bond because tau >= t_end makes no sense
@@ -136,7 +136,7 @@ class NonUniformSampling(ThermoTransform):
         # 1.) Binary search
         while high - low > precision:
             tau = (low + high) / 2
-            t_diff = tau * ((t_end / tau + 1) ** (1 / (n_samples_original - 1)) - 1)
+            t_diff = tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1)
 
             # Update bounds
             if t_diff > dt_min:
@@ -168,7 +168,7 @@ class NonUniformSampling(ThermoTransform):
         t_end = domain_values[-1]
         if not self.tau:
             tau = torch.tensor(
-                self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), n_samples_original)
+                self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), self.n_samples)
             )
         else:
             tau = torch.tensor(self.tau)

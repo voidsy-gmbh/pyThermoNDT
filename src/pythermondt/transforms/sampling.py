@@ -110,7 +110,7 @@ class NonUniformSampling(ThermoTransform):
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
-    def __init__(self, n_samples: int, tau: float | None = None):
+    def __init__(self, n_samples: int, tau: float | None = None, precision: float = 1e-2):
         """Implement a non-uniform sampling strategy for the data container.
 
         The implementation is based on the following paper:
@@ -122,19 +122,21 @@ class NonUniformSampling(ThermoTransform):
             tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
                           If None, will be approxmated automatically using binary search to satisfy
                           the minimum time step constraint from Equation (25) of the paper. Default is None.
+            precision (float, optional): Precision used for the binary search. Default is 1e-2, which is sufficient for
+                most applications.
         """
         super().__init__()
         self.n_samples = n_samples
         self.tau = tau
+        self.precision = precision
 
     def _calculate_tau(self, t_end: float, dt_min: float, n_t: int) -> float:
         """Calculate minimum tau according to equation (25) using binary search."""
         low = dt_min  # use dt_min as lower bound
         high = t_end  # use t_end as a upper bond because tau >= t_end makes no sense
-        precision = 1e-2
 
         # 1.) Binary search
-        while high - low > precision:
+        while high - low > self.precision:
             tau = (low + high) / 2
             t_diff = tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1)
 
@@ -144,14 +146,16 @@ class NonUniformSampling(ThermoTransform):
             else:
                 low = tau  # Equation violated: tau too small, need larger tau ==> narrow down to upper half
 
-        tau = high  # High is used because this is guaranteed to be the largest valid tau that satisfies the equation
+        # Verify the result actually works
+        tau = high
+        t_diff_final = tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1)
 
-        # Sanity check
-        if tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1) < dt_min:
-            print(
-                f"Warning: Calculated tau {tau} does not satisfy the minimum time step constraint. "
-                f"Expected at least {dt_min}, but got {tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1)}."
+        if t_diff_final < dt_min:
+            raise ValueError(
+                f"Binary search failed to find valid tau. Got t_diff={t_diff_final:.6f} < "
+                f"required dt_min={dt_min:.6f}. Please provide tau manually."
             )
+
         return tau
 
     def forward(self, container: DataContainer) -> DataContainer:
@@ -175,7 +179,7 @@ class NonUniformSampling(ThermoTransform):
         t_end = domain_values[-1]
         if not self.tau:
             tau = torch.tensor(
-                self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), self.n_samples)
+                self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), self.n_samples),
             )
         else:
             tau = torch.tensor(self.tau)

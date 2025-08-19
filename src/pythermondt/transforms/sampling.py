@@ -140,12 +140,19 @@ class NonUniformSampling(ThermoTransform):
 
             # Update bounds
             if t_diff > dt_min:
-                high = tau  # Narrow down to lower half
+                high = tau  # Equation satisfied: tau works, try smaller tau ==> narrow down to lower half
             else:
-                low = tau  # Narrow down to upper half
+                low = tau  # Equation violated: tau too small, need larger tau ==> narrow down to upper half
 
-        # return the calculated tau
-        return (low + high) / 2
+        tau = high  # High is used because this is guaranteed to be the largest valid tau that satisfies the equation
+
+        # Sanity check
+        if tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1) < dt_min:
+            print(
+                f"Warning: Calculated tau {tau} does not satisfy the minimum time step constraint. "
+                f"Expected at least {dt_min}, but got {tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1)}."
+            )
+        return tau
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets

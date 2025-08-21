@@ -3,8 +3,6 @@ import copy
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from pythermondt import DataContainer
-
 from .config import BENCHMARK_SPECS, READER_SPECS, BenchmarkSpec, ReaderSpec
 
 
@@ -38,10 +36,10 @@ def test_benchmark_transform(
     if benchmark_config.setup:
         container = benchmark_config.setup(container)
 
-    def run_transform() -> DataContainer:
+    def run_transform():
         """Run the transform on a fresh copy of the container."""
         container_copy = copy.deepcopy(container)
-        return benchmark_config.transform(container_copy)
+        benchmark_config.transform(container_copy)
 
     # Set up grouping and naming
     benchmark.group = benchmark_config.name

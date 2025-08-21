@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from pythermondt import DataContainer, LocalReader
+from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt import transforms as T  # noqa: N812
 from pythermondt.readers import BaseReader
 
@@ -25,6 +25,9 @@ class ReaderSpec:
 
 READER_SPECS = [
     ReaderSpec(name="small", reader=LocalReader(pattern="tests/assets/perf/small", recursive=True)),
+    ReaderSpec(
+        name="medium", reader=S3Reader("ffg-bp", "benchmark_datasets/fraunhofer", download_files=True, num_files=3)
+    ),
 ]
 
 

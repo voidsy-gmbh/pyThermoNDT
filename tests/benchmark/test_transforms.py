@@ -4,58 +4,46 @@ import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from pythermondt import DataContainer
-from pythermondt import transforms as T  # noqa: N812
 
-from .utils import BenchmarkConfig, discover_perf_readers
-
-# Define benchmark configurations as constants
-BENCHMARK_CONFIGS = [
-    BenchmarkConfig(
-        name="ApplyLUT",
-        transform=T.ApplyLUT(),
-    ),
-    BenchmarkConfig(
-        name="MinMaxNormalize",
-        setup=T.ApplyLUT(),
-        transform=T.MinMaxNormalize(),
-    ),
-    BenchmarkConfig(
-        name="SelectFrameRange",
-        transform=T.SelectFrameRange(start=0, end=50),
-    ),
-    BenchmarkConfig(
-        name="NonUniformSampling",
-        setup=T.ApplyLUT(),
-        transform=T.NonUniformSampling(10),
-    ),
-    BenchmarkConfig(
-        name="SubtractFrame",
-        setup=T.ApplyLUT(),
-        transform=T.SubtractFrame(0),
-    ),
-    BenchmarkConfig(
-        name="RemoveFlash",
-        transform=T.RemoveFlash(),
-    ),
-]
+from .config import BENCHMARK_SPECS, READER_SPECS, BenchmarkSpec, ReaderSpec
 
 
-@pytest.mark.parametrize("config", BENCHMARK_CONFIGS, ids=lambda config: config.name)
-def test_benchmark_transform(benchmark: BenchmarkFixture, config: BenchmarkConfig):
-    """Benchmark individual transforms."""
-    readers = discover_perf_readers()
+def get_readers():
+    """Get all readers for parameterization."""
+    return [pytest.param(reader, id=reader.name) for reader in READER_SPECS]
 
-    if len(readers.small) == 0:
-        pytest.skip("No test files found")
 
-    # Pre-setup: Load and prepare the container once
-    original_container = config.setup(readers.small[0]) if config.setup else readers.small[0]
+def get_file_indices_for_readers():
+    """Get all (reader, file_index) combinations for parameterization."""
+    combinations = []
+    for reader_spec in READER_SPECS:
+        for file_index in range(len(reader_spec.reader)):
+            combo_id = f"{reader_spec.name}_{file_index}"
+            combinations.append(pytest.param((reader_spec, file_index), id=combo_id))
+    return combinations
+
+
+@pytest.mark.parametrize("reader_file_combo", get_file_indices_for_readers())
+@pytest.mark.parametrize("benchmark_config", BENCHMARK_SPECS, ids=lambda config: config.name)
+def test_benchmark_transform(
+    benchmark: BenchmarkFixture,
+    benchmark_config: BenchmarkSpec,
+    reader_file_combo: tuple[ReaderSpec, int],
+):
+    """Benchmark individual transforms across different readers and files."""
+    reader_spec, file_index = reader_file_combo
+
+    # Setup: Load and prepare the container (excluded from benchmark timing)
+    container = reader_spec.reader[file_index]
+    if benchmark_config.setup:
+        container = benchmark_config.setup(container)
 
     def run_transform() -> DataContainer:
-        """Run the transform on a fresh copy of the container to avoid issues with mutation."""
-        container_copy = copy.deepcopy(original_container)
-        return config.transform(container_copy)
+        """Run the transform on a fresh copy of the container."""
+        container_copy = copy.deepcopy(container)
+        return benchmark_config.transform(container_copy)
 
-    # Benchmark the transform with automatic calibration
-    benchmark.group = config.name
+    # Set up grouping and naming
+    benchmark.group = benchmark_config.name
+    benchmark.name = f"{benchmark_config.name}_{reader_spec.name}_{file_index}"
     benchmark(run_transform)

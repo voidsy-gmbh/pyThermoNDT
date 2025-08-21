@@ -57,4 +57,5 @@ def test_benchmark_transform(benchmark: BenchmarkFixture, config: BenchmarkConfi
         return config.transform(container_copy)
 
     # Benchmark the transform with automatic calibration
+    benchmark.group = config.name
     benchmark(run_transform)

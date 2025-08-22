@@ -14,44 +14,46 @@ PyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 ```python
 from torch.utils.data import DataLoader
 
+from pythermondt import LocalReader, S3Reader
 from pythermondt import transforms as T
 from pythermondt.dataset import ThermoDataset, container_collate
-from pythermondt.readers import LocalReader, S3Reader
 
 # Load data from different sources
 local_reader = LocalReader("./examples/example_data/**/*.hdf5", recursive=True)
 s3_reader = S3Reader("ffg-bp", "example2_writing_data", download_files=True)
 
-# Create a transform pipeline
+# Create optimized transform pipeline (deterministic transforms first for better caching)
 transform = T.Compose([
-    T.ApplyLUT(),           # Convert raw data to temperatures
-    T.RemoveFlash(),        # Remove flash frames
-    T.NonUniformSampling(64), # Resample data to 64 frames
-    T.CropFrames(96, 96), # Center crop the frames to 96x96
-    T.MinMaxNormalize()     # Normalize data
+    T.ApplyLUT(),                  # Convert raw data to temperatures
+    T.RemoveFlash(),               # Remove flash frames
+    T.NonUniformSampling(64),      # Resample data to 64 frames
+    T.CropFrames(96, 96),          # Center crop the frames to 96x96
+    T.MinMaxNormalize()            # Normalize data
 ])
 
-# 1.) Access data using the reader interface
+# 1.) Access individual files using readers
 container = local_reader[0]
-processed = transform(container) # Apply the transform to the container
+processed = transform(container)
 
-# Visualize results
+# 2.) Analyse processed data
 processed.show_frame(frame_number=10)
+processed.analyse_interactive()
 
-# 2.) Combine multiple sources in a dataset with caching for remote data and applied transforms
+# 3.) Combine sources in a dataset for training workflows
 dataset = ThermoDataset([local_reader, s3_reader], transform=transform)
 
-# Analyse a datacontainer interactively
-dataset[0].analyse_interactive()
+# Build cache for faster training (splits pipeline at first random transform)
+dataset.build_cache("immediate")
 
-# 3.) Use the dataset with a PyTorch DataLoader for batched access
+# 4.) Use with PyTorch DataLoader for model training to be used in your training loop
 collate_fn = container_collate('/Data/Tdata', '/GroundTruth/DefectMask')
 dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
 
-# Run your training loop
-for thermal_data, ground_truth in dataloader:
-    print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [4, 96, 96, 64]
-    print(f"Ground truth shape: {ground_truth.shape}")    # Tensor of shape: [4, 96, 96]
+for epoch in range(50):
+    print(f"Epoch {epoch + 1}")
+    for thermal_data, ground_truth in dataloader:
+        print(f"Thermal data shape: {thermal_data.shape}")    # [4, 96, 96, 64]
+        print(f"Ground truth shape: {ground_truth.shape}")    # [4, 96, 96]
 ```
 
 ## From here?

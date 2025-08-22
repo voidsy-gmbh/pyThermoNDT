@@ -66,8 +66,4 @@ BENCHMARK_SPECS = [
         setup=T.ApplyLUT(),
         transform=T.SubtractFrame(0),
     ),
-    BenchmarkSpec(
-        name="RemoveFlash",
-        transform=T.RemoveFlash(),
-    ),
 ]

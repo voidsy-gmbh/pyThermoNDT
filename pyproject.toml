@@ -53,6 +53,10 @@ addopts = [
     "--import-mode=importlib",
 ]
 testpaths = ["tests"]
+markers = [
+    "local: marks tests that use local files only",
+    "cloud: marks tests that require cloud access",
+]
 
 
 # Ruff

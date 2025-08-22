@@ -5,20 +5,15 @@ from pytest_benchmark.fixture import BenchmarkFixture
 
 from pythermondt import DataContainer
 
-from .config import BENCHMARK_SPECS, READER_SPECS, BenchmarkSpec
-
-
-def get_readers():
-    """Get all readers for parameterization."""
-    return [pytest.param(reader, id=reader.name) for reader in READER_SPECS]
+from .config import BENCHMARK_DATA, BENCHMARK_SPECS, BenchmarkSpec
 
 
 def get_test_files_as_container():
     """Get all (index, container) combinations for parameterization."""
-    for reader_spec in READER_SPECS:
-        for idx, container in enumerate(reader_spec.reader):
-            combo_id = f"{reader_spec.name}_{idx}"
-            yield pytest.param((idx, reader_spec.name, container), id=combo_id)
+    for benchmark_data in BENCHMARK_DATA:
+        for idx, container in enumerate(benchmark_data.reader):
+            combo_id = f"{benchmark_data.name}_{idx}"
+            yield pytest.param((idx, benchmark_data.name, container), id=combo_id, marks=benchmark_data.marker)
 
 
 @pytest.mark.parametrize("data_config", get_test_files_as_container())

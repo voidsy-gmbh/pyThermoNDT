@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
+import pytest
+
 from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt import transforms as T  # noqa: N812
 from pythermondt.readers import BaseReader
@@ -16,20 +18,29 @@ class BenchmarkSpec:
 
 
 @dataclass
-class ReaderSpec:
+class BenchmarkData:
     """Specification for a reader."""
 
     name: str
     reader: BaseReader
+    marker: pytest.MarkDecorator
 
 
-READER_SPECS = [
-    ReaderSpec(name="small", reader=LocalReader(pattern="tests/assets/perf/small", recursive=True)),
-    ReaderSpec(
-        name="medium", reader=S3Reader("ffg-bp", "benchmark_datasets/fraunhofer", download_files=True, num_files=3)
+LOCAL_READER = [
+    BenchmarkData(
+        name="small", reader=LocalReader(pattern="tests/assets/perf/small", recursive=True), marker=pytest.mark.local
     ),
 ]
 
+CLOUD_READER = [
+    BenchmarkData(
+        name="medium-fraunhofer",
+        reader=S3Reader("ffg-bp", "benchmark_datasets/fraunhofer", download_files=True, num_files=1),
+        marker=pytest.mark.cloud,
+    ),
+]
+
+BENCHMARK_DATA = LOCAL_READER + CLOUD_READER
 
 BENCHMARK_SPECS = [
     BenchmarkSpec(

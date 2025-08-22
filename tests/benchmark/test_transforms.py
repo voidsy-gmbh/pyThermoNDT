@@ -11,6 +11,9 @@ from .config import BENCHMARK_DATA, BENCHMARK_SPECS, BenchmarkSpec
 def get_test_files_as_container():
     """Get all (index, container) combinations for parameterization."""
     for benchmark_data in BENCHMARK_DATA:
+        # Ensure files are downloaded
+        benchmark_data.reader.download()
+
         for idx, container in enumerate(benchmark_data.reader):
             combo_id = f"{benchmark_data.name}_{idx}"
             yield pytest.param((idx, benchmark_data.name, container), id=combo_id, marks=benchmark_data.marker)
@@ -28,7 +31,7 @@ def test_benchmark_transform(
 
     # Apply setup transform if specified
     if benchmark_config.setup:
-        container = benchmark_config.setup(container)
+        container = benchmark_config.setup(copy.deepcopy(container))
 
     def run_transform():
         """Run the transform on a fresh copy of the container."""

@@ -6,6 +6,15 @@ classDiagram
     parse(data: IOPathWrapper)* DataContainer
   }
   style BaseParser fill:#77AADD
+  class DataType {
+    name
+  }
+  style DataType fill:#77AADD
+  class EdevisParser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style EdevisParser fill:#77AADD
   class HDF5Parser {
     supported_extensions : tuple
     parse(data: IOPathWrapper) DataContainer
@@ -16,5 +25,6 @@ classDiagram
     parse(data: IOPathWrapper) DataContainer
   }
   style SimulationParser fill:#77AADD
+  EdevisParser --|> BaseParser
   HDF5Parser --|> BaseParser
   SimulationParser --|> BaseParser

@@ -15,11 +15,11 @@ PyThermoNDT is a Python package for manipulating thermographic data in Non-Destr
 from torch.utils.data import DataLoader
 
 from pythermondt import transforms as T
-from pythermondt.data import ThermoDataset, container_collate
+from pythermondt.dataset import ThermoDataset, container_collate
 from pythermondt.readers import LocalReader, S3Reader
 
 # Load data from different sources
-local_reader = LocalReader("./examples/example_data/*.hdf5")
+local_reader = LocalReader("./examples/example_data/**/*.hdf5", recursive=True)
 s3_reader = S3Reader("ffg-bp", "example2_writing_data", download_files=True)
 
 # Create a transform pipeline
@@ -52,7 +52,6 @@ dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_
 for thermal_data, ground_truth in dataloader:
     print(f"Thermal data shape: {thermal_data.shape}")    # Tensor of shape: [4, 96, 96, 64]
     print(f"Ground truth shape: {ground_truth.shape}")    # Tensor of shape: [4, 96, 96]
-    break
 ```
 
 ## From here?

@@ -1,6 +1,7 @@
 import copy
 
 import pytest
+from botocore.exceptions import ClientError, NoCredentialsError, SSOTokenLoadError
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from pythermondt import DataContainer
@@ -11,12 +12,16 @@ from .config import BENCHMARK_DATA, BENCHMARK_SPECS, BenchmarkSpec
 def get_test_files_as_container():
     """Get all (index, container) combinations for parameterization."""
     for benchmark_data in BENCHMARK_DATA:
-        # Ensure files are downloaded
-        benchmark_data.reader.download()
+        try:
+            # Ensure files are downloaded
+            benchmark_data.reader.download()
 
-        for idx, container in enumerate(benchmark_data.reader):
-            combo_id = f"{benchmark_data.name}_{idx}"
-            yield pytest.param((idx, benchmark_data.name, container), id=combo_id, marks=benchmark_data.marker)
+            for idx, container in enumerate(benchmark_data.reader):
+                combo_id = f"{benchmark_data.name}_{idx}"
+                yield pytest.param((idx, benchmark_data.name, container), id=combo_id, marks=benchmark_data.marker)
+        except (NoCredentialsError, ClientError, SSOTokenLoadError) as e:
+            msg = f"Skipping {benchmark_data.name} due to AWS credentials error: {e}"
+            yield pytest.param(None, id=msg, marks=pytest.mark.skip(reason=msg))
 
 
 @pytest.mark.parametrize("data_config", get_test_files_as_container())

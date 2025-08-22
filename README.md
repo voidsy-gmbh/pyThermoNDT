@@ -42,10 +42,10 @@ processed.analyse_interactive()
 # 3.) Combine sources in a dataset for training workflows
 dataset = ThermoDataset([local_reader, s3_reader], transform=transform)
 
-# Build cache for faster training (splits pipeline at first random transform)
+# 4.) Build cache for faster training (splits pipeline at first random transform)
 dataset.build_cache("immediate")
 
-# 4.) Use with PyTorch DataLoader for model training to be used in your training loop
+# 5.) Use with PyTorch DataLoader for model training to be used in your training loop
 collate_fn = container_collate('/Data/Tdata', '/GroundTruth/DefectMask')
 dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
 

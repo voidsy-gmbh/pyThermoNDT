@@ -34,8 +34,8 @@ LOCAL_READER = [
 
 CLOUD_READER = [
     BenchmarkData(
-        name="medium-fraunhofer",
-        reader=S3Reader("ffg-bp", "benchmark_datasets/fraunhofer", download_files=True, num_files=1),
+        name="fraunhofer",
+        reader=S3Reader("ffg-bp", "benchmark_datasets/fraunhofer", download_files=True, num_files=3),
         marker=pytest.mark.cloud,
     ),
 ]

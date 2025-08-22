@@ -109,6 +109,10 @@ classDiagram
     memory_bytes() int
   }
   style DataNode fill:#99DDFF
+  class DataType {
+    name
+  }
+  style DataType fill:#BBCC33
   class DatasetOps {
     add_dataset(path: str, name: str, data: Tensor | ndarray | None)
     add_datasets(path: str)
@@ -126,6 +130,11 @@ classDiagram
     load_from_hdf5(path: str)
   }
   style DeserializationOps fill:#99DDFF
+  class EdevisParser {
+    supported_extensions : tuple
+    parse(data: IOPathWrapper) DataContainer
+  }
+  style EdevisParser fill:#BBCC33
   class GaussianNoise {
     mean : float
     std : float
@@ -327,6 +336,7 @@ classDiagram
     arbitrary
     celsius
     dimensionless
+    hertz
     kelvin
     millisecond
     second
@@ -376,6 +386,7 @@ classDiagram
   ThermoDataset --|> BaseDataset
   LocalBackend --|> BaseBackend
   S3Backend --|> BaseBackend
+  EdevisParser --|> BaseParser
   HDF5Parser --|> BaseParser
   SimulationParser --|> BaseParser
   LocalReader --|> BaseReader
@@ -404,4 +415,5 @@ classDiagram
   Unit --* Units : celsius
   Unit --* Units : second
   Unit --* Units : millisecond
+  Unit --* Units : hertz
   _BaseTransform --o Compose : transforms

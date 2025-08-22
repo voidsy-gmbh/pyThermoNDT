@@ -20,6 +20,9 @@ classDiagram
   class base_parser {
   }
   style base_parser fill:#77AADD
+  class edevis_parser {
+  }
+  style edevis_parser fill:#77AADD
   class hdf5_parser {
   }
   style hdf5_parser fill:#77AADD
@@ -38,7 +41,9 @@ classDiagram
   local_backend --> base_backend
   s3_backend --> base_backend
   parsers --> base_parser
+  parsers --> edevis_parser
   parsers --> hdf5_parser
   parsers --> simulation_parser
+  edevis_parser --> base_parser
   hdf5_parser --> base_parser
   simulation_parser --> base_parser

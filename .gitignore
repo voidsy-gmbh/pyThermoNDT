@@ -1,3 +1,6 @@
+# Benchmark outputs from pytest-benchmark
+.benchmarks/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

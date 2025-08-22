@@ -115,6 +115,23 @@ pytest tests/test_file.py::test_name
 pytest -k test_name
 ```
 
+### Performance Benchmarking
+
+PyThermoNDT includes a benchmarking framework for measuring transform performance using [pytest-benchmark](https://pytest-benchmark.readthedocs.io/).
+
+```bash
+# Run all benchmarks
+pytest tests/benchmark/ --benchmark-only
+
+# Run only local benchmarks (no cloud data access)
+pytest tests/benchmark/ --benchmark-only -m "local"
+
+# Benchmark specific transforms
+pytest tests/benchmark/ --benchmark-only -k "ApplyLUT"
+```
+
+Use the `-m "local"` marker to run benchmarks without requiring AWS credentials.
+
 ###  Code Formatting and Linting
 
 The project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and linting to maintain consistent code quality. Ruff combines functionality from multiple tools (black, flake8, isort, pylint, etc.) into a single, fast package written in Rust.

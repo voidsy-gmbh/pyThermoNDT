@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install git+https://github.com/Julfried/pylint.git@fix-agg-comp
+        uv pip install git+https://github.com/pylint-dev/pylint.git
 
     - name: Create directories for diagrams
       run: |

@@ -41,6 +41,18 @@ class ApplyLUT(ThermoTransform):
         if not isinstance(tdata, torch.Tensor):
             raise ValueError("Tdata is not a torch.Tensor")
 
+        # Sanity check if tdata is valid
+        if tdata.dtype != torch.uint16 and tdata.negative().any():
+            raise ValueError("Invalid values in Tdata. Applying LookUpTable is not supported.")
+
+        # Except Invalid Indices. Negative indices are not allowed because indexing negatives values in tdata creates
+        # ambiguous values when applying the LUT. However if Tdata is unsigned this will not be a problem.
+        try:
+            tdata = tdata.to(torch.int32)
+            tdata = lut[tdata]
+        except IndexError as e:
+            raise IndexError("Index out of bounds. Tdata contains invalid indices not available from LUT") from e
+
         # Convert Tdata from uin16 to int32, because indexing in pytorch does not work with unsigned integers
         tdata = tdata.to(torch.int32)
 

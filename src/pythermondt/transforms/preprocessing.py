@@ -42,8 +42,7 @@ class ApplyLUT(ThermoTransform):
         # Except Invalid Indices. Negative indices are not allowed because indexing negatives values in tdata creates
         # ambiguous results when applying the LUT. However if Tdata is unsigned this will not be a problem.
         try:
-            tdata = tdata.to(torch.int32)
-            tdata = lut[tdata]
+            tdata = torch.take(lut, tdata.flatten().long()).reshape(tdata.shape)
         except IndexError as e:
             raise IndexError("Index out of bounds. Tdata contains invalid indices not available from LUT") from e
 

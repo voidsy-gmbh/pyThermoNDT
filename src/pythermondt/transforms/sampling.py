@@ -147,7 +147,7 @@ class NonUniformSampling(ThermoTransform):
                 low = tau  # Equation violated: tau too small, need larger tau ==> narrow down to upper half
 
         # Verify the result actually works
-        tau = high
+        tau = high  # take the upper bound instead of mean as final tau because it is guaranteed to satisfy the equation
         t_diff_final = tau * ((t_end / tau + 1) ** (1 / (n_t - 1)) - 1)
 
         if t_diff_final < dt_min:

@@ -180,7 +180,6 @@ class NonUniformSampling(ThermoTransform):
             )
 
         # Calculate tau using binary search if not provided
-        n_samples_original = len(domain_values)
         t_end = domain_values[-1]
         dt_min = domain_values[1] - domain_values[0]  # Assuming the input data is uniformly sampled
         if not self.tau:
@@ -233,7 +232,7 @@ class NonUniformSampling(ThermoTransform):
             indices = torch.searchsorted(domain_values, t_k)
 
             # Clamp indices to the valid range
-            indices = torch.clamp(indices, 0, n_samples_original - 1)
+            indices = torch.clamp(indices, 0, len(domain_values) - 1)
 
             # Select the frames according to the indices
             tdata = tdata[..., indices]

@@ -177,10 +177,9 @@ class NonUniformSampling(ThermoTransform):
         # Calculate tau using binary search if not provided
         n_samples_original = len(domain_values)
         t_end = domain_values[-1]
+        dt_min = domain_values[1] - domain_values[0]  # Assuming the input data is uniformly sampled
         if not self.tau:
-            tau = torch.tensor(
-                self._calculate_tau(t_end.item(), domain_values[1].item() - domain_values[0].item(), self.n_samples),
-            )
+            tau = torch.tensor(self._calculate_tau(t_end.item(), dt_min.item(), self.n_samples))
         else:
             tau = torch.tensor(self.tau)
 

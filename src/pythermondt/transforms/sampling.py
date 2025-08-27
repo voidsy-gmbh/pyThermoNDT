@@ -172,6 +172,30 @@ class NonUniformSampling(ThermoTransform):
 
         return tau
 
+    def _interp_vectorized(self, x_new, x_old, y_old_batch):
+        """Vectorized 1D interpolation for batched data.
+
+        Args:
+            x_new: Target interpolation points, shape (n_new,)
+            x_old: Original sample points, shape (n_old,)
+            y_old_batch: Original values, shape (batch_size, n_old)
+
+        Returns:
+            Interpolated values, shape (batch_size, n_new)
+        """
+        # Find indices (same for all batch elements)
+        indices = torch.searchsorted(x_old, x_new, right=False)
+        indices = torch.clamp(indices, 1, len(x_old) - 1)
+
+        # Get surrounding points
+        x0, x1 = x_old[indices - 1], x_old[indices]
+        y0 = y_old_batch[:, indices - 1]  # Shape: (batch_size, n_new)
+        y1 = y_old_batch[:, indices]  # Shape: (batch_size, n_new)
+
+        # Vectorized interpolation
+        t = (x_new - x0) / (x1 - x0)  # Shape: (n_new,)
+        return y0 + t * (y1 - y0)  # Broadcasting handles batch dimension
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
         tdata, domain_values, excitation_signal = container.get_datasets(
@@ -201,39 +225,14 @@ class NonUniformSampling(ThermoTransform):
         t_k = tau * ((t_end / tau + 1) ** (k / (self.n_samples - 1)) - 1)
 
         if self.interpolate:
-            # Manual linear interpolation using searchsorted + lerp
-            def interp_vectorized(x_new, x_old, y_old_batch):
-                """Vectorized 1D interpolation for batched data.
-
-                Args:
-                    x_new: Target interpolation points, shape (n_new,)
-                    x_old: Original sample points, shape (n_old,)
-                    y_old_batch: Original values, shape (batch_size, n_old)
-
-                Returns:
-                    Interpolated values, shape (batch_size, n_new)
-                """
-                # Find indices (same for all batch elements)
-                indices = torch.searchsorted(x_old, x_new, right=False)
-                indices = torch.clamp(indices, 1, len(x_old) - 1)
-
-                # Get surrounding points
-                x0, x1 = x_old[indices - 1], x_old[indices]
-                y0 = y_old_batch[:, indices - 1]  # Shape: (batch_size, n_new)
-                y1 = y_old_batch[:, indices]  # Shape: (batch_size, n_new)
-
-                # Vectorized interpolation
-                t = (x_new - x0) / (x1 - x0)  # Shape: (n_new,)
-                return y0 + t * (y1 - y0)  # Broadcasting handles batch dimension
-
             # Interpolate signals
             # Excitation signal
-            excitation_signal = interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
+            excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
 
             # Interpolate tdata (vectorized across all spatial locations)
             h, w, _ = tdata.shape
             tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)
-            tdata = interp_vectorized(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
+            tdata = self._interp_vectorized(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
 
             domain_values = t_k  # Use exact exponential times as new domain values
         else:

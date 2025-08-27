@@ -1,6 +1,7 @@
 import itertools
 import math
 from collections.abc import Callable, Sequence
+from functools import partial
 
 import torch
 from torch import Generator, default_generator
@@ -122,30 +123,31 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
     if not paths:
         raise ValueError("At least one path must be specified")
 
-    def collate_fn(batch: Sequence[DataContainer]) -> tuple[torch.Tensor, ...]:
-        """Inner collate function that processes a batch of DataContainer objects."""
-        if not batch:
-            raise ValueError("Empty batch provided - cannot collate empty sequence")
+    return partial(_container_collate_impl, paths=paths)
 
-        # Use get_datasets method to efficiently extract all datasets from each container
-        all_tensors = []
-        for container in batch:
-            try:
-                # Get all datasets from this container in one call
-                tensors = container.get_datasets(*paths)
-                all_tensors.append(tensors)
-            except KeyError as exc:
-                raise KeyError(f"One or more dataset paths not found in container: {exc}") from exc
 
-        # Stack tensors along batch dimension for each path
-        result = []
-        for i, path in enumerate(paths):
-            try:
-                # Extract tensors for this path from all containers and stack them
-                result.append(torch.stack([tensors[i] for tensors in all_tensors], dim=0))
-            except RuntimeError as e:
-                raise RuntimeError(f"Cannot stack tensors for path '{path}': {e}") from e
+def _container_collate_impl(batch: Sequence[DataContainer], paths: tuple[str, ...]) -> tuple[torch.Tensor, ...]:
+    """Inner collate function that processes a batch of DataContainer objects."""
+    if not batch:
+        raise ValueError("Empty batch provided - cannot collate empty sequence")
 
-        return tuple(result)
+    # Use get_datasets method to efficiently extract all datasets from each container
+    all_tensors = []
+    for container in batch:
+        try:
+            # Get all datasets from this container in one call
+            tensors = container.get_datasets(*paths)
+            all_tensors.append(tensors)
+        except KeyError as exc:
+            raise KeyError(f"One or more dataset paths not found in container: {exc}") from exc
 
-    return collate_fn
+    # Stack tensors along batch dimension for each path
+    result = []
+    for i, path in enumerate(paths):
+        try:
+            # Extract tensors for this path from all containers and stack them
+            result.append(torch.stack([tensors[i] for tensors in all_tensors], dim=0))
+        except RuntimeError as e:
+            raise RuntimeError(f"Cannot stack tensors for path '{path}': {e}") from e
+
+    return tuple(result)

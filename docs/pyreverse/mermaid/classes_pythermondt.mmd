@@ -233,7 +233,9 @@ classDiagram
   }
   style NodeType fill:#99DDFF
   class NonUniformSampling {
+    interpolate : bool
     n_samples : int
+    precision : float
     tau : float | None
     forward(container: DataContainer) DataContainer
   }

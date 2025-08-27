@@ -110,7 +110,7 @@ class NonUniformSampling(ThermoTransform):
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
-    def __init__(self, n_samples: int, tau: float | None = None, precision: float = 1e-2):
+    def __init__(self, n_samples: int, tau: float | None = None, interpolate: bool = True, precision: float = 1e-2):
         """Implement a non-uniform sampling strategy for the data container.
 
         The implementation is based on the following paper:
@@ -120,18 +120,32 @@ class NonUniformSampling(ThermoTransform):
         Args:
             n_samples (int): Number of samples to select from the original data.
             tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
-                          If None, will be approxmated automatically using binary search to satisfy
-                          the minimum time step constraint from Equation (25) of the paper. Default is None.
+                If None, will be approxmated automatically using binary search to satisfy the minimum time step
+                constraint from Equation (25) of the paper. Default is None.
+            interpolate (bool, optional): Whether to apply interpolation after non-uniform sampling. If True,
+                the downsampled data will be interpolated to match the exact time steps calculated according to
+                Equation (6) of the paper. If False, the transform will try to match the nearest time steps in the
+                original data using torch.searchsorted. Defaults to True.
             precision (float, optional): Precision used for the binary search. Default is 1e-2, which is sufficient for
                 most applications.
         """
         super().__init__()
         self.n_samples = n_samples
         self.tau = tau
+        self.interpolate = interpolate
         self.precision = precision
 
     def _calculate_tau(self, t_end: float, dt_min: float, n_t: int) -> float:
-        """Calculate minimum tau according to equation (25) using binary search."""
+        """Find the minimum tau that satisfies equation (25) using binary search.
+
+        Args:
+            t_end (float): End time of the original data.
+            dt_min (float): Minimum time step required.
+            n_t (int): Number of desired time steps after downsampling.
+
+        Returns:
+            float: The minimum tau value that satisfies the constraint.
+        """
         low = dt_min  # use dt_min as lower bound
         high = t_end  # use t_end as a upper bond because tau >= t_end makes no sense
 
@@ -158,6 +172,30 @@ class NonUniformSampling(ThermoTransform):
 
         return tau
 
+    def _interp_vectorized(self, x_new, x_old, y_old_batch):
+        """Vectorized 1D interpolation for batched data.
+
+        Args:
+            x_new: Target interpolation points, shape (n_new,)
+            x_old: Original sample points, shape (n_old,)
+            y_old_batch: Original values, shape (batch_size, n_old)
+
+        Returns:
+            Interpolated values, shape (batch_size, n_new)
+        """
+        # Find indices (same for all batch elements)
+        indices = torch.searchsorted(x_old, x_new, right=False)
+        indices = torch.clamp(indices, 1, len(x_old) - 1)
+
+        # Get surrounding points
+        x0, x1 = x_old[indices - 1], x_old[indices]
+        y0 = y_old_batch[:, indices - 1]  # Shape: (batch_size, n_new)
+        y1 = y_old_batch[:, indices]  # Shape: (batch_size, n_new)
+
+        # Vectorized interpolation
+        t = (x_new - x0) / (x1 - x0)  # Shape: (n_new,)
+        return y0 + t * (y1 - y0)  # Broadcasting handles batch dimension
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
         tdata, domain_values, excitation_signal = container.get_datasets(
@@ -175,7 +213,6 @@ class NonUniformSampling(ThermoTransform):
             )
 
         # Calculate tau using binary search if not provided
-        n_samples_original = len(domain_values)
         t_end = domain_values[-1]
         dt_min = domain_values[1] - domain_values[0]  # Assuming the input data is uniformly sampled
         if not self.tau:
@@ -187,16 +224,28 @@ class NonUniformSampling(ThermoTransform):
         k = torch.arange(self.n_samples)
         t_k = tau * ((t_end / tau + 1) ** (k / (self.n_samples - 1)) - 1)
 
-        # Find the indices of the closest time steps in the domain values
-        indices = torch.searchsorted(domain_values, t_k)
+        if self.interpolate:
+            # Interpolate signals
+            # Excitation signal
+            excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
 
-        # Clamp indices to the valid range
-        indices = torch.clamp(indices, 0, n_samples_original - 1)
+            # Interpolate tdata (vectorized across all spatial locations)
+            h, w, _ = tdata.shape
+            tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)
+            tdata = self._interp_vectorized(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
 
-        # Select the frames according to the indices
-        tdata = tdata[..., indices]
-        domain_values = domain_values[indices]
-        excitation_signal = excitation_signal[indices]
+            domain_values = t_k  # Use exact exponential times as new domain values
+        else:
+            # Find the indices of the closest time steps in the domain values
+            indices = torch.searchsorted(domain_values, t_k)
+
+            # Clamp indices to the valid range
+            indices = torch.clamp(indices, 0, len(domain_values) - 1)
+
+            # Select the frames according to the indices
+            tdata = tdata[..., indices]
+            domain_values = domain_values[indices]
+            excitation_signal = excitation_signal[indices]
 
         # Update Container and return
         container.update_datasets(

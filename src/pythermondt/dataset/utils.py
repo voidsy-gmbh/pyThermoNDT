@@ -126,8 +126,20 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
     return partial(_container_collate_impl, paths=paths)
 
 
-def _container_collate_impl(batch: Sequence[DataContainer], paths: tuple[str, ...]) -> tuple[torch.Tensor, ...]:
-    """Inner collate function that processes a batch of DataContainer objects."""
+    """Implementation function that processes a batch of DataContainer objects for collation.
+
+    Args:
+        batch (Sequence[DataContainer]): The batch of DataContainer objects to collate.
+        paths (tuple[str, ...]): The dataset paths to extract and collate from each container.
+
+    Returns:
+        tuple[torch.Tensor, ...]: A tuple of tensors, each stacked along the batch dimension for the corresponding path.
+
+    Raises:
+        KeyError: If a specified dataset path doesn't exist in any container.
+        RuntimeError: If tensors have incompatible shapes for stacking.
+        ValueError: If empty batch is provided.
+    """
     if not batch:
         raise ValueError("Empty batch provided - cannot collate empty sequence")
 

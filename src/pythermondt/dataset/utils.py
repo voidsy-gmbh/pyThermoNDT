@@ -126,6 +126,7 @@ def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[
     return partial(_container_collate_impl, paths=paths)
 
 
+def _container_collate_impl(batch: Sequence[DataContainer], paths: tuple[str, ...]) -> tuple[torch.Tensor, ...]:
     """Implementation function that processes a batch of DataContainer objects for collation.
 
     Args:

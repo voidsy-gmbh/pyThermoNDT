@@ -136,7 +136,16 @@ class NonUniformSampling(ThermoTransform):
         self.precision = precision
 
     def _calculate_tau(self, t_end: float, dt_min: float, n_t: int) -> float:
-        """Calculate minimum tau according to equation (25) using binary search."""
+        """Find the minimum tau that satisfies equation (25) using binary search.
+
+        Args:
+            t_end (float): End time of the original data.
+            dt_min (float): Minimum time step required.
+            n_t (int): Number of desired time steps after downsampling.
+
+        Returns:
+            float: The minimum tau value that satisfies the constraint.
+        """
         low = dt_min  # use dt_min as lower bound
         high = t_end  # use t_end as a upper bond because tau >= t_end makes no sense
 

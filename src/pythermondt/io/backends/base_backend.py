@@ -43,6 +43,11 @@ class BaseBackend(ABC):
         raise NotImplementedError("The method must be implemented by the subclass!")
 
     @abstractmethod
+    def get_file_size(self, file_path: str) -> int:
+        """Get the size of the file at the specified file path."""
+        raise NotImplementedError("The method must be implemented by the subclass!")
+
+    @abstractmethod
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Directly download a file from the source to the destination path.
 

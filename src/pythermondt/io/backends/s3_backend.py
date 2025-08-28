@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
+from .progress import TqdmCallback
 
 
 class S3Backend(BaseBackend):
@@ -48,7 +49,8 @@ class S3Backend(BaseBackend):
         bucket, key = self._parse_path(file_path)
         try:
             data = BytesIO()
-            self.__client.download_fileobj(bucket, key, data)
+            with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as progress:
+                self.__client.download_fileobj(bucket, key, data, Callback=progress.callback)
             return IOPathWrapper(data)
         except ClientError as e:
             if e.response["Error"]["Code"] in ("NoSuchKey", "NoSuchBucket"):
@@ -150,12 +152,13 @@ class S3Backend(BaseBackend):
         bucket, key = self._parse_path(source_path)
 
         # Download the file
-        self.__client.download_file(bucket, key, destination_path)
+        with TqdmCallback(total=self.get_file_size(source_path), desc=f"Downloading {key}") as progress:
+            self.__client.download_file(bucket, key, destination_path, Callback=progress.callback)
 
     def _parse_path(self, path: str) -> tuple[str, str]:
         """Parse S3 path into bucket and key.
 
-        Handles both s3://bucket/key format and relative paths.
+        Handles both s3://bucket/key format and relative paths
 
         Args:
             path (str): Path to parse

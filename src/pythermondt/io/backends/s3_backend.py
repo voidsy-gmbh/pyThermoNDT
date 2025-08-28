@@ -134,6 +134,12 @@ class S3Backend(BaseBackend):
 
         return files
 
+    def get_file_size(self, file_path: str) -> int:
+        """Return the size of the file on s3 bucket in bytes."""
+        bucket, key = self._parse_path(file_path)
+        response = self.__client.head_object(Bucket=bucket, Key=key)
+        return response["ContentLength"]
+
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Download a file from S3 to local filesystem.
 

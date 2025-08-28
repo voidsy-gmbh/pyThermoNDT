@@ -1,7 +1,7 @@
 from tqdm.auto import tqdm
 
 
-class TqdmCallback(tqdm):
+class TqdmCallback(tqdm):  # pylint: disable=inconsistent-mro
     """Progress bar with callback support.
 
     This allows to display a progress bar for long running operations that provide a callback function.

@@ -89,5 +89,10 @@ class LocalBackend(BaseBackend):
 
         return all_files
 
+    def get_file_size(self, file_path: str) -> int:
+        if os.path.isdir(file_path):
+            raise IsADirectoryError(f"Path is a directory, not a file: {file_path}")
+        return os.path.getsize(file_path)
+
     def download_file(self, source_path: str, destination_path: str) -> None:
         raise NotImplementedError("Direct download is not supported for local files.")

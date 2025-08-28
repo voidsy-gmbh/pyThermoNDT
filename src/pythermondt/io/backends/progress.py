@@ -18,7 +18,7 @@ class TqdmCallback(tqdm):
         """
         default_kwargs = {
             "unit": "B",
-            "disable": True if total < 20 * 1024 * 1024 else False,  # Disable progress for files smaller than 20MB
+            "disable": total < 20 * 1024 * 1024,  # Disable progress for files smaller than 20MB
             "unit_scale": True,
             "unit_divisor": 1024,
             "delay": delay,

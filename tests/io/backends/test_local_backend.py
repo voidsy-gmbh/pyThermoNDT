@@ -401,3 +401,60 @@ def test_pattern_with_special_characters(tmp_path):
     backend = LocalBackend(str(tmp_path))
     files = backend.get_file_list()
     assert len(files) == len(special_chars)
+
+
+def test_get_file_size(tmp_path):
+    """Test get_file_size returns correct file size."""
+    backend = LocalBackend(str(tmp_path))
+
+    # Test empty file
+    empty_file = tmp_path / "empty.txt"
+    empty_file.write_text("")
+    assert backend.get_file_size(str(empty_file)) == 0
+
+    # Test file with content
+    test_content = "Hello, World!"
+    test_file = tmp_path / "test.txt"
+    test_file.write_text(test_content)
+    expected_size = len(test_content.encode("utf-8"))
+    assert backend.get_file_size(str(test_file)) == expected_size
+
+    # Test binary file
+    binary_content = b"\x00\x01\x02\x03\x04\x05"
+    binary_file = tmp_path / "binary.bin"
+    binary_file.write_bytes(binary_content)
+    assert backend.get_file_size(str(binary_file)) == len(binary_content)
+
+
+def test_get_file_size_nonexistent_file(tmp_path):
+    """Test get_file_size raises error for non-existent file."""
+    backend = LocalBackend(str(tmp_path))
+    nonexistent_file = str(tmp_path / "nonexistent.txt")
+
+    with pytest.raises(FileNotFoundError):
+        backend.get_file_size(nonexistent_file)
+
+
+def test_get_file_size_large_file(tmp_path):
+    """Test get_file_size with larger file."""
+    backend = LocalBackend(str(tmp_path))
+
+    # Create a file with known size (1KB)
+    large_content = "A" * 1024
+    large_file = tmp_path / "large.txt"
+    large_file.write_text(large_content)
+
+    assert backend.get_file_size(str(large_file)) == 1024
+
+
+def test_get_file_size_directory_raises_error(tmp_path):
+    """Test get_file_size raises error when given directory path."""
+    backend = LocalBackend(str(tmp_path))
+
+    # Create a subdirectory
+    subdir = tmp_path / "subdir"
+    subdir.mkdir()
+
+    # Should raise an error when trying to get size of directory
+    with pytest.raises(IsADirectoryError):
+        backend.get_file_size(str(subdir))

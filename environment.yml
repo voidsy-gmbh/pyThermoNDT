@@ -6,5 +6,4 @@ dependencies:
   - python=3.12.*
   - pip
   - pip:
-    - "-e ." # Install the package in editable mode
-    - "-r requirements_dev.txt" # Install all dependencies from requirements_dev.txt
+    - "-e . --group dev" # Install the package in editable mode + development dependencies

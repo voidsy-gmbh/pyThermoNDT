@@ -33,8 +33,7 @@ Using uv/Pip is recommended as it is faster and more lightweight than Conda:
 uv venv
 
 # Install the package itself in development mode and dev dependencies
-uv pip install -e .
-uv pip install -r requirements_dev.txt
+uv pip install -e . --group dev
 ```
 
 This creates a virtual environment called `venv` with all necessary dependencies and installs PyThermoNDT in editable mode. Changes to the source code will immediately be reflected without having to reinstall the package (see [setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) for more information).
@@ -50,8 +49,7 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate.bat  # Windows
 
 # Install the package itself in development mode and dev dependencies
-pip install -e .
-pip install -r requirements_dev.txt
+pip install -e . --group dev
 ```
 
 ### Option 2: Using Conda

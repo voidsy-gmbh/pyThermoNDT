@@ -14,17 +14,23 @@ class ApplyLUT(ThermoTransform):
     As a result Tdata gets converted from uint16 to float64.
     """
 
-    def __init__(self):
+    def __init__(self, target_dtype: torch.dtype | None = None):
         """Applies the LookUpTable of the container to the Temperature data in the container.
 
         This is done by indexing the LookUpTable (Float64) with the Temperature data (Uint16).
         As a result Tdata gets converted from uint16 to float64.
+
+        Args:
+            target_dtype (torch.dtype, optional): The target data type to convert the Temperature data to. If None,
+                the original data type will be used. Defaults to None.
         """
         super().__init__()
+        self.target_dtype = target_dtype
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data
         lut = container.get_dataset("/MetaData/LookUpTable")
+        lut = lut.to(self.target_dtype) if self.target_dtype is not None else lut
         tdata = container.get_dataset("/Data/Tdata")
 
         # Check if LUT is available

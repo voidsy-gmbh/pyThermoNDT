@@ -1,0 +1,11 @@
+pytest==8.4.1
+pytest-cov==6.2.1
+pytest-benchmark==5.1.0
+ruff==0.12.10
+pre-commit==4.3.0
+bump-my-version==1.2.1
+deepdiff==8.6.0
+licensecheck==2025.1.0
+mypy==1.17.1
+uv~=0.8.13
+pylint==3.3.8

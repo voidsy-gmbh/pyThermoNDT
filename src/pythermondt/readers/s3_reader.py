@@ -52,10 +52,7 @@ class S3Reader(BaseReader):
 
         This method is called to create or recreate the backend when needed or after unpickling.
         """
-        session = boto3.Session(
-            region_name=self.__region_name,
-            profile_name=self.__profile_name,
-        )
+        session = boto3.Session(region_name=self.__region_name, profile_name=self.__profile_name)
         return S3Backend(self.__bucket, self.__prefix, session)
 
     def _get_reader_params(self) -> str:

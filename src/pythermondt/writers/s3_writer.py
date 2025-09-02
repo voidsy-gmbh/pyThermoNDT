@@ -25,10 +25,8 @@ class S3Writer(BaseWriter):
         self.__profile_name = profile_name
 
     def _create_backend(self) -> S3Backend:
-        session = boto3.Session(
-            region_name=self.__region_name,
-            profile_name=self.__profile_name,
-        )
+        # pylint: disable=duplicate-code
+        session = boto3.Session(region_name=self.__region_name, profile_name=self.__profile_name)
         return S3Backend(self.__bucket, self.__prefix, session)
 
     def write(self, container: DataContainer, file_name: str):

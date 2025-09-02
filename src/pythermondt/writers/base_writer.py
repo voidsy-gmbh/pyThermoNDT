@@ -5,6 +5,18 @@ from ..io.backends import BaseBackend
 
 
 class BaseWriter(ABC):
+    def __init__(self):
+        """Constructor for the BaseWriter class. Should be called by all subclasses."""
+        # Internal state
+        self.__backend: BaseBackend | None = None
+
+    @property
+    def backend(self) -> BaseBackend:
+        """The backend that the reader uses to read the data."""
+        if not self.__backend:
+            self.__backend = self._create_backend()
+        return self.__backend
+
     @abstractmethod
     def write(self, container: DataContainer, file_name: str):
         """Actual implementation of the writing a single DataContainer to the destination folder.

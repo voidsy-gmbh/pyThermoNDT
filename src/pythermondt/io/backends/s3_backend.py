@@ -49,8 +49,8 @@ class S3Backend(BaseBackend):
         bucket, key = self._parse_path(file_path)
         try:
             data = BytesIO()
-            with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as progress:
-                self.__client.download_fileobj(bucket, key, data, Callback=progress.callback)
+            with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as pbar:
+                self.__client.download_fileobj(bucket, key, data, Callback=pbar.callback)
             return IOPathWrapper(data)
         except ClientError as e:
             if e.response["Error"]["Code"] in ("NoSuchKey", "NoSuchBucket"):
@@ -68,9 +68,14 @@ class S3Backend(BaseBackend):
 
         # Reset file object position
         data.file_obj.seek(0)
+        size = data.file_obj.getbuffer().nbytes
 
-        # Upload to S3
-        self.__client.upload_fileobj(data.file_obj, bucket, key)
+        # Upload to S3 (Always show progress)
+        try:
+            with TqdmCallback(total=size, desc=f"Uploading {key}", disable=False, delay=0) as pbar:
+                self.__client.upload_fileobj(data.file_obj, bucket, key, Callback=pbar.callback)
+        except ClientError as e:
+            raise RuntimeError(f"Failed to upload file to S3: {e}") from e
 
     def exists(self, file_path: str) -> bool:
         """Check if a file exists in S3.

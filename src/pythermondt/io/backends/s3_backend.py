@@ -68,11 +68,10 @@ class S3Backend(BaseBackend):
 
         # Reset file object position
         data.file_obj.seek(0)
-        size = data.file_obj.getbuffer().nbytes
 
         # Upload to S3 (Always show progress)
         try:
-            with TqdmCallback(total=size, desc=f"Uploading {key}", disable=False, delay=0) as pbar:
+            with TqdmCallback(total=data.file_obj.getbuffer().nbytes, desc=f"Uploading {key}") as pbar:
                 self.__client.upload_fileobj(data.file_obj, bucket, key, Callback=pbar.callback)
         except ClientError as e:
             raise RuntimeError(f"Failed to upload file to S3: {e}") from e

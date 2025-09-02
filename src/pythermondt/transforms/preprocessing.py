@@ -21,8 +21,9 @@ class ApplyLUT(ThermoTransform):
         As a result Tdata gets converted from uint16 to float64.
 
         Args:
-            target_dtype (torch.dtype, optional): The target data type to convert the Temperature data to. If None,
-                the original data type will be used. Defaults to None.
+            target_dtype (torch.dtype, optional): The target data type to cast the LookUpTable (LUT) to before indexing.
+                If None, the LUT's original dtype will be used. The dtype of the LUT determines the final output dtype
+                after indexing the temperature data. Defaults to None.
         """
         super().__init__()
         self.target_dtype = target_dtype

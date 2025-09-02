@@ -1,12 +1,21 @@
 from abc import ABC, abstractmethod
 
 from ..data import DataContainer
+from ..io.backends import BaseBackend
 
 
 class BaseWriter(ABC):
-    @abstractmethod
     def __init__(self):
         """Constructor for the BaseWriter class. Should be called by all subclasses."""
+        # Internal state
+        self.__backend: BaseBackend | None = None
+
+    @property
+    def backend(self) -> BaseBackend:
+        """The backend that the writer uses to write the data."""
+        if not self.__backend:
+            self.__backend = self._create_backend()
+        return self.__backend
 
     @abstractmethod
     def write(self, container: DataContainer, file_name: str):
@@ -17,3 +26,13 @@ class BaseWriter(ABC):
             destination_folder (str): The destination folder to write to.
             file_name (str): The name of the DataContainer.
         """
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @abstractmethod
+    def _create_backend(self) -> BaseBackend:
+        """Create a new backend instance.
+
+        This method must be implemented by subclasses to create or
+        recreate their backend when needed or after unpickling.
+        """
+        raise NotImplementedError("Subclasses must implement this method")

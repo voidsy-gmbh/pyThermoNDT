@@ -13,15 +13,14 @@ class TqdmCallback(tqdm):  # pylint: disable=inconsistent-mro
         Args:
             total (int): Total bytes expected
             desc (str): Progress description
-            delay (float, optional): Show progress only if operation takes > delay seconds
+            delay (float, optional): Show progress only if operation takes > delay seconds. Only for files < 40MB
             **kwargs: Additional tqdm arguments to be passed to tqdm
         """
         default_kwargs = {
             "unit": "B",
-            "disable": total < 20 * 1024 * 1024,  # Disable progress for files smaller than 20MB
             "unit_scale": True,
             "unit_divisor": 1024,
-            "delay": delay,
+            "delay": delay if total < 40 * 1024 * 1024 else 0,
             "leave": False,
         }
         default_kwargs.update(kwargs)

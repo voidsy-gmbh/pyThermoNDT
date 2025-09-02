@@ -193,7 +193,7 @@ class NonUniformSampling(ThermoTransform):
         y1 = y_old_batch[:, indices]  # Shape: (batch_size, n_new)
 
         # Vectorized interpolation
-        t = (x_new - x0) / (x1 - x0)  # Shape: (n_new,)
+        t = ((x_new - x0) / (x1 - x0)).to(y_old_batch.dtype)  # Shape: (n_new,)
         return y0 + t * (y1 - y0)  # Broadcasting handles batch dimension
 
     def forward(self, container: DataContainer) -> DataContainer:

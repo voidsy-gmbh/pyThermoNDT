@@ -221,7 +221,7 @@ class NonUniformSampling(ThermoTransform):
             tau = torch.tensor(self.tau)
 
         # Calculate time steps according to equation (6) in the paper
-        k = torch.arange(self.n_samples)
+        k = torch.arange(self.n_samples, dtype=domain_values.dtype)
         t_k = tau * ((t_end / tau + 1) ** (k / (self.n_samples - 1)) - 1)
 
         if self.interpolate:

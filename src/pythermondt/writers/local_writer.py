@@ -7,7 +7,7 @@ from .base_writer import BaseWriter
 
 class LocalWriter(BaseWriter):
     def __init__(self, destination_folder: str):
-        """Instantiates a new HDF5Writer.
+        """Instantiates a new instance of the LocalWriter class.
 
         Args:
             destination_folder (str): The destination folder where the DataContainers should be written to.

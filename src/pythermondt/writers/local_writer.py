@@ -23,7 +23,7 @@ class LocalWriter(BaseWriter):
 
     def write(self, container: DataContainer, file_name: str):
         # Verify folder
-        if self.__exists or not os.path.exists(self.__destination_folder):
+        if not self.__exists or not os.path.exists(self.__destination_folder):
             os.makedirs(self.__destination_folder, exist_ok=True)
 
         # Append file extension if not present

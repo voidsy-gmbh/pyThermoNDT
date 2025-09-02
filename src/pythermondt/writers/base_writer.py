@@ -12,7 +12,7 @@ class BaseWriter(ABC):
 
     @property
     def backend(self) -> BaseBackend:
-        """The backend that the reader uses to read the data."""
+        """The backend that the writer uses to write the data."""
         if not self.__backend:
             self.__backend = self._create_backend()
         return self.__backend

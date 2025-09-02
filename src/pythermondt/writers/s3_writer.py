@@ -28,6 +28,7 @@ class S3Writer(BaseWriter):
         # pylint: disable=duplicate-code
         session = boto3.Session(region_name=self.__region_name, profile_name=self.__profile_name)
         return S3Backend(self.__bucket, self.__prefix, session)
+        # pylint: enable=duplicate-code
 
     def write(self, container: DataContainer, file_name: str):
         # Append file extension if not present

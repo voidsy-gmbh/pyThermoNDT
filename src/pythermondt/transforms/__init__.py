@@ -1,4 +1,4 @@
-from .augmentation import GaussianNoise, RandomFlip
+from .augmentation import AdaptiveGaussianNoise, GaussianNoise, RandomFlip
 from .base import RandomThermoTransform, ThermoTransform
 from .normalization import MaxNormalize, MinMaxNormalize, ZScoreNormalize
 from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
@@ -24,4 +24,5 @@ __all__ = [
     # Stochastic transforms
     "GaussianNoise",
     "RandomFlip",
+    "AdaptiveGaussianNoise",
 ]

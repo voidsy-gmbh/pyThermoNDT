@@ -110,7 +110,6 @@ class AdaptiveGaussianNoise(RandomThermoTransform):
     def forward(self, container: DataContainer) -> DataContainer:
         tdata = container.get_dataset("/Data/Tdata")
         std = torch.ones(1, device=tdata.device).uniform_(*self.std_range).item()
-        print(std)
         noise = torch.normal(mean=self.mean, std=std, size=tdata.size(), device=tdata.device, dtype=tdata.dtype)
         container.update_dataset("/Data/Tdata", tdata + noise)
         return container

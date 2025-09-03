@@ -57,6 +57,9 @@ dependencies = [
 
     # AWS
     "boto3>=1.33",
+
+    # Azure
+    "azure-storage-blob>=12.20"
 ]
 
 [dependency-groups]

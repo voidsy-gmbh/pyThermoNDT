@@ -63,7 +63,7 @@ class GaussianNoise(RandomThermoTransform):
 
         Args:
             mean (float): Mean of the Gaussian noise. Default is 0.0.
-            std (float): Standard deviation of the Gaussian noise. Default is 1.0.
+            std (float): Standard deviation of the Gaussian noise. Default is 0.1.
 
         Raises:
             ValueError: If std is negative.

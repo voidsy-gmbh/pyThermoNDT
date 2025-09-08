@@ -4,7 +4,7 @@ pytest-benchmark==5.1.0
 ruff==0.12.11
 pre-commit==4.3.0
 bump-my-version==1.2.1
-deepdiff==8.6.0
+deepdiff==8.6.1
 licensecheck==2025.1.0
 mypy==1.17.1
 uv==0.8.14

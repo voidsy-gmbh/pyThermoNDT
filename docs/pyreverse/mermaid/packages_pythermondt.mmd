@@ -83,6 +83,9 @@ classDiagram
   class local_backend {
   }
   style local_backend fill:#BBCC33
+  class progress {
+  }
+  style progress fill:#BBCC33
   class s3_backend {
   }
   style s3_backend fill:#BBCC33
@@ -212,6 +215,7 @@ classDiagram
   backends --> s3_backend
   local_backend --> base_backend
   s3_backend --> base_backend
+  s3_backend --> progress
   parsers --> base_parser
   parsers --> edevis_parser
   parsers --> hdf5_parser

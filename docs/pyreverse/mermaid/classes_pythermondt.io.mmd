@@ -5,6 +5,7 @@ classDiagram
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
+    get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str)* None
   }
@@ -41,6 +42,7 @@ classDiagram
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
   }
@@ -53,6 +55,7 @@ classDiagram
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
   }
@@ -62,6 +65,10 @@ classDiagram
     parse(data: IOPathWrapper) DataContainer
   }
   style SimulationParser fill:#77AADD
+  class TqdmCallback {
+    callback(bytes_amount: int) None
+  }
+  style TqdmCallback fill:#77AADD
   LocalBackend --|> BaseBackend
   S3Backend --|> BaseBackend
   EdevisParser --|> BaseParser

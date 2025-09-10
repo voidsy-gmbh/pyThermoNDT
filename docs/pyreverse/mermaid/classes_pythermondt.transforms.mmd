@@ -1,5 +1,6 @@
 classDiagram
   class ApplyLUT {
+    target_dtype : torch.dtype | None
     forward(container: DataContainer) DataContainer
   }
   style ApplyLUT fill:#77AADD

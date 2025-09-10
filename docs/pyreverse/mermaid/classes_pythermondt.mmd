@@ -1,5 +1,6 @@
 classDiagram
   class ApplyLUT {
+    target_dtype : torch.dtype | None
     forward(container: DataContainer) DataContainer
   }
   style ApplyLUT fill:#EEDD88
@@ -35,6 +36,7 @@ classDiagram
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
+    get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str)* None
   }
@@ -82,6 +84,7 @@ classDiagram
   }
   style BaseReader fill:#AAAA00
   class BaseWriter {
+    backend : BaseBackend
     write(container: DataContainer, file_name: str)*
   }
   style BaseWriter fill:#EE8866
@@ -200,6 +203,7 @@ classDiagram
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
   }
@@ -208,8 +212,7 @@ classDiagram
   }
   style LocalReader fill:#AAAA00
   class LocalWriter {
-    destination_folder : str
-    write(container, file_name)
+    write(container: DataContainer, file_name: str)
   }
   style LocalWriter fill:#EE8866
   class MaxNormalize {
@@ -240,10 +243,6 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style NonUniformSampling fill:#EEDD88
-  class ProgressCallback {
-    progress_bar
-  }
-  style ProgressCallback fill:#EE8866
   class RandomFlip {
     p_height : float
     p_width : float
@@ -270,6 +269,7 @@ classDiagram
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
   }
@@ -278,8 +278,6 @@ classDiagram
   }
   style S3Reader fill:#AAAA00
   class S3Writer {
-    bucket : str
-    destination_folder : str
     write(container: DataContainer, file_name: str)
   }
   style S3Writer fill:#EE8866
@@ -328,6 +326,10 @@ classDiagram
   class ThermoTransform {
   }
   style ThermoTransform fill:#EEDD88
+  class TqdmCallback {
+    callback(bytes_amount: int) None
+  }
+  style TqdmCallback fill:#BBCC33
   class Unit {
     name : str
     quantity : str

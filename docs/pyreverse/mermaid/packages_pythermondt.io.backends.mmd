@@ -8,6 +8,9 @@ classDiagram
   class local_backend {
   }
   style local_backend fill:#77AADD
+  class progress {
+  }
+  style progress fill:#77AADD
   class s3_backend {
   }
   style s3_backend fill:#77AADD
@@ -16,3 +19,4 @@ classDiagram
   backends --> s3_backend
   local_backend --> base_backend
   s3_backend --> base_backend
+  s3_backend --> progress

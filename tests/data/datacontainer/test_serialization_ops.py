@@ -17,7 +17,7 @@ def test_serialize_deserialize(
     container_fixture: str,
     request: pytest.FixtureRequest,
     compression: Literal["gzip", "lzf", "none"],
-    compression_opts: int,
+    compression_opts: int | None,
 ):
     """Test serialization and deserialization of DataContainer.
 
@@ -56,7 +56,7 @@ def test_serialize_file_operations(
     container_fixture: str,
     request: pytest.FixtureRequest,
     compression: Literal["gzip", "lzf", "none"],
-    compression_opts: int,
+    compression_opts: int | None,
     tmp_path,
 ):
     """Test save_to_hdf5 and load_from_hdf5 file operations."""

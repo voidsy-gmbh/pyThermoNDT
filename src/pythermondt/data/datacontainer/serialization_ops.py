@@ -17,7 +17,7 @@ CompressionType: TypeAlias = Literal["lzf", "gzip", "none"]
 
 
 class SerializationOps(BaseOps):
-    def serialize_to_hdf5(self, compression: CompressionType = "lzf", compression_opts: int = 4) -> BytesIO:
+    def serialize_to_hdf5(self, compression: CompressionType = "lzf", compression_opts: int | None = 4) -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
 
         Args:
@@ -82,7 +82,7 @@ class SerializationOps(BaseOps):
             # Assign attribute to HDF5 object
             h5obj.attrs[key] = value
 
-    def save_to_hdf5(self, path: str, compression: CompressionType = "lzf", compression_opts: int = 4):
+    def save_to_hdf5(self, path: str, compression: CompressionType = "lzf", compression_opts: int | None = 4):
         """Saves the serialized DataContainer to an HDF5 file at the specified path.
 
         Args:

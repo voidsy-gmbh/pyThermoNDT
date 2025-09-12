@@ -1,6 +1,7 @@
 import os
 
 from ..data import DataContainer
+from ..data.datacontainer.serialization_ops import CompressionType
 from ..io import IOPathWrapper, LocalBackend
 from .base_writer import BaseWriter
 
@@ -21,7 +22,13 @@ class LocalWriter(BaseWriter):
     def _create_backend(self) -> LocalBackend:
         return LocalBackend(pattern=self.__destination_folder)
 
-    def write(self, container: DataContainer, file_name: str):
+    def write(
+        self,
+        container: DataContainer,
+        file_name: str,
+        compression: CompressionType = "lzf",
+        compression_opts: int | None = 4,
+    ):
         # Verify folder
         if not self.__exists or not os.path.exists(self.__destination_folder):
             os.makedirs(self.__destination_folder, exist_ok=True)
@@ -34,4 +41,4 @@ class LocalWriter(BaseWriter):
         path = os.path.join(self.__destination_folder, file_name)
 
         # Write the DataContainer to the file
-        self.backend.write_file(IOPathWrapper(container.serialize_to_hdf5()), path)
+        self.backend.write_file(IOPathWrapper(container.serialize_to_hdf5(compression, compression_opts)), path)

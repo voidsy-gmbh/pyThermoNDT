@@ -1,6 +1,7 @@
 import boto3
 
 from ..data import DataContainer
+from ..data.datacontainer.serialization_ops import CompressionType
 from ..io import IOPathWrapper, S3Backend
 from .base_writer import BaseWriter
 
@@ -30,11 +31,17 @@ class S3Writer(BaseWriter):
         return S3Backend(self.__bucket, self.__prefix, session)
         # pylint: enable=duplicate-code
 
-    def write(self, container: DataContainer, file_name: str):
+    def write(
+        self,
+        container: DataContainer,
+        file_name: str,
+        compression: CompressionType = "lzf",
+        compression_opts: int | None = 4,
+    ):
         # Append file extension if not present
         if not file_name.endswith(".hdf5"):
             file_name += ".hdf5"
 
         # Write the DataContainer to the file
-        data = container.serialize_to_hdf5()
+        data = container.serialize_to_hdf5(compression, compression_opts)
         self.backend.write_file(IOPathWrapper(data), file_name)

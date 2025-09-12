@@ -87,10 +87,9 @@ class SerializationOps(BaseOps):
 
         Args:
             path (str): The path where the HDF5 file should be saved.
-            compression (Literal["lzf", "gzip", "none"]): The compression method to use for the HDF5 file.
-                Default is "lzf" which is a fast compression method. If you want smaller files,
-                use "gzip" instead, but it is slower. Use "none" to disable compression for faster
-                read/write operations, resulting in larger files.
+            compression (CompressionType): The compression method to use for the HDF5 file.
+                Default is "lzf" which is a fast compression method. For smaller files, "gzip" can be used at the cost
+                of speed. Use "none" to disable compression for faster read/write operations, resulting in larger files.
             compression_opts (int): The compression level for gzip compression. Ignored if compression is not "gzip".
                 Default is 4, which is a good balance between speed and compression ratio.
         """

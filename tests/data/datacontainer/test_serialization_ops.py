@@ -36,10 +36,7 @@ def test_serialize_deserialize(
     original_container = request.getfixturevalue(container_fixture)  # type: DataContainer
 
     # Serialize the DataContainer
-    if compression_opts is None:
-        hdf5_bytes = original_container.serialize_to_hdf5(compression=compression)
-    else:
-        hdf5_bytes = original_container.serialize_to_hdf5(compression=compression, compression_opts=compression_opts)
+    hdf5_bytes = original_container.serialize_to_hdf5(compression=compression, compression_opts=compression_opts)
 
     # Check if the serialized data is a bytes object and is not empty
     assert isinstance(hdf5_bytes, io.BytesIO)
@@ -52,10 +49,15 @@ def test_serialize_deserialize(
     assert deserialized_container == original_container
 
 
-@pytest.mark.parametrize("compression", ["gzip", "lzf"])
+@pytest.mark.parametrize("compression", ["gzip", "lzf", "none"])
+@pytest.mark.parametrize("compression_opts", [None, 1, 4, 9])
 @pytest.mark.parametrize("container_fixture", ["empty_container", "filled_container", "complex_container"])
 def test_serialize_file_operations(
-    container_fixture: str, request: pytest.FixtureRequest, compression: Literal["gzip", "lzf", "none"], tmp_path
+    container_fixture: str,
+    request: pytest.FixtureRequest,
+    compression: Literal["gzip", "lzf", "none"],
+    compression_opts: int,
+    tmp_path,
 ):
     """Test save_to_hdf5 and load_from_hdf5 file operations."""
     # Create temporary file path
@@ -65,7 +67,7 @@ def test_serialize_file_operations(
     original_container = request.getfixturevalue(container_fixture)  # type: DataContainer
 
     # Save container to file
-    original_container.save_to_hdf5(str(file_path), compression=compression)
+    original_container.save_to_hdf5(str(file_path), compression=compression, compression_opts=compression_opts)
 
     # Load into new container
     loaded_container = DataContainer()

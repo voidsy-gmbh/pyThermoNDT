@@ -1,18 +1,12 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sized
+from math import ceil
 from multiprocessing.pool import ThreadPool
-from typing import Protocol, TypeVar
 
 from ..config import settings
 from ..data import DataContainer
 from ..data.datacontainer.serialization_ops import CompressionType
 from ..io.backends import BaseBackend
-
-T = TypeVar("T", covariant=True)
-
-
-class SizedIterable(Iterable[T], Sized, Protocol):
-    pass
+from ..readers.base_reader import BaseReader
 
 
 class BaseWriter(ABC):
@@ -58,15 +52,29 @@ class BaseWriter(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def process_parallel(self, containers: SizedIterable[DataContainer], num_workers: int | None = None):
+    def process_parallel(self, reader: BaseReader, file_name: str, num_workers: int | None = None):
         """Process multiple DataContainers in parallel.
 
         Args:
-            containers (Collection[DataContainer]): The containers to process.
+            reader (BaseReader): A reader to process
+            file_name (str): The name of the file to write to.
             num_workers (int, optional): Number of workers to use for processing the files. If None, the global
                 configuration of PyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
         """
         workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
-        file_names = (f"test_{i}" for i in range(len(containers)))
+        n = len(reader)
+
+        def shard_range(worker_id: int):
+            per_worker = ceil(n / workers)
+            start = worker_id * per_worker
+            end = min(start + per_worker, n)
+            return range(start, end)
+
+        def worker_fn(worker_id: int):
+            for i in shard_range(worker_id):
+                container = reader[i]
+                file_name = f"test_{i}"
+                self.write(container, file_name)
+
         with ThreadPool(processes=workers) as pool:
-            pool.starmap(self.write, zip(containers, file_names, strict=True))
+            pool.map(worker_fn, range(workers))

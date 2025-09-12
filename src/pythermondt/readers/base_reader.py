@@ -165,10 +165,18 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
     def __iter__(self) -> Iterator[DataContainer]:
         # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
-        # and caching is of
+        # and caching is off
         file_paths = self.files
 
         for file in file_paths:
+            yield self.read_file(file)
+
+    def __reversed__(self) -> Iterator[DataContainer]:
+        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
+        # and caching is off
+        file_paths = self.files
+
+        for file in reversed(file_paths):
             yield self.read_file(file)
 
     def _load_manifest(self, manifest_path: str) -> dict[str, str]:

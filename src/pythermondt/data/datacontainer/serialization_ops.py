@@ -1,7 +1,7 @@
 import json
 from collections.abc import ItemsView
 from io import BytesIO
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 import h5py
 import numpy as np
@@ -13,16 +13,18 @@ from .group_ops import GroupOps
 from .node import AttributeTypes, DataNode, GroupNode, RootNode
 from .utils import validate_path
 
+CompressionType: TypeAlias = Literal["lzf", "gzip", "none"]
+
 
 class SerializationOps(BaseOps):
-    def serialize_to_hdf5(self, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4) -> BytesIO:
+    def serialize_to_hdf5(self, compression: CompressionType = "lzf", compression_opts: int | None = 4) -> BytesIO:
         """Serializes the DataContainer instance to an HDF5 file.
 
         Args:
-            compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
-                Default is "lzf" which is a fast compression method. If you want smaller files,
-                use "gzip" instead, but it is slower.
-            compression_opts (int): The compression level for gzip compression. Ignored if compression is "lzf".
+            compression (CompressionType): The compression method to use for the HDF5 file.
+                Default is "lzf" which is a fast compression method. For smaller files, "gzip" can be used at the cost
+                of speed. Use "none" to disable compression for faster read/write operations, resulting in larger files.
+            compression_opts (int): The compression level for gzip compression. Ignored if compression is not "gzip".
                 Default is 4, which is a good balance between speed and compression ratio.
 
         Returns:
@@ -51,8 +53,8 @@ class SerializationOps(BaseOps):
                     dataset = f.create_dataset(
                         path,
                         data=array,
-                        compression=compression,
-                        compression_opts=None if compression == "lzf" else compression_opts,
+                        compression=None if compression == "none" else compression,
+                        compression_opts=compression_opts if compression == "gzip" else None,
                         fletcher32=True,
                     )
                     self._add_attributes(dataset, node.attributes)
@@ -80,15 +82,15 @@ class SerializationOps(BaseOps):
             # Assign attribute to HDF5 object
             h5obj.attrs[key] = value
 
-    def save_to_hdf5(self, path: str, compression: Literal["lzf", "gzip"] = "lzf", compression_opts: int = 4):
+    def save_to_hdf5(self, path: str, compression: CompressionType = "lzf", compression_opts: int | None = 4):
         """Saves the serialized DataContainer to an HDF5 file at the specified path.
 
         Args:
             path (str): The path where the HDF5 file should be saved.
-            compression (Literal["lzf", "gzip"]): The compression method to use for the HDF5 file.
-                Default is "lzf" which is a fast compression method. If you want smaller files,
-                use "gzip" instead, but it is slower.
-            compression_opts (int): The compression level for gzip compression. Ignored if compression is "lzf".
+            compression (CompressionType): The compression method to use for the HDF5 file.
+                Default is "lzf" which is a fast compression method. For smaller files, "gzip" can be used at the cost
+                of speed. Use "none" to disable compression for faster read/write operations, resulting in larger files.
+            compression_opts (int): The compression level for gzip compression. Ignored if compression is not "gzip".
                 Default is 4, which is a good balance between speed and compression ratio.
         """
         with open(path, "wb") as file:

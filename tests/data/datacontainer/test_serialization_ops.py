@@ -10,10 +10,14 @@ from pythermondt.data import DataContainer
 from ...utils import containers_equal
 
 
-@pytest.mark.parametrize("compression", ["gzip", "lzf"])
+@pytest.mark.parametrize("compression", ["gzip", "lzf", "none"])
+@pytest.mark.parametrize("compression_opts", [None, 1, 4, 9])
 @pytest.mark.parametrize("container_fixture", ["empty_container", "filled_container", "complex_container"])
 def test_serialize_deserialize(
-    container_fixture: str, request: pytest.FixtureRequest, compression: Literal["gzip", "lzf"]
+    container_fixture: str,
+    request: pytest.FixtureRequest,
+    compression: Literal["gzip", "lzf", "none"],
+    compression_opts: int,
 ):
     """Test serialization and deserialization of DataContainer.
 
@@ -21,6 +25,7 @@ def test_serialize_deserialize(
         container_fixture: Name of the fixture to test
         request: Pytest fixture request object to get the fixture
         compression: Compression method to use for serialization
+        compression_opts: Compression level for gzip compression (ignored if not using gzip)
 
     Tests:
         1. Serialization to HDF5 bytes
@@ -31,7 +36,10 @@ def test_serialize_deserialize(
     original_container = request.getfixturevalue(container_fixture)  # type: DataContainer
 
     # Serialize the DataContainer
-    hdf5_bytes = original_container.serialize_to_hdf5(compression=compression)
+    if compression_opts is None:
+        hdf5_bytes = original_container.serialize_to_hdf5(compression=compression)
+    else:
+        hdf5_bytes = original_container.serialize_to_hdf5(compression=compression, compression_opts=compression_opts)
 
     # Check if the serialized data is a bytes object and is not empty
     assert isinstance(hdf5_bytes, io.BytesIO)
@@ -47,7 +55,7 @@ def test_serialize_deserialize(
 @pytest.mark.parametrize("compression", ["gzip", "lzf"])
 @pytest.mark.parametrize("container_fixture", ["empty_container", "filled_container", "complex_container"])
 def test_serialize_file_operations(
-    container_fixture: str, request: pytest.FixtureRequest, compression: Literal["gzip", "lzf"], tmp_path
+    container_fixture: str, request: pytest.FixtureRequest, compression: Literal["gzip", "lzf", "none"], tmp_path
 ):
     """Test save_to_hdf5 and load_from_hdf5 file operations."""
     # Create temporary file path

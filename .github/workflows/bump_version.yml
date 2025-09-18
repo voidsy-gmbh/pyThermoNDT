@@ -76,7 +76,7 @@ jobs:
           version-file: requirements_dev.txt
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
-          enable-cache: false
+          save-cache: false
 
       # Step 3: Install bump-my-version
       - name: Install bump-my-version

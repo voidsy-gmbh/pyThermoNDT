@@ -7,7 +7,7 @@ class TqdmCallback(tqdm):  # pylint: disable=inconsistent-mro
     This allows to display a progress bar for long running operations that provide a callback function.
     """
 
-    def __init__(self, total: int, desc: str, delay: float = 2.0, **kwargs):
+    def __init__(self, total: int, desc: str, delay: float = 4.0, **kwargs):
         """Initialize with automatic delay-based display.
 
         Args:

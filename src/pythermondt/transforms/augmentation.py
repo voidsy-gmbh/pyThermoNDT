@@ -63,7 +63,7 @@ class GaussianNoise(RandomThermoTransform):
 
         Args:
             mean (float): Mean of the Gaussian noise. Default is 0.0.
-            std (float): Standard deviation of the Gaussian noise. Default is 1.0.
+            std (float): Standard deviation of the Gaussian noise. Default is 0.1.
 
         Raises:
             ValueError: If std is negative.
@@ -80,5 +80,39 @@ class GaussianNoise(RandomThermoTransform):
     def forward(self, container: DataContainer) -> DataContainer:
         tdata = container.get_dataset("/Data/Tdata")
         noise = torch.normal(mean=self.mean, std=self.std, size=tdata.size(), device=tdata.device, dtype=tdata.dtype)
+        container.update_dataset("/Data/Tdata", tdata + noise)
+        return container
+
+
+class AdaptiveGaussianNoise(RandomThermoTransform):
+    """Add Gaussian noise with std uniformly sampled from a given range."""
+
+    def __init__(self, mean: float = 0.0, std_range: tuple[float, float] = (0.0, 0.1)):
+        """Initializes the AdaptiveGaussianNoise transformation with specified mean, std range, and distribution.
+
+        Args:
+            mean (float): Mean of the Gaussian noise. Default is 0.0.
+            std_range (tuple[float, float]): Range (min, max) for standard deviation of the Gaussian noise.
+                Default is (0.0, 0.1).
+
+        Raises:
+            ValueError: If std_range is invalid.
+        """
+        super().__init__()
+
+        # Validate std_range
+        if len(std_range) != 2:
+            raise ValueError("std_range must be a tuple of two numbers")
+
+        if std_range[0] < 0 or std_range[1] < 0 or std_range[0] >= std_range[1]:
+            raise ValueError("std_range must contain non-negative numbers with min < max")
+
+        self.mean = mean
+        self.std_range = std_range
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        tdata = container.get_dataset("/Data/Tdata")
+        std = torch.ones(1, device=tdata.device).uniform_(*self.std_range).item()
+        noise = torch.normal(mean=self.mean, std=std, size=tdata.size(), device=tdata.device, dtype=tdata.dtype)
         container.update_dataset("/Data/Tdata", tdata + noise)
         return container

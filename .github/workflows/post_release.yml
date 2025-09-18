@@ -34,9 +34,9 @@ jobs:
             --dir ./dist
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v6.6.1
+        uses: astral-sh/setup-uv@v6.7.0
         with:
-          enable-cache: false
+          save-cache: false
 
       - name: Publish the package
         env:

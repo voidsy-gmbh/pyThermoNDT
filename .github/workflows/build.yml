@@ -43,12 +43,12 @@ jobs:
       # Step 3: Setup build environment for pip
       - name: Setup build environment for pip
         if: matrix.build_type == 'pip'
-        uses: astral-sh/setup-uv@v6.6.1
+        uses: astral-sh/setup-uv@v6.7.0
         with:
           version-file: requirements_dev.txt
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
-          enable-cache: false # Disable cache for pip build
+          save-cache: false # Disable cache for pip build
 
       # Step 4: Build conda package
       - name: Build conda package

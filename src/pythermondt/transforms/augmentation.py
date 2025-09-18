@@ -104,6 +104,9 @@ class AdaptiveGaussianNoise(RandomThermoTransform):
         if len(std_range) != 2:
             raise ValueError("std_range must be a tuple of two numbers")
 
+        if std_range[0] < 0 or std_range[1] < 0 or std_range[0] >= std_range[1]:
+            raise ValueError("std_range must contain non-negative numbers with min < max")
+
         self.mean = mean
         self.std_range = std_range
 

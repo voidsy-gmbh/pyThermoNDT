@@ -36,6 +36,7 @@ jobs:
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
           cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
+          save-cache: false
 
       # Step 3 Sync dependencies
       - name: Sync dependencies

@@ -39,6 +39,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
+          save-cache: false
 
       # Step 3 Sync dependencies if cache hit
       - name: Sync dependencies

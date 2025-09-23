@@ -60,7 +60,7 @@ def get_all_parsers() -> tuple[type[BaseParser], ...]:
     """Get all registered parsers.
 
     Returns:
-        List of all parser classes
+        Tuple of all parser classes
     """
     return _get_registry()
 

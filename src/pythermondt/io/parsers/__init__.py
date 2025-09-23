@@ -21,14 +21,11 @@ def _load_parser_plugins() -> tuple[type[BaseParser], ...]:
 
 @lru_cache(maxsize=1)
 def _get_registry() -> tuple[type[BaseParser], ...]:
-    """
-    Lazily build and cache the parser registry on first use.
+    """Lazily build and cache the parser registry on first use.
 
-    This function constructs the registry of available parser classes, including both
-    built-in and plugin parsers, only when it is first called. The result is cached
-    using functools.lru_cache (with maxsize=1), so subsequent calls return the same
-    registry instance without rebuilding. This replaces previous module-level initialization
-    and ensures that plugin discovery is performed only once per process.
+    Constructs the registry of built-in and plugin parsers only when first called.
+    The result is cached so subsequent calls return the same registry instance. A tuple of parser classes is returned,
+    ensuring immutability and thread safety, exactly as the previous module level CONSTANT list did.
     """
     builtins = (HDF5Parser, SimulationParser, EdevisParser)
     plugins = _load_parser_plugins()

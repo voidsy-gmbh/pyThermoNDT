@@ -1,3 +1,4 @@
+from functools import lru_cache
 from importlib.metadata import entry_points
 
 from .base_parser import BaseParser
@@ -20,6 +21,14 @@ def _load_parser_plugins() -> list[type[BaseParser]]:
 
 # Parser registry of all available parsers
 PARSER_REGISTRY: list[type[BaseParser]] = [HDF5Parser, SimulationParser, EdevisParser] + _load_parser_plugins()
+
+
+@lru_cache(maxsize=1)
+def _get_registry() -> tuple[type[BaseParser], ...]:
+    """Lazily build the parser registry once, on first use."""
+    builtins = (HDF5Parser, SimulationParser, EdevisParser)
+    plugins = _load_parser_plugins()
+    return builtins + plugins
 
 
 def find_parser_for_extension(extension: str) -> type[BaseParser] | None:

@@ -6,6 +6,6 @@ pre-commit==4.3.0
 bump-my-version==1.2.3
 deepdiff==8.6.1
 licensecheck==2025.1.0
-mypy==1.18.1
+mypy==1.18.2
 uv==0.8.19
 pylint==3.3.8

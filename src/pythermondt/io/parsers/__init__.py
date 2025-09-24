@@ -1,3 +1,4 @@
+from functools import lru_cache
 from importlib.metadata import entry_points
 
 from .base_parser import BaseParser
@@ -6,7 +7,7 @@ from .hdf5_parser import HDF5Parser
 from .simulation_parser import SimulationParser
 
 
-def _load_parser_plugins() -> list[type[BaseParser]]:
+def _load_parser_plugins() -> tuple[type[BaseParser], ...]:
     """Load parser plugins via entry points."""
     plugins = []
     for ep in entry_points(group="pythermondt.parsers"):
@@ -15,11 +16,20 @@ def _load_parser_plugins() -> list[type[BaseParser]]:
             plugins.append(parser_cls)
         except Exception as e:  # pylint: disable=broad-except
             print(f"Warning: Failed to load parser plugin '{ep.name}': {e}")
-    return plugins
+    return tuple(plugins)
 
 
-# Parser registry of all available parsers
-PARSER_REGISTRY: list[type[BaseParser]] = [HDF5Parser, SimulationParser, EdevisParser] + _load_parser_plugins()
+@lru_cache(maxsize=1)
+def _get_registry() -> tuple[type[BaseParser], ...]:
+    """Lazily build and cache the parser registry on first use.
+
+    Constructs the registry of built-in and plugin parsers only when first called.
+    The result is cached so subsequent calls return the same registry instance. A tuple of parser classes is returned,
+    ensuring immutability and thread safety, exactly as the previous module level CONSTANT list did.
+    """
+    builtins = (HDF5Parser, SimulationParser, EdevisParser)
+    plugins = _load_parser_plugins()
+    return builtins + plugins
 
 
 def find_parser_for_extension(extension: str) -> type[BaseParser] | None:
@@ -35,7 +45,7 @@ def find_parser_for_extension(extension: str) -> type[BaseParser] | None:
     normalized_ext = extension if extension.startswith(".") else f".{extension}"
 
     # Find first parser supporting this extension
-    for parser_cls in PARSER_REGISTRY:
+    for parser_cls in _get_registry():
         if normalized_ext in parser_cls.supported_extensions:
             return parser_cls
 
@@ -48,16 +58,16 @@ def get_all_supported_extensions() -> set[str]:
     Returns:
         Set of all supported extensions
     """
-    return {ext for parser_cls in PARSER_REGISTRY for ext in parser_cls.supported_extensions}
+    return {ext for parser_cls in _get_registry() for ext in parser_cls.supported_extensions}
 
 
-def get_all_parsers() -> list[type[BaseParser]]:
+def get_all_parsers() -> tuple[type[BaseParser], ...]:
     """Get all registered parsers.
 
     Returns:
-        List of all parser classes
+        Tuple of all parser classes
     """
-    return PARSER_REGISTRY.copy()
+    return _get_registry()
 
 
 __all__ = [

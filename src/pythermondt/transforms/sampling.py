@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Literal
 
 import torch
 
@@ -110,7 +111,13 @@ class NonUniformSampling(ThermoTransform):
     thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
     """
 
-    def __init__(self, n_samples: int, tau: float | None = None, interpolate: bool = True, precision: float = 1e-2):
+    def __init__(
+        self,
+        n_samples: int,
+        tau: float | None = None,
+        interpolate: Literal["nearest", "linear", "averaging"] = "linear",
+        precision: float = 1e-2,
+    ):
         """Implement a non-uniform sampling strategy for the data container.
 
         The implementation is based on the following paper:
@@ -120,14 +127,17 @@ class NonUniformSampling(ThermoTransform):
         Args:
             n_samples (int): Number of samples to select from the original data.
             tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
-                If None, will be approximated automatically using binary search to satisfy the minimum time step
-                constraint from Equation (25) of the paper. Default is None.
-            interpolate (bool, optional): Whether to apply interpolation after non-uniform sampling. If True,
-                the downsampled data will be interpolated to match the exact time steps calculated according to
-                Equation (6) of the paper. If False, the transform will try to match the nearest time steps in the
-                original data using torch.searchsorted. Defaults to True.
-            precision (float, optional): Precision used for the binary search. Default is 1e-2, which is sufficient for
-                most applications.
+            If None, will be automatically calculated using binary search to satisfy the minimum time step
+            constraint from Equation (25) of the paper. Default is None.
+            interpolate (str, optional): Interpolation method to use after non-uniform sampling. Options are:
+            - "nearest": Find the closest time steps in the original data using torch.searchsorted.
+            - "linear": Apply linear interpolation to match the exact time steps calculated according to
+              Equation (6) of the paper.
+            - "averaging": Bin the original data into exponentially spaced intervals and average within
+              each bin to reduce aliasing effects.
+            Default is "linear".
+            precision (float, optional): Precision used for the binary search when automatically calculating tau.
+            Default is 1e-2, which is sufficient for most applications.
         """
         super().__init__()
         self.n_samples = n_samples
@@ -196,6 +206,37 @@ class NonUniformSampling(ThermoTransform):
         t = ((x_new - x0) / (x1 - x0)).to(y_old_batch.dtype)  # Shape: (n_new,)
         return y0 + t * (y1 - y0)  # Broadcasting handles batch dimension
 
+    def _average_binned(self, t_k, domain_values, data):
+        """Vectorized binning and averaging using torch.bucketize."""
+        # Create bin edges as midpoints between target time steps
+        bin_edges = torch.zeros(len(t_k) + 1, dtype=domain_values.dtype)
+        bin_edges[0] = domain_values[0] - 1e-10  # Ensure first sample is included
+        bin_edges[-1] = domain_values[-1] + 1e-10  # Ensure last sample is included
+        bin_edges[1:-1] = (t_k[:-1] + t_k[1:]) / 2
+
+        # Assign each time point to a bin
+        bin_indices = torch.bucketize(domain_values, bin_edges, right=False) - 1
+        bin_indices = torch.clamp(bin_indices, 0, len(t_k) - 1)
+
+        # Reshape data for vectorized operations
+        original_shape = data.shape
+        data_flat = data.view(-1, data.shape[-1])  # (batch_size, time)
+
+        # Initialize result tensor
+        result = torch.zeros((data_flat.shape[0], len(t_k)), dtype=data.dtype)
+
+        # Sum values in each bin using scatter_add
+        result.scatter_add_(1, bin_indices.expand(data_flat.shape[0], -1), data_flat)
+
+        # Count samples per bin
+        counts = torch.bincount(bin_indices, minlength=len(t_k)).float()
+        counts = torch.clamp(counts, min=1)  # Avoid division by zero
+
+        # Average: divide sums by counts
+        result = result / counts.unsqueeze(0)
+
+        return result.view(original_shape[:-1] + (len(t_k),))
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
         tdata, domain_values, excitation_signal = container.get_datasets(
@@ -224,28 +265,40 @@ class NonUniformSampling(ThermoTransform):
         k = torch.arange(self.n_samples, dtype=domain_values.dtype)
         t_k = tau * ((t_end / tau + 1) ** (k / (self.n_samples - 1)) - 1)
 
-        if self.interpolate:
-            # Interpolate signals
-            # Excitation signal
-            excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
+        match self.interpolate:
+            case "nearest":
+                # Find the indices of the closest time steps in the domain values
+                indices = torch.searchsorted(domain_values, t_k)
 
-            # Interpolate tdata (vectorized across all spatial locations)
-            h, w, _ = tdata.shape
-            tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)
-            tdata = self._interp_vectorized(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
+                # Clamp indices to the valid range
+                indices = torch.clamp(indices, 0, len(domain_values) - 1)
 
-            domain_values = t_k  # Use exact exponential times as new domain values
-        else:
-            # Find the indices of the closest time steps in the domain values
-            indices = torch.searchsorted(domain_values, t_k)
+                # Select the frames according to the indices
+                tdata = tdata[..., indices]
+                domain_values = domain_values[indices]
+                excitation_signal = excitation_signal[indices]
+            case "linear":
+                # Interpolate signals
+                # Excitation signal
+                excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(
+                    0
+                )
 
-            # Clamp indices to the valid range
-            indices = torch.clamp(indices, 0, len(domain_values) - 1)
+                # Interpolate tdata (vectorized across all spatial locations)
+                h, w, _ = tdata.shape
+                tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)
+                tdata = self._interp_vectorized(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
 
-            # Select the frames according to the indices
-            tdata = tdata[..., indices]
-            domain_values = domain_values[indices]
-            excitation_signal = excitation_signal[indices]
+                domain_values = t_k  # Use exact exponential times as new domain values
+            case "averaging":
+                # Bin and average signals
+                # Excitation signal
+                excitation_signal = self._average_binned(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
+                # Average tdata (vectorized across all spatial locations)
+                h, w, _ = tdata.shape
+                tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)
+                tdata = self._average_binned(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
+                domain_values = t_k  # Use exact exponential times as new domain values
 
         # Update Container and return
         container.update_datasets(

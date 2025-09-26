@@ -208,7 +208,7 @@ class NonUniformSampling(ThermoTransform):
 
     def _average_binned(self, t_k, domain_values, data):
         """Vectorized binning and averaging using torch.bucketize."""
-        # Create bin edges as midpoints between target time steps
+        # Create bin edges as midpoints between target time steps ==> optimal time steps are centered in each bin
         bin_edges = torch.zeros(len(t_k) + 1, dtype=domain_values.dtype)
         bin_edges[0] = domain_values[0] - 1e-10  # Ensure first sample is included
         bin_edges[-1] = domain_values[-1] + 1e-10  # Ensure last sample is included
@@ -218,22 +218,15 @@ class NonUniformSampling(ThermoTransform):
         bin_indices = torch.bucketize(domain_values, bin_edges, right=False) - 1
         bin_indices = torch.clamp(bin_indices, 0, len(t_k) - 1)
 
-        # Reshape data for vectorized operations
+        # Flatten the sequence for vectorized processing
         original_shape = data.shape
-        data_flat = data.view(-1, data.shape[-1])  # (batch_size, time)
+        data_flat = data.view(-1, data.shape[-1])  # Shape: (num_locations, time)
 
-        # Initialize result tensor
-        result = torch.zeros((data_flat.shape[0], len(t_k)), dtype=data.dtype)
-
-        # Sum values in each bin using scatter_add
-        result.scatter_add_(1, bin_indices.expand(data_flat.shape[0], -1), data_flat)
-
-        # Count samples per bin
-        counts = torch.bincount(bin_indices, minlength=len(t_k)).float()
-        counts = torch.clamp(counts, min=1)  # Avoid division by zero
-
-        # Average: divide sums by counts
-        result = result / counts.unsqueeze(0)
+        # One hot encode bins and average
+        bin_oh = torch.nn.functional.one_hot(bin_indices, num_classes=len(t_k)).to(data.dtype)  # Shape: (time, n_bins)
+        summed = data_flat @ bin_oh  # Shape: (num_locations, n_bins)
+        counts = bin_oh.sum(dim=0).clamp(min=1)  # Shape: (n_bins,)
+        result = summed / counts  # Shape: (num_locations, n_bins)
 
         return result.view(original_shape[:-1] + (len(t_k),))
 

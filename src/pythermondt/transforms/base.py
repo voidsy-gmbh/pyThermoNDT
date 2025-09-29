@@ -21,6 +21,12 @@ class _BaseTransform(nn.Module, ABC):
         """
         raise NotImplementedError("Forward method must be implemented in the sub-class.")
 
+    @property
+    @abstractmethod
+    def is_random(self) -> bool:
+        """Indicates whether the transform is random or deterministic."""
+        raise NotImplementedError("is_random property must be implemented in the sub-class.")
+
     def extra_repr(self) -> str:
         """Return extra representation of transform parameters.
 
@@ -71,6 +77,10 @@ class ThermoTransform(_BaseTransform):
     outputs given the same input, thus they can safely be cached for improved performance.
     """
 
+    @property
+    def is_random(self) -> bool:
+        return False
+
 
 class RandomThermoTransform(_BaseTransform):
     """Abstract base class that all random/stochastic transforms of PyThermoNDT must inherit from.
@@ -78,3 +88,7 @@ class RandomThermoTransform(_BaseTransform):
     Initializes the module and sets up necessary configurations. These transforms are expected to produce random outputs
     given the same input, thus they should NOT be cached for improved performance.
     """
+
+    @property
+    def is_random(self) -> bool:
+        return True

@@ -48,10 +48,8 @@ class CallbackTransform(_BaseTransform):
         self._is_random = is_random
 
     def forward(self, container: DataContainer) -> DataContainer:
-        # Instantiate the transform using the callback
+        # Instantiate the transform using the callback and apply it
         transform = self.callback(container)
-
-        # Apply and return the result
         return transform(container)
 
 

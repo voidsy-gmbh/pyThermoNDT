@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 from ..data import DataContainer
-from .base import RandomThermoTransform, ThermoTransform, _BaseTransform
+from .base import ThermoTransform, _BaseTransform
 
 
 class Compose(ThermoTransform):
@@ -76,7 +76,7 @@ def split_transforms_for_caching(
     found_random = False
 
     for transform in flat_transforms:
-        if isinstance(transform, RandomThermoTransform):
+        if transform.is_random:
             found_random = True
 
         if found_random:

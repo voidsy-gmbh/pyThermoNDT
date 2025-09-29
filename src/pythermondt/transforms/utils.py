@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from ..data import DataContainer
 from .base import ThermoTransform, _BaseTransform
@@ -40,6 +40,19 @@ class Compose(ThermoTransform):
         for t in self.transforms:
             container = t(container)
         return container
+
+
+class CallbackTransform(_BaseTransform):
+    def __init__(self, callback: Callable[[DataContainer], _BaseTransform], is_random: bool | None = None):
+        self.callback = callback
+        self._is_random = is_random
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Instantiate the transform using the callback
+        transform = self.callback(container)
+
+        # Apply and return the result
+        return transform(container)
 
 
 def split_transforms_for_caching(

@@ -65,6 +65,7 @@ class CallbackTransform(_BaseTransform):
             is_random (bool | None, optional): Whether the transform is random. If None, randomness is inferred from
                 the callback function, with fall to deterministic if inference fails. Defaults to None.
         """
+        super().__init__()
         self.callback = callback
         self._is_random = is_random
 

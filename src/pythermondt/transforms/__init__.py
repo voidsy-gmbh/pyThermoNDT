@@ -3,12 +3,15 @@ from .base import RandomThermoTransform, ThermoTransform
 from .normalization import MaxNormalize, MinMaxNormalize, ZScoreNormalize
 from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
 from .sampling import NonUniformSampling, SelectFrameRange, SelectFrames
-from .utils import Compose
+from .utils import CallbackTransform, Compose
 
 __all__ = [
     # Base classes
     "ThermoTransform",
     "RandomThermoTransform",
+    # Utility transforms
+    "CallbackTransform",
+    "Compose",
     # Deterministic transforms
     "MaxNormalize",
     "MinMaxNormalize",
@@ -19,7 +22,6 @@ __all__ = [
     "NonUniformSampling",
     "SelectFrameRange",
     "SelectFrames",
-    "Compose",
     "CropFrames",
     # Stochastic transforms
     "GaussianNoise",

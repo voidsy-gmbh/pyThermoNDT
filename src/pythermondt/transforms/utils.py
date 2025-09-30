@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from ..data import DataContainer
 from .base import ThermoTransform, _BaseTransform
@@ -40,6 +40,59 @@ class Compose(ThermoTransform):
         for t in self.transforms:
             container = t(container)
         return container
+
+
+class CallbackTransform(_BaseTransform):
+    """A transform that constructs another transform using a callback function at runtime.
+
+    This is useful for setting up custom transforms, where the input arguments depend on runtime information.
+
+    Per default, randomness is inferred from the callback by executing it with a dummy container. If this fails, the
+    transform is assumed to be non-random. To override this behavior, set the `is_random` argument explicitly.
+    """
+
+    def __init__(self, callback: Callable[[DataContainer], _BaseTransform], is_random: bool | None = None):
+        """A transform that constructs another transform using a callback function at runtime.
+
+        This is useful for setting up custom transforms, where the input arguments depend on runtime information.
+
+        Per default, randomness is inferred from the callback by executing it with a dummy container. If this fails, the
+        transform is assumed to be non-random. To override this behavior, set the `is_random` argument explicitly.
+
+        Args:
+            callback (Callable[[DataContainer], _BaseTransform]): A function that takes a DataContainer and returns a
+                transform instance. This function will be called each time the transform is applied.
+            is_random (bool | None, optional): Whether the transform is random. If None, randomness is inferred from
+                the callback function, with fall to deterministic if inference fails. Defaults to None.
+        """
+        super().__init__()
+        self.callback = callback
+        self._is_random = is_random
+
+    @property
+    def is_random(self) -> bool:
+        if self._is_random is not None:
+            return self._is_random
+
+        # Try to infer randomness from callback
+        try:
+            dummy_container = DataContainer()
+            transform = self.callback(dummy_container)
+            return transform.is_random
+        except Exception:  # pylint: disable=broad-except
+            print("Warning: Could not infer randomness from callback function. Assuming deterministic.")
+            return False
+
+    def extra_repr(self) -> str:
+        """Return string representation of callback."""
+        callback_name = getattr(self.callback, "__name__", "lambda")
+        explicit = f", is_random={self._is_random}" if self._is_random is not None else ""
+        return f"callback={callback_name}{explicit}"
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Instantiate the transform using the callback and apply it
+        transform = self.callback(container)
+        return transform(container)
 
 
 def split_transforms_for_caching(

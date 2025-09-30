@@ -79,7 +79,7 @@ class CallbackTransform(_BaseTransform):
             dummy_container = DataContainer()
             transform = self.callback(dummy_container)
             return transform.is_random
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             print("Warning: Could not infer randomness from callback function. Assuming deterministic.")
             return False
 

@@ -54,7 +54,7 @@ class _BaseTransform(nn.Module, ABC):
     def __str__(self) -> str:
         """Get a string representation of the transform."""
         class_name = self.__class__.__name__
-        transform_type = "Random" if isinstance(self, RandomThermoTransform) else "Deterministic"
+        transform_type = "Random" if self.is_random else "Deterministic"
 
         extra_repr = self.extra_repr()
         if extra_repr:

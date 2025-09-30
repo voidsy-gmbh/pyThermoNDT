@@ -47,6 +47,20 @@ class CallbackTransform(_BaseTransform):
         self.callback = callback
         self._is_random = is_random
 
+    @property
+    def is_random(self) -> bool:
+        if self._is_random is not None:
+            return self._is_random
+
+        # Try to infer randomness from callback
+        try:
+            dummy_container = DataContainer()
+            transform = self.callback(dummy_container)
+            return transform.is_random
+        except Exception:
+            print("Warning: Could not infer randomness from callback function. Assuming non-random transform.")
+            return False
+
     def forward(self, container: DataContainer) -> DataContainer:
         # Instantiate the transform using the callback and apply it
         transform = self.callback(container)

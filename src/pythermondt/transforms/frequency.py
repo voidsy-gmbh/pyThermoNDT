@@ -65,6 +65,11 @@ class ExtractPhase(ThermoTransform):
     """Extract phase images from complex thermal data."""
 
     def __init__(self, unwrap: bool = True) -> None:
+        """Initialize phase extraction transform.
+
+        Args:
+            unwrap: If True, the phase information is unwrapped to avoid discontinuities. Defaults to True.
+        """
         super().__init__()
         self.unwrap = unwrap
 

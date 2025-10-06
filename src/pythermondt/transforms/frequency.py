@@ -39,9 +39,7 @@ class PulsePhaseThermography(ThermoTransform):
 
         # Calculate frequency bins
         dt = domain_values[1] - domain_values[0]  # Time step
-        sample_rate = 1.0 / dt
-        n_samples = tdata.shape[-1]
-        freqs = torch.fft.rfftfreq(n_samples, d=1.0 / sample_rate)
+        freqs = torch.fft.rfftfreq(len(domain_values), d=dt.item())
 
         # Select specific frequencies if requested
         if self.freq_indices is not None:

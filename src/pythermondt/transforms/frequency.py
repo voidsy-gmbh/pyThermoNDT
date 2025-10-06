@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+import numpy as np
 import torch
 
 from ..data import DataContainer
@@ -57,4 +58,28 @@ class PulsePhaseThermography(ThermoTransform):
         container.update_unit("/Data/Tdata", Units.arbitrary)
         container.update_unit("/MetaData/DomainValues", Units.hertz)
 
+        return container
+
+
+class ExtractPhase(ThermoTransform):
+    """Extract phase images from complex thermal data."""
+
+    def __init__(self, unwrap: bool = True) -> None:
+        super().__init__()
+        self.unwrap = unwrap
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        tdata = container.get_dataset("/Data/Tdata")
+
+        if not torch.is_complex(tdata):
+            raise ValueError("Data must be complex (FFT result)")
+
+        # Extract phase and unwrap
+        phase = torch.angle(tdata)
+        if self.unwrap:
+            # phase = np.unwrap(phase.numpy(), axis=-1)
+            y = phase % (2 * np.pi)
+            phase = torch.where(y > np.pi, 2 * np.pi - y, y)
+        container.update_dataset("/Data/Tdata", phase)
+        container.update_unit("/Data/Tdata", Units.dimensionless)
         return container

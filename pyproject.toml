@@ -41,7 +41,7 @@ dev = [
     "licensecheck==2025.1.0",
     "mypy==1.18.2",
     "uv==0.8.22",
-    "pylint==3.3.8"
+    "pylint==3.3.9"
 ]
 
 [project.urls]

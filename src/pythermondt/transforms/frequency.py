@@ -61,6 +61,22 @@ class PulsePhaseThermography(ThermoTransform):
         return container
 
 
+class ExtractAmplitude(ThermoTransform):
+    """Extract amplitude images from complex thermal data."""
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        tdata = container.get_dataset("/Data/Tdata")
+
+        if not torch.is_complex(tdata):
+            raise ValueError("Data must be complex (FFT result)")
+
+        # Extract amplitude
+        amplitude = torch.abs(tdata)
+        container.update_dataset("/Data/Tdata", amplitude)
+        container.update_unit("/Data/Tdata", Units.dimensionless)
+        return container
+
+
 class ExtractPhase(ThermoTransform):
     """Extract phase images from complex thermal data."""
 

@@ -1,6 +1,6 @@
 from .augmentation import AdaptiveGaussianNoise, GaussianNoise, RandomFlip
 from .base import RandomThermoTransform, ThermoTransform
-from .frequency import ExtractPhase, PulsePhaseThermography
+from .frequency import ExtractAmplitude, ExtractPhase, PulsePhaseThermography
 from .normalization import MaxNormalize, MinMaxNormalize, ZScoreNormalize
 from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
 from .sampling import NonUniformSampling, SelectFrameRange, SelectFrames
@@ -26,6 +26,7 @@ __all__ = [
     "CropFrames",
     "PulsePhaseThermography",
     "ExtractPhase",
+    "ExtractAmplitude",
     # Stochastic transforms
     "GaussianNoise",
     "RandomFlip",

@@ -1,6 +1,6 @@
+import math
 from collections.abc import Sequence
 
-import numpy as np
 import torch
 
 from ..data import DataContainer
@@ -57,7 +57,6 @@ class PulsePhaseThermography(ThermoTransform):
         container.update_dataset("/MetaData/DomainValues", freqs)
         container.update_unit("/Data/Tdata", Units.arbitrary)
         container.update_unit("/MetaData/DomainValues", Units.hertz)
-
         return container
 
 
@@ -89,6 +88,36 @@ class ExtractPhase(ThermoTransform):
         super().__init__()
         self.unwrap = unwrap
 
+    def _unwrap(self, phase: torch.Tensor, discont: float = math.pi, dim: int = -1) -> torch.Tensor:
+        """Unwrap phase information along the specified dimension. Matches numpy.unwrap behavior.
+
+        Args:
+            phase: Input tensor containing phase values in radians.
+            discont: Discontinuity threshold, typically set to pi.
+            dim: Dimension along which to unwrap the phase. Default is the last dimension.
+        """
+        # Normalize dim to positive index
+        dim = dim if dim >= 0 else phase.ndim + dim
+
+        # Compute differences along specified dimension
+        d = torch.diff(phase, dim=dim)
+        d_mod = (d + discont) % (2 * discont) - discont
+
+        # Handle edge case where difference is exactly -discont
+        mask = (d_mod == -discont) & (d > 0)
+        d_mod = torch.where(mask, torch.full_like(d_mod, discont), d_mod)
+
+        # Compute correction and accumulate
+        corr = d_mod - d
+        correction = torch.cumsum(corr, dim=dim)
+
+        # Pad on the correct dimension to account for reduced size after diff
+        pad_shape = [0] * (2 * phase.ndim)
+        pad_shape[2 * (phase.ndim - dim - 1)] = 1  # Pad start of specified dim
+        correction = torch.nn.functional.pad(correction, pad_shape)
+
+        return phase + correction
+
     def forward(self, container: DataContainer) -> DataContainer:
         tdata = container.get_dataset("/Data/Tdata")
 
@@ -98,9 +127,7 @@ class ExtractPhase(ThermoTransform):
         # Extract phase and unwrap
         phase = torch.angle(tdata)
         if self.unwrap:
-            # phase = np.unwrap(phase.numpy(), axis=-1)
-            y = phase % (2 * np.pi)
-            phase = torch.where(y > np.pi, 2 * np.pi - y, y)
+            phase = self._unwrap(phase, dim=-1)
         container.update_dataset("/Data/Tdata", phase)
         container.update_unit("/Data/Tdata", Units.dimensionless)
         return container

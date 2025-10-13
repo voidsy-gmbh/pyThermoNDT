@@ -285,8 +285,10 @@ class NonUniformSampling(ThermoTransform):
                 domain_values = t_k  # Use exact exponential times as new domain values
             case "averaging":
                 # Bin and average signals
-                # Excitation signal
-                excitation_signal = self._average_binned(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
+                # Always interpolate the excitation signal to preserve it shape
+                excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(
+                    0
+                )
                 # Average tdata (vectorized across all spatial locations)
                 h, w, _ = tdata.shape
                 tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)

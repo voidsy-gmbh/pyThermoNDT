@@ -30,7 +30,7 @@ class SelectFrames(ThermoTransform):
 
         # Check if tdata has a "frame" dimension (last axis)
         if tdata.ndim < 3:
-            raise ValueError("SelectFrameRange transform requires tdata to have at least 3 dimensions (H, W, Frames).")
+            raise ValueError("SelectFrames transform requires tdata to have at least 3 dimensions (H, W, Frames).")
 
         # Select Frames
         tdata = tdata[..., self.frame_indices]

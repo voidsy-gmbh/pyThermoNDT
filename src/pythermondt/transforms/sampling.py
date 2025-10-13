@@ -28,9 +28,9 @@ class SelectFrames(ThermoTransform):
         if any(idx < 0 or idx >= tdata.shape[-1] for idx in self.frame_indices):
             raise ValueError(f"Invalid frame index. Frame indices must be in the range [0, {tdata.shape[-1] - 1}].")
 
-        # Check if we are in time domain
-        if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
-            raise ValueError("SelectFrames transform can only be applied to time domain data.")
+        # Check if tdata has a "frame" dimension (last axis)
+        if tdata.ndim < 3:
+            raise ValueError("SelectFrames transform requires tdata to have at least 3 dimensions (H, W, Frames).")
 
         # Select Frames
         tdata = tdata[..., self.frame_indices]
@@ -79,9 +79,9 @@ class SelectFrameRange(ThermoTransform):
         if self.end is not None and (self.end < 0 or self.end >= tdata.shape[-1]):
             raise ValueError(f"Invalid end index. End index must be in the range [0, {tdata.shape[-1] - 1}].")
 
-        # Check if we are in time domain
-        if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
-            raise ValueError("SelectFrameRange transform can only be applied to time domain data.")
+        # Check if tdata has a "frame" dimension (last axis)
+        if tdata.ndim < 3:
+            raise ValueError("SelectFrameRange transform requires tdata to have at least 3 dimensions (H, W, Frames).")
 
         # Select Frames (end index is inclusive)
         start = self.start if self.start is not None else 0

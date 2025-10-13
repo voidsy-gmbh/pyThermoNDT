@@ -134,7 +134,7 @@ class NonUniformSampling(ThermoTransform):
             - "linear": Apply linear interpolation to match the exact time steps calculated according to
               Equation (6) of the paper.
             - "averaging": Bin the original data into exponentially spaced intervals and average within
-              each bin to reduce aliasing effects.
+              each bin to reduce aliasing. Excitation signal is still linearly interpolated to preserve its shape.
             Default is "linear".
             precision (float, optional): Precision used for the binary search when automatically calculating tau.
             Default is 1e-2, which is sufficient for most applications.

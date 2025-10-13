@@ -182,7 +182,7 @@ class NonUniformSampling(ThermoTransform):
 
         return tau
 
-    def _interp_vectorized(self, x_new, x_old, y_old_batch):
+    def _interp_vect(self, x_new, x_old, y_old_batch):
         """Vectorized 1D interpolation for batched data.
 
         Args:
@@ -273,22 +273,18 @@ class NonUniformSampling(ThermoTransform):
             case "linear":
                 # Interpolate signals
                 # Excitation signal
-                excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(
-                    0
-                )
+                excitation_signal = self._interp_vect(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
 
                 # Interpolate tdata (vectorized across all spatial locations)
                 h, w, _ = tdata.shape
                 tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)
-                tdata = self._interp_vectorized(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
+                tdata = self._interp_vect(t_k, domain_values, tdata_flat).view(h, w, self.n_samples)
 
                 domain_values = t_k  # Use exact exponential times as new domain values
             case "averaging":
                 # Bin and average signals
-                # Always interpolate the excitation signal to preserve it shape
-                excitation_signal = self._interp_vectorized(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(
-                    0
-                )
+                # Always interpolate the excitation signal to preserve its shape
+                excitation_signal = self._interp_vect(t_k, domain_values, excitation_signal.unsqueeze(0)).squeeze(0)
                 # Average tdata (vectorized across all spatial locations)
                 h, w, _ = tdata.shape
                 tdata_flat = tdata.view(h * w, -1)  # Shape: (h*w, time)

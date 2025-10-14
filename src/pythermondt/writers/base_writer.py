@@ -89,4 +89,4 @@ class BaseWriter(ABC):
             with ThreadPool(processes=workers) as pool:
                 list(tqdm(pool.imap(write_single, range(n)), total=n, desc=desc, unit="files"))
         else:
-            [write_single(i) for i in tqdm(range(n), desc=desc, unit="files")]
+            list(map(write_single, tqdm(range(n), desc=desc, unit="files")))

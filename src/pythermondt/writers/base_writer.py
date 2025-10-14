@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
 
+from tqdm.auto import tqdm
+
 from ..config import settings
 from ..data import DataContainer
 from ..data.datacontainer.serialization_ops import CompressionType
@@ -69,8 +71,6 @@ class BaseWriter(ABC):
             compression_opts: Compression level for gzip (ignored for other methods)
             num_workers: Number of workers. Defaults to global config setting.
         """
-        from tqdm.auto import tqdm
-
         workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
         n = len(reader)
 

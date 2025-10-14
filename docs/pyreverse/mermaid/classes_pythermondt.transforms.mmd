@@ -1,9 +1,22 @@
 classDiagram
+  class AdaptiveGaussianNoise {
+    mean : float
+    std_range : tuple[float, float]
+    forward(container: DataContainer) DataContainer
+  }
+  style AdaptiveGaussianNoise fill:#77AADD
   class ApplyLUT {
     target_dtype : torch.dtype | None
     forward(container: DataContainer) DataContainer
   }
   style ApplyLUT fill:#77AADD
+  class CallbackTransform {
+    callback : Callable[[DataContainer], _BaseTransform]
+    is_random : bool
+    extra_repr() str
+    forward(container: DataContainer) DataContainer
+  }
+  style CallbackTransform fill:#77AADD
   class Compose {
     transforms : Sequence[_BaseTransform]
     forward(container: DataContainer) DataContainer
@@ -47,6 +60,7 @@ classDiagram
   }
   style RandomFlip fill:#77AADD
   class RandomThermoTransform {
+    is_random : bool
   }
   style RandomThermoTransform fill:#77AADD
   class RemoveFlash {
@@ -72,6 +86,7 @@ classDiagram
   }
   style SubtractFrame fill:#77AADD
   class ThermoTransform {
+    is_random : bool
   }
   style ThermoTransform fill:#77AADD
   class ZScoreNormalize {
@@ -80,10 +95,12 @@ classDiagram
   }
   style ZScoreNormalize fill:#77AADD
   class _BaseTransform {
+    is_random : bool
     extra_repr() str
     forward(container: DataContainer)* DataContainer
   }
   style _BaseTransform fill:#77AADD
+  AdaptiveGaussianNoise --|> RandomThermoTransform
   GaussianNoise --|> RandomThermoTransform
   RandomFlip --|> RandomThermoTransform
   RandomThermoTransform --|> _BaseTransform
@@ -98,5 +115,7 @@ classDiagram
   NonUniformSampling --|> ThermoTransform
   SelectFrameRange --|> ThermoTransform
   SelectFrames --|> ThermoTransform
+  CallbackTransform --|> _BaseTransform
   Compose --|> ThermoTransform
+  _BaseTransform --o CallbackTransform : callback
   _BaseTransform --o Compose : transforms

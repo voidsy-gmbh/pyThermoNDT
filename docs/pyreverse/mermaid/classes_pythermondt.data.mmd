@@ -115,8 +115,8 @@ classDiagram
   }
   style RootNode fill:#77AADD
   class SerializationOps {
-    save_to_hdf5(path: str, compression: Literal['lzf', 'gzip'], compression_opts: int)
-    serialize_to_hdf5(compression: Literal['lzf', 'gzip'], compression_opts: int) BytesIO
+    save_to_hdf5(path: str, compression: CompressionType, compression_opts: int | None)
+    serialize_to_hdf5(compression: CompressionType, compression_opts: int | None) BytesIO
   }
   style SerializationOps fill:#77AADD
   class ThermoContainer {

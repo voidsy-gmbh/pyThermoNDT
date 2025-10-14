@@ -14,6 +14,7 @@ classDiagram
     \_\_init\_\_(num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)*
     \_\_iter\_\_() Iterator[DataContainer]
     \_\_len\_\_() int
+    \_\_reversed\_\_() Iterator[DataContainer]
     \_\_setstate\_\_(state)
     \_\_str\_\_()
     download(file_paths: list[str] | None, num_workers: int | None) None

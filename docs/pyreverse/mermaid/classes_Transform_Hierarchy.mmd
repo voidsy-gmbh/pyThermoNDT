@@ -1,11 +1,14 @@
 classDiagram
   class RandomThermoTransform {
+    is_random : bool
   }
   style RandomThermoTransform fill:#77AADD
   class ThermoTransform {
+    is_random : bool
   }
   style ThermoTransform fill:#77AADD
   class _BaseTransform {
+    is_random : bool
     \_\_call\_\_(container: DataContainer) DataContainer
     \_\_str\_\_() str
     extra_repr() str

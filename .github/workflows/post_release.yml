@@ -36,6 +36,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v7.1.0
         with:
+          cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
           save-cache: false
 
       - name: Publish the package

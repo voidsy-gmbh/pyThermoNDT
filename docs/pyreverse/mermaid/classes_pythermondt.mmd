@@ -1,4 +1,10 @@
 classDiagram
+  class AdaptiveGaussianNoise {
+    mean : float
+    std_range : tuple[float, float]
+    forward(container: DataContainer) DataContainer
+  }
+  style AdaptiveGaussianNoise fill:#EEDD88
   class ApplyLUT {
     target_dtype : torch.dtype | None
     forward(container: DataContainer) DataContainer
@@ -85,9 +91,17 @@ classDiagram
   style BaseReader fill:#AAAA00
   class BaseWriter {
     backend : BaseBackend
-    write(container: DataContainer, file_name: str)*
+    process_parallel(reader: BaseReader, file_name_pattern: str, compression: CompressionType, compression_opts: int | None, num_workers: int | None)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)*
   }
   style BaseWriter fill:#EE8866
+  class CallbackTransform {
+    callback : Callable[[DataContainer], _BaseTransform]
+    is_random : bool
+    extra_repr() str
+    forward(container: DataContainer) DataContainer
+  }
+  style CallbackTransform fill:#EEDD88
   class Compose {
     transforms : Sequence[_BaseTransform]
     forward(container: DataContainer) DataContainer
@@ -212,7 +226,7 @@ classDiagram
   }
   style LocalReader fill:#AAAA00
   class LocalWriter {
-    write(container: DataContainer, file_name: str)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style LocalWriter fill:#EE8866
   class MaxNormalize {
@@ -250,6 +264,7 @@ classDiagram
   }
   style RandomFlip fill:#EEDD88
   class RandomThermoTransform {
+    is_random : bool
   }
   style RandomThermoTransform fill:#EEDD88
   class RemoveFlash {
@@ -278,7 +293,7 @@ classDiagram
   }
   style S3Reader fill:#AAAA00
   class S3Writer {
-    write(container: DataContainer, file_name: str)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style S3Writer fill:#EE8866
   class SelectFrameRange {
@@ -293,8 +308,8 @@ classDiagram
   }
   style SelectFrames fill:#EEDD88
   class SerializationOps {
-    save_to_hdf5(path: str, compression: Literal['lzf', 'gzip'], compression_opts: int)
-    serialize_to_hdf5(compression: Literal['lzf', 'gzip'], compression_opts: int) BytesIO
+    save_to_hdf5(path: str, compression: CompressionType, compression_opts: int | None)
+    serialize_to_hdf5(compression: CompressionType, compression_opts: int | None) BytesIO
   }
   style SerializationOps fill:#99DDFF
   class Settings {
@@ -324,6 +339,7 @@ classDiagram
   }
   style ThermoDataset fill:#44BB99
   class ThermoTransform {
+    is_random : bool
   }
   style ThermoTransform fill:#EEDD88
   class TqdmCallback {
@@ -360,6 +376,7 @@ classDiagram
   }
   style ZScoreNormalize fill:#EEDD88
   class _BaseTransform {
+    is_random : bool
     extra_repr() str
     forward(container: DataContainer)* DataContainer
   }
@@ -395,6 +412,7 @@ classDiagram
   SimulationParser --|> BaseParser
   LocalReader --|> BaseReader
   S3Reader --|> BaseReader
+  AdaptiveGaussianNoise --|> RandomThermoTransform
   GaussianNoise --|> RandomThermoTransform
   RandomFlip --|> RandomThermoTransform
   RandomThermoTransform --|> _BaseTransform
@@ -409,6 +427,7 @@ classDiagram
   NonUniformSampling --|> ThermoTransform
   SelectFrameRange --|> ThermoTransform
   SelectFrames --|> ThermoTransform
+  CallbackTransform --|> _BaseTransform
   Compose --|> ThermoTransform
   LocalWriter --|> BaseWriter
   S3Writer --|> BaseWriter
@@ -420,4 +439,5 @@ classDiagram
   Unit --* Units : second
   Unit --* Units : millisecond
   Unit --* Units : hertz
+  _BaseTransform --o CallbackTransform : callback
   _BaseTransform --o Compose : transforms

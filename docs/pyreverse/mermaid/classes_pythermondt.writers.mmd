@@ -2,17 +2,18 @@ classDiagram
   class BaseWriter {
     backend : BaseBackend
     \_\_init\_\_()
-    write(container: DataContainer, file_name: str)*
+    process_parallel(reader: BaseReader, file_name_pattern: str, compression: CompressionType, compression_opts: int | None, num_workers: int | None)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)*
   }
   style BaseWriter fill:#77AADD
   class LocalWriter {
     \_\_init\_\_(destination_folder: str)
-    write(container: DataContainer, file_name: str)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style LocalWriter fill:#77AADD
   class S3Writer {
     \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None)
-    write(container: DataContainer, file_name: str)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style S3Writer fill:#77AADD
   LocalWriter --|> BaseWriter

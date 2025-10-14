@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from math import ceil
 from multiprocessing.pool import ThreadPool
 
 from ..config import settings
@@ -52,29 +51,42 @@ class BaseWriter(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def process_parallel(self, reader: BaseReader, file_name: str, num_workers: int | None = None):
-        """Process multiple DataContainers in parallel.
+    def process_parallel(
+        self,
+        reader: BaseReader,
+        file_name_pattern: str = "{index}",
+        compression: CompressionType = "lzf",
+        compression_opts: int | None = 4,
+        num_workers: int | None = None,
+    ):
+        """Process multiple DataContainers from a reader in parallel.
 
         Args:
-            reader (BaseReader): A reader to process
-            file_name (str): The name of the file to write to.
-            num_workers (int, optional): Number of workers to use for processing the files. If None, the global
-                configuration of PyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
+            reader: Reader containing DataContainers to write
+            file_name_pattern: Pattern for naming files. Use {index} for zero-padded index.
+                Example: "data_{index}" produces "data_00000.hdf5", "data_00001.hdf5", etc.
+            compression: Compression method for HDF5 files
+            compression_opts: Compression level for gzip (ignored for other methods)
+            num_workers: Number of workers. Defaults to global config setting.
         """
+        from tqdm.auto import tqdm
+
         workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
         n = len(reader)
 
-        def shard_range(worker_id: int):
-            per_worker = ceil(n / workers)
-            start = worker_id * per_worker
-            end = min(start + per_worker, n)
-            return range(start, end)
+        # Format string for zero-padded indices
+        index_width = len(str(n))
 
-        def worker_fn(worker_id: int):
-            for i in shard_range(worker_id):
-                container = reader[i]
-                file_name = f"test_{i}"
-                self.write(container, file_name)
+        def write_single(idx: int):
+            container = reader[idx]
+            # Replace {index} with zero-padded index
+            file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
+            self.write(container, file_name, compression, compression_opts)
 
-        with ThreadPool(processes=workers) as pool:
-            pool.map(worker_fn, range(workers))
+        # Use ThreadPool for writing in parallel ==> I/O bound task
+        desc = f"{self.__class__.__name__} - Writing files with {workers} workers"
+        if workers > 1:
+            with ThreadPool(processes=workers) as pool:
+                list(tqdm(pool.imap(write_single, range(n)), total=n, desc=desc, unit="files"))
+        else:
+            [write_single(i) for i in tqdm(range(n), desc=desc, unit="files")]

@@ -71,10 +71,8 @@ class BaseWriter(ABC):
             compression_opts: Compression level for gzip (ignored for other methods)
             num_workers: Number of workers. Defaults to global config setting.
         """
-        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        # Determine length to format zero-padded indices
         n = len(reader)
-
-        # Format string for zero-padded indices
         index_width = len(str(n))
 
         def write_single(idx: int):
@@ -84,6 +82,7 @@ class BaseWriter(ABC):
             self.write(container, file_name, compression, compression_opts)
 
         # Use ThreadPool for writing in parallel ==> I/O bound task
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
         desc = f"{self.__class__.__name__} - Writing files with {workers} workers"
         if workers > 1:
             with ThreadPool(processes=workers) as pool:

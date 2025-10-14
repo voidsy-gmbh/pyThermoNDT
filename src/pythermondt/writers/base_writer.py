@@ -65,8 +65,9 @@ class BaseWriter(ABC):
 
         Args:
             reader: Reader containing DataContainers to write
-            file_name_pattern: Pattern for naming files. Use {index} for zero-padded index.
-                Example: "data_{index}" produces "data_00000.hdf5", "data_00001.hdf5", etc.
+            file_name_pattern: Pattern for naming files. Use {index} for zero-padded index. If {index} is not present,
+                it will be appended to the pattern with an underscore.
+                Example: "data_{index}_name" produces "data_00000_name.hdf5", "data_00001_name.hdf5", etc.
             compression: Compression method for HDF5 files
             compression_opts: Compression level for gzip (ignored for other methods)
             num_workers: Number of workers. Defaults to global config setting.
@@ -74,6 +75,9 @@ class BaseWriter(ABC):
         # Determine length to format zero-padded indices
         n = len(reader)
         index_width = len(str(n))
+
+        if "{index}" not in file_name_pattern:
+            file_name_pattern += "_{index}"
 
         def write_single(idx: int):
             container = reader[idx]

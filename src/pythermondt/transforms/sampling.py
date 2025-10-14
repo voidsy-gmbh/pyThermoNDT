@@ -120,7 +120,7 @@ class NonUniformSampling(ThermoTransform):
         Args:
             n_samples (int): Number of samples to select from the original data.
             tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
-                If None, will be approxmated automatically using binary search to satisfy the minimum time step
+                If None, will be approximated automatically using binary search to satisfy the minimum time step
                 constraint from Equation (25) of the paper. Default is None.
             interpolate (bool, optional): Whether to apply interpolation after non-uniform sampling. If True,
                 the downsampled data will be interpolated to match the exact time steps calculated according to

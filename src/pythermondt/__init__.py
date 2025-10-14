@@ -29,4 +29,3 @@ __all__ = [
 
 # TODO: Implement logging instead of print statements according to this guide: https://docs.python.org/3/howto/logging.html
 # TODO: Implement async data loading
-# TODO: Implement multi threading for data loading / writing

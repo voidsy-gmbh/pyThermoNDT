@@ -1,8 +1,13 @@
 from abc import ABC, abstractmethod
+from multiprocessing.pool import ThreadPool
 
+from tqdm.auto import tqdm
+
+from ..config import settings
 from ..data import DataContainer
 from ..data.datacontainer.serialization_ops import CompressionType
 from ..io.backends import BaseBackend
+from ..readers.base_reader import BaseReader
 
 
 class BaseWriter(ABC):
@@ -47,3 +52,44 @@ class BaseWriter(ABC):
         recreate their backend when needed or after unpickling.
         """
         raise NotImplementedError("Subclasses must implement this method")
+
+    def process_parallel(
+        self,
+        reader: BaseReader,
+        file_name_pattern: str = "{index}",
+        compression: CompressionType = "lzf",
+        compression_opts: int | None = 4,
+        num_workers: int | None = None,
+    ):
+        """Process multiple DataContainers from a reader in parallel.
+
+        Args:
+            reader: Reader containing DataContainers to write
+            file_name_pattern: Pattern for naming files. Use {index} for zero-padded index. If {index} is not present,
+                it will be appended to the pattern with an underscore.
+                Example: "data_{index}_name" produces "data_00000_name.hdf5", "data_00001_name.hdf5", etc.
+            compression: Compression method for HDF5 files
+            compression_opts: Compression level for gzip (ignored for other methods)
+            num_workers: Number of workers. Defaults to global config setting.
+        """
+        # Determine length to format zero-padded indices
+        n = len(reader)
+        index_width = len(str(n))
+
+        if "{index}" not in file_name_pattern:
+            file_name_pattern += "_{index}"
+
+        def write_single(idx: int):
+            container = reader[idx]
+            # Replace {index} with zero-padded index
+            file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
+            self.write(container, file_name, compression, compression_opts)
+
+        # Use ThreadPool for writing in parallel ==> I/O bound task
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        desc = f"{self.__class__.__name__} - Writing files with {workers} workers"
+        if workers > 1:
+            with ThreadPool(processes=workers) as pool:
+                list(tqdm(pool.imap(write_single, range(n)), total=n, desc=desc, unit="files"))
+        else:
+            list(map(write_single, tqdm(range(n), desc=desc, unit="files")))

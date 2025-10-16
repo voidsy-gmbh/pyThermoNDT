@@ -97,7 +97,6 @@ select = [
 fixable = ["ALL"]
 pydocstyle.convention = "google"
 ignore = [
-    "UP038", # Use X | Y in {} call instead of (X, Y) ==> Ignore for performance reasons, see: https://github.com/astral-sh/ruff/issues/7871
     "D100",   # Missing docstring in public module
     "D101",   # Missing docstring in public class
     "D102",   # Missing docstring in public method

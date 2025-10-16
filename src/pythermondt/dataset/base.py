@@ -1,6 +1,7 @@
 import collections
 import copy
 import sys
+import gc
 from abc import ABC, abstractmethod
 from multiprocessing import Manager
 from multiprocessing.managers import ListProxy
@@ -192,9 +193,38 @@ class BaseDataset(Dataset, ABC):
             else:
                 self.__cache = [self._load_cache_item(i) for i in tqdm(range(num), desc=desc, unit=unit)]
         elif mode == "lazy":
+            # Store the manager so it can be released in case
+            self.__manager = Manager()
             # Create a shared list for lazy loading using a list proxy
-            self.__cache = Manager().list([None] * len(self))
+            self.__cache = self.__manager.list([None] * len(self))
         else:
             raise ValueError(f"Invalid cache mode: {mode}. Use one of: {list(CacheMode.__args__)}.")
 
         self.__cache_built = True
+
+    def release_cache(self, gc_collect: bool = True):
+        """Release the in-memory cache to free up memory and release any background manager processes.
+
+        Args:
+            gc_collect (bool): Whether to run garbage collection after releasing the cache. Default is True.
+        """
+        # Try to clear cached items
+        try:
+            if isinstance(self.__cache, ListProxy):
+                self.__cache[:] = []
+            self.__cache = []
+            self.__det_transforms = None
+            self.__runtime_transforms = None
+            self.__cache_built = False
+
+        # Ensure that the manager process is terminated
+        finally:
+            if self.__manager:
+                try:
+                    self.__manager.shutdown()
+                finally:
+                    self.__manager = None
+
+        # Garbage collect to free memory if requested
+        if gc_collect:
+            gc.collect()

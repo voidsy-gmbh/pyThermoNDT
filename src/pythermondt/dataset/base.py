@@ -1,7 +1,7 @@
 import collections
 import copy
-import sys
 import gc
+import sys
 from abc import ABC, abstractmethod
 from multiprocessing import Manager
 from multiprocessing.managers import ListProxy, SyncManager

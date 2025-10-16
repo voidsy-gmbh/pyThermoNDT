@@ -4,7 +4,7 @@ import sys
 import gc
 from abc import ABC, abstractmethod
 from multiprocessing import Manager
-from multiprocessing.managers import ListProxy
+from multiprocessing.managers import ListProxy, SyncManager
 from multiprocessing.pool import ThreadPool
 from typing import Literal
 
@@ -27,6 +27,7 @@ class BaseDataset(Dataset, ABC):
         self.__transform = transform
 
         # Internal state for cache
+        self.__manager: SyncManager | None = None
         self.__cache_built = False
         self.__cache: list | ListProxy = []
         self.__det_transforms: _BaseTransform | None = None
@@ -44,6 +45,11 @@ class BaseDataset(Dataset, ABC):
     @abstractmethod
     def files(self) -> list[str]:
         """Get the list of files associated with this dataset."""
+
+    def __del__(self):
+        """Ensure that the cache is released when the dataset is deleted."""
+        if self.cache_built:
+            self.release_cache(gc_collect=False)
 
     def __getitem__(self, idx: int) -> DataContainer:
         """Get an item while also applying the proper transform chain.

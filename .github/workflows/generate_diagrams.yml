@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install git+https://github.com/pylint-dev/pylint.git
+        uv pip install pylint --overrides ./requirements_dev.txt
 
     - name: Create directories for diagrams
       run: |

@@ -218,7 +218,8 @@ class BaseDataset(Dataset, ABC):
         try:
             if isinstance(self.__cache, ListProxy):
                 self.__cache[:] = []
-            self.__cache = []
+            else:
+                self.__cache = []
             self.__det_transforms = None
             self.__runtime_transforms = None
             self.__cache_built = False

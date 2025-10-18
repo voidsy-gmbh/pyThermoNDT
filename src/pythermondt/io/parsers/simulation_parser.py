@@ -14,7 +14,7 @@ class SimulationParser(BaseParser):
     supported_extensions = (".mat",)
 
     @staticmethod
-    def parse(data: IOPathWrapper) -> DataContainer:
+    def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-branches
         """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
         The IOPathWrapper object must contain a .mat file with simulattion data from COMSOL.

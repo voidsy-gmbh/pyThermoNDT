@@ -9,6 +9,7 @@ classDiagram
     load_raw_data(idx: int)* DataContainer
     memory_bytes() int
     print_memory_usage()
+    release_cache(gc_collect: bool)
   }
   style BaseDataset fill:#77AADD
   class IndexedThermoDataset {

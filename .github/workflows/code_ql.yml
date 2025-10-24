@@ -54,7 +54,11 @@ jobs:
 
       # Step 6: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
       - name: Perform licensecheck
-        run: licensecheck --requirements-paths pyproject.toml --ignore-packages nvidia-*,matplotlib-inline -0 #TODO: Remove matplib-inline if fixed
+        run: |
+          licensecheck \
+            --requirements-paths pyproject.toml \
+            --ignore-packages 'nvidia-*' matplotlib-inline \
+            -0
 
       # Step 7: Run mypy
       - name: Run mypy

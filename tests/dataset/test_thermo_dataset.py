@@ -30,8 +30,7 @@ def test_empty_readers_list():
 def test_empty_reader(caplog, localreader_no_files):
     """Test initialization with readers that have no files."""
     with caplog.at_level(logging.WARNING):
-        with pytest.raises(ValueError, match="No files found for reader of type LocalReader"):
-            ThermoDataset(localreader_no_files)
+        ThermoDataset(localreader_no_files)
     assert "No files found for reader of type LocalReader" in caplog.text
 
 

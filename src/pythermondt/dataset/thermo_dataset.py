@@ -89,7 +89,7 @@ class ThermoDataset(BaseDataset):
                 for reader in readers_objects:
                     # Check if the reader has found any files
                     if not reader.files:
-                        logger.warning(f"No files found for reader of type {reader_type.__qualname__}")
+                        logger.warning("No files found for reader of type %s", reader_type.__qualname__)
 
                     # Check for duplicate files
                     reader_files = set(reader.files)
@@ -101,13 +101,13 @@ class ThermoDataset(BaseDataset):
 
                 if duplicate_files:
                     logger.warning(
-                        f"Duplicate files found for reader of type {reader_type.__qualname__}: \n {duplicate_files}"
+                        "Duplicate files found for reader of type %s: \n %s", reader_type.__qualname__, duplicate_files
                     )
 
             # Else duplicates are not possible ==> Check if the reader has found any files
             else:
                 if len(readers[0].files) == 0:
-                    logger.warning(f"No files found for reader of type {reader_type.__qualname__}")
+                    logger.warning("No files found for reader of type %s", reader_type.__qualname__)
 
     def _build_index(self):
         """Build an index map using 2 torch Tensors.

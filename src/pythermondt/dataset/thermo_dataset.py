@@ -1,4 +1,5 @@
 from collections.abc import Iterator, Sequence
+from logging import getLogger
 
 import torch
 
@@ -6,6 +7,8 @@ from ..data import DataContainer
 from ..readers.base_reader import BaseReader
 from ..transforms.utils import _BaseTransform
 from .base import BaseDataset
+
+logger = getLogger(__name__)
 
 
 class ThermoDataset(BaseDataset):
@@ -26,7 +29,7 @@ class ThermoDataset(BaseDataset):
             transform: Optional transform applied to each container when loaded
 
         Raises:
-            ValueError: If duplicate files found or no files available
+            ValueError: If no readers are provided
         """
         # Initialize base with no parent (this is root) and given transform
         super().__init__(parent=None, transform=transform)
@@ -86,7 +89,7 @@ class ThermoDataset(BaseDataset):
                 for reader in readers_objects:
                     # Check if the reader has found any files
                     if not reader.files:
-                        raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
+                        logger.warning("No files found for reader of type %s", reader_type.__qualname__)
 
                     # Check for duplicate files
                     reader_files = set(reader.files)
@@ -97,14 +100,14 @@ class ThermoDataset(BaseDataset):
                     all_files.update(reader_files)
 
                 if duplicate_files:
-                    raise ValueError(
-                        f"Duplicate files found for reader of type {reader_type.__qualname__}: \n {duplicate_files}"
+                    logger.warning(
+                        "Duplicate files found for reader of type %s: \n %s", reader_type.__qualname__, duplicate_files
                     )
 
             # Else duplicates are not possible ==> Check if the reader has found any files
             else:
                 if len(readers[0].files) == 0:
-                    raise ValueError(f"No files found for reader of type {reader_type.__qualname__}")
+                    logger.warning("No files found for reader of type %s", reader_type.__qualname__)
 
     def _build_index(self):
         """Build an index map using 2 torch Tensors.

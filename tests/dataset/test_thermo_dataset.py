@@ -1,3 +1,4 @@
+import logging
 import time
 
 import pytest
@@ -26,10 +27,12 @@ def test_empty_readers_list():
         ThermoDataset([])
 
 
-def test_empty_reader(localreader_no_files):
+def test_empty_reader(caplog, localreader_no_files):
     """Test initialization with readers that have no files."""
-    with pytest.raises(ValueError, match="No files found for reader of type LocalReader"):
-        ThermoDataset(localreader_no_files)
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(ValueError, match="No files found for reader of type LocalReader"):
+            ThermoDataset(localreader_no_files)
+    assert "No files found for reader of type LocalReader" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -54,7 +57,7 @@ def test_empty_reader(localreader_no_files):
         ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source*.mat"),
     ],
 )
-def test_duplicate_files(paths: tuple[str, str]):
+def test_duplicate_files(caplog, paths: tuple[str, str]):
     """Test initialization with duplicate files."""
     localreader1 = LocalReader(pattern=paths[0])
     localreader2 = LocalReader(pattern=paths[1])
@@ -62,8 +65,9 @@ def test_duplicate_files(paths: tuple[str, str]):
     print(f"Files in localreader1: {localreader1.files}")
     print(f"Files in localreader2: {localreader2.files}")
 
-    with pytest.raises(ValueError, match="Duplicate files found for reader of type LocalReader"):
+    with caplog.at_level(logging.WARNING):
         ThermoDataset([localreader1, localreader2])
+    assert "Duplicate files found for reader of type LocalReader" in caplog.text
 
 
 @pytest.mark.parametrize(

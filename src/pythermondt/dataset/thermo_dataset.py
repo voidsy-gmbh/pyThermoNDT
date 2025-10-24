@@ -29,7 +29,7 @@ class ThermoDataset(BaseDataset):
             transform: Optional transform applied to each container when loaded
 
         Raises:
-            ValueError: If duplicate files found or no files available
+            ValueError: If no readers are provided
         """
         # Initialize base with no parent (this is root) and given transform
         super().__init__(parent=None, transform=transform)

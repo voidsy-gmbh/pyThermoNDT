@@ -34,7 +34,7 @@ jobs:
             --dir ./dist
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v7.1.1
+        uses: astral-sh/setup-uv@v7.1.2
         with:
           cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
           save-cache: false

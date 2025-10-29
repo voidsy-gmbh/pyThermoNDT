@@ -223,6 +223,7 @@ class NonUniformSampling(ThermoTransform):
         data_flat = data.view(-1, data.shape[-1])  # Shape: (num_locations, time)
 
         # One hot encode bins and average
+        # pylint: disable-next=not-callable
         bin_oh = torch.nn.functional.one_hot(bin_indices, num_classes=len(t_k)).to(data.dtype)  # Shape: (time, n_bins)
         summed = data_flat @ bin_oh  # Shape: (num_locations, n_bins)
         counts = bin_oh.sum(dim=0).clamp(min=1)  # Shape: (n_bins,)

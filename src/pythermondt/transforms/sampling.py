@@ -106,9 +106,15 @@ class SelectFrameRange(ThermoTransform):
 class NonUniformSampling(ThermoTransform):
     """Implement a non-uniform sampling strategy for the data container.
 
-    The implementation is based on the following paper:
-    Efficient defect reconstruction from temporal non-uniform pulsed
-    thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
+    Based on: *Efficient defect reconstruction from temporal non-uniform pulsed thermography data using the virtual
+    wave concept* — https://doi.org/10.1016/j.ndteint.2024.103200
+
+    The following interpolation methods are supported:
+        - **nearest** Find the closest time steps in the original data using ``torch.searchsorted``.
+        - **linear** Apply linear interpolation to match the exact time steps calculated according to Equation (6)
+            of the paper.
+        - **averaging** Bin the original data into exponentially spaced intervals and average within each bin to reduce
+            aliasing. Excitation signal is still linearly interpolated to preserve its shape.
     """
 
     def __init__(
@@ -120,24 +126,25 @@ class NonUniformSampling(ThermoTransform):
     ):
         """Implement a non-uniform sampling strategy for the data container.
 
-        The implementation is based on the following paper:
-        Efficient defect reconstruction from temporal non-uniform pulsed
-        thermography data using the virtual wave concept: https://doi.org/10.1016/j.ndteint.2024.103200
+        Based on: *Efficient defect reconstruction from temporal non-uniform pulsed thermography data using the virtual
+        wave concept* — https://doi.org/10.1016/j.ndteint.2024.103200
+
+        The following interpolation methods are supported:
+        - **nearest** Find the closest time steps in the original data using ``torch.searchsorted``.
+        - **linear** Apply linear interpolation to match the exact time steps calculated according to Equation (6)
+            of the paper.
+        - **averaging** Bin the original data into exponentially spaced intervals and average within each bin to reduce
+            aliasing. Excitation signal is still linearly interpolated to preserve its shape.
 
         Args:
             n_samples (int): Number of samples to select from the original data.
-            tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution.
-            If None, will be automatically calculated using binary search to satisfy the minimum time step
-            constraint from Equation (25) of the paper. Default is None.
-            interpolate (str, optional): Interpolation method to use after non-uniform sampling. Options are:
-            - "nearest": Find the closest time steps in the original data using torch.searchsorted.
-            - "linear": Apply linear interpolation to match the exact time steps calculated according to
-              Equation (6) of the paper.
-            - "averaging": Bin the original data into exponentially spaced intervals and average within
-              each bin to reduce aliasing. Excitation signal is still linearly interpolated to preserve its shape.
-            Default is "linear".
+            tau (float, optional): Time shift parameter that controls the non-uniform sampling distribution. If None,
+                will be automatically calculated using binary search to satisfy the minimum time step constraint from
+                Equation (25) of the paper. Default is None.
+            interpolate (Literal["nearest", "linear", "averaging"], optional): Interpolation method to use after
+                non-uniform sampling. Default is ``"linear"``.
             precision (float, optional): Precision used for the binary search when automatically calculating tau.
-            Default is 1e-2, which is sufficient for most applications.
+                Default is 1e-2, which is sufficient for most applications.
         """
         super().__init__()
         self.n_samples = n_samples

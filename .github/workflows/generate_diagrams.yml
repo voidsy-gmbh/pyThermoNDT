@@ -87,7 +87,7 @@ jobs:
 
     - name: Setup Node.js for Mermaid CLI
       if: env.CHANGED == 'true'
-      uses: actions/setup-node@v5.0.0
+      uses: actions/setup-node@v6.0.0
       with:
         node-version: '20'
 

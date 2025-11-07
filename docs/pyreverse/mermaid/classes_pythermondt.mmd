@@ -251,7 +251,7 @@ classDiagram
   }
   style NodeType fill:#99DDFF
   class NonUniformSampling {
-    interpolate : bool
+    interpolate : Literal['nearest', 'linear', 'averaging']
     n_samples : int
     precision : float
     tau : float | None

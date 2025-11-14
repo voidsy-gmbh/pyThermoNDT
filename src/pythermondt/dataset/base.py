@@ -216,7 +216,7 @@ class BaseDataset(Dataset, ABC):
         """
         # Try to clear cached items
         try:
-            if isinstance(self.__cache, ListProxy):
+            if isinstance(self.__cache, ListProxy) and self.__manager:
                 self.__cache[:] = []
             else:
                 self.__cache = []

@@ -225,7 +225,7 @@ class BaseDataset(Dataset, ABC):
         if self.__manager:
             try:
                 self.__manager.shutdown()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 pass
             finally:
                 self.__manager = None

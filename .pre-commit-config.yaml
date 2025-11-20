@@ -23,14 +23,14 @@ repos:
     -   id: detect-private-key
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.0
+    rev: v0.14.5
     hooks:
     -   id: ruff-check
         args: [--fix]
     -   id: ruff-format
 
 -   repo: https://github.com/adhtruong/mirrors-typos
-    rev: v1.38.1
+    rev: v1.39.2
     hooks:
       - id: typos
         args: [.github, ., -w]

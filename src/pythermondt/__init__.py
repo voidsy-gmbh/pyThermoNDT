@@ -1,3 +1,5 @@
+import logging
+
 from .__pkginfo__ import __version__
 from .config import settings
 from .data import DataContainer, ThermoContainer
@@ -6,6 +8,10 @@ from .io import HDF5Parser, SimulationParser
 from .readers import LocalReader, S3Reader
 from .transforms import augmentation, normalization, preprocessing, sampling, utils
 from .writers import LocalWriter, S3Writer
+
+# Set up logging per Python best practices: https://docs.python.org/3/howto/logging.html
+# Add NullHandler to prevent "No handlers could be found" warnings
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 __all__ = [
     "__version__",
@@ -27,5 +33,4 @@ __all__ = [
     "settings",
 ]
 
-# TODO: Implement logging instead of print statements according to this guide: https://docs.python.org/3/howto/logging.html
 # TODO: Implement async data loading

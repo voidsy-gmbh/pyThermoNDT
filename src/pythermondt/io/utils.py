@@ -1,8 +1,11 @@
 import fnmatch
+import logging
 import os
 import re
 import tempfile
 from io import BytesIO
+
+logger = logging.getLogger(__name__)
 
 
 class IOPathWrapper:
@@ -63,7 +66,12 @@ class IOPathWrapper:
             try:
                 os.remove(self.__temp_path)
             except Exception as e:  # pylint: disable=broad-except
-                print(f"Warning: Failed to remove temporary file {self.__temp_path}: {e}")
+                logger.warning(
+                    "Failed to remove temporary file %s: %s",
+                    self.__temp_path,
+                    e,
+                    exc_info=True,  # Include traceback for debugging
+                )
             self.__temp_path = None
 
     def __del__(self):

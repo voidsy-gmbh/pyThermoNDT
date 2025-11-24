@@ -63,14 +63,14 @@ class ThermoDataset(BaseDataset):
         for reader in readers:
             # Check for stable file list during training
             if not reader.cache_files:
-                print(
-                    f"Warning: {reader.__class__.__name__} has cache_files=False. File list may change during training."
+                logger.warning(
+                    f"{reader.__class__.__name__} has cache_files=False. File list may change during training."
                 )
 
             # Check for efficient remote access
             if reader.remote_source and not reader.download_files:
-                print(
-                    f"Warning: {reader.__class__.__name__} is remote but download_files=False. "
+                logger.warning(
+                    f"{reader.__class__.__name__} is remote but download_files=False. "
                     f"This will be slower for repeated access."
                 )
 

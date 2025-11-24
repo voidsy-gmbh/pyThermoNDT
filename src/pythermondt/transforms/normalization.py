@@ -1,6 +1,10 @@
+import logging
+
 from ..data import DataContainer
 from ..data.units import Units
 from .base import ThermoTransform
+
+logger = logging.getLogger(__name__)
 
 
 class MinMaxNormalize(ThermoTransform):
@@ -21,7 +25,7 @@ class MinMaxNormalize(ThermoTransform):
         """
         super().__init__()
         if eps > 1e-3:
-            print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
+            logger.warning("eps=%s is bigger than 1e-3. This might lead to unexpected normalization results.", eps)
         self.eps = eps
 
     def forward(self, container: DataContainer) -> DataContainer:
@@ -53,7 +57,7 @@ class MaxNormalize(ThermoTransform):
         """
         super().__init__()
         if eps > 1e-3:
-            print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
+            logger.warning("eps=%s is bigger than 1e-3. This might lead to unexpected normalization results.", eps)
         self.eps = eps
 
     def forward(self, container: DataContainer) -> DataContainer:
@@ -84,7 +88,7 @@ class ZScoreNormalize(ThermoTransform):
         """
         super().__init__()
         if eps > 1e-3:
-            print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
+            logger.warning("eps=%s is bigger than 1e-3. This might lead to unexpected normalization results.", eps)
         self.eps = eps
 
     def forward(self, container: DataContainer) -> DataContainer:

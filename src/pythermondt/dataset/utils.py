@@ -1,4 +1,5 @@
 import itertools
+import logging
 import math
 from collections.abc import Callable, Sequence
 from functools import partial
@@ -10,6 +11,8 @@ from ..data import DataContainer
 from ..transforms import ThermoTransform
 from .indexed_thermo_dataset import IndexedThermoDataset
 from .thermo_dataset import ThermoDataset
+
+logger = logging.getLogger(__name__)
 
 
 def random_split(
@@ -77,7 +80,7 @@ def random_split(
     # Print a warning if any of the splits have a length of 0
     for i, length in enumerate(lengths):
         if length == 0:
-            print(f"Length of split at index {i} is 0. ", "This might result in an empty dataset.")
+            logger.warning(f"Length of split at index {i} is 0. This might result in an empty dataset.")
 
     # Raise an error if the computed lengths don't match the length of the original dataset
     if sum(lengths) != len(dataset):

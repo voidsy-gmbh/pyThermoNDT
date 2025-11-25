@@ -1,5 +1,5 @@
+import warnings
 from collections.abc import Iterator, Sequence
-from logging import getLogger
 
 import torch
 
@@ -7,8 +7,6 @@ from ..data import DataContainer
 from ..readers.base_reader import BaseReader
 from ..transforms.utils import _BaseTransform
 from .base import BaseDataset
-
-logger = getLogger(__name__)
 
 
 class ThermoDataset(BaseDataset):
@@ -63,15 +61,17 @@ class ThermoDataset(BaseDataset):
         for reader in readers:
             # Check for stable file list during training
             if not reader.cache_files:
-                logger.warning(
-                    f"{reader.__class__.__name__} has cache_files=False. File list may change during training."
+                warnings.warn(
+                    f"{reader.__class__.__name__} has cache_files=False. File list may change during training.",
+                    stacklevel=2,
                 )
 
             # Check for efficient remote access
             if reader.remote_source and not reader.download_files:
-                logger.warning(
+                warnings.warn(
                     f"{reader.__class__.__name__} is remote but download_files=False. "
-                    f"This will be slower for repeated access."
+                    f"This will be slower for repeated access.",
+                    stacklevel=2,
                 )
 
         # Group all the readers by type
@@ -89,7 +89,7 @@ class ThermoDataset(BaseDataset):
                 for reader in readers_objects:
                     # Check if the reader has found any files
                     if not reader.files:
-                        logger.warning("No files found for reader of type %s", reader_type.__qualname__)
+                        warnings.warn(f"No files found for reader of type {reader_type.__qualname__}", stacklevel=2)
 
                     # Check for duplicate files
                     reader_files = set(reader.files)
@@ -100,14 +100,15 @@ class ThermoDataset(BaseDataset):
                     all_files.update(reader_files)
 
                 if duplicate_files:
-                    logger.warning(
-                        "Duplicate files found for reader of type %s: \n %s", reader_type.__qualname__, duplicate_files
+                    warnings.warn(
+                        f"Duplicate files found for reader of type {reader_type.__qualname__}: \n {duplicate_files}",
+                        stacklevel=2,
                     )
 
             # Else duplicates are not possible ==> Check if the reader has found any files
             else:
                 if len(readers[0].files) == 0:
-                    logger.warning("No files found for reader of type %s", reader_type.__qualname__)
+                    warnings.warn(f"No files found for reader of type {reader_type.__qualname__}", stacklevel=2)
 
     def _build_index(self):
         """Build an index map using 2 torch Tensors.

@@ -200,8 +200,7 @@ class AzureBlobBackend(BaseBackend):
             if container_idx is not None and len(parts) > container_idx + 1:
                 # Skip container name, return blob path
                 return "/".join(parts[container_idx + 1 :])
-            else:
-                raise ValueError(f"Invalid Azure blob URL: {path}")
+            raise ValueError(f"Invalid Azure blob URL: {path}")
 
         # Handle relative paths
         if self.__prefix:

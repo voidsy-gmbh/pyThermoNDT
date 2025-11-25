@@ -7,7 +7,7 @@ import torch
 from torch import Generator, default_generator
 
 from ..data import DataContainer
-from ..transforms import ThermoTransform
+from ..transforms.base import _BaseTransform
 from .indexed_thermo_dataset import IndexedThermoDataset
 from .thermo_dataset import ThermoDataset
 
@@ -15,7 +15,7 @@ from .thermo_dataset import ThermoDataset
 def random_split(
     dataset: ThermoDataset,
     lengths: Sequence,
-    transforms: Sequence[ThermoTransform | None] | None = None,
+    transforms: Sequence[_BaseTransform | None] | None = None,
     generator: Generator = default_generator,
 ) -> list[IndexedThermoDataset]:
     """Split a dataset into random non-overlapping subsets of given lengths with optional transforms being applied.
@@ -29,7 +29,7 @@ def random_split(
     Args:
         dataset (Dataset): Dataset to be split
         lengths (Sequence[float]): Fractions for each split that sum up to 1.0.
-        transforms (Sequence[ThermoTransform | None], optional): Optional sequence of transforms for each split.
+        transforms (Sequence[_BaseTransform | None], optional): Optional sequence of transforms for each split.
         generator (Generator, optional): Generator used for reproducible splits.
             Per default the default generator is used.
 

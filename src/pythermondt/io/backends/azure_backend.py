@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from typing import IO, cast
 
@@ -8,6 +9,8 @@ from tqdm.auto import tqdm
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
 from .progress import TqdmCallback
+
+logger = logging.getLogger(__name__)
 
 
 class AzureBlobBackend(BaseBackend):
@@ -119,6 +122,7 @@ class AzureBlobBackend(BaseBackend):
             return False
         except Exception:
             # Other exceptions (auth, network) should be re-raised
+            logger.exception("Error checking existence of blob")
             raise
 
     def close(self) -> None:

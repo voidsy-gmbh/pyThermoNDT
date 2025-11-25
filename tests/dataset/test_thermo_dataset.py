@@ -1,10 +1,9 @@
-import logging
 import time
 
 import pytest
 import torch
 
-from pythermondt import LocalReader, ThermoDataset
+from pythermondt import LocalReader, ThermoDataset, configure_logging
 from pythermondt.transforms import ThermoTransform
 
 from ..utils import containers_equal
@@ -29,9 +28,8 @@ def test_empty_readers_list():
 
 def test_empty_reader(caplog, localreader_no_files):
     """Test initialization with readers that have no files."""
-    with caplog.at_level(logging.WARNING):
+    with pytest.warns(UserWarning, match="No files found for reader of type LocalReader"):
         ThermoDataset(localreader_no_files)
-    assert "No files found for reader of type LocalReader" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -58,15 +56,15 @@ def test_empty_reader(caplog, localreader_no_files):
 )
 def test_duplicate_files(caplog, paths: tuple[str, str]):
     """Test initialization with duplicate files."""
+    configure_logging()
     localreader1 = LocalReader(pattern=paths[0])
     localreader2 = LocalReader(pattern=paths[1])
 
     print(f"Files in localreader1: {localreader1.files}")
     print(f"Files in localreader2: {localreader2.files}")
 
-    with caplog.at_level(logging.WARNING):
+    with pytest.warns(UserWarning, match="Duplicate files found for reader of type LocalReader"):
         ThermoDataset([localreader1, localreader2])
-    assert "Duplicate files found for reader of type LocalReader" in caplog.text
 
 
 @pytest.mark.parametrize(

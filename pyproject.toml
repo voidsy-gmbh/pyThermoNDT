@@ -40,7 +40,7 @@ dev = [
     "deepdiff==8.6.1",
     "licensecheck==2025.1.0",
     "mypy==1.18.2",
-    "uv==0.9.9",
+    "uv==0.9.11",
     "pylint==4.0.3"
 ]
 

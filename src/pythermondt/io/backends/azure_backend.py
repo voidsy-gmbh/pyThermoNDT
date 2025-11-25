@@ -42,10 +42,13 @@ class AzureBlobBackend(BaseBackend):
         elif account_url:
             self.__client = BlobServiceClient(account_url, credential=credential)
         else:
+            logger.error("Must provide either connection_string or account_url for AzureBlobBackend")
             raise ValueError("Must provide either connection_string or account_url")
 
         self.__container_name = container_name
         self.__prefix = prefix.rstrip("/") if prefix else ""
+
+        logger.info("Initialized AzureBlobBackend for container: %s and prefix: %s", container_name, self.__prefix)
 
     @property
     def remote_source(self) -> bool:
@@ -81,6 +84,7 @@ class AzureBlobBackend(BaseBackend):
             return IOPathWrapper(data)
 
         except ResourceNotFoundError as e:
+            logger.error(e)
             raise FileNotFoundError(f"Blob not found: {file_path}") from e
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
@@ -108,6 +112,7 @@ class AzureBlobBackend(BaseBackend):
                 blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True, max_concurrency=4)
 
         except Exception as e:
+            logger.error(e)
             raise RuntimeError(f"Failed to upload blob: {e}") from e
 
     def exists(self, file_path: str) -> bool:
@@ -120,9 +125,9 @@ class AzureBlobBackend(BaseBackend):
             return True
         except ResourceNotFoundError:
             return False
-        except Exception:
+        except Exception as e:
             # Other exceptions (auth, network) should be re-raised
-            logger.exception("Error checking existence of blob")
+            logger.exception("Error checking blob existence: %s", e)
             raise
 
     def close(self) -> None:

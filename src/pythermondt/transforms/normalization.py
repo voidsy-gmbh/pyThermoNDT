@@ -1,3 +1,5 @@
+import warnings
+
 from ..data import DataContainer
 from ..data.units import Units
 from .base import ThermoTransform
@@ -21,7 +23,11 @@ class MinMaxNormalize(ThermoTransform):
         """
         super().__init__()
         if eps > 1e-3:
-            print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
+            warnings.warn(
+                f"eps={eps} is larger than 1e-3. This may significantly affect "
+                "normalization results beyond numerical stability.",
+                stacklevel=2,
+            )
         self.eps = eps
 
     def forward(self, container: DataContainer) -> DataContainer:
@@ -53,7 +59,11 @@ class MaxNormalize(ThermoTransform):
         """
         super().__init__()
         if eps > 1e-3:
-            print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
+            warnings.warn(
+                f"eps={eps} is larger than 1e-3. This may significantly affect "
+                "normalization results beyond numerical stability.",
+                stacklevel=2,
+            )
         self.eps = eps
 
     def forward(self, container: DataContainer) -> DataContainer:
@@ -84,7 +94,11 @@ class ZScoreNormalize(ThermoTransform):
         """
         super().__init__()
         if eps > 1e-3:
-            print("Warning: eps is bigger than 1e-3. This might lead to unexpected results.")
+            warnings.warn(
+                f"eps={eps} is larger than 1e-3. This may significantly affect "
+                "normalization results beyond numerical stability.",
+                stacklevel=2,
+            )
         self.eps = eps
 
     def forward(self, container: DataContainer) -> DataContainer:

@@ -1,7 +1,38 @@
+import logging
 import os
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def configure_logging(level: str | None = None):
+    """Configure logging for pythermondt.
+
+    Simple convenience function for quick debugging. Advanced users should
+    configure Python's logging directly.
+
+    Args:
+        level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+               If None, uses settings.log_level.
+
+    Example:
+        >>> import pythermondt
+        >>> pythermondt.configure_logging("DEBUG")  # See all logs
+        >>> pythermondt.configure_logging()  # Use settings.log_level
+    """
+    # Add a basic configuration but keep loglevel at default (WARNING)
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,  # Override any existing config
+    )
+
+    # Capture warnings from the warnings module as well
+    logging.captureWarnings(True)
+
+    # Configure log level specifically for the pythermondt logger ==> avoids spamming from other libraries
+    level = level or settings.log_level
+    logger = logging.getLogger("pythermondt")
+    logger.setLevel(getattr(logging, level.upper()))
 
 
 class Settings(BaseSettings):
@@ -11,6 +42,9 @@ class Settings(BaseSettings):
     download_dir: str = Field(default="./", description="Base directory where PyThermoNDT will download files to.")
     num_workers: int = Field(
         default=os.cpu_count() or 1, description="Default number of workers used for parallel operations."
+    )
+    log_level: str = Field(
+        default="WARNING", description="Default log level for pythermondt (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
     )
 
     model_config = SettingsConfigDict(
@@ -39,6 +73,15 @@ class Settings(BaseSettings):
         if v < 1:
             raise ValueError("num_workers must be at least 1")
         return v
+
+    @field_validator("log_level", mode="after")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        v_upper = v.upper()
+        if v_upper not in valid_levels:
+            raise ValueError(f"log_level must be one of {valid_levels}, got {v}")
+        return v_upper
 
 
 # Global settings instance

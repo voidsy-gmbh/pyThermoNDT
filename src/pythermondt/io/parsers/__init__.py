@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 from importlib.metadata import entry_points
 
@@ -5,6 +6,8 @@ from .base_parser import BaseParser
 from .edevis_parser import EdevisParser
 from .hdf5_parser import HDF5Parser
 from .simulation_parser import SimulationParser
+
+logger = logging.getLogger(__name__)
 
 
 def _load_parser_plugins() -> tuple[type[BaseParser], ...]:
@@ -15,7 +18,7 @@ def _load_parser_plugins() -> tuple[type[BaseParser], ...]:
             parser_cls = ep.load()
             plugins.append(parser_cls)
         except Exception as e:  # pylint: disable=broad-except
-            print(f"Warning: Failed to load parser plugin '{ep.name}': {e}")
+            logger.error("Failed to load parser plugin '%s': %s", ep.name, e)
     return tuple(plugins)
 
 

@@ -88,7 +88,7 @@ def test_indexed_thermodataset_integration(test_case: IntegrationTestCase):
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
 @pytest.mark.parametrize("split_ratio", [[0.5, 0.5], [0.8, 0.2], [0.7, 0.3]])
-def test_random_split_integration(test_case: IntegrationTestCase, split_ratio: list[float]):
+def test_random_split_integration(recwarn, test_case: IntegrationTestCase, split_ratio: list[float]):
     """Test random_split function."""
     # Create readers
     source_reader = LocalReader(test_case.source_path)
@@ -102,6 +102,18 @@ def test_random_split_integration(test_case: IntegrationTestCase, split_ratio: l
     seed = 42
     source_train, source_test = random_split(source_dataset, split_ratio, generator=torch.manual_seed(seed))
     expected_train, expected_test = random_split(expected_dataset, split_ratio, generator=torch.manual_seed(seed))
+
+    # Count number of expected warnings
+    expected_warnings = (len(source_train), len(source_test), len(expected_train), len(expected_test)).count(0)
+    assert len(recwarn) == expected_warnings, (
+        f"Test case '{test_case.id}': Expected {expected_warnings} warnings, got {len(recwarn)}"
+    )
+
+    # Assert that all warnings are correct
+    for w in recwarn:
+        assert issubclass(w.category, UserWarning)
+        assert "Length of split at index" in str(w.message)
+        assert "is 0" in str(w.message)
 
     # Compare the train datasets
     for i, (source_container, expected_container) in enumerate(zip(source_train, expected_train, strict=True)):

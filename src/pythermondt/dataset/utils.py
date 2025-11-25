@@ -1,5 +1,6 @@
 import itertools
 import math
+import warnings
 from collections.abc import Callable, Sequence
 from functools import partial
 
@@ -77,7 +78,7 @@ def random_split(
     # Print a warning if any of the splits have a length of 0
     for i, length in enumerate(lengths):
         if length == 0:
-            print(f"Length of split at index {i} is 0. ", "This might result in an empty dataset.")
+            warnings.warn(f"Length of split at index {i} is 0. This might result in an empty dataset.", stacklevel=2)
 
     # Raise an error if the computed lengths don't match the length of the original dataset
     if sum(lengths) != len(dataset):

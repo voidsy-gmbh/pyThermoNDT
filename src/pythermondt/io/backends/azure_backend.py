@@ -1,7 +1,9 @@
 from io import BytesIO
+from typing import IO, cast
 
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient
+from tqdm.auto import tqdm
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
@@ -81,26 +83,25 @@ class AzureBlobBackend(BaseBackend):
         """Write file to Azure Blob Storage."""
         blob_name = self._parse_path(file_path)
 
-        # Reset file object position
+        # Reset and get size
         data.file_obj.seek(0)
         file_size = data.file_obj.getbuffer().nbytes
 
         try:
             blob_client = self.__client.get_blob_client(container=self.__container_name, blob=blob_name)
 
-            with TqdmCallback(total=file_size, desc=f"Uploading {blob_name}") as pbar:
-                # Azure SDK doesn't have built-in progress callback, so we'll upload in chunks
-                chunk_size = 4 * 1024 * 1024  # 4MB chunks
-                data.file_obj.seek(0)
-
-                if file_size <= chunk_size:
-                    # Small file - upload directly
-                    blob_client.upload_blob(data.file_obj.read(), overwrite=True)
-                    pbar.callback(file_size)
-                else:
-                    # Large file - upload in chunks
-                    blob_client.upload_blob(data.file_obj, overwrite=True, max_concurrency=4)
-                    pbar.callback(file_size)  # Update progress bar at end
+            # Wrap file object to track read progress
+            data.file_obj.seek(0)
+            with tqdm.wrapattr(
+                data.file_obj,
+                "read",
+                total=file_size,
+                desc=f"Uploading {blob_name}",
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+            ) as wrapped_file:
+                blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True, max_concurrency=4)
 
         except Exception as e:
             raise RuntimeError(f"Failed to upload blob: {e}") from e

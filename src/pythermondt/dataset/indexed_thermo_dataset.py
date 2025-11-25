@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 
 from ..data import DataContainer
-from ..transforms import ThermoTransform
+from ..transforms.base import _BaseTransform
 from .base import BaseDataset
 
 
@@ -14,13 +14,13 @@ class IndexedThermoDataset(BaseDataset):
     IndexedThermoDataset maintains the transform chain of the parent dataset and appends the additional transform to it.
     """
 
-    def __init__(self, dataset: BaseDataset, indices: Sequence[int], transform: ThermoTransform | None = None):
+    def __init__(self, dataset: BaseDataset, indices: Sequence[int], transform: _BaseTransform | None = None):
         """Initialize an indexed dataset with optional additional transform.
 
         Args:
             dataset (ThermoDataset): Parent dataset to index into
             indices (Sequence[int]): Sequence of indices to select from parent
-            transform (ThermoTransform, optional): Optional transform to apply after parent's transform
+            transform (_BaseTransform, optional): Optional transform to apply after parent's transform
 
         Raises:
             IndexError: If any of the provided indices are out of range

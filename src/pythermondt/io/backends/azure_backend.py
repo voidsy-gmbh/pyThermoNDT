@@ -74,6 +74,7 @@ class AzureBlobBackend(BaseBackend):
                     data.write(chunk)
                     pbar.callback(len(chunk))
 
+            data.seek(0)
             return IOPathWrapper(data)
 
         except ResourceNotFoundError as e:

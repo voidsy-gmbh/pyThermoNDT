@@ -59,7 +59,8 @@ dependencies = [
     "boto3>=1.33",
 
     # Azure
-    "azure-storage-blob>=12.20"
+    "azure-storage-blob>=12.20",
+    "azure-identity>=1.20",
 ]
 
 [dependency-groups]

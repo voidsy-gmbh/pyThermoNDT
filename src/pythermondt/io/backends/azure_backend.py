@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import IO, cast
 
 from azure.core.exceptions import ResourceNotFoundError
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from tqdm.auto import tqdm
 
@@ -16,39 +17,40 @@ logger = logging.getLogger(__name__)
 class AzureBlobBackend(BaseBackend):
     def __init__(
         self,
+        account_url: str,
         container_name: str,
-        prefix: str,
+        prefix: str = "",
         connection_string: str | None = None,
-        account_url: str | None = None,
-        credential: str | None = None,
+        credential=None,
     ) -> None:
         """Initialize Azure Blob Storage backend.
 
-        Authentication options (provide one):
-        1. connection_string: Full connection string
-        2. account_url + credential: Storage account URL + access key/SAS token
-        3. account_url only: Uses default Azure credentials (managed identity, etc.)
+        Authentication priority:
+        1. connection_string (if provided) - simplest for local dev or research
+        2. credential (if provided) - custom credential
+        3. DefaultAzureCredential - auto-discovers (managed identity, az login, etc.)
 
         Args:
-            container_name (str): Azure blob container name
-            prefix (str): Prefix (folder path) within container
-            connection_string (str, optional): Azure storage connection string
-            account_url (str, optional): Storage account URL (https://account.blob.core.windows.net)
-            credential (str, optional): Account key or SAS token
+            account_url: Storage account URL (https://<account>.blob.core.windows.net)
+            container_name: Container name
+            prefix: Prefix within container
+            connection_string: Connection string (optional, for dev/researchers)
+            credential: Azure TokenCredential (optional, defaults to DefaultAzureCredential)
         """
-        # Validate authentication parameters
         if connection_string:
             self.__client = BlobServiceClient.from_connection_string(connection_string)
-        elif account_url:
-            self.__client = BlobServiceClient(account_url, credential=credential)
+            logger.debug("Client initialized using connection string.")
         else:
-            logger.error("Must provide either connection_string or account_url for AzureBlobBackend")
-            raise ValueError("Must provide either connection_string or account_url")
+            if credential is None:
+                credential = DefaultAzureCredential()
+                logger.debug("Using DefaultAzureCredential for authentication.")
+            self.__client = BlobServiceClient(account_url, credential=credential)
+            logger.debug("Client initialized using account URL and credential.")
 
         self.__container_name = container_name
         self.__prefix = prefix.rstrip("/") if prefix else ""
 
-        logger.info("Initialized AzureBlobBackend for container: %s and prefix: %s", container_name, self.__prefix)
+        logger.info(f"Azure backend: container={container_name}, prefix={prefix or '(root)'}")
 
     @property
     def remote_source(self) -> bool:

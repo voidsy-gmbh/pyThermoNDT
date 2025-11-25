@@ -26,7 +26,7 @@ def configure_logging(level: str | None = None):
         force=True,  # Override any existing config
     )
 
-    # Capture warnings from the warnings module aswell
+    # Capture warnings from the warnings module as well
     logging.captureWarnings(True)
 
     # Configure log level specifically for the pythermondt logger ==> avoids spamming from other libraries

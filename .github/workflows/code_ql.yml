@@ -18,14 +18,14 @@ jobs:
       # Step 1.1: Checkout repository (workflow_call) (see https://dev.to/koseimori/conditional-branching-with-workflowdispatch-and-workflowcall-in-github-actions-oik)
       - name: Checkout repository
         if: github.event.workflow != '.github/workflows/code_ql.yml'
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.0
         with:
           ref: ${{ inputs.ref }}
 
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout repository
         if: github.event.workflow == '.github/workflows/code_ql.yml'
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.0
 
       # Step 2: Setup uv
       - name: Setup uv

@@ -20,16 +20,19 @@ def configure_logging(level: str | None = None):
         >>> pythermondt.configure_logging("DEBUG")  # See all logs
         >>> pythermondt.configure_logging()  # Use settings.log_level
     """
-    if level is None:
-        level = settings.log_level
-
+    # Add a basic configuration but keep loglevel at default (WARNING)
     logging.basicConfig(
-        level=getattr(logging, level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         force=True,  # Override any existing config
     )
 
-    logging.captureWarnings(True)  # Capture warnings from the warnings module
+    # Capture warnings from the warnings module aswell
+    logging.captureWarnings(True)
+
+    # Configure log level specifically for the pythermondt logger ==> avoids spamming from other libraries
+    level = level or settings.log_level
+    logger = logging.getLogger("pythermondt")
+    logger.setLevel(level)
 
 
 class Settings(BaseSettings):

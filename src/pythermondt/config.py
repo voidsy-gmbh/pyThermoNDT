@@ -32,7 +32,7 @@ def configure_logging(level: str | None = None):
     # Configure log level specifically for the pythermondt logger ==> avoids spamming from other libraries
     level = level or settings.log_level
     logger = logging.getLogger("pythermondt")
-    logger.setLevel(level)
+    logger.setLevel(getattr(logging, level.upper()))
 
 
 class Settings(BaseSettings):

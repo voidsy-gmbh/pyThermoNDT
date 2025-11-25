@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     num_workers: int = Field(
         default=os.cpu_count() or 1, description="Default number of workers used for parallel operations."
     )
+    log_level: str = Field(
+        default="WARNING", description="Default log level for pythermondt (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="PYTHERMONDT_",
@@ -39,6 +42,15 @@ class Settings(BaseSettings):
         if v < 1:
             raise ValueError("num_workers must be at least 1")
         return v
+
+    @field_validator("log_level", mode="after")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        v_upper = v.upper()
+        if v_upper not in valid_levels:
+            raise ValueError(f"log_level must be one of {valid_levels}, got {v}")
+        return v_upper
 
 
 # Global settings instance

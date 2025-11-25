@@ -1,7 +1,7 @@
 import logging
 
 from .__pkginfo__ import __version__
-from .config import settings
+from .config import configure_logging, settings
 from .data import DataContainer, ThermoContainer
 from .dataset import IndexedThermoDataset, ThermoDataset
 from .io import HDF5Parser, SimulationParser
@@ -31,6 +31,7 @@ __all__ = [
     "LocalWriter",
     "S3Writer",
     "settings",
+    "configure_logging",
 ]
 
 # TODO: Implement async data loading

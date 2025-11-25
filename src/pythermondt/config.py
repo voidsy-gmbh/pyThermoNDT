@@ -1,7 +1,35 @@
+import logging
 import os
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def configure_logging(level: str | None = None):
+    """Configure logging for pythermondt.
+
+    Simple convenience function for quick debugging. Advanced users should
+    configure Python's logging directly.
+
+    Args:
+        level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+               If None, uses settings.log_level.
+
+    Example:
+        >>> import pythermondt
+        >>> pythermondt.configure_logging("DEBUG")  # See all logs
+        >>> pythermondt.configure_logging()  # Use settings.log_level
+    """
+    if level is None:
+        level = settings.log_level
+
+    logging.basicConfig(
+        level=getattr(logging, level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,  # Override any existing config
+    )
+
+    logging.captureWarnings(True)  # Capture warnings from the warnings module
 
 
 class Settings(BaseSettings):

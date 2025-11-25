@@ -18,7 +18,7 @@ def _load_parser_plugins() -> tuple[type[BaseParser], ...]:
             parser_cls = ep.load()
             plugins.append(parser_cls)
         except Exception as e:  # pylint: disable=broad-except
-            logger.error(f"Failed to load parser plugin '{ep.name}': {e}")
+            logger.error("Failed to load parser plugin '%s': %s", ep.name, e)
     return tuple(plugins)
 
 

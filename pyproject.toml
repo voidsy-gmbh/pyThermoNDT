@@ -8,6 +8,38 @@ authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.10, <3.14"
+
+classifiers = [
+    # Development status
+    "Development Status :: 4 - Beta",
+
+    # Intended audience
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+
+    # License
+    "License :: OSI Approved :: Apache Software License",
+
+    # Python versions
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+
+    # Topics - critical for search
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+
+    # Additional classifiers
+    "Operating System :: OS Independent",
+    "Typing :: Typed"
+]
+
 dependencies = [
     # General dependencies
     "tqdm>=4.65",

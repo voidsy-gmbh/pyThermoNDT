@@ -2,6 +2,7 @@ import logging
 from io import BytesIO
 from typing import IO, cast
 
+from azure.core.credentials import TokenCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
@@ -21,21 +22,24 @@ class AzureBlobBackend(BaseBackend):
         container_name: str,
         prefix: str = "",
         connection_string: str | None = None,
-        credential=None,
+        credential: TokenCredential | None = None,
     ) -> None:
         """Initialize Azure Blob Storage backend.
 
+        Uses DefaultAzureCredential by default (managed identity, az login, env vars, etc.). Providing an explicit
+        connection_string or credential overrides the default behavior.
+
         Authentication priority:
-        1. connection_string (if provided) - simplest for local dev or research
-        2. credential (if provided) - custom credential
-        3. DefaultAzureCredential - auto-discovers (managed identity, az login, etc.)
+            1. DefaultAzureCredential (default - auto-discovers credentials)
+            2. connection_string (if provided overrides default behavior)
+            3. credential (if provided overrides default behavior)
 
         Args:
-            account_url: Storage account URL (https://<account>.blob.core.windows.net)
-            container_name: Container name
-            prefix: Prefix within container
-            connection_string: Connection string (optional, for dev/researchers)
-            credential: Azure TokenCredential (optional, defaults to DefaultAzureCredential)
+            account_url (str): Storage account URL (https://<account>.blob.core.windows.net)
+            container_name (str): Container name
+            prefix (str, optional): Prefix within the specified container
+            connection_string (str, optional): Connection string (optional, for dev/researchers)
+            credential (TokenCredential, optional): Azure TokenCredential (optional, defaults to DefaultAzureCredential)
         """
         if connection_string:
             self.__client = BlobServiceClient.from_connection_string(connection_string)

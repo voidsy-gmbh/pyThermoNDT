@@ -145,26 +145,21 @@ class AzureBlobBackend(BaseBackend):
         blobs = []
         container_client = self.__client.get_container_client(self.__container_name)
 
-        # List blobs with prefix
         blob_prefix = self.__prefix + "/" if self.__prefix else ""
 
         for blob in container_client.list_blobs(name_starts_with=blob_prefix):
-            # Skip "directory" markers (blobs ending with /)
             if blob.name.endswith("/"):
                 continue
 
-            # Build full Azure URL
-            blob_url = f"https://{self.__client.account_name}.blob.core.windows.net/{self.__container_name}/{blob.name}"
-            blobs.append(blob_url)
+            # Match S3's pattern: use azure:// scheme
+            blob_uri = f"azure://{self.__container_name}/{blob.name}"
+            blobs.append(blob_uri)
 
-        # Filter by extension if provided
         if extensions:
             blobs = [b for b in blobs if any(b.lower().endswith(ext.lower()) for ext in extensions)]
 
-        # Sort for deterministic behavior
         blobs.sort()
 
-        # Limit results if specified
         if num_files is not None:
             blobs = blobs[:num_files]
 
@@ -198,26 +193,18 @@ class AzureBlobBackend(BaseBackend):
 
     def _parse_path(self, path: str) -> str:
         """Parse path into blob name."""
-        # Handle full Azure URLs
-        if "blob.core.windows.net" in path:
-            # Extract blob name from URL
-            parts = path.split("/")
-            container_idx = None
-            for i, part in enumerate(parts):
-                if "blob.core.windows.net" in part:
-                    container_idx = i + 1
-                    break
-
-            if container_idx is not None and len(parts) > container_idx + 1:
-                # Skip container name, return blob path
-                return "/".join(parts[container_idx + 1 :])
-            raise ValueError(f"Invalid Azure blob URL: {path}")
+        # Handle azure:// URIs (new format)
+        if path.startswith("azure://"):
+            path = path[8:]  # Remove "azure://"
+            parts = path.split("/", 1)
+            # parts[0] is container, parts[1] is blob path
+            if len(parts) > 1:
+                return parts[1]
+            return ""
 
         # Handle relative paths
         if self.__prefix:
-            # Remove leading slash if present
-            if path.startswith("/"):
-                path = path[1:]
+            path = path.lstrip("/")
             return f"{self.__prefix}/{path}"
 
         return path

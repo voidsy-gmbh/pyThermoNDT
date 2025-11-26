@@ -61,28 +61,24 @@ PyThermoNDT is yours to use! You can start by exploring the [examples](examples/
 
 ## Installation
 
-### From Wheel Package (Recommended)
-Download the latest wheel package (`.whl` file) from the [release page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and run:
-
+### From PyPI (Recommended)
+Install the latest stable release from PyPI:
 ```bash
-pip install /path/to/downloaded/pythermondt-x.y.z-py3-none-any.whl
+pip install pythermondt
+```
+
+### From GitHub
+Install the latest development version from the main branch:
+```bash
+pip install git+https://github.com/voidsy-gmbh/pyThermoNDT.git
 ```
 
 ### From Source
-PyThermoNDT can be installed directly from the source code:
-
-Clone the repository and install the package locally:
-
+Clone the repository and install locally:
 ```bash
 git clone https://github.com/voidsy-gmbh/pyThermoNDT.git
 cd pyThermoNDT
 pip install .
-```
-
-Or install directly from GitHub:
-
-```bash
-pip install git+https://github.com/voidsy-gmbh/pyThermoNDT.git
 ```
 
 ## Documentation

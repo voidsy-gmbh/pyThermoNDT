@@ -85,15 +85,6 @@ Or install directly from GitHub:
 pip install git+https://github.com/voidsy-gmbh/pyThermoNDT.git
 ```
 
-### From a local conda channel
-Download the latest conda install package (`.zip` file) from the [release page](https://github.com/voidsy-gmbh/pyThermoNDT/releases) and unzip it. The file contains a local conda channel
-with PyThermoNDT and its dependencies. To install PyThermoNDT from the local channel, run:
-
-```bash
-conda config --add channels conda-forge # Recommended to resolve pip dependencies using conda
-conda install pythermondt -c /path/to/downloaded/folder
-```
-
 ## Documentation
 For detailed usage examples, check out the Jupyter Notebooks in the [examples](examples/) directory.
 

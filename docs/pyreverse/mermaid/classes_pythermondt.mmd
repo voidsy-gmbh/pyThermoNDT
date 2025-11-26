@@ -315,9 +315,11 @@ classDiagram
   style SerializationOps fill:#99DDFF
   class Settings {
     download_dir : str
+    log_level : str
     model_config
     num_workers : int
     ensure_exists(v: str) str
+    validate_log_level(v: str) str
     validate_num_workers(v: int) int
   }
   style Settings fill:#77AADD

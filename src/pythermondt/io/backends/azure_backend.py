@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
-from .progress import TqdmCallback
+from .progress import TqdmCallback, get_tqdm_default_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -107,13 +107,7 @@ class AzureBlobBackend(BaseBackend):
             # Wrap file object to track read progress
             data.file_obj.seek(0)
             with tqdm.wrapattr(
-                data.file_obj,
-                "read",
-                total=file_size,
-                desc=f"Uploading {blob_name}",
-                unit="B",
-                unit_scale=True,
-                unit_divisor=1024,
+                data.file_obj, "read", desc=f"Uploading {blob_name}", **get_tqdm_default_kwargs(file_size=file_size)
             ) as wrapped_file:
                 blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True, max_concurrency=4)
 

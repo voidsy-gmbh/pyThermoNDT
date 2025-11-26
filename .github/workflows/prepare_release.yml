@@ -119,7 +119,7 @@ jobs:
     with:
       ref: release/${{ needs.prepare.outputs.release_version }}
 
-  # Job 4: Build the package (conda or pip) and upload artifacts using a matrix job
+  # Job 4: Build the package and upload artifacts
   build:
     needs: prepare
     if: needs.prepare.outputs.release_exists == 'false' || needs.prepare.outputs.is_draft == 'true'
@@ -161,7 +161,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Find artifact files
-          CONDA_PACKAGE=$(find artifacts -name "*.zip" -type f)
           WHEEL_PACKAGE=$(find artifacts -name "*.whl" -type f)
           SRC_PACKAGE=$(find artifacts -name "*.tar.gz" -type f)
 
@@ -169,7 +168,6 @@ jobs:
           # Use -e flag with echo to interpret escape sequences
           NOTES=$(cat <<EOF
           ## Release Contents
-          - Conda Package (.zip): Full conda package with all dependencies (for conda installation)
           - Wheel Package (.whl): Python wheel distribution (recommended for pip installation)
           - Source Package (.tar.gz): Source distribution
 
@@ -184,6 +182,5 @@ jobs:
             --notes-start-tag $(git tag --sort=-creatordate | head -n 1) \
             --draft \
             --target "release/${{ needs.prepare.outputs.release_version }}" \
-            "$CONDA_PACKAGE" \
             "$WHEEL_PACKAGE" \
             "$SRC_PACKAGE"

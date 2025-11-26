@@ -109,7 +109,7 @@ class AzureBlobBackend(BaseBackend):
             with tqdm.wrapattr(
                 data.file_obj, "read", desc=f"Uploading {blob_name}", **get_tqdm_default_kwargs(file_size=file_size)
             ) as wrapped_file:
-                blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True, max_concurrency=4)
+                blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True)
 
         except Exception as e:
             logger.error(e)

@@ -9,6 +9,23 @@ on:
         default: false
         type: boolean
 
+  workflow_call:
+    inputs:
+      ref:
+        description: 'The branch or tag to generate diagrams for'
+        type: string
+        required: false
+        default: ''
+      force_regenerate:
+        description: 'Force regenerate all images (even if no .mmd files changed)'
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      WRITE_KEY:
+        description: 'SSH key to push changes'
+        required: true
+
 jobs:
   generate-diagrams:
     runs-on: ubuntu-latest
@@ -18,105 +35,123 @@ jobs:
       IMAGES_DIR: ./docs/pyreverse/images
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6.0.0
-      with:
-        ssh-key: ${{ secrets.WRITE_KEY }}
+      # Step 1.1: Checkout repository (workflow_call)
+      - name: Checkout code
+        if: github.event_name == 'workflow_call'
+        uses: actions/checkout@v6.0.0
+        with:
+          ref: ${{ inputs.ref }}
+          ssh-key: ${{ secrets.WRITE_KEY }}
 
-    - name: Set up Python 3.12
-      uses: astral-sh/setup-uv@v7.1.4
-      with:
-        version-file: requirements_dev.txt
-        python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
-        activate-environment: true
-        save-cache: false
+      # Step 1.2: Checkout repository (workflow_dispatch)
+      - name: Checkout code
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v6.0.0
+        with:
+          ssh-key: ${{ secrets.WRITE_KEY }}
 
-    - name: Install dependencies
-      run: |
-        uv pip install pylint --overrides ./requirements_dev.txt
+      # Step 2: Setup uv
+      - name: Set up Python
+        uses: astral-sh/setup-uv@v7.1.4
+        with:
+          version-file: requirements_dev.txt
+          python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
+          activate-environment: true
+          save-cache: false
 
-    - name: Create directories for diagrams
-      run: |
-        mkdir -p ${{ env.MERMAID_DIR }}
-        mkdir -p ${{ env.IMAGES_DIR }}
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: uv pip install pylint --overrides ./requirements_dev.txt
 
-    - name: Generate Mermaid files for all major modules with Pyreverse
-      run: |
-        # Generate a top level overview of the project
-        pyreverse -p Overview -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --max-depth 1 pythermondt
+      # Step 4: Create directories for diagrams
+      - name: Create directories for diagrams
+        run: |
+          mkdir -p ${{ env.MERMAID_DIR }}
+          mkdir -p ${{ env.IMAGES_DIR }}
 
-        # Generate detailed diagrams for all major modules
-        pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt
-        pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data
-        pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.dataset
-        pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.readers
-        pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.writers
-        pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.transforms
-        pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer
-        pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.units
-        pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io
-        pyreverse -p pythermondt.io.backends -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.backends
-        pyreverse -p pythermondt.io.parsers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.parsers
+      # Step 5: Generate Mermaid files for all major modules with Pyreverse
+      - name: Generate Mermaid files for all major modules with Pyreverse
+        run: |
+          # Generate a top level overview of the project
+          pyreverse -p Overview -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --max-depth 1 pythermondt
 
-        # Generate specialized diagrams
-        pyreverse -p Node_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode ALL pythermondt.data.datacontainer.node
-        pyreverse -p Transform_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.transforms.base
+          # Generate detailed diagrams for all major modules
+          pyreverse -p pythermondt -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt
+          pyreverse -p pythermondt.data -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data
+          pyreverse -p pythermondt.dataset -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.dataset
+          pyreverse -p pythermondt.readers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.readers
+          pyreverse -p pythermondt.writers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.writers
+          pyreverse -p pythermondt.transforms -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.transforms
+          pyreverse -p pythermondt.data.datacontainer -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.datacontainer
+          pyreverse -p pythermondt.data.units -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.data.units
+          pyreverse -p pythermondt.io -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src pythermondt.io
+          pyreverse -p pythermondt.io.backends -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.backends
+          pyreverse -p pythermondt.io.parsers -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.io.parsers
 
-    - name: Check for New or Modified Mermaid Files
-      id: files-check
-      run: |
-        if [ "${{ inputs.force_regenerate }}" = "true" ]; then
-          echo "Force regenerate enabled - will rebuild all images."
-          FILES=$(find ${{ env.MERMAID_DIR }} -name "*.mmd" | tr '\n' ' ')
-          echo "CHANGED=true" >> $GITHUB_ENV
-        else
-          # Get list of new or modified .mmd files (uncommitted changes)
-          FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd 2>/dev/null | awk '{print $2}' | tr '\n' ' ' || echo "")
+          # Generate specialized diagrams
+          pyreverse -p Node_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode ALL pythermondt.data.datacontainer.node
+          pyreverse -p Transform_Hierarchy -o mmd -d ${{ env.MERMAID_DIR }} --colorized --source-roots ./src --filter-mode OTHER pythermondt.transforms.base
 
-          if [ -n "$FILES" ]; then
-            echo "Changed .mmd files detected: $FILES"
+      # Step 6: Check for New or Modified Mermaid Files
+      - name: Check for New or Modified Mermaid Files
+        id: files-check
+        run: |
+          if [ "${{ inputs.force_regenerate }}" = "true" ]; then
+            echo "Force regenerate enabled - will rebuild all images."
+            FILES=$(find ${{ env.MERMAID_DIR }} -name "*.mmd" | tr '\n' ' ')
             echo "CHANGED=true" >> $GITHUB_ENV
           else
-            echo "No changed .mmd files detected."
-            echo "CHANGED=false" >> $GITHUB_ENV
+            # Get list of new or modified .mmd files (uncommitted changes)
+            FILES=$(git status --porcelain ${{ env.MERMAID_DIR }}/*.mmd 2>/dev/null | awk '{print $2}' | tr '\n' ' ' || echo "")
+
+            if [ -n "$FILES" ]; then
+              echo "Changed .mmd files detected: $FILES"
+              echo "CHANGED=true" >> $GITHUB_ENV
+            else
+              echo "No changed .mmd files detected."
+              echo "CHANGED=false" >> $GITHUB_ENV
+            fi
           fi
-        fi
 
-        # Write files list to step output
-        echo "files=$FILES" >> $GITHUB_OUTPUT
+          # Write files list to step output
+          echo "files=$FILES" >> $GITHUB_OUTPUT
 
-    - name: Setup Node.js for Mermaid CLI
-      if: env.CHANGED == 'true'
-      uses: actions/setup-node@v6.0.0
-      with:
-        node-version: '20'
+      # Step 7: Setup Node.js for Mermaid CLI
+      - name: Setup Node.js for Mermaid CLI
+        if: env.CHANGED == 'true'
+        uses: actions/setup-node@v6.0.0
+        with:
+          node-version: '20'
 
-    - name: Install Mermaid CLI
-      if: env.CHANGED == 'true'
-      run: npm install -g @mermaid-js/mermaid-cli
+      # Step 8: Install Mermaid CLI
+      - name: Install Mermaid CLI
+        if: env.CHANGED == 'true'
+        run: npm install -g @mermaid-js/mermaid-cli
 
-    - name: Generate images from Mermaid files
-      if: env.CHANGED == 'true'
-      run: |
-        # Create puppeteer config for no-sandbox
-        echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
+      # Step 9: Generate images from Mermaid files
+      - name: Generate images from Mermaid files
+        if: env.CHANGED == 'true'
+        run: |
+          # Create puppeteer config for no-sandbox
+          echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
 
-        FILES="${{ steps.files-check.outputs.files }}"
+          FILES="${{ steps.files-check.outputs.files }}"
 
-        for file in $FILES; do
-          if [ -f "$file" ]; then
-            filename=$(basename "$file" .mmd)
-            echo "Processing: $file"
-            mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" \
-              -b transparent -t neutral -s 5 --puppeteerConfigFile puppeteer-config.json
-          fi
-        done
+          for file in $FILES; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file" .mmd)
+              echo "Processing: $file"
+              mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" \
+                -b transparent -t neutral -s 5 --puppeteerConfigFile puppeteer-config.json
+            fi
+          done
 
-    - name: Commit and Push Diagrams back to the repository
-      if: env.CHANGED == 'true'
-      run: |
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
-        git add ./docs/pyreverse/*
-        git commit -m "Update mermaid diagrams"
-        git push
+      # Step 10: Commit and Push Diagrams back to the repository
+      - name: Commit and Push Diagrams back to the repository
+        if: env.CHANGED == 'true'
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add ./docs/pyreverse/*
+          git commit -m "Update mermaid diagrams"
+          git push

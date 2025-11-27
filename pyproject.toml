@@ -8,6 +8,35 @@ authors = [{name = "Julian Grimm", email = "julian.grimm@fh-wels.at"}]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.10, <3.14"
+
+classifiers = [
+    # Development status
+    "Development Status :: 4 - Beta",
+
+    # Intended audience
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+
+    # Python versions
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+
+    # Topics - critical for search
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+
+    # Additional classifiers
+    "Operating System :: OS Independent",
+    "Typing :: Typed"
+]
+
 dependencies = [
     # General dependencies
     "tqdm>=4.65",
@@ -160,7 +189,7 @@ warn_redundant_casts = true
 
 # Bump Version
 [tool.bumpversion]
-current_version = "0.2.6dev"
+current_version = "0.3.0dev"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?P<release>dev)?"
 serialize = [
     "{major}.{minor}.{patch}{release}",

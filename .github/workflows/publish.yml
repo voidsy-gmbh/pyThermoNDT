@@ -1,53 +1,32 @@
-name: Publish the package
+name: Publish to TestPyPI
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to (testpypi or pypi)'
-        required: true
-        default: 'testpypi'
-        type: choice
-        options:
-          - testpypi
-          - pypi
-
-  workflow_call:
-    inputs:
-      environment:
-        description: 'Environment to deploy to (testpypi or pypi)'
-        required: true
-        type: string
 
 jobs:
-  pypi_publish:
-    name: Publish to ${{ inputs.environment }}
+  # Job 1: Build from current branch
+  build:
+    name: Build Package
+    uses: ./.github/workflows/build.yml
+
+  # Job 2: Publish to TestPyPI
+  publish:
+    name: Publish to TestPyPI
+    needs: build
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.environment }}
-      url: ${{ inputs.environment == 'pypi' && 'https://pypi.org/p/pythermondt' || 'https://test.pypi.org/p/pythermondt' }}
+      name: testpypi
+      url: https://test.pypi.org/p/pythermondt
     permissions:
-      id-token: write  # Mandatory for trusted publishing
-      contents: read   # Required for actions/checkout
+      id-token: write
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v6.0.0
-
-      # Step 2: Setup uv and build
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v7.1.4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v5.0.0
         with:
-          python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
-          save-cache: false
-          version-file: requirements_dev.txt
+          name: build-artifacts
+          path: dist/
 
-      # Step 3: Build package
-      - name: Build package
-        run: uv build --no-sources
-
-      # Step 4: Publish to PyPI/TestPyPI
-      - name: Publish package distributions
+      - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ inputs.environment == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+          repository-url: https://test.pypi.org/legacy/

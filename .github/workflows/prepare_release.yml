@@ -24,6 +24,7 @@ jobs:
         with:
           version-file: requirements_dev.txt
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
+          activate-environment: true
           save-cache: false
 
       # Step 3: Create release branch and bump version

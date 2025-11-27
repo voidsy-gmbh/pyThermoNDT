@@ -155,22 +155,33 @@ The package version is defined in [pythermondt/\__pkginfo\__.py](src/pythermondt
 
 ### Release Workflow
 
-This project uses an automated release workflow with GitHub Actions und [bump-my-version](https://github.com/callowayproject/bump-my-version) Manually updating the version
-string should be avoided. If you really need to use the [CLI-Interface](https://callowayproject.github.io/bump-my-version/reference/cli/) that bump-my-version provides.
+This project uses an automated release workflow with GitHub Actions and [bump-my-version](https://github.com/callowayproject/bump-my-version). Manually updating the version string should be avoided. If you really need to, use the [CLI-Interface](https://callowayproject.github.io/bump-my-version/reference/cli/) that bump-my-version provides.
 
-When using the automated release workflow, the these steps should be followed:
-1. **Trigger a release:**
-   - Manually trigger the [Build and Release Python Package workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/build_and_release.yml) on the `main` branch.
+#### Steps to Release
+
+1. **Prepare Release Branch:**
+   - Manually trigger the [Prepare Release workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/prepare_release.yml) on the `main` branch
    - This workflow:
      - Creates a `release/X.Y.Z` branch
-     - Bumps the version number by removing the "dev" suffix
-     - Builds and tests the package
-     - Creates a draft release on GitHub's [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases)
+     - Bumps the version by removing the `.dev*` suffix
+     - Updates architecture diagrams
 
-2. **Finalizing a Release**:
-   - Review the draft release on GitHub
-   - Edit release notes as needed
-   - Click "Publish release" to make it official
-   - Publishing automatically triggers a post-release workflow that:
-     - Increments the patch version in the main branch
-     - Adds the "dev" suffix for the next development cycle
+2. **Create and Merge Release PR:**
+   - Manually create a pull request from `release/X.Y.Z` to `main`
+   - Wait for automated checks (tests and code quality) to pass
+   - Review and merge the PR
+
+3. **Publish Release:**
+   - Go to GitHub's [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases)
+   - Click "Draft a new release"
+   - Select tag: `X.Y.Z` (create new tag from `main`)
+   - Set title: `vX.Y.Z`
+   - Generate release notes
+   - Click "Publish release"
+
+4. **Automatic Post-Release:**
+   - Publishing triggers the [Post-Release workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/post_release.yml) which:
+     - Builds the package from the release tag
+     - Publishes to PyPI
+     - Signs and uploads artifacts to the GitHub release
+     - Bumps `main` to the next patch version with `.dev0` suffix

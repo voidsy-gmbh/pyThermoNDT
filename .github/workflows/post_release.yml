@@ -5,44 +5,62 @@ on:
     types: [published]
 
 jobs:
-  # Job 1: Bump the version in the main branch to the next patch version
+  # Job 1: Build the package
+  build-package:
+    name: Build Package
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ github.event.release.tag_name }}
+
+  # Job 2: Publish to PyPI (runs parallel with sign-and-upload)
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build-package
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pythermondt
+    permissions:
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v5.0.0
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # Job 3: Sign and upload release assets
+  gh-release-assets:
+    name: Sign and Upload Release Assets
+    needs: build-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Required to upload to GitHub release
+      id-token: write   # Required for Sigstore signing
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v5.0.0
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Sign artifacts and upload to GitHub Release
+        uses: sigstore/gh-action-sigstore-python@v3.1.0
+        with:
+          inputs: |
+            ./dist/*.tar.gz
+            ./dist/*.whl
+
+  # Job 4: Bump the version in the main branch to the next patch version
   bump-version:
     name: Bump Version to Next Patch
+    needs: [publish-pypi, gh-release-assets]
     uses: ./.github/workflows/bump_version.yml
     with:
       bump-type: patch
       ref: main
     secrets:
       WRITE_KEY: ${{ secrets.WRITE_KEY }}
-
-  # Job 2: Publish the package
-  publish-package:
-    name: Publish the package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download wheel from github release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Get the release tag from the event
-          RELEASE_TAG="${{ github.event.release.tag_name }}"
-
-          # Download the wheel file from the release
-          gh release download "$RELEASE_TAG" \
-            --repo ${{ github.repository }} \
-            --pattern "*.whl" \
-            --dir ./dist
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v7.1.4
-        with:
-          cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-
-      - name: Publish the package
-        env:
-          UV_PUBLISH_USERNAME: dummy
-          UV_PUBLISH_URL: ${{ secrets.PUBLISH_URL }}
-          UV_PUBLISH_PASSWORD: ${{ secrets.AZURE_ARTIFACTS_PAT }}
-        run: |
-          uv publish ./dist/*.whl

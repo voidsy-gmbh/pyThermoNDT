@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
-      release_version:
-        description: 'The version to release'
-        required: true
+      ref:
+        description: 'Git ref to build (branch, tag, or commit SHA)'
+        required: false
         type: string
-
+        default: ''
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6.0.0
         with:
-          ref: release/${{ inputs.release_version }}
+          ref: ${{ inputs.ref }}
 
         # Step 2: Setup uv for building the package
       - name: Setup uv
@@ -33,7 +33,7 @@ jobs:
         id: build
         run: |
           uv build --no-sources .
-          echo "Successfully built pythermondt version ${{ inputs.release_version }}"
+          echo "Successfully built pythermondt from ref ${{ inputs.ref }}"
           echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
           echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
 

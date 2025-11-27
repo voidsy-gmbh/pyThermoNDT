@@ -21,10 +21,6 @@ on:
         required: false
         default: false
         type: boolean
-    secrets:
-      WRITE_KEY:
-        description: 'SSH key to push changes'
-        required: true
 
 jobs:
   generate-diagrams:

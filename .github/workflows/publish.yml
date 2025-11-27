@@ -48,4 +48,4 @@ jobs:
       - name: Publish package distributions
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ inputs.environment == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+          repository-url: ${{ inputs.environment == 'testpypi' && 'https://test.pypi.org/legacy/' }}

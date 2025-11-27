@@ -37,6 +37,9 @@ jobs:
     name: Sign and Upload Release Assets
     needs: build-package
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Required to upload to GitHub release
+      id-token: write   # Required for Sigstore signing
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v5.0.0

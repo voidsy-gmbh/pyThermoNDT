@@ -28,6 +28,7 @@ jobs:
       url: ${{ inputs.environment == 'pypi' && 'https://pypi.org/p/pythermondt' || 'https://test.pypi.org/p/pythermondt' }}
     permissions:
       id-token: write  # Mandatory for trusted publishing
+      contents: read   # Required for actions/checkout
     steps:
       # Step 1: Checkout code
       - name: Checkout code
@@ -39,6 +40,7 @@ jobs:
         with:
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           save-cache: false
+          version-file: requirements_dev.txt
 
       # Step 3: Build package
       - name: Build package
@@ -48,4 +50,4 @@ jobs:
       - name: Publish package distributions
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ inputs.environment == 'testpypi' && 'https://test.pypi.org/legacy/' }}
+          repository-url: ${{ inputs.environment == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}

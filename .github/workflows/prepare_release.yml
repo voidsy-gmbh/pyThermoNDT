@@ -49,7 +49,7 @@ jobs:
           bump-my-version bump release --commit
 
           # Push release branch
-          git push origin release/$VERSION
+          git push origin -f release/$VERSION
 
   # Job 2: Update diagrams on the release branch
   update-diagrams:

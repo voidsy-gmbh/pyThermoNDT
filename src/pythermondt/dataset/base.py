@@ -214,23 +214,21 @@ class BaseDataset(Dataset, ABC):
         Args:
             gc_collect (bool): Whether to run garbage collection after releasing the cache. Default is True.
         """
-        # Try to clear cached items
-        try:
-            if isinstance(self.__cache, ListProxy):
-                self.__cache[:] = []
-            else:
-                self.__cache = []
-            self.__det_transforms = None
-            self.__runtime_transforms = None
-            self.__cache_built = False
+        # For regular lists, clear the items to free memory ==> ListProxies are handled by manager shutdown
+        if not isinstance(self.__cache, ListProxy):
+            self.__cache = []
+        self.__det_transforms = None
+        self.__runtime_transforms = None
+        self.__cache_built = False
 
         # Ensure that the manager process is terminated
-        finally:
-            if self.__manager:
-                try:
-                    self.__manager.shutdown()
-                finally:
-                    self.__manager = None
+        if self.__manager:
+            try:
+                self.__manager.shutdown()
+            except Exception:  # pylint: disable=broad-except
+                pass
+            finally:
+                self.__manager = None
 
         # Garbage collect to free memory if requested
         if gc_collect:

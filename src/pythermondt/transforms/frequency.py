@@ -57,10 +57,9 @@ class PulsePhaseThermography(ThermoTransform):
             freqs = freqs[self.freq_indices]
 
         # Update container with complex FFT results
-        container.update_dataset("/Data/Tdata", fft_result)
+        container.update_dataset("/Data/Tdata", fft_result)  # Unit stays the same
         container.update_dataset("/MetaData/DomainValues", freqs)
-        container.update_unit("/Data/Tdata", Units.arbitrary)
-        container.update_unit("/MetaData/DomainValues", Units.hertz)
+        container.update_unit("/MetaData/DomainValues", Units.hertz)  # Unit is now frequency
         return container
 
 
@@ -75,8 +74,7 @@ class ExtractAmplitude(ThermoTransform):
 
         # Extract amplitude
         amplitude = torch.abs(tdata)
-        container.update_dataset("/Data/Tdata", amplitude)
-        container.update_unit("/Data/Tdata", Units.dimensionless)
+        container.update_dataset("/Data/Tdata", amplitude)  # Unit stays the same
         return container
 
 
@@ -134,5 +132,5 @@ class ExtractPhase(ThermoTransform):
         if self.unwrap:
             phase = self._unwrap(phase, dim=-1)
         container.update_dataset("/Data/Tdata", phase)
-        container.update_unit("/Data/Tdata", Units.dimensionless)
+        container.update_unit("/Data/Tdata", Units.dimensionless)  # Phase images are now radians (dimensionless)
         return container

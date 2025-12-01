@@ -36,14 +36,3 @@ class Units:
 
     def __init__(self):
         raise TypeError("This class is static and should not be instantiated.")
-
-
-# Test
-if __name__ == "__main__":
-    print(type(Units.kelvin))
-    print(Units.kelvin)
-    print(Units.celsius)
-    print(Units.second)
-    print(Units.millisecond)
-    print(Units.dimensionless)
-    print(Units.arbitrary)

@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from torch import Tensor
 
-from pythermondt.data import DataContainer, Units
+from pythermondt.data import DataContainer, units
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def attr_container(empty_container: DataContainer, sample_tensor: Tensor):
         ("/testdata", "list_attr", [1, 2, 3]),  # list attribute on dataset
         ("/testgroup", "tuple_attr", (4, 5, 6)),  # tuple attribute on group
         ("/testdata", "dict_attr", {"key": "value"}),  # dict attribute on dataset
-        ("/testdata", "unit_attr", Units.kelvin),  # unit attribute on dataset
+        ("/testdata", "unit_attr", units.kelvin),  # unit attribute on dataset
     ],
 )
 def test_add_attribute(attr_container: DataContainer, path: str, key: str, value: Any):
@@ -102,16 +102,16 @@ def test_get_all_attributes(attr_container: DataContainer):
 
 def test_unit_operations(attr_container: DataContainer):
     # Test adding unit
-    attr_container.add_unit("/testdata", Units.kelvin)
+    attr_container.add_unit("/testdata", units.kelvin)
 
     # Test getting unit
     unit = attr_container.get_unit("/testdata")
-    assert unit == Units.kelvin
+    assert unit == units.kelvin
 
     # Test updating unit
-    attr_container.update_unit("/testdata", Units.celsius)
+    attr_container.update_unit("/testdata", units.celsius)
     updated_unit = attr_container.get_unit("/testdata")
-    assert updated_unit == Units.celsius
+    assert updated_unit == units.celsius
 
 
 @pytest.mark.parametrize(

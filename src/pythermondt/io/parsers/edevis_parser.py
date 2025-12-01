@@ -6,7 +6,8 @@ from xml.etree.ElementTree import Element
 
 import torch
 
-from ...data import DataContainer, ThermoContainer, Units
+from ...data import DataContainer, ThermoContainer
+from ...data.units import arbitrary, hertz
 from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
 
@@ -238,7 +239,7 @@ class EdevisParser(BaseParser):
                             case DataType.COMPLEX_IMAGE:
                                 # Read domain values from the data
                                 domain_str = frame.findtext("FourierFrequency", default=None)
-                                domain_unit = Units.hertz
+                                domain_unit = hertz
                                 if domain_str:
                                     domain_values[i] = float(domain_str.strip().split("Hz")[0])
 
@@ -248,7 +249,7 @@ class EdevisParser(BaseParser):
                                 frame_data[:, :, i] = torch.frombuffer(buffer, dtype=frame_dtype[bit_depth]).reshape(
                                     height, width
                                 )
-                                frame_unit = Units.arbitrary  # Complex images do not have a specific unit
+                                frame_unit = arbitrary  # Complex images do not have a specific unit
 
                             case _:
                                 types = ", ".join(f"{t.value} ({t.name})" for t in DataType)

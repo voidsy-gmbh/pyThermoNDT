@@ -1,5 +1,5 @@
+from ..data import units
 from .datacontainer import DataContainer
-from .units import Units
 
 
 class ThermoContainer(DataContainer):
@@ -21,9 +21,9 @@ class ThermoContainer(DataContainer):
 
         # Add units to the initial datasets
         self.add_attributes(
-            "/Data/Tdata", Unit=Units.arbitrary
+            "/Data/Tdata", Unit=units.arbitrary
         )  # Tdata has a arbitrary unit because it is raw data and the LUT has not been applied yet
-        self.add_attributes("/MetaData/DomainValues", Unit=Units.second)
-        self.add_attributes("/MetaData/LookUpTable", Unit=Units.kelvin)
-        self.add_attributes("/MetaData/ExcitationSignal", Unit=Units.dimensionless)
-        self.add_attributes("/GroundTruth/DefectMask", Unit=Units.dimensionless)
+        self.add_attributes("/MetaData/DomainValues", Unit=units.second)
+        self.add_attributes("/MetaData/LookUpTable", Unit=units.kelvin)
+        self.add_attributes("/MetaData/ExcitationSignal", Unit=units.dimensionless)
+        self.add_attributes("/GroundTruth/DefectMask", Unit=units.dimensionless)

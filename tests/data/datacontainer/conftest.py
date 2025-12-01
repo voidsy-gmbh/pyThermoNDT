@@ -3,8 +3,9 @@ import copy
 import pytest
 from torch import Tensor
 
-from pythermondt.data import DataContainer, Units
+from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import DataNode, GroupNode, RootNode
+from pythermondt.data.units import kelvin
 
 
 @pytest.fixture
@@ -67,7 +68,7 @@ def complex_container(filled_container: DataContainer):
         "float_attr": 3.14,
         "list_attr": [1, 2, 3],
         "dict_attr": {"key": "value"},
-        "unit_attr": Units.kelvin,
+        "unit_attr": kelvin,
     }
 
     # Add various types of attributes to the TestGroup

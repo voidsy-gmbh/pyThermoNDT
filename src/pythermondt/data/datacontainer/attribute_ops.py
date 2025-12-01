@@ -1,4 +1,4 @@
-from ..units import Unit, Units, is_unit_info
+from ..units import Unit, undefined
 from .base import BaseOps
 from .node import DataNode, GroupNode
 
@@ -107,10 +107,10 @@ class AttributeOps(BaseOps):
         try:
             unit = self.nodes(path, DataNode).get_attribute("Unit")
         except KeyError:
-            unit = Units.undefined
+            unit = undefined
 
         # Verify that unit is valid and return it ==> otherwise return undefined
-        return unit if is_unit_info(unit) else Units.undefined
+        return unit if isinstance(unit, Unit) else undefined
 
     def remove_attribute(self, path: str, key: str):
         """Remove an attribute from a specified group or dataset in the DataContainer.

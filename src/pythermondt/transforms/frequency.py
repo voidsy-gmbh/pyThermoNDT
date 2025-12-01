@@ -39,7 +39,11 @@ class PulsePhaseThermography(ThermoTransform):
         fft_result = torch.fft.rfft(tdata, dim=-1)
 
         # Calculate frequency bins
-        dt = domain_values[1] - domain_values[0]  # Time step
+        dt = domain_values[1] - domain_values[0]
+        # Validate uniform sampling (required for FFT frequency calculation)
+        diffs = torch.diff(domain_values)
+        if not torch.allclose(diffs, dt, rtol=1e-5):
+            raise ValueError("Domain values must be uniformly spaced for FFT")
         freqs = torch.fft.rfftfreq(len(domain_values), d=dt.item())
 
         # Select specific frequencies if requested

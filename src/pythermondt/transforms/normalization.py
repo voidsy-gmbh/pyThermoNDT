@@ -1,7 +1,7 @@
 import warnings
 
 from ..data import DataContainer
-from ..data.units import Units
+from ..data.units import dimensionless
 from .base import ThermoTransform
 
 
@@ -41,7 +41,7 @@ class MinMaxNormalize(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
-        container.update_unit("/Data/Tdata", Units.dimensionless)
+        container.update_unit("/Data/Tdata", dimensionless)
         return container
 
 
@@ -76,7 +76,7 @@ class MaxNormalize(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
-        container.update_unit("/Data/Tdata", Units.dimensionless)
+        container.update_unit("/Data/Tdata", dimensionless)
         return container
 
 
@@ -112,5 +112,5 @@ class ZScoreNormalize(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
-        container.update_unit("/Data/Tdata", Units.dimensionless)
+        container.update_unit("/Data/Tdata", dimensionless)
         return container

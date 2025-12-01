@@ -3,7 +3,7 @@ from typing import Literal, get_args
 import torch
 
 from ..data import DataContainer
-from ..data.units import Units
+from ..data.units import arbitrary, kelvin
 from .base import ThermoTransform
 
 
@@ -39,7 +39,7 @@ class ApplyLUT(ThermoTransform):
             raise ValueError("LookUpTable or Tdata is not available in the container.")
 
         # Check if LUT has already been applied
-        if container.get_unit("/Data/Tdata") != Units.arbitrary and torch.is_floating_point(tdata):
+        if container.get_unit("/Data/Tdata") != arbitrary and torch.is_floating_point(tdata):
             raise ValueError("LookUpTable has already been applied to the Temperature data.")
 
         # Sanity check if tdata is valid
@@ -55,7 +55,7 @@ class ApplyLUT(ThermoTransform):
 
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
-        container.update_unit("/Data/Tdata", Units.kelvin)
+        container.update_unit("/Data/Tdata", kelvin)
         return container
 
 

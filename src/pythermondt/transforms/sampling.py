@@ -245,7 +245,7 @@ class NonUniformSampling(ThermoTransform):
         )
 
         # Check if we are in time domain
-        if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
+        if container.get_unit("/MetaData/DomainValues").quantity != "time":
             raise ValueError("NonUniformSampling transform can only be applied to time domain data.")
 
         # Check if number of samples is valid

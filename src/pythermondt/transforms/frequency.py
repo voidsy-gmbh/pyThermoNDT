@@ -112,7 +112,6 @@ class ExtractPhase(ThermoTransform):
         correction = torch.cumsum(corr, dim=dim)
 
         # Pad on the correct dimension to account for reduced size after diff
-        pad_shape = [0] * (2 * phase.ndim)
         pad_shape = list(correction.shape)
         pad_shape[dim] = 1
         zeros = torch.zeros(pad_shape, dtype=phase.dtype, device=phase.device)

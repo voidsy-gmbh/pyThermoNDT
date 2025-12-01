@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 
 @dataclass(frozen=True)
@@ -8,6 +8,14 @@ class Unit:
     name: str  # The name of the unit (e.g. kelvin, celsius, etc.)
     quantity: str  # The quantity the unit represents (e.g. temperature, time, etc.)
     symbol: str  # The symbol of the unit (e.g. K, °C, etc.)
+
+    def to_dict(self) -> dict:
+        """Convert the Unit dataclass to a dictionary.
+
+        Returns:
+            dict: The dictionary representation of the Unit.
+        """
+        return asdict(self)
 
 
 def print_available_units() -> None:

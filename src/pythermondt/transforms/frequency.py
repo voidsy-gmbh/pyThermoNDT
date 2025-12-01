@@ -47,7 +47,7 @@ class PulsePhaseThermography(ThermoTransform):
             # Validate indices
             max_idx = fft_result.shape[-1]
             if any(idx < 0 or idx >= max_idx for idx in self.freq_indices):
-                raise ValueError(f"freq_indices must be in range [0, {max_idx - 1}]")
+                raise ValueError(f"freq_indices must be in range [0, {max_idx - 1}], got {self.freq_indices}")
 
             fft_result = fft_result[..., self.freq_indices]
             freqs = freqs[self.freq_indices]

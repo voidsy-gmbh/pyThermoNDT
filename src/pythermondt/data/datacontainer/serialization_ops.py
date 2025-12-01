@@ -6,6 +6,7 @@ from typing import Any, Literal, TypeAlias
 import h5py
 import numpy as np
 
+from ..units import Unit
 from .attribute_ops import AttributeOps
 from .base import BaseOps
 from .dataset_ops import DatasetOps
@@ -76,8 +77,8 @@ class SerializationOps(BaseOps):
         """
         for key, value in attributes:
             # Convert lists and dictionaries to JSON strings ==> HDF5 does not support these types natively
-            if isinstance(value, (list, dict)):
-                value = json.dumps(value)
+            if isinstance(value, (list, dict, Unit)):
+                value = json.dumps(value.to_dict() if isinstance(value, Unit) else value)
 
             # Assign attribute to HDF5 object
             h5obj.attrs[key] = value
@@ -192,7 +193,11 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
 
                     # Use the JSON-decoded value only if it successfully decodes to a list or dictionary
                     if isinstance(value_decoded, (list, dict)):
-                        value = value_decoded
+                        if isinstance(value_decoded, dict) and value_decoded.keys() == Unit.__annotations__.keys():
+                            # Convert dict to Unit instance
+                            value = Unit(**value_decoded)
+                        else:
+                            value = value_decoded
 
             # If it fails, the value is not a JSON object or a string ==> keep it as it is
             except (json.JSONDecodeError, TypeError):

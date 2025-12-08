@@ -34,7 +34,7 @@ jobs:
       # Step 1.1: Checkout repository (workflow_call)
       - name: Checkout code
         if: github.event_name == 'workflow_call'
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           ref: ${{ inputs.ref }}
           ssh-key: ${{ secrets.WRITE_KEY }}
@@ -42,7 +42,7 @@ jobs:
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout code
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           ssh-key: ${{ secrets.WRITE_KEY }}
 

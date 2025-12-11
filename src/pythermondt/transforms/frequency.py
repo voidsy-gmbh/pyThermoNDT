@@ -4,7 +4,7 @@ from collections.abc import Sequence
 import torch
 
 from ..data import DataContainer
-from ..data.units import Units
+from ..data.units import dimensionless, hertz
 from .base import ThermoTransform
 
 
@@ -31,7 +31,7 @@ class PulsePhaseThermography(ThermoTransform):
         tdata, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues")
 
         # Verify time domain
-        if container.get_unit("/MetaData/DomainValues")["quantity"] != "time":
+        if container.get_unit("/MetaData/DomainValues").quantity != "time":
             raise ValueError("PulsePhaseThermography requires time-domain data")
 
         # Compute FFT along time axis (dim=-1)
@@ -59,7 +59,7 @@ class PulsePhaseThermography(ThermoTransform):
         # Update container with complex FFT results
         container.update_dataset("/Data/Tdata", fft_result)  # Unit stays the same
         container.update_dataset("/MetaData/DomainValues", freqs)
-        container.update_unit("/MetaData/DomainValues", Units.hertz)  # Unit is now frequency
+        container.update_unit("/MetaData/DomainValues", hertz)  # Unit is now frequency (hertz)
         return container
 
 
@@ -132,5 +132,5 @@ class ExtractPhase(ThermoTransform):
         if self.unwrap:
             phase = self._unwrap(phase, dim=-1)
         container.update_dataset("/Data/Tdata", phase)
-        container.update_unit("/Data/Tdata", Units.dimensionless)  # Phase images are now radians (dimensionless)
+        container.update_unit("/Data/Tdata", dimensionless)  # Phase images are now radians (dimensionless)
         return container

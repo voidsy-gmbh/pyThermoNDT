@@ -6,7 +6,7 @@ import torch
 from ..data import DataContainer
 from ..readers.base_reader import BaseReader
 from ..transforms.utils import _BaseTransform
-from .base import BaseDataset
+from .base_dataset import BaseDataset
 
 
 class ThermoDataset(BaseDataset):
@@ -44,12 +44,6 @@ class ThermoDataset(BaseDataset):
 
         # Write the readers to the private attributes
         self.__readers = data_source
-
-        # Eagerly load files from all readers
-        for reader in self.__readers:
-            # Download files if remote and download_files is True
-            if reader.remote_source and reader.download_files:
-                reader.download()
 
         # Build the index map
         self._build_index()
@@ -124,6 +118,20 @@ class ThermoDataset(BaseDataset):
 
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
+
+    def download(self, num_workers: int | None = None) -> None:
+        """Download all files from all readers that support downloading.
+
+        This will call download() on each reader that has a remote source.
+
+        Args:
+            num_workers (int, optional): Number of workers for parallel downloads.
+                Passed to each reader's download() method. If None, uses the
+                global configuration from settings.
+        """
+        for reader in self.__readers:
+            if reader.remote_source:
+                reader.download(num_workers=num_workers)
 
     def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from readers - required by BaseDataset."""

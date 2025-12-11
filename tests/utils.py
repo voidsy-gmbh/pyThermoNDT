@@ -3,8 +3,9 @@ import os
 import torch
 from deepdiff import DeepDiff
 
-from pythermondt.data import DataContainer, Units
+from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import AttributeNode, DataNode
+from pythermondt.data.units import celsius, kelvin
 from pythermondt.io.parsers import find_parser_for_extension
 from pythermondt.readers import LocalReader
 
@@ -101,7 +102,7 @@ def update_expected_outputs(source_folder: str, file_extension: str):
 
     updated_files = []
     for source_path in source_reader.files:
-        source_container = source_reader.read(source_path)
+        source_container = source_reader.read_file(source_path)
         head, tail = os.path.split(source_path)
         output_name = tail.replace(file_extension, ".hdf5")
         output_name = output_name.replace("source", "expected")
@@ -121,8 +122,8 @@ if __name__ == "__main__":
     # ...
     container1.add_dataset("/", "Dataset1", torch.tensor([[1, 2], [3, 4]]))
     container2.add_dataset("/", "Dataset1", torch.tensor([[1, 2], [7, 5]]))
-    container1.add_unit("/Dataset1", Units.kelvin)
-    container2.add_unit("/Dataset1", Units.celsius)
+    container1.add_unit("/Dataset1", kelvin)
+    container2.add_unit("/Dataset1", celsius)
     container1.add_attribute("/Dataset1", "Attribute1", "Value1")
 
     # Compare the containers

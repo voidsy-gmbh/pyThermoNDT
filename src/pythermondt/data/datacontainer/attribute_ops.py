@@ -1,4 +1,4 @@
-from ..units import Unit, Units, is_unit_info
+from ..units import Unit, undefined
 from .base import BaseOps
 from .node import DataNode, GroupNode
 
@@ -10,7 +10,7 @@ class AttributeOps(BaseOps):
         Args:
             path (str): The path to the group or dataset.
             key (str): The key of the attribute.
-            value (str | int | float | list | tuple | dict | UnitInfo): The value of the attribute.
+            value (str | int | float | list | tuple | dict | Unit): The value of the attribute.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -23,7 +23,7 @@ class AttributeOps(BaseOps):
 
         Args:
             path (str): The path to the group or dataset.
-            **attributes (Dict[str, str | int | float | list | tuple | dict | UnitInfo]): The attributes to add.
+            **attributes (Dict[str, str | int | float | list | tuple | dict | Unit]): The attributes to add.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -36,7 +36,7 @@ class AttributeOps(BaseOps):
 
         Args:
             path (str): The path to the dataset.
-            unit (UnitInfo): The unit to add.
+            unit (Unit): The unit to add.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -52,7 +52,7 @@ class AttributeOps(BaseOps):
             key (str): The key of the attribute.
 
         Returns:
-            str | int | float | list | tuple | dict | UnitInfo: The value of the attribute.
+            str | int | float | list | tuple | dict | Unit: The value of the attribute.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -84,7 +84,7 @@ class AttributeOps(BaseOps):
             path (str): The path to the group or dataset.
 
         Returns:
-            Dict[str, str | int | float | list | tuple | dict | UnitInfo]: A dictionary of all attributes at the path.
+            Dict[str, str | int | float | list | tuple | dict | Unit]: A dictionary of all attributes at the path.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -98,7 +98,7 @@ class AttributeOps(BaseOps):
             path (str): The path to the dataset.
 
         Returns:
-            UnitInfo: The unit information. If no unit information is available, it returns Units.undefined.
+            Unit: The unit information. If no unit information is available, it returns units.undefined.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -107,10 +107,10 @@ class AttributeOps(BaseOps):
         try:
             unit = self.nodes(path, DataNode).get_attribute("Unit")
         except KeyError:
-            unit = Units.undefined
+            unit = undefined
 
         # Verify that unit is valid and return it ==> otherwise return undefined
-        return unit if is_unit_info(unit) else Units.undefined
+        return unit if isinstance(unit, Unit) else undefined
 
     def remove_attribute(self, path: str, key: str):
         """Remove an attribute from a specified group or dataset in the DataContainer.
@@ -131,7 +131,7 @@ class AttributeOps(BaseOps):
         Args:
             path (str): The path to the group or dataset.
             key (str): The key of the attribute.
-            value (str | int | float | list | tuple | dict | UnitInfo): The new value of the attribute.
+            value (str | int | float | list | tuple | dict | Unit): The new value of the attribute.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -144,7 +144,7 @@ class AttributeOps(BaseOps):
 
         Args:
             path (str): The path to the group or dataset.
-            **attributes (Dict[str, str | int | float | list | tuple | dict | UnitInfo]): The new attributes.
+            **attributes (Dict[str, str | int | float | list | tuple | dict | Unit]): The new attributes.
 
         Raises:
             KeyError: If the group or dataset does not exist.
@@ -157,7 +157,7 @@ class AttributeOps(BaseOps):
 
         Args:
             path (str): The path to the dataset.
-            unit (UnitInfo): The new unit information.
+            unit (Unit): The new unit to be set.
 
         Raises:
             KeyError: If the group or dataset does not exist.

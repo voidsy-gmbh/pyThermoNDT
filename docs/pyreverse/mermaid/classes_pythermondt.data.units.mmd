@@ -3,25 +3,6 @@ classDiagram
     name : str
     quantity : str
     symbol : str
+    to_dict() dict
   }
   style Unit fill:#77AADD
-  class Units {
-    arbitrary
-    celsius
-    dimensionless
-    hertz
-    kelvin
-    millisecond
-    second
-    undefined
-    print_available_units()
-  }
-  style Units fill:#77AADD
-  Unit --* Units : dimensionless
-  Unit --* Units : arbitrary
-  Unit --* Units : undefined
-  Unit --* Units : kelvin
-  Unit --* Units : celsius
-  Unit --* Units : second
-  Unit --* Units : millisecond
-  Unit --* Units : hertz

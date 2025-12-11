@@ -31,7 +31,7 @@ def print_available_units() -> None:
 # Units definitions
 # Special units
 dimensionless = Unit(name="dimensionless", quantity="dimensionless", symbol="1")
-# arbitrary: Special unit for data that is not really dimensionaless but has not been processed yet
+# arbitrary: Special unit for data that is not really dimensionless but has not been processed yet
 # (e.g. temp without LUT applied)
 arbitrary = Unit(name="arbitrary", quantity="arbitrary", symbol="a. u.")
 # undefined: Return value for datasets without a unit defined

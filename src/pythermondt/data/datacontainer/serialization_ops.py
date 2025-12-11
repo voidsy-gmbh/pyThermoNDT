@@ -1,5 +1,6 @@
 import json
 from collections.abc import ItemsView
+from dataclasses import fields
 from io import BytesIO
 from typing import Any, Literal, TypeAlias
 
@@ -193,7 +194,7 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
 
                     # Use the JSON-decoded value only if it successfully decodes to a list or dictionary
                     if isinstance(value_decoded, (list, dict)):
-                        if isinstance(value_decoded, dict) and value_decoded.keys() == Unit.__annotations__.keys():
+                        if isinstance(value_decoded, dict) and value_decoded.keys() == {f.name for f in fields(Unit)}:
                             # Convert dict to Unit instance
                             value = Unit(**value_decoded)
                         else:

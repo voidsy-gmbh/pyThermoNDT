@@ -47,9 +47,6 @@ classDiagram
   class units {
   }
   style units fill:#99DDFF
-  class _unit {
-  }
-  style _unit fill:#99DDFF
   class units {
   }
   style units fill:#99DDFF
@@ -162,7 +159,6 @@ classDiagram
   pythermondt --> writers
   data --> datacontainer
   data --> thermo_container
-  data --> units
   datacontainer --> core
   datacontainer --> node
   attribute_ops --> base
@@ -193,12 +189,8 @@ classDiagram
   visualization_ops --> dataset_ops
   visualization_ops --> group_ops
   thermo_container --> datacontainer
-  thermo_container --> units
-  units --> _unit
   units --> units
   units --> utils
-  units --> _unit
-  utils --> _unit
   utils --> units
   dataset --> indexed_thermo_dataset
   dataset --> thermo_dataset

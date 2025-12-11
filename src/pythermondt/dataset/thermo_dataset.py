@@ -119,6 +119,20 @@ class ThermoDataset(BaseDataset):
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
 
+    def download(self, num_workers: int | None = None) -> None:
+        """Download all files from all readers that support downloading.
+
+        This will call download() on each reader that has a remote source.
+
+        Args:
+            num_workers (int, optional): Number of workers for parallel downloads.
+                Passed to each reader's download() method. If None, uses the
+                global configuration from settings.
+        """
+        for reader in self.__readers:
+            if reader.remote_source:
+                reader.download(num_workers=num_workers)
+
     def load_raw_data(self, idx: int) -> DataContainer:
         """Load raw data from readers - required by BaseDataset."""
         # Validate index first

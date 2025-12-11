@@ -13,7 +13,7 @@ jobs:
     steps:
       # Step 1: Checkout code with full history
       - name: Checkout code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0  # Required for tags history
           ssh-key: ${{ secrets.WRITE_KEY }}

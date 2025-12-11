@@ -54,7 +54,7 @@ jobs:
       # Step 1.1: Checkout repository (workflow_call) (see https://dev.to/koseimori/conditional-branching-with-workflowdispatch-and-workflowcall-in-github-actions-oik)
       - name: Checkout repository
         if: github.event.workflow != '.github/workflows/bump_version.yml'
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0  # Required for tags history
           ssh-key: ${{ secrets.WRITE_KEY }} # TODO: Replace with GitHub App: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560
@@ -63,7 +63,7 @@ jobs:
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout repository
         if: github.event.workflow == '.github/workflows/bump_version.yml'
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0  # Required for tags history
           ssh-key: ${{ secrets.WRITE_KEY }} # TODO: Replace with GitHub App: https://github.com/orgs/community/discussions/25305#discussioncomment-8256560

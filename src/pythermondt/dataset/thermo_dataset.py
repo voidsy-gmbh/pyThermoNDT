@@ -6,7 +6,7 @@ import torch
 from ..data import DataContainer
 from ..readers.base_reader import BaseReader
 from ..transforms.utils import _BaseTransform
-from .base import BaseDataset
+from .base_dataset import BaseDataset
 
 
 class ThermoDataset(BaseDataset):

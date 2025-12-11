@@ -2,7 +2,7 @@ from collections.abc import Iterator, Sequence
 
 from ..data import DataContainer
 from ..transforms.base import _BaseTransform
-from .base import BaseDataset
+from .base_dataset import BaseDataset
 
 
 class IndexedThermoDataset(BaseDataset):

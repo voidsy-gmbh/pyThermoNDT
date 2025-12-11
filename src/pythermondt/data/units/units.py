@@ -1,3 +1,4 @@
+import sys
 from dataclasses import asdict, dataclass
 
 
@@ -20,8 +21,6 @@ class Unit:
 
 def print_available_units() -> None:
     """Print all available units."""
-    import sys
-
     module = sys.modules[__name__]
     for name in dir(module):
         if isinstance(obj := getattr(module, name), Unit):

@@ -12,6 +12,7 @@ from pythermondt.data.units.units import (
     second,
     undefined,
 )
+from pythermondt.data.units.utils import generate_label
 
 
 def test_unit_creation():
@@ -120,3 +121,41 @@ def test_print_available_units_no_error(capsys):
     assert str(second) in output
     assert str(millisecond) in output
     assert str(hertz) in output
+
+
+def test_generate_label_dimensionless():
+    """Test generate_label for dimensionless unit."""
+    assert generate_label(dimensionless) == "dimensionless"
+
+
+def test_generate_label_arbitrary():
+    """Test generate_label for arbitrary unit."""
+    assert generate_label(arbitrary) == "arbitrary"
+
+
+def test_generate_label_undefined():
+    """Test generate_label for undefined unit."""
+    assert generate_label(undefined) == ""
+
+
+def test_generate_label_temperature_units():
+    """Test generate_label for temperature units."""
+    assert generate_label(kelvin) == "temperature in K"
+    assert generate_label(celsius) == "temperature in °C"
+
+
+def test_generate_label_time_units():
+    """Test generate_label for time units."""
+    assert generate_label(second) == "time in s"
+    assert generate_label(millisecond) == "time in ms"
+
+
+def test_generate_label_frequency_units():
+    """Test generate_label for frequency units."""
+    assert generate_label(hertz) == "frequency in Hz"
+
+
+def test_generate_label_custom_unit():
+    """Test generate_label for a custom unit."""
+    custom_unit = Unit(name="custom", quantity="custom_quantity", symbol="C")
+    assert generate_label(custom_unit) == "custom_quantity in C"

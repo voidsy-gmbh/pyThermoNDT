@@ -20,7 +20,7 @@ jobs:
 
       # Step 2: Setup uv
       - name: Setup uv
-        uses: astral-sh/setup-uv@v7.1.5
+        uses: astral-sh/setup-uv@v7.1.6
         with:
           version-file: requirements_dev.txt
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}

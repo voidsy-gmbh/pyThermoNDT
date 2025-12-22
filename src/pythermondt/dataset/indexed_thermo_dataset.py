@@ -33,7 +33,7 @@ class IndexedThermoDataset(BaseDataset):
             raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset) - 1}]")
 
         # Store parent dataset and indices
-        self.__parent_dataset = dataset
+        self.__parent_dataset = dataset  # Parent dataset to avoid type issues with BaseDataset.parent
         self.__indices = indices  # Indices for subset
 
     def __len__(self) -> int:

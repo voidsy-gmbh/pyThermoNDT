@@ -32,7 +32,7 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
     sim_result = {
         "Tdata": np.zeros((10, 10, 5)),
         "Time": np.linspace(0, 1, 5),
-        "GroundTruth": dict(DefectMask=np.zeros((10, 10)), LabelIds=json.dumps({"label1": 1, "label2": 2})),
+        "GroundTruth": {"DefectMask": np.zeros((10, 10)), "LabelIds": json.dumps({"label1": 1, "label2": 2})},
         "LookUpTable": np.linspace(0, 100, 100),
         "ExcitationSignal": np.ones(5),
     }

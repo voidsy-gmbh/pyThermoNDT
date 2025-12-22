@@ -41,7 +41,7 @@ def discover_test_cases(base_dir: Path) -> list[IntegrationTestCase]:
             continue
 
         test_type = test_type_dir.name
-        source_files = sorted(list(test_type_dir.glob("source*.*")))
+        source_files = sorted(test_type_dir.glob("source*.*"))
 
         if not source_files:
             continue

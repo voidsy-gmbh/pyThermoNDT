@@ -25,15 +25,15 @@ class IndexedThermoDataset(BaseDataset):
         Raises:
             IndexError: If any of the provided indices are out of range
         """
+        # Initialize base with dataset as parent and given transform
+        super().__init__(parent=dataset, transform=transform)
+
         # Validate the indices
         if not all(0 <= i < len(dataset) for i in indices):
             raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset) - 1}]")
 
-        # Initialize base with dataset as parent and given transform
-        super().__init__(parent=dataset, transform=transform)
-
         # Store parent dataset and indices
-        self.__parent_dataset = dataset
+        self.__parent_dataset = dataset  # Parent dataset to avoid type issues with BaseDataset.parent
         self.__indices = indices  # Indices for subset
 
     def __len__(self) -> int:

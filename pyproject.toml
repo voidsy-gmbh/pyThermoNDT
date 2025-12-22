@@ -123,6 +123,7 @@ select = [
     "UP", # pyupdate
     "D", # pydocstyle
     "C4", # flake8-comprehensions
+    "FURB", # refurb
 ]
 fixable = ["ALL"]
 pydocstyle.convention = "google"

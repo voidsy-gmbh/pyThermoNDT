@@ -122,6 +122,7 @@ select = [
     "N", # pep8-naming
     "UP", # pyupdate
     "D", # pydocstyle
+    "C4", # flake8-comprehensions
 ]
 fixable = ["ALL"]
 pydocstyle.convention = "google"

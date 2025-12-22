@@ -63,7 +63,7 @@ dev = [
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
     "pytest-benchmark==5.2.3",
-    "ruff==0.14.9",
+    "ruff==0.14.10",
     "pre-commit==4.5.1",
     "bump-my-version==1.2.4",
     "deepdiff==8.6.1",
@@ -122,6 +122,9 @@ select = [
     "N", # pep8-naming
     "UP", # pyupdate
     "D", # pydocstyle
+    "C4", # flake8-comprehensions
+    "FURB", # refurb
+    "A", # flake8-builtins
 ]
 fixable = ["ALL"]
 pydocstyle.convention = "google"

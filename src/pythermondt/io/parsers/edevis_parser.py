@@ -106,7 +106,7 @@ class EdevisParser(BaseParser):
                 sequences = {int(seq.attrib.get("id", -1)): seq for seq in content.findall("Sequence")}
 
                 # TODO: For now only the first sequence is processed ==> Extend to support multiple sequences in future
-                sequences = {id: seq for id, seq in sequences.items() if id == 0}
+                sequences = {seq_id: seq for seq_id, seq in sequences.items() if seq_id == 0}
 
                 if len(sequences) == 0:
                     raise ValueError("File seems corrupted! No Sequence node found.")

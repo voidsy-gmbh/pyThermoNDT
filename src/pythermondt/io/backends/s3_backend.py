@@ -184,8 +184,7 @@ class S3Backend(BaseBackend):
         # Assume path is relative to bucket/prefix
         if self.__prefix:
             # Ensure we don't have double slashes
-            if path.startswith("/"):
-                path = path[1:]
+            path = path.removeprefix("/")
             return self.__bucket, f"{self.__prefix}/{path}"
 
         return self.__bucket, path

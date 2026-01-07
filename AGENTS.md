@@ -1,133 +1,186 @@
-# PyThermoNDT Agents
+# PyThermoNDT Agent Instructions
 
-Hello agent. You are one of the most talented programmers of your generation.
-
-You are looking forward to putting those talents to use to improve PyThermoNDT.
+Hello agent. You are one of the most talented programmers of your generation, ready to improve PyThermoNDT - a PyTorch-compatible package for thermographic Non-Destructive Testing (NDT) data processing.
 
 ## Philosophy
 
-PyThermoNDT is a PyTorch-compatible package focused on elegant thermal data processing while maintaining scientific rigor and performance.
+- **Clarity over Complexity**: Every transform must earn its place in the pipeline
+- **Scientific Rigor**: Maintain physical accuracy in thermal data processing
+- **PyTorch Compatible**: Seamless integration with PyTorch workflows
+- **Never mix functionality and whitespace changes** - separate commits
+- **All functionality changes must include tests**
 
-Every transform must earn its place in the pipeline. Prefer clarity over complexity. We believe that well-designed, composable components can handle the full spectrum of thermographic NDT workflows.
+## Architecture
 
-Never mix functionality changes with whitespace changes. All functionality changes must be tested using the existing test infrastructure under `tests/`.
-
-## Style
-
-Follow the project's Ruff configuration with 120-character line limits. Match the existing PyTorch Module patterns and maintain consistency with the thermal data domain conventions.
-
-## Project Overview
-PyThermoNDT is a PyTorch-compatible Python package for thermographic data processing in Non-Destructive Testing (NDT). The architecture follows a modular pipeline pattern: **Readers** → **DataContainers** → **Transforms** → **Datasets** → **PyTorch DataLoaders**.
-
-## Core Architecture
-
-### Data Flow Pipeline
-1. **Readers** (`src/pythermondt/readers/`) - Load data from sources (local files, S3)
-2. **DataContainers** (`src/pythermondt/data/`) - Hierarchical data structure (HDF5-like)
-3. **Transforms** (`src/pythermondt/transforms/`) - Processing pipeline (PyTorch nn.Module based)
-4. **Datasets** (`src/pythermondt/dataset/`) - PyTorch Dataset interface
-
-### Key Components
-
-#### DataContainer Structure
-All data uses the standardized ThermoContainer hierarchy:
 ```
-/Data/Tdata               # Raw thermal data (H×W×T)
-/GroundTruth/DefectMask   # Binary defect masks
-/MetaData/LookUpTable     # Temperature conversion
-/MetaData/DomainValues    # Time values
-/MetaData/ExcitationSignal # Heating pattern
+Readers → DataContainers → Transforms → Datasets → PyTorch DataLoaders
 ```
 
-#### Transform System
-- All transforms inherit from `ThermoTransform` (deterministic) or `RandomThermoTransform` (stochastic)
-- Use `__init__` parameters for configuration, store as instance attributes
-- Implement `forward(container: DataContainer) -> DataContainer`
-- Follow PyTorch Module patterns for `extra_repr()` and parameter handling
+**Tech Stack**: Python 3.10-3.14, PyTorch ≥2.0, NumPy, h5py, boto3 (S3), pytest, ruff, mypy
 
-#### Reader/Backend Separation
-- **Readers** handle file discovery and caching logic
-- **Backends** handle I/O operations (LocalBackend, S3Backend)
-- **Parsers** convert file formats to DataContainers (HDF5Parser, SimulationParser)
+### DataContainer Structure (Standard Paths)
 
-## Development Patterns
+```
+/Data/Tdata                    # Thermal data (H×W×T)
+/GroundTruth/DefectMask        # Defect masks (H×W)
+/MetaData/LookUpTable          # Temperature conversion (Uint16→Float64)
+/MetaData/DomainValues         # Time values (T,)
+/MetaData/ExcitationSignal     # Heating pattern
+```
 
-### Transform Implementation
+**Access Pattern**:
 ```python
-class MyTransform(ThermoTransform):
+# Get datasets (efficient for multiple)
+tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
+
+# Update datasets
+container.update_datasets(
+    ("/Data/Tdata", processed_tdata),
+    ("/MetaData/DomainValues", new_domain_values)
+)
+```
+
+### Transform Pattern
+
+```python
+class MyTransform(ThermoTransform):  # or RandomThermoTransform for stochastic
     def __init__(self, param: int):
         super().__init__()
         self.param = param
 
     def forward(self, container: DataContainer) -> DataContainer:
-        # Extract datasets
-        tdata, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues")
+        tdata = container.get_dataset("/Data/Tdata")
 
-        # Process data
-        processed_tdata = self._process(tdata)
+        # Validate early
+        if tdata.ndim != 3:
+            raise ValueError(f"Expected 3D tensor (H×W×T), got {tdata.shape}")
 
-        # Update container
-        container.update_datasets(("/Data/Tdata", processed_tdata))
+        # Process (use tensor ops, not loops)
+        processed = self._process(tdata)
+
+        container.update_dataset("/Data/Tdata", processed)
         return container
+
+    def extra_repr(self) -> str:
+        return f"param={self.param}"
 ```
 
-### Testing Strategy
-- Use fixtures from `tests/conftest.py` for common test data
-- Test files follow module structure: `tests/transforms/test_sampling.py`
-- Integration tests in `tests/integration/` for end-to-end workflows
-- Use `pytest.mark.parametrize` for multiple input scenarios
+## Code Conventions
 
-### Configuration
-- Global settings in `pythermondt.config.settings` (uses pydantic-settings)
-- Environment variables prefixed with `PYTHERMONDT_`
-- Download directory and worker count configurable
+**Ruff** (line length: 120, Google docstrings, double quotes):
+```python
+def method(self, param: int, optional: str | None = None) -> DataContainer:
+    """Short summary ending with period.
 
-## Common Workflows
+    Args:
+        param (int): Description.
+        optional (str, optional): Description. Defaults to None.
 
-### Development Setup
-```bash
-uv venv && uv pip install -e . && uv pip install -r requirements_dev.txt
-pre-commit install  # Essential for code quality
+    Returns:
+        DataContainer: Description.
+
+    Raises:
+        ValueError: When param is invalid.
+    """
 ```
 
-### Running Tests
+**Type Hints** (modern Python 3.10+):
+```python
+def process(data: list[int]) -> dict[str, float] | None:  # Not List, Optional
+    pass
+```
+
+**Naming**:
+- Classes: `PascalCase`
+- Functions/methods: `snake_case`
+- Private: `__double_underscore`
+
+**Errors** (descriptive with context):
+```python
+raise ValueError(f"Frame {idx} out of range [0, {total_frames})")
+```
+
+## Testing
+
+**Test organization**:
+- Tests organized by domain: `tests/{data,dataset,io,integration}/test_*.py`
+- Use fixtures from `tests/conftest.py`
+
+**Pattern**:
+```python
+@pytest.mark.parametrize("num_frames,expected", [(10, (96,96,10)), (32, (96,96,32))])
+def test_feature(sample_container, num_frames, expected):
+    # Test implementation
+    assert result.shape == expected
+```
+
+**Common commands**:
 ```bash
 pytest tests/                    # All tests
-pytest tests/transforms/         # Transform tests only
-pytest -k "test_sampling"        # Specific test pattern
+pytest -k "test_name"           # Pattern match
+pytest --benchmark-skip         # Skip benchmarks (faster)
+ruff check --fix .              # Lint and fix
+mypy src/pythermondt            # Type check
+pre-commit run --all-files      # All quality checks
 ```
 
-### Code Quality
-- Pre-commit hooks run Ruff (linting/formatting), type checking, security checks
-- Configuration in `pyproject.toml` with strict settings
-- Use `ruff check --fix` for manual formatting
+## Critical Details
 
-## Critical Implementation Details
+### Temporal Consistency
+When selecting frames, **always update temporal metadata together**:
+```python
+# Select frames
+new_tdata = tdata[..., indices]
+new_domain_values = domain_values[indices] - domain_values[indices[0]]  # Zero-base!
 
-### Time Domain Handling
-- Always check `container.get_unit("/MetaData/DomainValues")["quantity"] == "time"` for temporal operations
-- Frame selection must adjust domain values: `domain_values - domain_values[0]`
-- Maintain temporal consistency across Tdata, DomainValues, and ExcitationSignal
+# Update together
+container.update_datasets(
+    ("/Data/Tdata", new_tdata),
+    ("/MetaData/DomainValues", new_domain_values)
+)
+```
 
 ### Unit Management
-- Use `Units` enum from `pythermondt.data.units`
-- Transforms must preserve or update units appropriately
-- LUT application changes Tdata units from `arbitrary` to `kelvin`
+```python
+from pythermondt.data.units import Units
 
-### Error Handling Patterns
-- Validate tensor dimensions before operations
-- Check frame indices bounds: `idx < 0 or idx >= tdata.shape[-1]`
-- Raise `ValueError` with descriptive messages for user errors
+# Update units when transformation changes physical meaning
+container.set_unit("/Data/Tdata", Units.KELVIN)  # After ApplyLUT: arbitrary→kelvin
+```
 
-### Performance Considerations
-- Use tensor operations over loops for frame processing
-- Leverage `settings.num_workers` for parallel operations
-- Consider memory usage for large thermal sequences (H×W×T tensors)
+### Performance
+- Use tensor operations over loops: `processed = tdata * scale` not `for i in range(...)`
+- Validate dimensions early: `if tdata.ndim != 3: raise ValueError(...)`
+- Leverage `settings.num_workers` for parallelism
 
-## Integration Points
-- **PyTorch**: Transforms are `nn.Module`, datasets follow `torch.utils.data.Dataset`
-- **AWS S3**: S3Reader with boto3, supports download caching
-- **HDF5**: Primary data format, hierarchical structure matches DataContainer
-- **Jupyter**: Interactive analysis methods like `container.analyse_interactive()`
+## Key Locations
 
-When implementing new features, follow the existing modular patterns and ensure compatibility with the PyTorch ecosystem.
+**Transforms**: `src/pythermondt/transforms/{base,preprocessing,sampling,normalization,augmentation}.py`
+**Readers**: `src/pythermondt/readers/{local_reader,s3_reader}.py`
+**Tests**: `tests/conftest.py` (fixtures), `tests/{data,dataset,io,integration}/test_*.py`
+**Config**: `pyproject.toml`, `src/pythermondt/config.py`
+
+## Development Workflow
+
+```bash
+# Setup
+uv venv && uv pip install -e . && uv pip install -r requirements_dev.txt && pre-commit install
+
+# Quality checks (run before commit)
+ruff check --fix . && ruff format . && mypy src/pythermondt && pytest tests/
+```
+
+## Essential Rules
+
+1. Never mix functionality and whitespace changes
+2. All functionality changes must include tests
+3. Run pre-commit hooks before committing
+4. Validate tensor dimensions early with clear errors
+5. Maintain temporal consistency (Tdata, DomainValues, ExcitationSignal)
+6. Update units when physical meaning changes
+7. Use tensor operations over loops
+8. Follow PyTorch Module patterns (inherit from ThermoTransform/RandomThermoTransform)
+
+Your contributions should feel native to the codebase. Follow patterns, maintain consistency, prioritize clarity and correctness.
+
+Welcome aboard!

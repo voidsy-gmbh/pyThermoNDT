@@ -64,10 +64,9 @@ Edit(file.py) → Bash(pytest tests/)
 ### Adding a Transform
 
 1. **Explore**: `Task(Explore, "Find similar transforms like UniformSampling")`
-2. **Read**: Base class + similar transform + tests
+2. **Read**: Base class + similar transform
 3. **Implement**: Follow pattern from AGENTS.md
-4. **Test**: Create `tests/transforms/test_my_transform.py`
-5. **Verify**: `pytest tests/transforms/test_my_transform.py && ruff check --fix .`
+4. **Verify**: `pytest tests/ && ruff check --fix .`
 
 ### Fixing a Bug
 
@@ -146,21 +145,24 @@ container.set_unit("/Data/Tdata", Units.KELVIN)
 ```
 src/pythermondt/
 ├── transforms/
-│   ├── transform.py           # Base classes
-│   ├── preprocessing.py       # ApplyLUT, RemoveFlash
+│   ├── base.py                # Base classes
+│   ├── preprocessing.py       # ApplyLUT, RemoveFlash, CropFrames
 │   ├── sampling.py            # Frame sampling
-│   ├── spatial.py             # Cropping, resizing
-│   └── normalization.py       # MinMax, Z-score
+│   ├── normalization.py       # MinMax, Z-score
+│   └── augmentation.py        # Data augmentation
 ├── readers/
 │   ├── local_reader.py
 │   └── s3_reader.py
 ├── data/datacontainer/
 │   └── datacontainer.py       # Core container
-└── config/settings.py
+└── config.py
 
 tests/
 ├── conftest.py                # Global fixtures
-└── {module}/test_*.py         # Mirror src structure
+├── integration/               # Integration tests
+├── data/                      # Data module tests
+├── dataset/                   # Dataset tests
+└── io/                        # I/O tests (backends, parsers)
 ```
 
 ## When to Use EnterPlanMode

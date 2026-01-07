@@ -102,18 +102,16 @@ raise ValueError(f"Frame {idx} out of range [0, {total_frames})")
 
 ## Testing
 
-**Mirror source structure**:
-```
-src/pythermondt/transforms/sampling.py
-tests/transforms/test_sampling.py
-```
+**Test organization**:
+- Tests organized by domain: `tests/{data,dataset,io,integration}/test_*.py`
+- Use fixtures from `tests/conftest.py`
 
 **Pattern**:
 ```python
 @pytest.mark.parametrize("num_frames,expected", [(10, (96,96,10)), (32, (96,96,32))])
-def test_uniform_sampling(sample_container, num_frames, expected):
-    result = UniformSampling(num_frames)(sample_container)
-    assert result.get_dataset("/Data/Tdata").shape == expected
+def test_feature(sample_container, num_frames, expected):
+    # Test implementation
+    assert result.shape == expected
 ```
 
 **Common commands**:
@@ -157,10 +155,10 @@ container.set_unit("/Data/Tdata", Units.KELVIN)  # After ApplyLUT: arbitrary→k
 
 ## Key Locations
 
-**Transforms**: `src/pythermondt/transforms/{preprocessing,sampling,spatial,normalization}.py`
+**Transforms**: `src/pythermondt/transforms/{base,preprocessing,sampling,normalization,augmentation}.py`
 **Readers**: `src/pythermondt/readers/{local_reader,s3_reader}.py`
-**Tests**: `tests/conftest.py` (fixtures), `tests/{module}/test_*.py`
-**Config**: `pyproject.toml`, `src/pythermondt/config/settings.py`
+**Tests**: `tests/conftest.py` (fixtures), `tests/{data,dataset,io,integration}/test_*.py`
+**Config**: `pyproject.toml`, `src/pythermondt/config.py`
 
 ## Development Workflow
 

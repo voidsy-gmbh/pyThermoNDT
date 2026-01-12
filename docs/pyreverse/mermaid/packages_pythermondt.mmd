@@ -56,9 +56,9 @@ classDiagram
   class dataset {
   }
   style dataset fill:#44BB99
-  class base {
+  class base_dataset {
   }
-  style base fill:#44BB99
+  style base_dataset fill:#44BB99
   class indexed_thermo_dataset {
   }
   style indexed_thermo_dataset fill:#44BB99
@@ -125,6 +125,9 @@ classDiagram
   class base {
   }
   style base fill:#EEDD88
+  class frequency {
+  }
+  style frequency fill:#EEDD88
   class normalization {
   }
   style normalization fill:#EEDD88
@@ -195,8 +198,8 @@ classDiagram
   dataset --> indexed_thermo_dataset
   dataset --> thermo_dataset
   dataset --> utils
-  indexed_thermo_dataset --> base
-  thermo_dataset --> base
+  indexed_thermo_dataset --> base_dataset
+  thermo_dataset --> base_dataset
   utils --> indexed_thermo_dataset
   utils --> thermo_dataset
   io --> backends
@@ -222,11 +225,13 @@ classDiagram
   s3_reader --> base_reader
   transforms --> augmentation
   transforms --> base
+  transforms --> frequency
   transforms --> normalization
   transforms --> preprocessing
   transforms --> sampling
   transforms --> utils
   augmentation --> base
+  frequency --> base
   normalization --> base
   preprocessing --> base
   sampling --> base

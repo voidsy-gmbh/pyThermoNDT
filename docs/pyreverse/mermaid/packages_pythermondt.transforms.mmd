@@ -8,6 +8,9 @@ classDiagram
   class base {
   }
   style base fill:#77AADD
+  class frequency {
+  }
+  style frequency fill:#77AADD
   class normalization {
   }
   style normalization fill:#77AADD
@@ -22,11 +25,13 @@ classDiagram
   style utils fill:#77AADD
   transforms --> augmentation
   transforms --> base
+  transforms --> frequency
   transforms --> normalization
   transforms --> preprocessing
   transforms --> sampling
   transforms --> utils
   augmentation --> base
+  frequency --> base
   normalization --> base
   preprocessing --> base
   sampling --> base

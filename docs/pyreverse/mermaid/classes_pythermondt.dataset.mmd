@@ -19,6 +19,7 @@ classDiagram
   style IndexedThermoDataset fill:#77AADD
   class ThermoDataset {
     files : list[str]
+    download(num_workers: int | None) None
     load_raw_data(idx: int) DataContainer
   }
   style ThermoDataset fill:#77AADD

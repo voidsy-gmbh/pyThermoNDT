@@ -34,6 +34,9 @@ class PulsePhaseThermography(ThermoTransform):
         if container.get_unit("/MetaData/DomainValues").quantity != "time":
             raise ValueError("PulsePhaseThermography requires time-domain data")
 
+        if domain_values.numel() < 2:
+            raise ValueError("PulsePhaseThermography requires at least two time points to compute frequency spacing")
+
         # Compute FFT along time axis (dim=-1)
         # Use rfft to only get positive frequencies below the Nyquist limit
         fft_result = torch.fft.rfft(tdata, dim=-1)  # pylint: disable=not-callable

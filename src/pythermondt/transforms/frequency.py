@@ -14,6 +14,11 @@ class PulsePhaseThermography(ThermoTransform):
     Applies FFT to temperature data and stores complex-valued frequency components
     at specified frequencies. The complex representation preserves both amplitude
     and phase information, which can be extracted as needed for analysis.
+
+    The time-domain data at **/Data/Tdata** is replaced with complex frequency components,
+    and **/MetaData/DomainValues** is updated from time (seconds) to frequency (hertz).
+    Any existing **/MetaData/ExcitationSignal** is removed as it has no meaning in the
+    frequency domain.
     """
 
     def __init__(self, freq_indices: Sequence[int] | None = None):
@@ -63,6 +68,11 @@ class PulsePhaseThermography(ThermoTransform):
         container.update_dataset("/Data/Tdata", fft_result)  # Unit stays the same
         container.update_dataset("/MetaData/DomainValues", freqs)
         container.update_unit("/MetaData/DomainValues", hertz)  # Unit is now frequency (hertz)
+        # TODO: Refactor once public API of DataContainer is improved
+        if container._is_datanode("/MetaData/ExcitationSignal"):
+            container.remove_dataset(
+                "/MetaData/ExcitationSignal"
+            )  # ExcitationSignal is meaningless in frequency domain
         return container
 
 

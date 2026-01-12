@@ -21,6 +21,10 @@ on:
         required: false
         default: false
         type: boolean
+    secrets:
+      WRITE_KEY:
+        description: 'SSH key for git operations'
+        required: true
 
 jobs:
   generate-diagrams:
@@ -33,7 +37,7 @@ jobs:
     steps:
       # Step 1.1: Checkout repository (workflow_call)
       - name: Checkout code
-        if: github.event_name == 'workflow_call'
+        if: github.event.workflow != '.github/workflows/generate_diagrams.yml'
         uses: actions/checkout@v6.0.1
         with:
           ref: ${{ inputs.ref }}
@@ -41,7 +45,7 @@ jobs:
 
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout code
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event.workflow == '.github/workflows/generate_diagrams.yml'
         uses: actions/checkout@v6.0.1
         with:
           ssh-key: ${{ secrets.WRITE_KEY }}

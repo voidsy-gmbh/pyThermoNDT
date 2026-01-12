@@ -59,3 +59,5 @@ jobs:
     with:
       ref: release/${{ needs.bump-version.outputs.version }}
       force_regenerate: false
+    secrets:
+      WRITE_KEY: ${{ secrets.WRITE_KEY }}

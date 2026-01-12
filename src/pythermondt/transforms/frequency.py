@@ -70,7 +70,10 @@ class ExtractAmplitude(ThermoTransform):
         tdata = container.get_dataset("/Data/Tdata")
 
         if not torch.is_complex(tdata):
-            raise ValueError("Data must be complex (FFT result). Please apply PulsePhaseThermography first.")
+            raise ValueError(
+                "Data must be complex (FFT result). Apply PulsePhaseThermography transform first to "
+                "convert time-domain data to frequency domain."
+            )
 
         # Extract amplitude
         amplitude = torch.abs(tdata)
@@ -125,7 +128,10 @@ class ExtractPhase(ThermoTransform):
         tdata = container.get_dataset("/Data/Tdata")
 
         if not torch.is_complex(tdata):
-            raise ValueError("Data must be complex (FFT result). Please apply PulsePhaseThermography first.")
+            raise ValueError(
+                "Data must be complex (FFT result). Apply PulsePhaseThermography transform first to "
+                "convert time-domain data to frequency domain."
+            )
 
         # Extract phase and unwrap
         phase = torch.angle(tdata)

@@ -21,6 +21,10 @@ on:
         required: false
         default: false
         type: boolean
+    secrets:
+      WRITE_KEY:
+        description: 'SSH key for git operations'
+        required: true
 
 jobs:
   generate-diagrams:

@@ -29,6 +29,15 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style CropFrames fill:#77AADD
+  class ExtractAmplitude {
+    forward(container: DataContainer) DataContainer
+  }
+  style ExtractAmplitude fill:#77AADD
+  class ExtractPhase {
+    unwrap : bool
+    forward(container: DataContainer) DataContainer
+  }
+  style ExtractPhase fill:#77AADD
   class GaussianNoise {
     mean : float
     std : float
@@ -53,6 +62,11 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style NonUniformSampling fill:#77AADD
+  class PulsePhaseThermography {
+    freq_indices : NoneType, list
+    forward(container: DataContainer) DataContainer
+  }
+  style PulsePhaseThermography fill:#77AADD
   class RandomFlip {
     p_height : float
     p_width : float
@@ -105,6 +119,9 @@ classDiagram
   RandomFlip --|> RandomThermoTransform
   RandomThermoTransform --|> _BaseTransform
   ThermoTransform --|> _BaseTransform
+  ExtractAmplitude --|> ThermoTransform
+  ExtractPhase --|> ThermoTransform
+  PulsePhaseThermography --|> ThermoTransform
   MaxNormalize --|> ThermoTransform
   MinMaxNormalize --|> ThermoTransform
   ZScoreNormalize --|> ThermoTransform

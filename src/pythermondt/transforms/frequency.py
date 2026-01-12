@@ -69,7 +69,7 @@ class PulsePhaseThermography(ThermoTransform):
         container.update_dataset("/MetaData/DomainValues", freqs)
         container.update_unit("/MetaData/DomainValues", hertz)  # Unit is now frequency (hertz)
         # TODO: Refactor once public API of DataContainer is improved
-        if container._is_datanode("/MetaData/ExcitationSignal"):
+        if container._is_datanode("/MetaData/ExcitationSignal"):  # pylint: disable=protected-access
             container.remove_dataset(
                 "/MetaData/ExcitationSignal"
             )  # ExcitationSignal is meaningless in frequency domain

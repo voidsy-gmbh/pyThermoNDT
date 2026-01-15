@@ -1,3 +1,6 @@
+[run]
+source = src/pythermondt
+
 [paths]
 source =
    src/pythermondt

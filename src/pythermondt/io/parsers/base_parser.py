@@ -47,4 +47,4 @@ class BaseParser(Protocol):
         Returns:
             DataContainer: The parsed data as a DataContainer object.
         """
-        raise NotImplementedError("Subclasses must implement this method.")
+        raise NotImplementedError("Subclasses must implement this method")

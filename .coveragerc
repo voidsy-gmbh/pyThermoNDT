@@ -1,0 +1,18 @@
+[run]
+source = src/pythermondt
+
+[paths]
+source =
+   src/pythermondt
+
+[report]
+include =
+    src/*
+omit =
+    */test/*
+exclude_also =
+    # Type checking code not executed during pytest runs
+    @overload
+
+    # Abstract methods are not executed during pytest runs
+    raise NotImplementedError\("Subclasses must implement this method"\)

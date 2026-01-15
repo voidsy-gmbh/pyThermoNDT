@@ -55,7 +55,7 @@ jobs:
       # Step 4.1: Run tests with coverage on default python version
       - name: Run Tests
         if: matrix.python-version == vars.DEFAULT_PYTHON_VERSION
-        run: pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=pythermondt --ignore=tests/benchmark tests/ | tee pytest-coverage.txt
+        run: pytest --junitxml=pytest.xml --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml --cov=pythermondt --ignore=tests/benchmark tests/ | tee pytest-coverage.txt
 
       # Step 5: Create artifact for coverage data
       - name: Upload coverage data

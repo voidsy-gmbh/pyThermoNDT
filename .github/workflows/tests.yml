@@ -62,7 +62,7 @@ jobs:
         if: matrix.python-version == vars.DEFAULT_PYTHON_VERSION
         uses: actions/upload-artifact@v6.0.0
         with:
-          name: coverage-data-${{ matrix.python-version }}
+          name: coverage-data-python-${{ matrix.python-version }}
           path: |
             coverage.xml
             pytest.xml

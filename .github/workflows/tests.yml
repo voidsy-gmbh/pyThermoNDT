@@ -45,7 +45,7 @@ jobs:
       - name: Sync dependencies
         run: |
           uv pip install -r ./requirements_dev.txt # Install dev dependencies
-          uv pip install . --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
+          uv pip install . -e --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
 
       # Step 4: Run tests without coverage
       - name: Run Tests

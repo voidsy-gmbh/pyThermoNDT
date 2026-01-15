@@ -19,13 +19,13 @@ class _BaseTransform(nn.Module, ABC):
 
         This method should contain the actual transformation logic.
         """
-        raise NotImplementedError("Forward method must be implemented in the sub-class.")
+        raise NotImplementedError("Subclasses must implement this method")
 
     @property
     @abstractmethod
     def is_random(self) -> bool:
         """Indicates whether the transform is random or deterministic."""
-        raise NotImplementedError("is_random property must be implemented in the sub-class.")
+        raise NotImplementedError("Subclasses must implement this method")
 
     def extra_repr(self) -> str:
         """Return extra representation of transform parameters.

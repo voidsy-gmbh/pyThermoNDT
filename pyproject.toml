@@ -61,7 +61,7 @@ dependencies = [
     # Azure
     "azure-storage-blob>=12.20",
     "azure-identity>=1.20",
-    "azure-identity-broker>=1.1.0",
+    "azure-identity-broker>=1.1.0; sys_platform == 'win32'", # Provide the broker only on Windows systems
 ]
 
 [dependency-groups]

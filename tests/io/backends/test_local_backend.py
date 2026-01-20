@@ -1,3 +1,5 @@
+"""Specific tests for the LocalBackend class."""
+
 import io
 import os
 from pathlib import Path
@@ -45,44 +47,6 @@ def test_init_nonexistent_pattern(pattern):
     backend = LocalBackend(pattern)
     assert backend.pattern == pattern
     assert len(backend.get_file_list()) == 0  # Should return empty list for non-existent path
-
-
-def test_read_file(tmp_path):
-    """Test reading a file returns IOPathWrapper."""
-    test_file = tmp_path / "test.txt"
-    test_content = "test content"
-    test_file.write_text(test_content)
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.read_file(str(test_file))
-
-    assert isinstance(result, IOPathWrapper)
-    assert result.file_obj.read().decode() == test_content
-
-
-def test_write_file(tmp_path):
-    """Test writing a file."""
-    backend = LocalBackend(str(tmp_path))
-    test_content = b"test content"
-    test_file = tmp_path / "output.txt"
-
-    wrapper = IOPathWrapper(io.BytesIO(test_content))
-    backend.write_file(wrapper, str(test_file))
-
-    assert test_file.exists()
-    assert test_file.read_bytes() == test_content
-
-
-@pytest.mark.parametrize("exists", [True, False])
-def test_exists(tmp_path, exists):
-    """Test exists method."""
-    backend = LocalBackend(str(tmp_path))
-    test_file = tmp_path / "test.txt"
-
-    if exists:
-        test_file.write_text("content")
-
-    assert backend.exists(str(test_file)) == exists
 
 
 def test_close_does_nothing(tmp_path):

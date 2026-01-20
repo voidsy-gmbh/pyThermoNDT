@@ -55,6 +55,21 @@ def backend(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None
     backend.close()
 
 
+def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_path):
+    file_path = tmp_path / name
+    # Prepare file based on backend type
+    if isinstance(backend_instance, LocalBackend):
+        file_path = tmp_path / name
+        file_path.write_bytes(content)
+        file_path = str(file_path)
+    # Else write using backend
+    else:
+        file_path = name
+        backend_instance.write_file(IOPathWrapper(content), file_path)
+
+    return file_path
+
+
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x)
 def test_file(request, backend, tmp_path):
     """Auto-create test files for the configured backend.
@@ -62,36 +77,13 @@ def test_file(request, backend, tmp_path):
     Returns dict mapping logical names to actual paths.
     """
     name, content = request.param
-    backend, _ = backend
-
-    if isinstance(backend, LocalBackend):
-        file_path = tmp_path / name
-        with open(file_path, "wb") as f:
-            f.write(content)
-        file_path = str(file_path)
-    # Else write using backend
-    else:
-        file_path = name
-        backend.write_file(IOPathWrapper(content), file_path)
-
+    backend_instance, _ = backend
+    file_path = _prepare_file(backend_instance, name, content, tmp_path)
     return file_path, content
 
 
 @pytest.fixture
 def test_files_all(backend, tmp_path):
     """All test files for bulk operations."""
-    backend_instance, config = backend
-    files = {}
-
-    for name, content in TEST_FILES.items():
-        if config.is_remote:
-            file_path = name
-            backend_instance.write_file(IOPathWrapper(content), file_path)
-        else:
-            file_path = tmp_path / name
-            file_path.write_bytes(content)
-            file_path = str(file_path)
-
-        files[name] = file_path
-
-    return files
+    backend_instance, _ = backend
+    return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in TEST_FILES.items()}

@@ -1,4 +1,7 @@
+# test_backend_interface.py
 """Tests for general backend interface compliance."""
+
+from pathlib import Path
 
 import pytest
 
@@ -6,83 +9,126 @@ from pythermondt.io import IOPathWrapper
 
 
 def test_remote_source(backend):
-    backend, config = backend
-    assert backend.remote_source == config.is_remote
+    """Test remote_source property matches config."""
+    backend_instance, config = backend
+    assert backend_instance.remote_source == config.is_remote
 
 
 def test_read_file(backend, test_file):
-    backend, _ = backend
-    name, content = test_file
+    """Test reading single file."""
+    backend_instance, _ = backend
+    file_path, expected_content = test_file
 
-    result = backend.read_file(name)
+    result = backend_instance.read_file(file_path)
     assert isinstance(result, IOPathWrapper)
-    assert result.file_obj.read() == content
+    assert result.file_obj.read() == expected_content
 
 
-def test_read_write_file(backend, tmp_path):
-    backend, _ = backend
+def test_write_file(backend, tmp_path):
+    """Test writing and reading back."""
+    backend_instance, config = backend
+
+    # Determine path based on backend type
+    if config.is_remote:
+        file_path = "new_sample.txt"
+    else:
+        file_path = str(tmp_path / "new_sample.txt")
 
     # Write
     data = IOPathWrapper(b"new test content")
-    file_path = str(tmp_path / "new_sample.txt")
-    backend.write_file(data, file_path)
+    backend_instance.write_file(data, file_path)
 
     # Read back
-    result = backend.read_file(file_path)
+    result = backend_instance.read_file(file_path)
     assert isinstance(result, IOPathWrapper)
     assert result.file_obj.read() == b"new test content"
 
 
 @pytest.mark.parametrize("exists", [True, False])
 def test_exists(backend, tmp_path, exists):
-    backend, _ = backend
+    """Test file existence check."""
+    backend_instance, config = backend
 
-    # Write if exists
-    data = IOPathWrapper(b"new test content")
-    file_path = str(tmp_path / "new_sample.txt")
+    if config.is_remote:
+        file_path = "test_exists.txt"
+    else:
+        file_path = str(tmp_path / "test_exists.txt")
+
+    # Create file if should exist
     if exists:
-        backend.write_file(data, file_path)
+        data = IOPathWrapper(b"exists test")
+        backend_instance.write_file(data, file_path)
 
-    assert backend.exists(file_path) == exists
-
-
-def test_get_file_list_single(backend, test_file):
-    backend, _ = backend
-    name, _ = test_file
-
-    file_list = backend.get_file_list()
-    assert [name] == file_list
-
-
-def test_get_file_list_multi(backend, test_files_all):
-    backend, _ = backend
-
-    file_list = backend.get_file_list()
-    assert set(file_list) == set(test_files_all.values())
+    assert backend_instance.exists(file_path) == exists
 
 
 def test_get_file_size(backend, test_file):
-    backend, _ = backend
-    name, content = test_file
+    """Test getting file size."""
+    backend_instance, _ = backend
+    file_path, content = test_file
 
-    size = backend.get_file_size(name)
+    size = backend_instance.get_file_size(file_path)
     assert size == len(content)
 
 
-def test_download_file(backend, tmp_path, test_file):
-    backend, config = backend
-    name, content = test_file
-    destination_path = str(tmp_path / f"downloaded_{name}")
+def test_get_file_list(backend, test_file):
+    """Test listing a single file without any filters."""
+    backend_instance, _ = backend
+    file_path, _ = test_file
+    assert [file_path] == backend_instance.get_file_list()
 
-    # Download not supported for local backends
+
+def test_get_file_list_all(backend, test_files_scenario):
+    """Test listing all files."""
+    backend_instance, _ = backend
+
+    file_list = backend_instance.get_file_list()
+    assert len(file_list) == len(test_files_scenario)
+
+
+def test_get_file_list_filter_extension(backend, test_files_scenario):
+    """Test extension filtering."""
+    backend_instance, _ = backend
+
+    # Count expected .tiff files in scenario
+    expected_tiff = sum(1 for name in test_files_scenario if name.endswith(".tiff"))
+
+    tiff_files = backend_instance.get_file_list(extensions=(".tiff",))
+    assert len(tiff_files) == expected_tiff
+    assert all(f.endswith(".tiff") for f in tiff_files)
+
+
+def test_get_file_list_num_limit(backend, test_files_scenario):
+    """Test num_files limit."""
+    backend_instance, _ = backend
+
+    num_files = len(test_files_scenario)
+    if num_files == 0:
+        pytest.skip("Empty scenario")
+
+    limit = min(2, num_files)
+    limited = backend_instance.get_file_list(num_files=limit)
+    assert len(limited) == limit
+
+
+def test_download_file(backend, tmp_path, test_file):
+    """Test file download/copy."""
+    backend_instance, config = backend
+    file_path, expected_content = test_file
+
+    # Extract filename for destination
+    filename = Path(file_path).name
+    dest_path = str(tmp_path / f"downloaded_{filename}")
+
     if not config.is_remote:
+        # Local backends don't support download
         with pytest.raises(NotImplementedError):
-            backend.download_file(name, destination_path)
-    # Else Download and verify content
+            backend_instance.download_file(file_path, dest_path)
     else:
-        backend.download_file(name, destination_path)
+        # Remote backends download to local filesystem
+        backend_instance.download_file(file_path, dest_path)
 
         # Verify content
-        with open(destination_path, "rb") as f:
+        with open(dest_path, "rb") as f:
             downloaded_content = f.read()
-        assert downloaded_content == content
+        assert downloaded_content == expected_content

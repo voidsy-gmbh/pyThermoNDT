@@ -1,3 +1,4 @@
+# conftest.py
 """Fixtures for backend tests."""
 
 from collections.abc import Generator
@@ -17,22 +18,30 @@ class TestConfig:
     is_remote: bool
 
 
-@dataclass
-class TestFile:
-    """Configuration for test files."""
-
-    filename: str
-    content: bytes
-
-
 BACKENDS = [
     TestConfig(backend_cls=LocalBackend, is_remote=False),
 ]
 
+# Single file test data
 TEST_FILES = {
     "sample.txt": b"test content",
     "data.bin": b"\x00\x01\x02\x03",
     "large.tiff": b"fake thermal data" * 100,
+}
+
+# Multi-file scenarios for list/filter tests
+FILE_SCENARIOS = {
+    "mixed_types": {
+        "sample.txt": b"test content",
+        "data.bin": b"\x00\x01\x02\x03",
+        "large.tiff": b"fake thermal data" * 100,
+    },
+    "single_type": {
+        "thermal1.tiff": b"data1",
+        "thermal2.tiff": b"data2",
+        "thermal3.tiff": b"data3",
+    },
+    "many_files": {f"file{i:03d}.bin": b"x" * i for i in range(15)},
 }
 
 
@@ -41,39 +50,31 @@ def backend(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None
     """Create backend from configuration."""
     config = cast(TestConfig, request.param)
 
-    # Setup the backend instance
     if config.backend_cls == LocalBackend:
-        backend = LocalBackend(pattern=str(tmp_path))
+        backend_instance = LocalBackend(pattern=str(tmp_path))
     elif config.backend_cls == S3Backend:
-        backend = S3Backend(bucket="ffg-bp", prefix="example2_writing_data/")
+        backend_instance = S3Backend(bucket="test-bucket", prefix="test/")
     else:
-        raise NotImplementedError(f"Backend {config.backend_cls} not implemented in test fixture.")
+        raise NotImplementedError(f"Backend {config.backend_cls} not implemented")
 
-    yield backend, config
-
-    # Cleanup
-    backend.close()
+    yield backend_instance, config
+    backend_instance.close()
 
 
-def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_path):
-    file_path = tmp_path / name
-    # Prepare file based on backend type
+def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_path) -> str:
+    """Prepare file and return path."""
     if isinstance(backend_instance, LocalBackend):
         file_path = tmp_path / name
         file_path.write_bytes(content)
         return str(file_path)
-    # Else write using backend
     else:
         backend_instance.write_file(IOPathWrapper(content), name)
         return name
 
 
-@pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x)
+@pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x[0])
 def test_file(request, backend, tmp_path):
-    """Auto-create test files for the configured backend.
-
-    Returns dict mapping logical names to actual paths.
-    """
+    """Single test file - returns (path, content) tuple."""
     name, content = request.param
     backend_instance, _ = backend
     file_path = _prepare_file(backend_instance, name, content, tmp_path)
@@ -82,6 +83,14 @@ def test_file(request, backend, tmp_path):
 
 @pytest.fixture
 def test_files_all(backend, tmp_path):
-    """All test files for bulk operations."""
+    """All test files - returns dict of {name: path}."""
     backend_instance, _ = backend
     return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in TEST_FILES.items()}
+
+
+@pytest.fixture(params=FILE_SCENARIOS.items(), ids=lambda x: x[0])
+def test_files_scenario(request, backend, tmp_path):
+    """Parameterized multi-file scenarios - returns dict of {name: path}."""
+    scenario_name, files = request.param
+    backend_instance, _ = backend
+    return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in files.items()}

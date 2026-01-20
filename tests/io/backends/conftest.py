@@ -1,6 +1,6 @@
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Any
+from typing import cast
 
 import pytest
 
@@ -13,71 +13,59 @@ class TestConfig:
 
     backend_cls: type[BaseBackend]
     is_remote: bool
-    init_kwargs: dict[str, Any]
-    requires_mock: bool = False
-    mock_setup: Callable | None = None
 
 
-BACKEND_CONFIGS = [
-    TestConfig(
-        backend_cls=LocalBackend,
-        is_remote=False,
-        init_kwargs={"pattern": "tests/assets", "recursive": True},
-        requires_mock=False,
-    ),
-]
+@dataclass
+class TestFile:
+    """Configuration for test files."""
+
+    filename: str
+    content: bytes
 
 
-@pytest.fixture(params=BACKEND_CONFIGS, ids=lambda x: x.backend_cls.__name__)
-def configured_backend(request) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
+BACKENDS = [TestConfig(backend_cls=LocalBackend, is_remote=False)]
+
+TEST_FILES = {
+    "sample.txt": b"test content",
+    "data.bin": b"\x00\x01\x02\x03",
+    "large.tiff": b"fake thermal data" * 100,
+}
+
+
+@pytest.fixture(params=BACKENDS, ids=lambda x: x.backend_cls.__name__)
+def backend(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
     """Create backend from configuration."""
-    config = request.param
+    config = cast(TestConfig, request.param)
 
-    # Setup mock if needed
-    mock_context = None
-    if config.requires_mock and config.mock_setup:
-        mock_context = config.mock_setup()
-        mock_context.__enter__()
-
-    # Add tmp_path to kwargs if backend needs it
-    kwargs = config.init_kwargs.copy()
-    backend = config.backend_cls(**kwargs)
+    # Setup the backend instance
+    if config.backend_cls is LocalBackend:
+        backend = LocalBackend(pattern=str(tmp_path))
+    else:
+        raise NotImplementedError(f"Backend {config.backend_cls} not implemented in test fixture.")
 
     yield backend, config
 
     # Cleanup
     backend.close()
-    if mock_context:
-        mock_context.__exit__(None, None, None)
 
 
-@pytest.fixture
-def test_files(configured_backend, tmp_path):
+@pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x)
+def test_file(request, configured_backend, tmp_path):
     """Auto-create test files for the configured backend.
 
     Returns dict mapping logical names to actual paths.
     """
-    backend = configured_backend
+    name, content = request.param
+    backend, _ = configured_backend
 
-    files = {}
-    test_data = {
-        "sample.txt": b"test content",
-        "data.bin": b"\x00\x01\x02\x03",
-        "large.tiff": b"fake thermal data" * 100,
-    }
+    if isinstance(backend, LocalBackend):
+        file_path = tmp_path / name
+        with open(file_path, "wb") as f:
+            f.write(content)
+        file_path = str(file_path)
+    # Else write using backend
+    else:
+        file_path = name
+        backend.write_file(IOPathWrapper(content), file_path)
 
-    for filename, content in test_data.items():
-        # For local Backend: create file in tmp path
-        if isinstance(backend, LocalBackend):
-            file_path = tmp_path / filename
-            with open(file_path, "wb") as f:
-                f.write(content)
-            file_path = str(file_path)
-        # Else write using backend
-        else:
-            file_path = filename
-            backend.write_file(IOPathWrapper(content), file_path)
-
-        files[filename] = file_path
-
-    return files
+    return file_path, content

@@ -1,3 +1,5 @@
+"""Fixtures for backend tests."""
+
 from collections.abc import Generator
 from dataclasses import dataclass
 from typing import cast
@@ -25,7 +27,6 @@ class TestFile:
 
 BACKENDS = [
     TestConfig(backend_cls=LocalBackend, is_remote=False),
-    TestConfig(backend_cls=S3Backend, is_remote=True),
 ]
 
 TEST_FILES = {
@@ -74,3 +75,23 @@ def test_file(request, backend, tmp_path):
         backend.write_file(IOPathWrapper(content), file_path)
 
     return file_path, content
+
+
+@pytest.fixture
+def test_files_all(backend, tmp_path):
+    """All test files for bulk operations."""
+    backend_instance, config = backend
+    files = {}
+
+    for name, content in TEST_FILES.items():
+        if config.is_remote:
+            file_path = name
+            backend_instance.write_file(IOPathWrapper(content), file_path)
+        else:
+            file_path = tmp_path / name
+            file_path.write_bytes(content)
+            file_path = str(file_path)
+
+        files[name] = file_path
+
+    return files

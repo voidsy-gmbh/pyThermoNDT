@@ -4,7 +4,7 @@ from typing import cast
 
 import pytest
 
-from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend
+from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend, S3Backend
 
 
 @dataclass
@@ -23,7 +23,10 @@ class TestFile:
     content: bytes
 
 
-BACKENDS = [TestConfig(backend_cls=LocalBackend, is_remote=False)]
+BACKENDS = [
+    TestConfig(backend_cls=LocalBackend, is_remote=False),
+    TestConfig(backend_cls=S3Backend, is_remote=True),
+]
 
 TEST_FILES = {
     "sample.txt": b"test content",
@@ -38,8 +41,10 @@ def backend(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None
     config = cast(TestConfig, request.param)
 
     # Setup the backend instance
-    if config.backend_cls is LocalBackend:
+    if config.backend_cls == LocalBackend:
         backend = LocalBackend(pattern=str(tmp_path))
+    elif config.backend_cls == S3Backend:
+        backend = S3Backend(bucket="ffg-bp", prefix="example2_writing_data/")
     else:
         raise NotImplementedError(f"Backend {config.backend_cls} not implemented in test fixture.")
 

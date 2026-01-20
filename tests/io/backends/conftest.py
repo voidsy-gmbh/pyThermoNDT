@@ -50,13 +50,13 @@ def backend(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None
 
 
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x)
-def test_file(request, configured_backend, tmp_path):
+def test_file(request, backend, tmp_path):
     """Auto-create test files for the configured backend.
 
     Returns dict mapping logical names to actual paths.
     """
     name, content = request.param
-    backend, _ = configured_backend
+    backend, _ = backend
 
     if isinstance(backend, LocalBackend):
         file_path = tmp_path / name

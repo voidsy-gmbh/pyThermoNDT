@@ -8,7 +8,7 @@ from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend
 
 
 @dataclass
-class BackendConfig:
+class TestConfig:
     """Configuration for backend testing."""
 
     backend_cls: type[BaseBackend]
@@ -19,7 +19,7 @@ class BackendConfig:
 
 
 BACKEND_CONFIGS = [
-    BackendConfig(
+    TestConfig(
         backend_cls=LocalBackend,
         is_remote=False,
         init_kwargs={"pattern": "tests/assets", "recursive": True},
@@ -29,7 +29,7 @@ BACKEND_CONFIGS = [
 
 
 @pytest.fixture(params=BACKEND_CONFIGS, ids=lambda x: x.backend_cls.__name__)
-def configured_backend(request) -> Generator[tuple[BaseBackend, BackendConfig], None, None]:
+def configured_backend(request) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
     """Create backend from configuration."""
     config = request.param
 
@@ -57,7 +57,7 @@ def test_files(configured_backend, tmp_path):
 
     Returns dict mapping logical names to actual paths.
     """
-    backend, config = configured_backend
+    backend = configured_backend
 
     files = {}
     test_data = {
@@ -67,15 +67,16 @@ def test_files(configured_backend, tmp_path):
     }
 
     for filename, content in test_data.items():
-        if config.is_remote:
-            # Remote: upload to S3
+        # For local Backend: create file in tmp path
+        if isinstance(backend, LocalBackend):
+            file_path = tmp_path / filename
+            with open(file_path, "wb") as f:
+                f.write(content)
+            file_path = str(file_path)
+        # Else write using backend
+        else:
             file_path = filename
             backend.write_file(IOPathWrapper(content), file_path)
-        else:
-            # Local: create actual file
-            file_path = tmp_path / filename
-            file_path.write_bytes(content)
-            file_path = str(file_path)
 
         files[filename] = file_path
 

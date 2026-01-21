@@ -91,6 +91,7 @@ def test_get_file_list_all(backend_config, test_files_scenario):
 
     file_list = backend_instance.get_file_list()
     assert len(file_list) == len(test_files_scenario)
+    assert list(file_list) == list(test_files_scenario.values())
 
 
 def test_get_file_list_filter_extension(backend_config, test_files_scenario):

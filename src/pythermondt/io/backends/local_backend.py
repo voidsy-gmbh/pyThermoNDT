@@ -1,7 +1,7 @@
 import os
 from glob import glob
 
-from ..utils import IOPathWrapper, is_valid_glob_pattern
+from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
 
 
@@ -20,6 +20,8 @@ class LocalBackend(BaseBackend):
         # Validate the pattern
         if not isinstance(pattern, str):
             raise ValueError(f"Invalid pattern type: {type(pattern)}. Must be a string.")
+        if pattern == "":
+            raise ValueError(f"Invalid pattern: {pattern!r}. Must be a non-empty string.")
 
         # Determine the type of the source based on the provided pattern
         self.__source_type = None
@@ -27,11 +29,8 @@ class LocalBackend(BaseBackend):
             self.__source_type = "file"
         elif os.path.isdir(pattern):
             self.__source_type = "directory"
-        elif is_valid_glob_pattern(pattern):
-            self.__source_type = "glob"
         else:
-            msg = f"Invalid pattern: {pattern}. Must either be a file path, directory path, or valid glob pattern."
-            raise ValueError(msg)
+            self.__source_type = "glob"
 
         # Internal state
         self.__pattern_str = pattern

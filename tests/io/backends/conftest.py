@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import cast
 
 import pytest
-from utils import TestConfig
 
 from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend, S3Backend
+
+from .utils import TestConfig
 
 BACKENDS = [
     TestConfig(backend_cls=LocalBackend, is_remote=False),

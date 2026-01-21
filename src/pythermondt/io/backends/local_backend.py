@@ -45,6 +45,8 @@ class LocalBackend(BaseBackend):
         return self.__pattern_str
 
     def read_file(self, file_path: str) -> IOPathWrapper:
+        if not self.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
         return IOPathWrapper(file_path)
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:

@@ -27,7 +27,6 @@ def test_read_file_not_exist(backend_config, tmp_path):
     """Test reading non-existent file raises FileNotFoundError."""
     backend_instance, _ = backend_config
     path = str(tmp_path / "non_existent_file.txt")
-    print(path)
     with pytest.raises(FileNotFoundError, match="File not found:"):
         backend_instance.read_file(path)
 

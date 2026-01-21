@@ -1,3 +1,5 @@
+"""Specific tests for the LocalBackend class."""
+
 import io
 import os
 from pathlib import Path
@@ -39,50 +41,19 @@ def test_init_invalid_pattern_type(pattern):
         LocalBackend(pattern)
 
 
-@pytest.mark.parametrize("pattern", ["", "nonexistent/path", "nonexistent/file.txt", "nonexistent/*.md"])
+@pytest.mark.parametrize("pattern", ["", ''])  # fmt: skip
+def test_init_empty_pattern(pattern):
+    """Test that empty pattern strings raise ValueError."""
+    with pytest.raises(ValueError, match=f"Invalid pattern: {pattern!r}. Must be a non-empty string."):
+        LocalBackend(pattern)
+
+
+@pytest.mark.parametrize("pattern", ["nonexistent/path", "nonexistent/file.txt", "nonexistent/*.md"])
 def test_init_nonexistent_pattern(pattern):
     """Test that non-existent paths are treated as valid but return empty file list."""
     backend = LocalBackend(pattern)
     assert backend.pattern == pattern
     assert len(backend.get_file_list()) == 0  # Should return empty list for non-existent path
-
-
-def test_read_file(tmp_path):
-    """Test reading a file returns IOPathWrapper."""
-    test_file = tmp_path / "test.txt"
-    test_content = "test content"
-    test_file.write_text(test_content)
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.read_file(str(test_file))
-
-    assert isinstance(result, IOPathWrapper)
-    assert result.file_obj.read().decode() == test_content
-
-
-def test_write_file(tmp_path):
-    """Test writing a file."""
-    backend = LocalBackend(str(tmp_path))
-    test_content = b"test content"
-    test_file = tmp_path / "output.txt"
-
-    wrapper = IOPathWrapper(io.BytesIO(test_content))
-    backend.write_file(wrapper, str(test_file))
-
-    assert test_file.exists()
-    assert test_file.read_bytes() == test_content
-
-
-@pytest.mark.parametrize("exists", [True, False])
-def test_exists(tmp_path, exists):
-    """Test exists method."""
-    backend = LocalBackend(str(tmp_path))
-    test_file = tmp_path / "test.txt"
-
-    if exists:
-        test_file.write_text("content")
-
-    assert backend.exists(str(test_file)) == exists
 
 
 def test_close_does_nothing(tmp_path):
@@ -206,18 +177,6 @@ def test_get_file_list_sorting(tmp_path):
     # Check that all expected filenames are present
     result_names = [Path(f).name for f in result]
     assert result_names == ["alpha.txt", "beta.txt", "zebra.txt"]
-
-
-def test_read_nonexistent_file(tmp_path):
-    """Test reading non-existent file."""
-    backend = LocalBackend(str(tmp_path))
-    nonexistent_file = str(tmp_path / "nonexistent.txt")
-
-    result = backend.read_file(nonexistent_file)
-    assert isinstance(result, IOPathWrapper)
-
-    with pytest.raises(FileNotFoundError):
-        result.file_obj.read()
 
 
 def test_unicode_filenames(tmp_path):

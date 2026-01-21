@@ -1,7 +1,5 @@
-import fnmatch
 import logging
 import os
-import re
 import tempfile
 from io import BytesIO
 
@@ -77,13 +75,3 @@ class IOPathWrapper:
     def __del__(self):
         """Ensure cleanup on garbage collection."""
         self.close()
-
-
-def is_valid_glob_pattern(pattern: str) -> bool:
-    """Check if the provided pattern is a valid glob pattern."""
-    regex = fnmatch.translate(pattern)
-    try:
-        re.compile(regex)
-        return True
-    except re.error:
-        return False

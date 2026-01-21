@@ -92,4 +92,4 @@ def test_files_scenario(request, backend_config, tmp_path) -> dict[str, str]:
     """Parameterized multi-file scenarios - returns dict of {name: path}."""
     _, files = request.param
     backend_instance, _ = backend_config
-    return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in files.items()}
+    return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in sorted(files.items())}

@@ -41,14 +41,14 @@ def test_init_invalid_pattern_type(pattern):
         LocalBackend(pattern)
 
 
-@pytest.mark.parametrize("pattern", ["[[ ]]"])
-def test_init_invalid_pattern(pattern):
-    """Test that invalid pattern strings raise ValueError."""
-    with pytest.raises(ValueError, match="Invalid pattern:"):
+@pytest.mark.parametrize("pattern", ["", ''])  # fmt: skip
+def test_init_empty_pattern(pattern):
+    """Test that empty pattern strings raise ValueError."""
+    with pytest.raises(ValueError, match=f"Invalid pattern: {pattern!r}. Must be a non-empty string."):
         LocalBackend(pattern)
 
 
-@pytest.mark.parametrize("pattern", ["", "nonexistent/path", "nonexistent/file.txt", "nonexistent/*.md"])
+@pytest.mark.parametrize("pattern", ["nonexistent/path", "nonexistent/file.txt", "nonexistent/*.md"])
 def test_init_nonexistent_pattern(pattern):
     """Test that non-existent paths are treated as valid but return empty file list."""
     backend = LocalBackend(pattern)

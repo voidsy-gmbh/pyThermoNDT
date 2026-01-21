@@ -1,22 +1,13 @@
 """Fixtures for backend tests."""
 
 from collections.abc import Generator
-from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
 import pytest
+from utils import TestConfig
 
 from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend, S3Backend
-
-
-@dataclass
-class TestConfig:
-    """Configuration for backend testing."""
-
-    backend_cls: type[BaseBackend]
-    is_remote: bool
-
 
 BACKENDS = [
     TestConfig(backend_cls=LocalBackend, is_remote=False),

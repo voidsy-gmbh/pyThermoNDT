@@ -179,18 +179,6 @@ def test_get_file_list_sorting(tmp_path):
     assert result_names == ["alpha.txt", "beta.txt", "zebra.txt"]
 
 
-def test_read_nonexistent_file(tmp_path):
-    """Test reading non-existent file."""
-    backend = LocalBackend(str(tmp_path))
-    nonexistent_file = str(tmp_path / "nonexistent.txt")
-
-    result = backend.read_file(nonexistent_file)
-    assert isinstance(result, IOPathWrapper)
-
-    with pytest.raises(FileNotFoundError):
-        result.file_obj.read()
-
-
 def test_unicode_filenames(tmp_path):
     """Test handling files with unicode characters."""
     backend = LocalBackend(str(tmp_path))

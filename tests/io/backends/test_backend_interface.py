@@ -1,4 +1,3 @@
-# test_backend_interface.py
 """Tests for general backend interface compliance."""
 
 from pathlib import Path
@@ -8,15 +7,15 @@ import pytest
 from pythermondt.io import IOPathWrapper
 
 
-def test_remote_source(backend):
+def test_remote_source(backend_config):
     """Test remote_source property matches config."""
-    backend_instance, config = backend
+    backend_instance, config = backend_config
     assert backend_instance.remote_source == config.is_remote
 
 
-def test_read_file(backend, test_file):
+def test_read_file(backend_config, test_file):
     """Test reading single file."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
     file_path, expected_content = test_file
 
     result = backend_instance.read_file(file_path)
@@ -24,9 +23,9 @@ def test_read_file(backend, test_file):
     assert result.file_obj.read() == expected_content
 
 
-def test_write_file(backend, tmp_path):
+def test_write_file(backend_config, tmp_path):
     """Test writing and reading back."""
-    backend_instance, config = backend
+    backend_instance, config = backend_config
 
     # Determine path based on backend type
     if config.is_remote:
@@ -45,9 +44,9 @@ def test_write_file(backend, tmp_path):
 
 
 @pytest.mark.parametrize("exists", [True, False])
-def test_exists(backend, tmp_path, exists):
+def test_exists(backend_config, tmp_path, exists):
     """Test file existence check."""
-    backend_instance, config = backend
+    backend_instance, config = backend_config
 
     if config.is_remote:
         file_path = "test_exists.txt"
@@ -62,33 +61,33 @@ def test_exists(backend, tmp_path, exists):
     assert backend_instance.exists(file_path) == exists
 
 
-def test_get_file_size(backend, test_file):
+def test_get_file_size(backend_config, test_file):
     """Test getting file size."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
     file_path, content = test_file
 
     size = backend_instance.get_file_size(file_path)
     assert size == len(content)
 
 
-def test_get_file_list(backend, test_file):
+def test_get_file_list(backend_config, test_file):
     """Test listing a single file without any filters."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
     file_path, _ = test_file
     assert [file_path] == backend_instance.get_file_list()
 
 
-def test_get_file_list_all(backend, test_files_scenario):
+def test_get_file_list_all(backend_config, test_files_scenario):
     """Test listing all files."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
 
     file_list = backend_instance.get_file_list()
     assert len(file_list) == len(test_files_scenario)
 
 
-def test_get_file_list_filter_extension(backend, test_files_scenario):
+def test_get_file_list_filter_extension(backend_config, test_files_scenario):
     """Test extension filtering."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
 
     # Count expected .tiff files in scenario
     expected_tiff = sum(1 for name in test_files_scenario if name.endswith(".tiff"))
@@ -98,9 +97,9 @@ def test_get_file_list_filter_extension(backend, test_files_scenario):
     assert all(f.endswith(".tiff") for f in tiff_files)
 
 
-def test_get_file_list_num_limit(backend, test_files_scenario):
+def test_get_file_list_num_limit(backend_config, test_files_scenario):
     """Test num_files limit."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
 
     num_files = len(test_files_scenario)
     if num_files == 0:
@@ -111,9 +110,9 @@ def test_get_file_list_num_limit(backend, test_files_scenario):
     assert len(limited) == limit
 
 
-def test_download_file(backend, tmp_path, test_file):
+def test_download_file(backend_config, tmp_path, test_file):
     """Test file download/copy."""
-    backend_instance, config = backend
+    backend_instance, config = backend_config
     file_path, expected_content = test_file
 
     # Extract filename for destination

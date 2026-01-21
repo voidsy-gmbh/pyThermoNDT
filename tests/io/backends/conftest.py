@@ -1,4 +1,3 @@
-# conftest.py
 """Fixtures for backend tests."""
 
 from collections.abc import Generator
@@ -46,7 +45,7 @@ FILE_SCENARIOS = {
 
 
 @pytest.fixture(params=BACKENDS, ids=lambda x: x.backend_cls.__name__)
-def backend(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
+def backend_config(request, tmp_path) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
     """Create backend from configuration."""
     config = cast(TestConfig, request.param)
 
@@ -73,24 +72,24 @@ def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_
 
 
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x[0])
-def test_file(request, backend, tmp_path):
+def test_file(request, backend_config, tmp_path) -> tuple[str, bytes]:
     """Single test file - returns (path, content) tuple."""
     name, content = request.param
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
     file_path = _prepare_file(backend_instance, name, content, tmp_path)
     return file_path, content
 
 
 @pytest.fixture
-def test_files_all(backend, tmp_path):
+def test_files_all(backend_config, tmp_path) -> dict[str, str]:
     """All test files - returns dict of {name: path}."""
-    backend_instance, _ = backend
+    backend_instance, _ = backend_config
     return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in TEST_FILES.items()}
 
 
 @pytest.fixture(params=FILE_SCENARIOS.items(), ids=lambda x: x[0])
-def test_files_scenario(request, backend, tmp_path):
+def test_files_scenario(request, backend_config, tmp_path) -> dict[str, str]:
     """Parameterized multi-file scenarios - returns dict of {name: path}."""
-    scenario_name, files = request.param
-    backend_instance, _ = backend
+    _, files = request.param
+    backend_instance, _ = backend_config
     return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in files.items()}

@@ -58,7 +58,7 @@ def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_
     if isinstance(backend_instance, LocalBackend):
         file_path = tmp_path / name
         file_path.write_bytes(content)
-        return str(file_path)
+        return file_path.as_uri()
     else:
         backend_instance.write_file(IOPathWrapper(content), name)
         return name

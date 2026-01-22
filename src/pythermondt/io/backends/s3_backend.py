@@ -15,7 +15,7 @@ class S3Backend(BaseBackend):
         if not session:
             session = boto3.Session()
 
-        # Create a new s3 client from the give session
+        # Create a new s3 client from the given session
         self.__client = session.client("s3")
 
         # Write the bucket and prefix to the private attributes

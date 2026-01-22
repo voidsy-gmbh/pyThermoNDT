@@ -82,16 +82,22 @@ def test_get_file_list(backend_config, test_file):
     """Test listing a single file without any filters."""
     backend_instance, _ = backend_config
     file_path, _ = test_file
-    assert [file_path] == backend_instance.get_file_list()
+    expected_files = [file_path]
+    file_list = backend_instance.get_file_list()
+
+    assert len(file_list) == 1
+    assert file_list[0].startswith(backend_instance.scheme + "://")
+    assert file_list == expected_files
 
 
 def test_get_file_list_all(backend_config, test_files_scenario):
     """Test listing all files."""
     backend_instance, _ = backend_config
-
     expected_files = list(test_files_scenario.values())
     file_list = backend_instance.get_file_list()
+
     assert len(file_list) == len(test_files_scenario)
+    assert all(f.startswith(backend_instance.scheme + "://") for f in file_list)
     assert file_list == expected_files
 
 
@@ -101,10 +107,11 @@ def test_get_file_list_filter_extension(backend_config, test_files_scenario):
 
     # Count expected .tiff files in scenario
     expected_tiff = [name for name in test_files_scenario.values() if name.endswith(".tiff")]
+    file_list = backend_instance.get_file_list(extensions=(".tiff",))
 
-    tiff_files = backend_instance.get_file_list(extensions=(".tiff",))
-    assert len(tiff_files) == len(expected_tiff)
-    assert tiff_files == expected_tiff
+    assert len(file_list) == len(expected_tiff)
+    assert all(f.startswith(backend_instance.scheme + "://") for f in file_list)
+    assert file_list == expected_tiff
 
 
 @pytest.mark.parametrize("num_files", [0, 1, 5])
@@ -114,7 +121,9 @@ def test_get_file_list_num_limit(backend_config, test_files_scenario, num_files)
 
     expected_files = list(test_files_scenario.values())[0:num_files]
     limited = backend_instance.get_file_list(num_files=num_files)
+
     assert len(limited) == len(expected_files)
+    assert all(f.startswith(backend_instance.scheme + "://") for f in limited)
     assert limited == expected_files
 
 

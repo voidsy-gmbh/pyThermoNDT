@@ -65,7 +65,7 @@ def backend_config(request, tmp_path: Path) -> Generator[tuple[BaseBackend, Test
         s3_client.create_bucket(Bucket="test-bucket")
 
         # Create S3 backend instance
-        backend_instance = S3Backend(bucket="test-bucket", prefix="test/")
+        backend_instance = S3Backend(bucket="test-bucket", prefix="")
     else:
         raise NotImplementedError(f"Backend {config.backend_cls} not implemented")
 

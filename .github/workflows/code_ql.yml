@@ -44,7 +44,7 @@ jobs:
       - name: Sync dependencies
         run: |
           uv pip install -r ./requirements_dev.txt # Install dev dependencies
-          uv pip install . --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
+          uv pip install .
 
       # Step 4: Run Ruff
       - name: Run Ruff

@@ -51,7 +51,7 @@ class S3Backend(BaseBackend):
         Raises:
             FileNotFoundError: If file doesn't exist
         """
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
         try:
             data = BytesIO()
             with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as pbar:
@@ -69,7 +69,7 @@ class S3Backend(BaseBackend):
             data (IOPathWrapper): File data to write
             file_path (str): Destination path
         """
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
 
         # Reset file object position
         data.file_obj.seek(0)
@@ -90,7 +90,7 @@ class S3Backend(BaseBackend):
         Returns:
             bool: True if file exists
         """
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
 
         try:
             self.__client.head_object(Bucket=bucket, Key=key)
@@ -121,7 +121,7 @@ class S3Backend(BaseBackend):
         paginator = self.__client.get_paginator("list_objects_v2")
 
         files = []
-        for page in paginator.paginate(Bucket=self.__bucket, Prefix=self.__prefix):
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=self.prefix):
             if "Contents" in page:
                 for obj in page["Contents"]:
                     key = obj["Key"]
@@ -130,7 +130,7 @@ class S3Backend(BaseBackend):
                         continue
 
                     # Add full S3 path
-                    files.append(f"s3://{self.__bucket}/{key}")
+                    files.append(self._to_url(self.bucket, key))
 
         # Filter by extension if provided
         if extensions:
@@ -147,7 +147,7 @@ class S3Backend(BaseBackend):
 
     def get_file_size(self, file_path: str) -> int:
         """Return the size of the file on s3 bucket in bytes."""
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
         response = self.__client.head_object(Bucket=bucket, Key=key)
         return response["ContentLength"]
 
@@ -158,7 +158,7 @@ class S3Backend(BaseBackend):
             source_path (str): Source S3 path
             destination_path (str): Destination local path
         """
-        bucket, key = self._parse_path(source_path)
+        bucket, key = self._parse_input(source_path)
 
         # Download the file
         with TqdmCallback(total=self.get_file_size(source_path), desc=f"Downloading {key}") as progress:

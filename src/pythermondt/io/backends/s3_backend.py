@@ -1,4 +1,5 @@
 from io import BytesIO
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
@@ -163,32 +164,34 @@ class S3Backend(BaseBackend):
         with TqdmCallback(total=self.get_file_size(source_path), desc=f"Downloading {key}") as progress:
             self.__client.download_file(bucket, key, destination_path, Callback=progress.callback)
 
-    def _parse_path(self, path: str) -> tuple[str, str]:
-        """Parse S3 path into bucket and key.
-
-        Handles both s3://bucket/key format and relative paths
+    def _parse_input(self, file_path: str) -> tuple[str, str]:
+        """Convert S3 URI to (bucket, key) tuple.
 
         Args:
-            path (str): Path to parse
+            file_path: Either "s3://bucket/key" or just "key"
 
         Returns:
             tuple[str, str]: (bucket, key)
         """
-        # Handle s3:// URIs
-        if path.startswith("s3://"):
-            # Remove s3:// prefix
-            path = path[5:]
-            # Split into bucket and key
-            parts = path.split("/", 1)
-            if len(parts) == 1:
-                # No key, just bucket
-                return parts[0], ""
-            return parts[0], parts[1]
+        parsed = urlparse(file_path)
+        if parsed.scheme == "s3":
+            # s3://bucket/key/path -> bucket="bucket", key="key/path"
+            bucket = parsed.netloc
+            key = parsed.path.lstrip("/")  # Remove leading slash
+            return bucket, key
 
-        # Assume path is relative to bucket/prefix
-        if self.__prefix:
-            # Ensure we don't have double slashes
-            path = path.removeprefix("/")
-            return self.__bucket, f"{self.__prefix}/{path}"
+        # Not a URI - treat as absolute key within default bucket
+        # No prefix prepending - user must provide full key
+        return self.bucket, file_path
 
-        return self.__bucket, path
+    def _to_url(self, bucket: str, key: str) -> str:
+        """Convert (bucket, key) to S3 URI.
+
+        Args:
+            bucket: S3 bucket name
+            key: Object key
+
+        Returns:
+            str: S3 URI like "s3://bucket/key"
+        """
+        return f"s3://{bucket}/{key}"

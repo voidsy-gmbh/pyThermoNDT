@@ -53,27 +53,3 @@ class BaseBackend(ABC):
         This is used for remote sources to download files directly to the local filesystem.
         """
         raise NotImplementedError("Subclasses must implement this method")
-
-    @abstractmethod
-    def _parse_input(self, input_path: str) -> str:
-        """Parse input path (URL or path) to internal representation.
-
-        Args:
-            input_path (str): The input path, which can be a URL or file path.
-
-        Returns:
-            str: Internal representation of the path which the backend can use.
-        """
-        raise NotImplementedError("Subclasses must implement this method")
-
-    @abstractmethod
-    def _to_url(self, internal_path: str) -> str:
-        """Convert internal representation back to unified URL format.
-
-        Args:
-            internal_path (str): The internal representation of the path.
-
-        Returns:
-            str: The unified URL format of the path including scheme.
-        """
-        raise NotImplementedError("Subclasses must implement this method")

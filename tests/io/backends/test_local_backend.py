@@ -56,7 +56,7 @@ def test_init_nonexistent_pattern(pattern):
     assert len(backend.get_file_list()) == 0  # Should return empty list for non-existent path
 
 
-def test_close_does_nothing(tmp_path):
+def test_close_does_nothing(tmp_path: Path):
     """Test that close method doesn't raise errors."""
     backend = LocalBackend(str(tmp_path))
     backend.close()  # Should not raise
@@ -195,7 +195,7 @@ def test_unicode_filenames(tmp_path):
         pytest.skip("Unicode filenames not supported on this system")
 
 
-def test_special_characters_in_paths(tmp_path):
+def test_special_characters_in_paths(tmp_path: Path):
     """Test handling paths with special characters."""
     special_dir = tmp_path / "test dir with spaces & special chars"
     special_dir.mkdir()
@@ -206,7 +206,11 @@ def test_special_characters_in_paths(tmp_path):
 
     files = backend.get_file_list()
     assert len(files) == 1
-    assert "test file.txt" in files[0]
+
+    # Test reading the file back
+    result = backend.read_file(str(test_file))
+    assert isinstance(result, IOPathWrapper)
+    assert result.file_obj.read() == b"content"
 
 
 def test_full_workflow(tmp_path):

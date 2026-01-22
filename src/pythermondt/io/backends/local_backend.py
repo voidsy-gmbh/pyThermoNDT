@@ -116,4 +116,5 @@ class LocalBackend(BaseBackend):
         return input_path
 
     def _to_url(self, internal_path: str) -> str:
-        return f"{self.scheme}:{pathname2url(internal_path)}"
+        url_path = pathname2url(internal_path)
+        return f"file:{url_path}" if url_path.startswith("///") else f"file://{url_path}"

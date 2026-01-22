@@ -27,6 +27,10 @@ class S3Backend(BaseBackend):
         return True
 
     @property
+    def scheme(self) -> str:
+        return "s3"
+
+    @property
     def bucket(self) -> str:
         return self.__bucket
 

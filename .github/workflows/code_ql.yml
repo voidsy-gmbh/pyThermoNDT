@@ -14,6 +14,8 @@ jobs:
   code_ql:
     name: Run Code Quality Checks
     runs-on: ubuntu-latest
+    env:
+      UV_TORCH_BACKEND: cpu  # Set the backend to CPU to avoid installing cuda dependencies for code quality checks
     steps:
       # Step 1.1: Checkout repository (workflow_call) (see https://dev.to/koseimori/conditional-branching-with-workflowdispatch-and-workflowcall-in-github-actions-oik)
       - name: Checkout repository
@@ -42,7 +44,7 @@ jobs:
       - name: Sync dependencies
         run: |
           uv pip install -r ./requirements_dev.txt # Install dev dependencies
-          uv pip install . --torch-backend cpu # Set the backend to CPU to avoid installing cuda dependencies
+          uv pip install .
 
       # Step 4: Run Ruff
       - name: Run Ruff
@@ -55,10 +57,7 @@ jobs:
       # Step 6: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
       - name: Perform licensecheck
         run: |
-          licensecheck \
-            --requirements-paths pyproject.toml \
-            --ignore-packages 'nvidia-*' matplotlib-inline \
-            -0
+          licensecheck --requirements-paths pyproject.toml --ignore-packages matplotlib-inline -0
 
       # Step 7: Run mypy
       - name: Run mypy

@@ -58,7 +58,7 @@ class S3Backend(BaseBackend):
                 self.__client.download_fileobj(bucket, key, data, Callback=pbar.callback)
             return IOPathWrapper(data)
         except ClientError as e:
-            if e.response["Error"]["Code"] in ("NoSuchKey", "NoSuchBucket"):
+            if self._is_not_found_error(e):
                 raise FileNotFoundError(f"File not found: {file_path}") from e
             raise
 
@@ -96,7 +96,7 @@ class S3Backend(BaseBackend):
             self.__client.head_object(Bucket=bucket, Key=key)
             return True
         except ClientError as e:
-            if e.response["Error"]["Code"] in ("404", "403", "NoSuchKey"):
+            if self._is_not_found_error(e):
                 return False
             raise
 
@@ -195,3 +195,21 @@ class S3Backend(BaseBackend):
             str: S3 URI like "s3://bucket/key"
         """
         return f"s3://{bucket}/{key}"
+
+    def _is_not_found_error(self, e: ClientError) -> bool:
+        """Check if ClientError indicates file not found.
+
+        AWS S3 returns different error codes for "not found":
+        - '404' - from head_object() operation
+        - 'NoSuchKey' - from get_object() and other operations
+        - 'NoSuchBucket' - bucket doesn't exist
+        - '403' - can indicate missing file if user lacks s3:ListBucket permission
+
+        Args:
+            e: ClientError from boto3
+
+        Returns:
+            bool: True if this is a not-found error
+        """
+        error_code = e.response.get("Error", {}).get("Code", "")
+        return error_code in ("404", "403", "NoSuchKey", "NoSuchBucket")

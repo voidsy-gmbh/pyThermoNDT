@@ -96,8 +96,8 @@ class LocalBackend(BaseBackend):
         if num_files is not None:
             all_files = all_files[:num_files]
 
-        # Normalize paths before returning
-        all_files = [self._to_url(os.path.normpath(f)) for f in all_files]
+        # Convert to absolute paths and normalize before returning
+        all_files = [self._to_url(os.path.normpath(os.path.abspath(f))) for f in all_files]
 
         return all_files
 

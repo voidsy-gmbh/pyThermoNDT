@@ -83,7 +83,7 @@ def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_
         return file_path.as_uri()
     else:
         backend_instance.write_file(IOPathWrapper(content), name)
-        return name
+        return "s3://test-bucket/" + name
 
 
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x[0])

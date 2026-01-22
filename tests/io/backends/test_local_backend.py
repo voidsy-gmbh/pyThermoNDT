@@ -78,7 +78,7 @@ def test_get_file_list_single_file(tmp_path: Path):
     backend = LocalBackend(str(test_file))
 
     result = backend.get_file_list()
-    expected = [str(test_file)]
+    expected = [test_file.as_uri()]
 
     assert len(result) == 1
     assert result == expected
@@ -95,7 +95,7 @@ def test_get_file_list_directory(tmp_path: Path):
     backend = LocalBackend(str(tmp_path))
 
     result = backend.get_file_list()
-    expected = [str(p) for p in paths]  # Convert path objects to strings for comparison
+    expected = [p.as_uri() for p in paths]  # Convert path objects to strings for comparison
 
     assert len(result) == 3
     assert result == expected
@@ -113,7 +113,7 @@ def test_get_file_list_glob_pattern(tmp_path: Path):
     backend = LocalBackend(pattern)
 
     result = backend.get_file_list()
-    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
+    expected = [(tmp_path / "test1.txt").as_uri()]  # Only the file matching the pattern should be returned
 
     assert len(result) == 1
     assert result == expected

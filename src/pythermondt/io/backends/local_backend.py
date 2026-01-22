@@ -1,5 +1,7 @@
 import os
 from glob import glob
+from urllib.parse import urlparse
+from urllib.request import pathname2url, url2pathname
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
@@ -23,17 +25,20 @@ class LocalBackend(BaseBackend):
         if pattern == "":
             raise ValueError(f"Invalid pattern: {pattern!r}. Must be a non-empty string.")
 
+        # Initialize the pattern either as url or path
+        parsed_input = self._parse_input(pattern)
+
         # Determine the type of the source based on the provided pattern
         self.__source_type = None
-        if os.path.isfile(pattern):
+        if os.path.isfile(parsed_input):
             self.__source_type = "file"
-        elif os.path.isdir(pattern):
+        elif os.path.isdir(parsed_input):
             self.__source_type = "directory"
         else:
             self.__source_type = "glob"
 
         # Internal state
-        self.__pattern_str = pattern
+        self.__pattern_str = parsed_input
         self.__recursive = recursive
 
     @property
@@ -41,20 +46,26 @@ class LocalBackend(BaseBackend):
         return False
 
     @property
+    def scheme(self) -> str:
+        return "file"
+
+    @property
     def pattern(self) -> str:
         return self.__pattern_str
 
     def read_file(self, file_path: str) -> IOPathWrapper:
-        if not self.exists(file_path):
+        path = self._parse_input(file_path)
+        if not os.path.exists(path):
             raise FileNotFoundError(f"File not found: {file_path}")
-        return IOPathWrapper(file_path)
+        return IOPathWrapper(path)
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
-        with open(file_path, "wb") as file:
+        path = self._parse_input(file_path)
+        with open(path, "wb") as file:
             file.write(data.file_obj.read())
 
     def exists(self, file_path: str) -> bool:
-        return os.path.exists(file_path)
+        return os.path.exists(self._parse_input(file_path))
 
     def close(self) -> None:
         # Nothing to close for local files
@@ -85,15 +96,24 @@ class LocalBackend(BaseBackend):
         if num_files is not None:
             all_files = all_files[:num_files]
 
-        # Normalize paths before returning
-        all_files = [os.path.normpath(f) for f in all_files]
+        # Convert to absolute paths and normalize before returning
+        all_files = [self._to_url(os.path.normpath(os.path.abspath(f))) for f in all_files]
 
         return all_files
 
     def get_file_size(self, file_path: str) -> int:
-        if os.path.isdir(file_path):
-            raise IsADirectoryError(f"Path is a directory, not a file: {file_path}")
-        return os.path.getsize(file_path)
+        path = self._parse_input(file_path)
+        if os.path.isdir(path):
+            raise IsADirectoryError(f"Path is a directory, not a file: {path}")
+        return os.path.getsize(path)
 
     def download_file(self, source_path: str, destination_path: str) -> None:
         raise NotImplementedError("Direct download is not supported for local files.")
+
+    def _parse_input(self, input_path: str) -> str:
+        parsed = urlparse(input_path)
+        return url2pathname(parsed.path) if parsed.scheme == self.scheme else input_path
+
+    def _to_url(self, internal_path: str) -> str:
+        url_path = pathname2url(internal_path)
+        return f"file:{url_path}" if url_path.startswith("///") else f"file://{url_path}"

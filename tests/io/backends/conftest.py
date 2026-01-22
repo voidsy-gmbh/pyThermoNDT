@@ -1,7 +1,6 @@
 """Fixtures for backend tests."""
 
 from collections.abc import Generator
-from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -9,14 +8,7 @@ import pytest
 
 from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend, S3Backend
 
-
-@dataclass
-class TestConfig:
-    """Configuration for backend testing."""
-
-    backend_cls: type[BaseBackend]
-    is_remote: bool
-
+from .utils import TestConfig
 
 BACKENDS = [
     TestConfig(backend_cls=LocalBackend, is_remote=False),
@@ -66,7 +58,7 @@ def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_
     if isinstance(backend_instance, LocalBackend):
         file_path = tmp_path / name
         file_path.write_bytes(content)
-        return str(file_path)
+        return file_path.as_uri()
     else:
         backend_instance.write_file(IOPathWrapper(content), name)
         return name

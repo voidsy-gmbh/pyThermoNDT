@@ -56,7 +56,24 @@ def test_init_nonexistent_pattern(pattern):
     assert len(backend.get_file_list()) == 0  # Should return empty list for non-existent path
 
 
-def test_close_does_nothing(tmp_path):
+def test_init_uri_pattern(tmp_path: Path):
+    """Test initialization works with URI patterns and normal file paths."""
+    # Create a test file
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("content")
+
+    backend_path = LocalBackend(str(tmp_path / "*.txt"))
+    backend_uri = LocalBackend((tmp_path / "*.txt").as_uri())
+
+    file_list_path = backend_path.get_file_list()
+    file_list_uri = backend_uri.get_file_list()
+    assert file_list_path == file_list_uri
+    assert backend_path.pattern == backend_uri.pattern
+    assert backend_path.read_file(file_list_path[0]).file_obj.read() == b"content"
+    assert backend_uri.read_file(file_list_uri[0]).file_obj.read() == b"content"
+
+
+def test_close_does_nothing(tmp_path: Path):
     """Test that close method doesn't raise errors."""
     backend = LocalBackend(str(tmp_path))
     backend.close()  # Should not raise
@@ -78,7 +95,7 @@ def test_get_file_list_single_file(tmp_path: Path):
     backend = LocalBackend(str(test_file))
 
     result = backend.get_file_list()
-    expected = [str(test_file)]
+    expected = [test_file.as_uri()]
 
     assert len(result) == 1
     assert result == expected
@@ -95,7 +112,7 @@ def test_get_file_list_directory(tmp_path: Path):
     backend = LocalBackend(str(tmp_path))
 
     result = backend.get_file_list()
-    expected = [str(p) for p in paths]  # Convert path objects to strings for comparison
+    expected = [p.as_uri() for p in paths]  # Convert path objects to strings for comparison
 
     assert len(result) == 3
     assert result == expected
@@ -113,7 +130,7 @@ def test_get_file_list_glob_pattern(tmp_path: Path):
     backend = LocalBackend(pattern)
 
     result = backend.get_file_list()
-    expected = [str(tmp_path / "test1.txt")]  # Only the file matching the pattern should be returned
+    expected = [(tmp_path / "test1.txt").as_uri()]  # Only the file matching the pattern should be returned
 
     assert len(result) == 1
     assert result == expected
@@ -195,7 +212,7 @@ def test_unicode_filenames(tmp_path):
         pytest.skip("Unicode filenames not supported on this system")
 
 
-def test_special_characters_in_paths(tmp_path):
+def test_special_characters_in_paths(tmp_path: Path):
     """Test handling paths with special characters."""
     special_dir = tmp_path / "test dir with spaces & special chars"
     special_dir.mkdir()
@@ -206,7 +223,11 @@ def test_special_characters_in_paths(tmp_path):
 
     files = backend.get_file_list()
     assert len(files) == 1
-    assert "test file.txt" in files[0]
+
+    # Test reading the file back
+    result = backend.read_file(str(test_file))
+    assert isinstance(result, IOPathWrapper)
+    assert result.file_obj.read() == b"content"
 
 
 def test_full_workflow(tmp_path):

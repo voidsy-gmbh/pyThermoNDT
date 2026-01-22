@@ -10,6 +10,12 @@ class BaseBackend(ABC):
         """Determine if the source is remote."""
         raise NotImplementedError("Subclasses must implement this method")
 
+    @property
+    @abstractmethod
+    def scheme(self) -> str:
+        """Return the scheme of the backend (e.g., 'file', 's3')."""
+        raise NotImplementedError("Subclasses must implement this method")
+
     @abstractmethod
     def read_file(self, file_path: str) -> IOPathWrapper:
         """Read a file and return its content as a IOPathWrapper object."""

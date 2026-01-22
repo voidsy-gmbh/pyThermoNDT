@@ -111,9 +111,8 @@ class LocalBackend(BaseBackend):
         raise NotImplementedError("Direct download is not supported for local files.")
 
     def _parse_input(self, input_path: str) -> str:
-        if urlparse(input_path).scheme == self.scheme:
-            return url2pathname(input_path.replace(f"{self.scheme}:", ""))
-        return input_path
+        parsed = urlparse(input_path)
+        return url2pathname(parsed.path) if parsed.scheme == self.scheme else input_path
 
     def _to_url(self, internal_path: str) -> str:
         url_path = pathname2url(internal_path)

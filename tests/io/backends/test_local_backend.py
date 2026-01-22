@@ -56,6 +56,23 @@ def test_init_nonexistent_pattern(pattern):
     assert len(backend.get_file_list()) == 0  # Should return empty list for non-existent path
 
 
+def test_init_uri_pattern(tmp_path: Path):
+    """Test initialization works with URI patterns and normal file paths."""
+    # Create a test file
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("content")
+
+    backend_path = LocalBackend(str(tmp_path / "*.txt"))
+    backend_uri = LocalBackend((tmp_path / "*.txt").as_uri())
+
+    file_list_path = backend_path.get_file_list()
+    file_list_uri = backend_uri.get_file_list()
+    assert file_list_path == file_list_uri
+    assert backend_path.pattern == backend_uri.pattern
+    assert backend_path.read_file(file_list_path[0]).file_obj.read() == b"content"
+    assert backend_uri.read_file(file_list_uri[0]).file_obj.read() == b"content"
+
+
 def test_close_does_nothing(tmp_path: Path):
     """Test that close method doesn't raise errors."""
     backend = LocalBackend(str(tmp_path))

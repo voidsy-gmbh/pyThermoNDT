@@ -74,6 +74,19 @@ def test_exists(backend_config, tmp_path, exists):
     assert backend_instance.exists(file_path) == exists
 
 
+def test_get_file_size_not_exist(backend_config, tmp_path):
+    """Test getting file size for a non-existent file raises FileNotFoundError."""
+    backend_instance, config = backend_config
+
+    # Determine path based on backend type
+    if config.is_remote:
+        path = "non_existent_file.txt"
+    else:
+        path = str(tmp_path / "non_existent_file.txt")
+    with pytest.raises(FileNotFoundError, match="File not found:"):
+        backend_instance.get_file_size(path)
+
+
 def test_get_file_size(backend_config, test_file):
     """Test getting file size."""
     backend_instance, _ = backend_config

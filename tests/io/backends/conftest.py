@@ -1,10 +1,14 @@
-"""Fixtures for backend tests."""
+"""Fixtures for backend agnostic tests."""
 
+import os
 from collections.abc import Generator
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import cast
 
+import boto3
 import pytest
+from moto import mock_aws
 
 from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend, S3Backend
 
@@ -12,6 +16,7 @@ from .utils import TestConfig
 
 BACKENDS = [
     TestConfig(backend_cls=LocalBackend, is_remote=False),
+    TestConfig(backend_cls=S3Backend, is_remote=True),
 ]
 
 # Single file test data
@@ -42,15 +47,32 @@ def backend_config(request, tmp_path: Path) -> Generator[tuple[BaseBackend, Test
     """Create backend from configuration."""
     config = cast(TestConfig, request.param)
 
+    mock: AbstractContextManager | None = None
     if config.backend_cls == LocalBackend:
         backend_instance = LocalBackend(pattern=str(tmp_path))
     elif config.backend_cls == S3Backend:
-        backend_instance = S3Backend(bucket="test-bucket", prefix="test/")
+        # Mock the AWS S3 service
+        os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+        os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+        os.environ["AWS_SECURITY_TOKEN"] = "testing"
+        os.environ["AWS_SESSION_TOKEN"] = "testing"
+        os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+        mock = mock_aws()
+        mock.start()
+
+        # Setup S3 bucket
+        s3_client = boto3.client("s3")
+        s3_client.create_bucket(Bucket="test-bucket")
+
+        # Create S3 backend instance
+        backend_instance = S3Backend(bucket="test-bucket", prefix="")
     else:
         raise NotImplementedError(f"Backend {config.backend_cls} not implemented")
 
     yield backend_instance, config
     backend_instance.close()
+    if mock:
+        mock.stop()
 
 
 def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_path: Path) -> str:
@@ -61,7 +83,7 @@ def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_
         return file_path.as_uri()
     else:
         backend_instance.write_file(IOPathWrapper(content), name)
-        return name
+        return "s3://test-bucket/" + name
 
 
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x[0])

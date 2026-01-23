@@ -1,4 +1,5 @@
 from io import BytesIO
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
@@ -14,7 +15,7 @@ class S3Backend(BaseBackend):
         if not session:
             session = boto3.Session()
 
-        # Create a new s3 client from the give session
+        # Create a new s3 client from the given session
         self.__client = session.client("s3")
 
         # Write the bucket and prefix to the private attributes
@@ -50,14 +51,14 @@ class S3Backend(BaseBackend):
         Raises:
             FileNotFoundError: If file doesn't exist
         """
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
         try:
             data = BytesIO()
             with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as pbar:
                 self.__client.download_fileobj(bucket, key, data, Callback=pbar.callback)
             return IOPathWrapper(data)
         except ClientError as e:
-            if e.response["Error"]["Code"] in ("NoSuchKey", "NoSuchBucket"):
+            if self._is_not_found_error(e):
                 raise FileNotFoundError(f"File not found: {file_path}") from e
             raise
 
@@ -68,7 +69,7 @@ class S3Backend(BaseBackend):
             data (IOPathWrapper): File data to write
             file_path (str): Destination path
         """
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
 
         # Reset file object position
         data.file_obj.seek(0)
@@ -89,13 +90,13 @@ class S3Backend(BaseBackend):
         Returns:
             bool: True if file exists
         """
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
 
         try:
             self.__client.head_object(Bucket=bucket, Key=key)
             return True
         except ClientError as e:
-            if e.response["Error"]["Code"] in ("404", "403", "NoSuchKey"):
+            if self._is_not_found_error(e):
                 return False
             raise
 
@@ -120,7 +121,7 @@ class S3Backend(BaseBackend):
         paginator = self.__client.get_paginator("list_objects_v2")
 
         files = []
-        for page in paginator.paginate(Bucket=self.__bucket, Prefix=self.__prefix):
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=self.prefix):
             if "Contents" in page:
                 for obj in page["Contents"]:
                     key = obj["Key"]
@@ -129,7 +130,7 @@ class S3Backend(BaseBackend):
                         continue
 
                     # Add full S3 path
-                    files.append(f"s3://{self.__bucket}/{key}")
+                    files.append(self._to_url(self.bucket, key))
 
         # Filter by extension if provided
         if extensions:
@@ -146,7 +147,7 @@ class S3Backend(BaseBackend):
 
     def get_file_size(self, file_path: str) -> int:
         """Return the size of the file on s3 bucket in bytes."""
-        bucket, key = self._parse_path(file_path)
+        bucket, key = self._parse_input(file_path)
         response = self.__client.head_object(Bucket=bucket, Key=key)
         return response["ContentLength"]
 
@@ -157,38 +158,58 @@ class S3Backend(BaseBackend):
             source_path (str): Source S3 path
             destination_path (str): Destination local path
         """
-        bucket, key = self._parse_path(source_path)
+        bucket, key = self._parse_input(source_path)
 
         # Download the file
         with TqdmCallback(total=self.get_file_size(source_path), desc=f"Downloading {key}") as progress:
             self.__client.download_file(bucket, key, destination_path, Callback=progress.callback)
 
-    def _parse_path(self, path: str) -> tuple[str, str]:
-        """Parse S3 path into bucket and key.
-
-        Handles both s3://bucket/key format and relative paths
+    def _parse_input(self, file_path: str) -> tuple[str, str]:
+        """Convert S3 URI to (bucket, key) tuple.
 
         Args:
-            path (str): Path to parse
+            file_path: Either "s3://bucket/key" or just "key"
 
         Returns:
             tuple[str, str]: (bucket, key)
         """
-        # Handle s3:// URIs
-        if path.startswith("s3://"):
-            # Remove s3:// prefix
-            path = path[5:]
-            # Split into bucket and key
-            parts = path.split("/", 1)
-            if len(parts) == 1:
-                # No key, just bucket
-                return parts[0], ""
-            return parts[0], parts[1]
+        parsed = urlparse(file_path)
+        if parsed.scheme == "s3":
+            # s3://bucket/key/path -> bucket="bucket", key="key/path"
+            bucket = parsed.netloc
+            key = parsed.path.lstrip("/")  # Remove leading slash
+            return bucket, key
 
-        # Assume path is relative to bucket/prefix
-        if self.__prefix:
-            # Ensure we don't have double slashes
-            path = path.removeprefix("/")
-            return self.__bucket, f"{self.__prefix}/{path}"
+        # Not a URI - treat as absolute key within default bucket
+        # No prefix prepending - user must provide full key
+        return self.bucket, file_path
 
-        return self.__bucket, path
+    def _to_url(self, bucket: str, key: str) -> str:
+        """Convert (bucket, key) to S3 URI.
+
+        Args:
+            bucket: S3 bucket name
+            key: Object key
+
+        Returns:
+            str: S3 URI like "s3://bucket/key"
+        """
+        return f"s3://{bucket}/{key}"
+
+    def _is_not_found_error(self, e: ClientError) -> bool:
+        """Check if ClientError indicates file not found.
+
+        AWS S3 returns different error codes for "not found":
+        - '404' - from head_object() operation
+        - 'NoSuchKey' - from get_object() and other operations
+        - 'NoSuchBucket' - bucket doesn't exist
+        - '403' - can indicate missing file if user lacks s3:ListBucket permission
+
+        Args:
+            e: ClientError from boto3
+
+        Returns:
+            bool: True if this is a not-found error
+        """
+        error_code = e.response.get("Error", {}).get("Code", "")
+        return error_code in ("404", "403", "NoSuchKey", "NoSuchBucket")

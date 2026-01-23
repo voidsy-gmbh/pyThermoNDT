@@ -42,6 +42,9 @@ class S3Writer(BaseWriter):
         if not file_name.endswith(".hdf5"):
             file_name += ".hdf5"
 
-        # Write the DataContainer to the file
+        # Writer constructs full key with prefix
+        full_key = f"{self.__prefix}/{file_name}" if self.__prefix else file_name
+
+        # Backend handles everything - just pass the key
         data = container.serialize_to_hdf5(compression, compression_opts)
-        self.backend.write_file(IOPathWrapper(data), file_name)
+        self.backend.write_file(IOPathWrapper(data), full_key)

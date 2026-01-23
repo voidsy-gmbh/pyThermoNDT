@@ -103,6 +103,8 @@ class LocalBackend(BaseBackend):
 
     def get_file_size(self, file_path: str) -> int:
         path = self._parse_input(file_path)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File not found: {file_path}")
         if os.path.isdir(path):
             raise IsADirectoryError(f"Path is a directory, not a file: {path}")
         return os.path.getsize(path)

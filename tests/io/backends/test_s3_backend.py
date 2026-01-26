@@ -1,6 +1,5 @@
 """S3-specific backend tests."""
 
-import os
 from unittest.mock import patch
 
 import boto3
@@ -12,14 +11,8 @@ from pythermondt.io import IOPathWrapper, S3Backend
 
 
 @pytest.fixture
-def s3_backend():
+def s3_backend(aws_creds):
     """Create mocked S3 backend for testing."""
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
     with mock_aws():
         # Setup S3 bucket
         s3_client = boto3.client("s3")

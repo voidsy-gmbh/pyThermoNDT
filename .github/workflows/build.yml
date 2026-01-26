@@ -15,7 +15,7 @@ jobs:
     steps:
         # Step 1: Checkout code in the specified release branch
       - name: Checkout code
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
 

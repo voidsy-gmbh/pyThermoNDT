@@ -17,7 +17,7 @@ jobs:
     steps:
       # Step 1: Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
 
       # Step 2: Setup uv
       - name: Setup uv

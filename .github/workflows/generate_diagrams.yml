@@ -38,7 +38,7 @@ jobs:
       # Step 1.1: Checkout repository (workflow_call)
       - name: Checkout code
         if: github.event.workflow != '.github/workflows/generate_diagrams.yml'
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
           ssh-key: ${{ secrets.WRITE_KEY }}
@@ -46,7 +46,7 @@ jobs:
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout code
         if: github.event.workflow == '.github/workflows/generate_diagrams.yml'
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           ssh-key: ${{ secrets.WRITE_KEY }}
 

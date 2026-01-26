@@ -52,8 +52,15 @@ def aws_creds():
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
 
+@pytest.fixture()
+def s3_client(aws_creds):
+    """Create mocked S3 client."""
+    with mock_aws():
+        yield boto3.client("s3")
+
+
 @pytest.fixture(params=BACKENDS, ids=lambda x: x.backend_cls.__name__)
-def backend_config(request, tmp_path: Path, aws_creds) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
+def backend_config(request, tmp_path: Path, s3_client) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
     """Create backend from configuration."""
     config = cast(TestConfig, request.param)
 
@@ -66,7 +73,6 @@ def backend_config(request, tmp_path: Path, aws_creds) -> Generator[tuple[BaseBa
         mock.start()
 
         # Setup S3 bucket
-        s3_client = boto3.client("s3")
         s3_client.create_bucket(Bucket="test-bucket")
 
         # Create S3 backend instance

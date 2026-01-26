@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-import boto3
 import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
@@ -11,11 +10,10 @@ from pythermondt.io import IOPathWrapper, S3Backend
 
 
 @pytest.fixture
-def s3_backend(aws_creds):
+def s3_backend(s3_client):
     """Create mocked S3 backend for testing."""
     with mock_aws():
         # Setup S3 bucket
-        s3_client = boto3.client("s3")
         s3_client.create_bucket(Bucket="test-bucket")
 
         # Create backend

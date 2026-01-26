@@ -42,8 +42,25 @@ FILE_SCENARIOS = {
 }
 
 
+@pytest.fixture()
+def aws_creds():
+    """Mocked AWS Credentials for moto."""
+    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    os.environ["AWS_SECURITY_TOKEN"] = "testing"
+    os.environ["AWS_SESSION_TOKEN"] = "testing"
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+
+
+@pytest.fixture()
+def s3_client(aws_creds):
+    """Create mocked S3 client."""
+    with mock_aws():
+        yield boto3.client("s3")
+
+
 @pytest.fixture(params=BACKENDS, ids=lambda x: x.backend_cls.__name__)
-def backend_config(request, tmp_path: Path) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
+def backend_config(request, tmp_path: Path, s3_client) -> Generator[tuple[BaseBackend, TestConfig], None, None]:
     """Create backend from configuration."""
     config = cast(TestConfig, request.param)
 
@@ -52,16 +69,10 @@ def backend_config(request, tmp_path: Path) -> Generator[tuple[BaseBackend, Test
         backend_instance = LocalBackend(pattern=str(tmp_path))
     elif config.backend_cls == S3Backend:
         # Mock the AWS S3 service
-        os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-        os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-        os.environ["AWS_SECURITY_TOKEN"] = "testing"
-        os.environ["AWS_SESSION_TOKEN"] = "testing"
-        os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
         mock = mock_aws()
         mock.start()
 
         # Setup S3 bucket
-        s3_client = boto3.client("s3")
         s3_client.create_bucket(Bucket="test-bucket")
 
         # Create S3 backend instance

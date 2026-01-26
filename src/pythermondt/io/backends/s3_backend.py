@@ -52,15 +52,10 @@ class S3Backend(BaseBackend):
             FileNotFoundError: If file doesn't exist
         """
         bucket, key = self._parse_input(file_path)
-        try:
-            data = BytesIO()
-            with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as pbar:
-                self.__client.download_fileobj(bucket, key, data, Callback=pbar.callback)
-            return IOPathWrapper(data)
-        except ClientError as e:
-            if self._is_not_found_error(e):
-                raise FileNotFoundError(f"File not found: {file_path}") from e
-            raise
+        data = BytesIO()
+        with TqdmCallback(total=self.get_file_size(file_path), desc=f"Downloading {key}") as pbar:
+            self.__client.download_fileobj(bucket, key, data, Callback=pbar.callback)
+        return IOPathWrapper(data)
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         """Write file to S3.

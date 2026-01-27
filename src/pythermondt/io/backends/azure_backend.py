@@ -74,10 +74,10 @@ class AzureBlobBackend(BaseBackend):
 
     def read_file(self, file_path: str) -> IOPathWrapper:
         """Read file from Azure Blob Storage."""
-        blob_name = self._parse_path(file_path)
+        container, blob_name = self._parse_input(file_path)
 
         try:
-            blob_client = self.__client.get_blob_client(container=self.__container_name, blob=blob_name)
+            blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
 
             # Get blob properties for progress bar
             properties = blob_client.get_blob_properties()
@@ -99,14 +99,14 @@ class AzureBlobBackend(BaseBackend):
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         """Write file to Azure Blob Storage."""
-        blob_name = self._parse_path(file_path)
+        container, blob_name = self._parse_input(file_path)
 
         # Reset and get size
         data.file_obj.seek(0)
         file_size = data.file_obj.getbuffer().nbytes
 
         try:
-            blob_client = self.__client.get_blob_client(container=self.__container_name, blob=blob_name)
+            blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
 
             # Wrap file object to track read progress
             data.file_obj.seek(0)
@@ -121,10 +121,10 @@ class AzureBlobBackend(BaseBackend):
 
     def exists(self, file_path: str) -> bool:
         """Check if blob exists."""
-        blob_name = self._parse_path(file_path)
+        container, blob_name = self._parse_input(file_path)
 
         try:
-            blob_client = self.__client.get_blob_client(container=self.__container_name, blob=blob_name)
+            blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
             blob_client.get_blob_properties()
             return True
         except ResourceNotFoundError:
@@ -149,9 +149,8 @@ class AzureBlobBackend(BaseBackend):
             if blob.name.endswith("/"):
                 continue
 
-            # Match S3's pattern: use azure:// scheme
-            blob_uri = f"azure://{self.__container_name}/{blob.name}"
-            blobs.append(blob_uri)
+            # Add full Azure path using _to_url
+            blobs.append(self._to_url(self.__container_name, blob.name))
 
         if extensions:
             blobs = [b for b in blobs if any(b.lower().endswith(ext.lower()) for ext in extensions)]
@@ -165,18 +164,18 @@ class AzureBlobBackend(BaseBackend):
 
     def get_file_size(self, file_path: str) -> int:
         """Get blob size in bytes."""
-        blob_name = self._parse_path(file_path)
+        container, blob_name = self._parse_input(file_path)
 
-        blob_client = self.__client.get_blob_client(container=self.__container_name, blob=blob_name)
+        blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
 
         properties = blob_client.get_blob_properties()
         return properties.size
 
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Download blob to local filesystem."""
-        blob_name = self._parse_path(source_path)
+        container, blob_name = self._parse_input(source_path)
 
-        blob_client = self.__client.get_blob_client(container=self.__container_name, blob=blob_name)
+        blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
 
         # Get file size for progress
         properties = blob_client.get_blob_properties()
@@ -189,20 +188,39 @@ class AzureBlobBackend(BaseBackend):
                     local_file.write(chunk)
                     progress.callback(len(chunk))
 
-    def _parse_path(self, path: str) -> str:
-        """Parse path into blob name."""
-        # Handle azure:// URIs (new format)
-        if path.startswith("azure://"):
-            path = path[8:]  # Remove "azure://"
+    def _parse_input(self, file_path: str) -> tuple[str, str]:
+        """Convert Azure URI to (container, blob_name) tuple.
+
+        Args:
+            file_path: Either "az://container/blob" or just "blob"
+
+        Returns:
+            tuple[str, str]: (container, blob_name)
+        """
+        if file_path.startswith("az://"):
+            # az://container/blob/path -> container="container", blob_name="blob/path"
+            path = file_path[5:]  # Remove "az://"
             parts = path.split("/", 1)
-            # parts[0] is container, parts[1] is blob path
-            if len(parts) > 1:
-                return parts[1]
-            return ""
+            container = parts[0]
+            blob_name = parts[1] if len(parts) > 1 else ""
+            return container, blob_name
 
-        # Handle relative paths
+        # Not a URI - treat as blob name within default container
+        # Apply prefix if configured
+        blob_name = file_path.lstrip("/")
         if self.__prefix:
-            path = path.lstrip("/")
-            return f"{self.__prefix}/{path}"
+            blob_name = f"{self.__prefix}/{blob_name}"
 
-        return path
+        return self.__container_name, blob_name
+
+    def _to_url(self, container: str, blob_name: str) -> str:
+        """Convert (container, blob_name) to Azure URI.
+
+        Args:
+            container: Azure container name
+            blob_name: Blob name/key
+
+        Returns:
+            str: Azure URI like "az://container/blob"
+        """
+        return f"az://{container}/{blob_name}"

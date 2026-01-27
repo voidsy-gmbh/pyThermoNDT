@@ -61,6 +61,10 @@ class AzureBlobBackend(BaseBackend):
         return True
 
     @property
+    def scheme(self) -> str:
+        return "az"
+
+    @property
     def container_name(self) -> str:
         return self.__container_name
 

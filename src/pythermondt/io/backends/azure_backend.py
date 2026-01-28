@@ -49,12 +49,11 @@ class AzureBlobBackend(BaseBackend):
                 credential = DefaultAzureCredential()
                 logger.debug("Using DefaultAzureCredential for authentication.")
             self.__client = BlobServiceClient(account_url, credential=credential)
-            logger.debug("Client initialized using account URL and credential.")
 
         self.__container_name = container_name
         self.__prefix = prefix.rstrip("/") if prefix else ""
 
-        logger.info(f"Azure backend: container={container_name}, prefix={prefix or '(root)'}")
+        logger.debug(f"AzureBackend(container={container_name}, prefix={prefix}")
 
     @property
     def remote_source(self) -> bool:
@@ -94,7 +93,6 @@ class AzureBlobBackend(BaseBackend):
             return IOPathWrapper(data)
 
         except ResourceNotFoundError as e:
-            logger.error(e)
             raise FileNotFoundError(f"File not found: {file_path}") from e
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
@@ -116,7 +114,6 @@ class AzureBlobBackend(BaseBackend):
                 blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True)
 
         except Exception as e:
-            logger.error(e)
             raise RuntimeError(f"Failed to upload blob: {e}") from e
 
     def exists(self, file_path: str) -> bool:
@@ -129,10 +126,6 @@ class AzureBlobBackend(BaseBackend):
             return True
         except ResourceNotFoundError:
             return False
-        except Exception as e:
-            # Other exceptions (auth, network) should be re-raised
-            logger.exception("Error checking blob existence: %s", e)
-            raise
 
     def close(self) -> None:
         """Close Azure Blob client connections."""
@@ -172,7 +165,6 @@ class AzureBlobBackend(BaseBackend):
             properties = blob_client.get_blob_properties()
             return properties.size
         except ResourceNotFoundError as e:
-            logger.error(e)
             raise FileNotFoundError(f"File not found: {file_path}") from e
 
     def download_file(self, source_path: str, destination_path: str) -> None:

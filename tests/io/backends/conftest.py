@@ -15,8 +15,8 @@ from pythermondt.io import BaseBackend, IOPathWrapper, LocalBackend, S3Backend
 from .utils import TestConfig
 
 BACKENDS = [
-    TestConfig(backend_cls=LocalBackend, is_remote=False),
-    TestConfig(backend_cls=S3Backend, is_remote=True),
+    TestConfig(backend_cls=LocalBackend, scheme="file", is_remote=False),
+    TestConfig(backend_cls=S3Backend, scheme="s3", is_remote=True),
 ]
 
 # Single file test data

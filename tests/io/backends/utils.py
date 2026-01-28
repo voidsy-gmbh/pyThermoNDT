@@ -8,4 +8,5 @@ class TestConfig:
     """Configuration for backend testing."""
 
     backend_cls: type[BaseBackend]
+    scheme: str
     is_remote: bool

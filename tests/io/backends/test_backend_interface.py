@@ -7,6 +7,12 @@ import pytest
 from pythermondt.io import IOPathWrapper
 
 
+def test_scheme(backend_config):
+    """Test scheme property matches config."""
+    backend_instance, config = backend_config
+    assert backend_instance.scheme == config.scheme
+
+
 def test_remote_source(backend_config):
     """Test remote_source property matches config."""
     backend_instance, config = backend_config
@@ -98,50 +104,50 @@ def test_get_file_size(backend_config, test_file):
 
 def test_get_file_list(backend_config, test_file):
     """Test listing a single file without any filters."""
-    backend_instance, _ = backend_config
+    backend_instance, config = backend_config
     file_path, _ = test_file
     expected_files = [file_path]
     file_list = backend_instance.get_file_list()
 
     assert len(file_list) == 1
-    assert file_list[0].startswith(backend_instance.scheme + "://")
+    assert file_list[0].startswith(config.scheme + "://")
     assert file_list == expected_files
 
 
 def test_get_file_list_all(backend_config, test_files_scenario):
     """Test listing all files."""
-    backend_instance, _ = backend_config
+    backend_instance, config = backend_config
     expected_files = list(test_files_scenario.values())
     file_list = backend_instance.get_file_list()
 
     assert len(file_list) == len(test_files_scenario)
-    assert all(f.startswith(backend_instance.scheme + "://") for f in file_list)
+    assert all(f.startswith(config.scheme + "://") for f in file_list)
     assert file_list == expected_files
 
 
 def test_get_file_list_filter_extension(backend_config, test_files_scenario):
     """Test extension filtering."""
-    backend_instance, _ = backend_config
+    backend_instance, config = backend_config
 
     # Count expected .tiff files in scenario
     expected_tiff = [name for name in test_files_scenario.values() if name.endswith(".tiff")]
     file_list = backend_instance.get_file_list(extensions=(".tiff",))
 
     assert len(file_list) == len(expected_tiff)
-    assert all(f.startswith(backend_instance.scheme + "://") for f in file_list)
+    assert all(f.startswith(config.scheme + "://") for f in file_list)
     assert file_list == expected_tiff
 
 
 @pytest.mark.parametrize("num_files", [0, 1, 5])
 def test_get_file_list_num_limit(backend_config, test_files_scenario, num_files):
     """Test num_files limit."""
-    backend_instance, _ = backend_config
+    backend_instance, config = backend_config
 
     expected_files = list(test_files_scenario.values())[0:num_files]
     limited = backend_instance.get_file_list(num_files=num_files)
 
     assert len(limited) == len(expected_files)
-    assert all(f.startswith(backend_instance.scheme + "://") for f in limited)
+    assert all(f.startswith(config.scheme + "://") for f in limited)
     assert limited == expected_files
 
 

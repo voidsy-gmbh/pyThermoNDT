@@ -36,6 +36,7 @@ class AzureBlobWriter(BaseWriter):
 
     def _create_backend(self) -> AzureBlobBackend:
         """Create a new AzureBlobBackend instance."""
+        # pylint: disable=duplicate-code
         return AzureBlobBackend(
             account_url=self.__account_url,
             container_name=self.__container_name,
@@ -43,6 +44,7 @@ class AzureBlobWriter(BaseWriter):
             connection_string=self.__connection_string,
             credential=self.__credential,
         )
+        # pylint: enable=duplicate-code
 
     def write(
         self,

@@ -166,10 +166,14 @@ class AzureBlobBackend(BaseBackend):
         """Get blob size in bytes."""
         container, blob_name = self._parse_input(file_path)
 
-        blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
+        try:
+            blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
 
-        properties = blob_client.get_blob_properties()
-        return properties.size
+            properties = blob_client.get_blob_properties()
+            return properties.size
+        except ResourceNotFoundError as e:
+            logger.error(e)
+            raise FileNotFoundError(f"File not found: {file_path}") from e
 
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Download blob to local filesystem."""

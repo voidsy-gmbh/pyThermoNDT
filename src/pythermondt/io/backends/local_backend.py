@@ -39,12 +39,12 @@ class LocalBackend(BaseBackend):
             self.__source_type = "directory"
         else:
             self.__source_type = "glob"
-        logger.debug(f"Source type determined as: {self.__source_type}")
+        logger.debug("Source type determined as: %s", self.__source_type)
 
         # Internal state
         self.__pattern_str = parsed_input
         self.__recursive = recursive
-        logger.debug(f"LocalBackend(pattern={pattern}, recursive={recursive}) initialized.")
+        logger.debug("LocalBackend(pattern=%s, recursive=%s) initialized.", pattern, recursive)
 
     @property
     def remote_source(self) -> bool:

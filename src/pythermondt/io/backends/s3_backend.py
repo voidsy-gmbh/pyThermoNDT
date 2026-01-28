@@ -25,7 +25,7 @@ class S3Backend(BaseBackend):
         # Write the bucket and prefix to the private attributes
         self.__bucket = bucket
         self.__prefix = prefix
-        logger.debug(f"S3Backend(bucket={bucket}, prefix={prefix}) initialized.")
+        logger.debug("S3Backend(bucket=%s, prefix=%s) initialized.", bucket, prefix)
 
     @property
     def remote_source(self) -> bool:

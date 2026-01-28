@@ -53,7 +53,7 @@ class AzureBlobBackend(BaseBackend):
         self.__container_name = container_name
         self.__prefix = prefix.rstrip("/") if prefix else ""
 
-        logger.debug(f"AzureBackend(container={container_name}, prefix={prefix}")
+        logger.debug("AzureBlobBackend(container=%s, prefix=%s) initialized.", container_name, prefix)
 
     @property
     def remote_source(self) -> bool:

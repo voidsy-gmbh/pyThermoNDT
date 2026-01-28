@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from urllib.parse import urlparse
 
@@ -8,11 +9,14 @@ from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
 from .progress import TqdmCallback
 
+logger = logging.getLogger(__name__)
+
 
 class S3Backend(BaseBackend):
     def __init__(self, bucket: str, prefix: str, session: boto3.Session | None = None) -> None:
         # Use default boto3 session if none is provided
         if not session:
+            logger.debug("No boto3 session provided, creating default session.")
             session = boto3.Session()
 
         # Create a new s3 client from the given session
@@ -21,6 +25,7 @@ class S3Backend(BaseBackend):
         # Write the bucket and prefix to the private attributes
         self.__bucket = bucket
         self.__prefix = prefix
+        logger.debug(f"S3Backend(bucket={bucket}, prefix={prefix}) initialized.")
 
     @property
     def remote_source(self) -> bool:

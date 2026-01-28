@@ -1,3 +1,4 @@
+import logging
 import os
 from glob import glob
 from urllib.parse import urlparse
@@ -5,6 +6,8 @@ from urllib.request import pathname2url, url2pathname
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
+
+logger = logging.getLogger(__name__)
 
 
 class LocalBackend(BaseBackend):
@@ -36,10 +39,12 @@ class LocalBackend(BaseBackend):
             self.__source_type = "directory"
         else:
             self.__source_type = "glob"
+        logger.debug(f"Source type determined as: {self.__source_type}")
 
         # Internal state
         self.__pattern_str = parsed_input
         self.__recursive = recursive
+        logger.debug(f"LocalBackend(pattern={pattern}, recursive={recursive}) initialized.")
 
     @property
     def remote_source(self) -> bool:

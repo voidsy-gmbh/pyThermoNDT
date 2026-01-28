@@ -95,7 +95,7 @@ class AzureBlobBackend(BaseBackend):
 
         except ResourceNotFoundError as e:
             logger.error(e)
-            raise FileNotFoundError(f"Blob not found: {file_path}") from e
+            raise FileNotFoundError(f"File not found: {file_path}") from e
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
         """Write file to Azure Blob Storage."""

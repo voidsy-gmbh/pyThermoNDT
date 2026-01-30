@@ -54,10 +54,10 @@ jobs:
       - name: Run Pylint
         run: pylint --source-roots src --jobs 0 pythermondt
 
-      # Step 6: Perform licensecheck (ignoring nvidia because licensecheck does not know how to handle proprietary licenses)
+      # Step 6: Perform licensecheck
       - name: Perform licensecheck
         run: |
-          licensecheck --requirements-paths pyproject.toml --ignore-packages matplotlib-inline -0
+          licensecheck -0
 
       # Step 7: Run mypy
       - name: Run mypy

@@ -100,7 +100,6 @@ class AzureBlobBackend(BaseBackend):
         container, blob_name = self._parse_input(file_path)
 
         # Reset and get size
-        data.file_obj.seek(0)
         file_size = data.file_obj.getbuffer().nbytes
 
         try:

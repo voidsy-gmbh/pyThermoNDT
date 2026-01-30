@@ -252,12 +252,8 @@ class AzureBlobBackend(BaseBackend):
             return container, blob_name
 
         # Not a URI - treat as blob name within default container
-        # Apply prefix if configured
-        blob_name = file_path.lstrip("/")
-        if self.__prefix:
-            blob_name = f"{self.__prefix}/{blob_name}"
-
-        return self.__container_name, blob_name
+        # No prefix prepending - user must provide full blob name
+        return self.__container_name, file_path
 
     def _to_url(self, container: str, blob_name: str) -> str:
         """Convert (container, blob_name) to Azure URI.

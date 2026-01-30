@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import IO, cast
 
 from azure.core.credentials import TokenCredential
-from azure.core.exceptions import ResourceNotFoundError
+from azure.core.exceptions import AzureError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from tqdm.auto import tqdm
@@ -130,7 +130,7 @@ class AzureBlobBackend(BaseBackend):
             ) as wrapped_file:
                 blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True)
 
-        except Exception as e:
+        except AzureError as e:
             raise RuntimeError(f"Failed to upload blob: {e}") from e
 
     def exists(self, file_path: str) -> bool:

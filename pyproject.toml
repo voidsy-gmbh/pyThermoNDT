@@ -224,6 +224,7 @@ replace = "__version__ = \"{new_version}\""
 
 [tool.licensecheck]
 skip_dependencies = [
+    "azure-identity", # Buggy with complex license
     "torch", # Buggy with complex license
     "matplotlib-inline" # TODO: Remove once https://github.com/ipython/matplotlib-inline/pull/58 is merged
 ]

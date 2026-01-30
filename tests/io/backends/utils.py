@@ -30,9 +30,8 @@ class MockAzureBlob:
             raise ResourceNotFoundError(f"Container '{container}' not found")
 
         # Handle both bytes and file-like objects
-        if hasattr(data, "read"):
-            if hasattr(data, "seek"):
-                data.seek(0)
+        if isinstance(data, BytesIO):
+            data.seek(0)
             content = data.read()
         else:
             content = data

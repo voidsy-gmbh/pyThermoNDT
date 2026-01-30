@@ -215,3 +215,9 @@ values = [
 filename = "src/pythermondt/__pkginfo__.py"
 search = "__version__ = \"{current_version}\""
 replace = "__version__ = \"{new_version}\""
+
+[tool.licensecheck]
+skip_dependencies = [
+    "torch", # Buggy with complex license
+    "matplotlib-inline" # TODO: Remove once https://github.com/ipython/matplotlib-inline/pull/58 is merged
+]

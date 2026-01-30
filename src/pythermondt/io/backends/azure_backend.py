@@ -72,7 +72,17 @@ class AzureBlobBackend(BaseBackend):
         return self.__prefix
 
     def read_file(self, file_path: str) -> IOPathWrapper:
-        """Read file from Azure Blob Storage."""
+        """Read a file from Azure Blob Storage.
+
+        Args:
+            file_path (str): Path to file, either full Azure URI or blob name within container
+
+        Returns:
+            IOPathWrapper: File contents
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+        """
         container, blob_name = self._parse_input(file_path)
 
         try:
@@ -96,7 +106,15 @@ class AzureBlobBackend(BaseBackend):
             raise FileNotFoundError(f"File not found: {file_path}") from e
 
     def write_file(self, data: IOPathWrapper, file_path: str) -> None:
-        """Write file to Azure Blob Storage."""
+        """Write file to Azure Blob Storage.
+
+        Args:
+            data (IOPathWrapper): File data to write
+            file_path (str): Destination path
+
+        Raises:
+            RuntimeError: If upload fails
+        """
         container, blob_name = self._parse_input(file_path)
 
         # Reset and get size
@@ -116,7 +134,14 @@ class AzureBlobBackend(BaseBackend):
             raise RuntimeError(f"Failed to upload blob: {e}") from e
 
     def exists(self, file_path: str) -> bool:
-        """Check if blob exists."""
+        """Check if a file exists in Azure Blob Storage.
+
+        Args:
+            file_path (str): Path to check
+
+        Returns:
+            bool: True if file exists
+        """
         container, blob_name = self._parse_input(file_path)
 
         try:
@@ -127,11 +152,22 @@ class AzureBlobBackend(BaseBackend):
             return False
 
     def close(self) -> None:
-        """Close Azure Blob client connections."""
+        """Close connections.
+
+        For Azure Blob Storage, closes the underlying BlobServiceClient.
+        """
         self.__client.close()
 
     def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
-        """Get list of blobs with optional filtering."""
+        """Get list of files from Azure Blob Storage with optional filtering.
+
+        Args:
+            extensions (tuple[str, ...], optional): Filter by file extensions
+            num_files (int, optional): Limit number of files returned
+
+        Returns:
+            list[str]: List of file paths
+        """
         blobs = []
         container_client = self.__client.get_container_client(self.__container_name)
 
@@ -155,7 +191,17 @@ class AzureBlobBackend(BaseBackend):
         return blobs
 
     def get_file_size(self, file_path: str) -> int:
-        """Get blob size in bytes."""
+        """Get the size of the file in Azure Blob Storage in bytes.
+
+        Args:
+            file_path (str): Path to file
+
+        Returns:
+            int: File size in bytes
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+        """
         container, blob_name = self._parse_input(file_path)
 
         try:
@@ -167,7 +213,12 @@ class AzureBlobBackend(BaseBackend):
             raise FileNotFoundError(f"File not found: {file_path}") from e
 
     def download_file(self, source_path: str, destination_path: str) -> None:
-        """Download blob to local filesystem."""
+        """Download a file from Azure Blob Storage to local filesystem.
+
+        Args:
+            source_path (str): Source Azure path
+            destination_path (str): Destination local path
+        """
         container, blob_name = self._parse_input(source_path)
 
         blob_client = self.__client.get_blob_client(container=container, blob=blob_name)

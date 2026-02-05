@@ -1,6 +1,10 @@
+import logging
+
 from ..data.datacontainer import DataContainer
 from ..data.datacontainer.utils import is_datanode
 from .base import ThermoTransform
+
+logger = logging.getLogger(__name__)
 
 
 class DeviceTransfer(ThermoTransform):
@@ -22,4 +26,6 @@ class DeviceTransfer(ThermoTransform):
             node = container.nodes[path]
             if is_datanode(node):
                 node.data = node.data.to(self.device)
+
+        logger.debug(f"Moved datasets {self.datasets if self.datasets else 'all'} to device {self.device}")
         return container

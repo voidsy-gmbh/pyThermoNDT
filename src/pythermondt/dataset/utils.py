@@ -91,7 +91,7 @@ def random_split(
     indices = torch.randperm(sum(lengths), generator=generator).tolist()
 
     # Create the subsets and return
-    transforms = transforms if transforms else [None] * len(lengths)
+    transforms = transforms or [None] * len(lengths)
     return [
         IndexedThermoDataset(dataset, indices[offset - length : offset], transform)
         for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths), strict=False)

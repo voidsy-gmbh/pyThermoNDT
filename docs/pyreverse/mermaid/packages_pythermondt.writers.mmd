@@ -2,6 +2,9 @@ classDiagram
   class writers {
   }
   style writers fill:#77AADD
+  class azure_writer {
+  }
+  style azure_writer fill:#77AADD
   class base_writer {
   }
   style base_writer fill:#77AADD
@@ -11,8 +14,10 @@ classDiagram
   class s3_writer {
   }
   style s3_writer fill:#77AADD
+  writers --> azure_writer
   writers --> base_writer
   writers --> local_writer
   writers --> s3_writer
+  azure_writer --> base_writer
   local_writer --> base_writer
   s3_writer --> base_writer

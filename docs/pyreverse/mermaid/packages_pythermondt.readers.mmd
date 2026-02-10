@@ -2,6 +2,9 @@ classDiagram
   class readers {
   }
   style readers fill:#77AADD
+  class azure_reader {
+  }
+  style azure_reader fill:#77AADD
   class base_reader {
   }
   style base_reader fill:#77AADD
@@ -11,8 +14,10 @@ classDiagram
   class s3_reader {
   }
   style s3_reader fill:#77AADD
+  readers --> azure_reader
   readers --> base_reader
   readers --> local_reader
   readers --> s3_reader
+  azure_reader --> base_reader
   local_reader --> base_reader
   s3_reader --> base_reader

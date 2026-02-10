@@ -1,6 +1,22 @@
 classDiagram
+  class AzureBlobBackend {
+    container_name : str
+    prefix : str
+    remote_source : bool
+    scheme : str
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None) None
+    close() None
+    download_file(source_path: str, destination_path: str) None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_size(file_path: str) int
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style AzureBlobBackend fill:#77AADD
   class BaseBackend {
     remote_source : bool
+    scheme : str
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
@@ -13,6 +29,7 @@ classDiagram
   class LocalBackend {
     pattern : str
     remote_source : bool
+    scheme : str
     \_\_init\_\_(pattern: str, recursive: bool) None
     close()* None
     download_file(source_path: str, destination_path: str)* None
@@ -27,6 +44,7 @@ classDiagram
     bucket : str
     prefix : str
     remote_source : bool
+    scheme : str
     \_\_init\_\_(bucket: str, prefix: str, session: boto3.Session | None) None
     close() None
     download_file(source_path: str, destination_path: str) None
@@ -42,5 +60,6 @@ classDiagram
     callback(bytes_amount: int) None
   }
   style TqdmCallback fill:#77AADD
+  AzureBlobBackend --|> BaseBackend
   LocalBackend --|> BaseBackend
   S3Backend --|> BaseBackend

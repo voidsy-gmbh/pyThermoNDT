@@ -1,4 +1,8 @@
 classDiagram
+  class AzureBlobReader {
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
+  }
+  style AzureBlobReader fill:#77AADD
   class BaseReader {
     backend : BaseBackend
     cache_files : bool
@@ -29,5 +33,6 @@ classDiagram
     \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
   }
   style S3Reader fill:#77AADD
+  AzureBlobReader --|> BaseReader
   LocalReader --|> BaseReader
   S3Reader --|> BaseReader

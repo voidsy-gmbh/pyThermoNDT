@@ -5,6 +5,9 @@ classDiagram
   class backends {
   }
   style backends fill:#77AADD
+  class azure_backend {
+  }
+  style azure_backend fill:#77AADD
   class base_backend {
   }
   style base_backend fill:#77AADD
@@ -38,9 +41,12 @@ classDiagram
   io --> backends
   io --> parsers
   io --> utils
+  backends --> azure_backend
   backends --> base_backend
   backends --> local_backend
   backends --> s3_backend
+  azure_backend --> base_backend
+  azure_backend --> progress
   local_backend --> base_backend
   s3_backend --> base_backend
   s3_backend --> progress

@@ -74,6 +74,9 @@ classDiagram
   class backends {
   }
   style backends fill:#BBCC33
+  class azure_backend {
+  }
+  style azure_backend fill:#BBCC33
   class base_backend {
   }
   style base_backend fill:#BBCC33
@@ -107,6 +110,9 @@ classDiagram
   class readers {
   }
   style readers fill:#AAAA00
+  class azure_reader {
+  }
+  style azure_reader fill:#AAAA00
   class base_reader {
   }
   style base_reader fill:#AAAA00
@@ -143,6 +149,9 @@ classDiagram
   class writers {
   }
   style writers fill:#EE8866
+  class azure_writer {
+  }
+  style azure_writer fill:#EE8866
   class base_writer {
   }
   style base_writer fill:#EE8866
@@ -205,9 +214,12 @@ classDiagram
   io --> backends
   io --> parsers
   io --> utils
+  backends --> azure_backend
   backends --> base_backend
   backends --> local_backend
   backends --> s3_backend
+  azure_backend --> base_backend
+  azure_backend --> progress
   local_backend --> base_backend
   s3_backend --> base_backend
   s3_backend --> progress
@@ -218,9 +230,11 @@ classDiagram
   edevis_parser --> base_parser
   hdf5_parser --> base_parser
   simulation_parser --> base_parser
+  readers --> azure_reader
   readers --> base_reader
   readers --> local_reader
   readers --> s3_reader
+  azure_reader --> base_reader
   local_reader --> base_reader
   s3_reader --> base_reader
   transforms --> augmentation
@@ -236,8 +250,10 @@ classDiagram
   preprocessing --> base
   sampling --> base
   utils --> base
+  writers --> azure_writer
   writers --> base_writer
   writers --> local_writer
   writers --> s3_writer
+  azure_writer --> base_writer
   local_writer --> base_writer
   s3_writer --> base_writer

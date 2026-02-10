@@ -36,8 +36,30 @@ classDiagram
     update_unit(path: str, unit: Unit)
   }
   style AttributeOps fill:#99DDFF
+  class AzureBlobBackend {
+    container_name : str
+    prefix : str
+    remote_source : bool
+    scheme : str
+    close() None
+    download_file(source_path: str, destination_path: str) None
+    exists(file_path: str) bool
+    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_size(file_path: str) int
+    read_file(file_path: str) IOPathWrapper
+    write_file(data: IOPathWrapper, file_path: str) None
+  }
+  style AzureBlobBackend fill:#BBCC33
+  class AzureBlobReader {
+  }
+  style AzureBlobReader fill:#AAAA00
+  class AzureBlobWriter {
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
+  }
+  style AzureBlobWriter fill:#EE8866
   class BaseBackend {
     remote_source : bool
+    scheme : str
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
@@ -223,6 +245,7 @@ classDiagram
   class LocalBackend {
     pattern : str
     remote_source : bool
+    scheme : str
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
@@ -295,6 +318,7 @@ classDiagram
     bucket : str
     prefix : str
     remote_source : bool
+    scheme : str
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
@@ -412,11 +436,13 @@ classDiagram
   ThermoContainer --|> DataContainer
   IndexedThermoDataset --|> BaseDataset
   ThermoDataset --|> BaseDataset
+  AzureBlobBackend --|> BaseBackend
   LocalBackend --|> BaseBackend
   S3Backend --|> BaseBackend
   EdevisParser --|> BaseParser
   HDF5Parser --|> BaseParser
   SimulationParser --|> BaseParser
+  AzureBlobReader --|> BaseReader
   LocalReader --|> BaseReader
   S3Reader --|> BaseReader
   AdaptiveGaussianNoise --|> RandomThermoTransform
@@ -439,6 +465,7 @@ classDiagram
   SelectFrames --|> ThermoTransform
   CallbackTransform --|> _BaseTransform
   Compose --|> ThermoTransform
+  AzureBlobWriter --|> BaseWriter
   LocalWriter --|> BaseWriter
   S3Writer --|> BaseWriter
   _BaseTransform --o CallbackTransform : callback

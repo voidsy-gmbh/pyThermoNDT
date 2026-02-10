@@ -1,4 +1,9 @@
 classDiagram
+  class AzureBlobWriter {
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None)
+    write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
+  }
+  style AzureBlobWriter fill:#77AADD
   class BaseWriter {
     backend : BaseBackend
     \_\_init\_\_()
@@ -16,5 +21,6 @@ classDiagram
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style S3Writer fill:#77AADD
+  AzureBlobWriter --|> BaseWriter
   LocalWriter --|> BaseWriter
   S3Writer --|> BaseWriter

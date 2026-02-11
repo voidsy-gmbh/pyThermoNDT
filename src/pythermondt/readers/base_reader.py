@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
+from urllib.parse import unquote, urlparse
 
 from tqdm.auto import tqdm
 
@@ -45,6 +46,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Internal state
         self.__backend: BaseBackend | None = None
         self.__files: list[str] | None = None
+        self.__file_names: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
         self.__manifest_lock = Lock()
@@ -123,6 +125,17 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         # Return the cached files list
         return self.__files
+
+    @property
+    def file_names(self) -> list[str]:
+        """List of file names (without path) that the reader is able to read."""
+        if not self.__cache_files:
+            return [os.path.basename(unquote(urlparse(file).path)) for file in self.files]
+
+        if self.__file_names is None:
+            self.__file_names = [os.path.basename(unquote(urlparse(file).path)) for file in self.files]
+
+        return self.__file_names
 
     def __getstate__(self):
         """Prepare object for pickling by removing the backend."""

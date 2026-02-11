@@ -136,10 +136,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             state["_BaseReader__manifest_lock"] = None
 
         # Clear files cache to force reloading
-        state["_BaseReader__files_cache"] = None
+        state["_BaseReader__files"] = None
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict):
         """Restore object from pickled state."""
         # Just restore the state dictionary - backend will be created
         # lazily when first accessed

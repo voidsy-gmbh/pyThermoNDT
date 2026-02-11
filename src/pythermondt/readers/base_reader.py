@@ -150,6 +150,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         # Clear files cache to force reloading
         state["_BaseReader__files"] = None
+        state["_BaseReader__file_names"] = None
         return state
 
     def __setstate__(self, state: dict):

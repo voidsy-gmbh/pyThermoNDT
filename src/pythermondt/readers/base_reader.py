@@ -130,10 +130,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def file_names(self) -> list[str]:
         """List of file names (without path) that the reader is able to read."""
         if not self.__cache_files:
-            return [os.path.basename(unquote(urlparse(file).path)) for file in self.files]
+            return [self._to_file_name(file) for file in self.files]
 
         if self.__file_names is None:
-            self.__file_names = [os.path.basename(unquote(urlparse(file).path)) for file in self.files]
+            self.__file_names = [self._to_file_name(file) for file in self.files]
 
         return self.__file_names
 
@@ -192,6 +192,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         for file in reversed(file_paths):
             yield self.read_file(file)
+
+    def _to_file_name(self, file_path: str) -> str:
+        """Extract the file name from a file path."""
+        return os.path.basename(unquote(urlparse(file_path).path))
 
     def _load_manifest(self, manifest_path: str) -> dict[str, str]:
         """Load manifest from disk with thread safety."""

@@ -1,4 +1,5 @@
 import logging
+import warnings
 from functools import lru_cache
 from importlib.metadata import entry_points
 
@@ -18,7 +19,7 @@ def _load_parser_plugins() -> tuple[type[BaseParser], ...]:
             parser_cls = ep.load()
             plugins.append(parser_cls)
         except Exception as e:  # pylint: disable=broad-except
-            logger.error("Failed to load parser plugin '%s': %s", ep.name, e)
+            warnings.warn(f"Failed to load parser plugin '{ep.name}': {e}", UserWarning, stacklevel=2)
     return tuple(plugins)
 
 

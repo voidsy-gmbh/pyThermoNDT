@@ -82,6 +82,9 @@ class BaseWriter(ABC):
         if "{index}" not in file_name_pattern:
             file_name_pattern += "_{index}"
 
+        if keep_file_names:
+            _ = reader.file_names  # Access file names to ensure they are loaded
+
         def write_single(idx: int):
             container = reader[idx]
             if keep_file_names:

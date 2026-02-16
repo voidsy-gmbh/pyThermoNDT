@@ -56,6 +56,7 @@ class BaseWriter(ABC):
     def process_parallel(
         self,
         reader: BaseReader,
+        keep_file_names: bool = False,
         file_name_pattern: str = "{index}",
         compression: CompressionType = "lzf",
         compression_opts: int | None = 4,
@@ -81,8 +82,11 @@ class BaseWriter(ABC):
 
         def write_single(idx: int):
             container = reader[idx]
-            # Replace {index} with zero-padded index
-            file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
+            if keep_file_names:
+                file_name = reader.file_names[idx]
+            else:
+                # Replace {index} with zero-padded index
+                file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
             self.write(container, file_name, compression, compression_opts)
 
         # Use ThreadPool for writing in parallel ==> I/O bound task

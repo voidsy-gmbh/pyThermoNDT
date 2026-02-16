@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
+from urllib.parse import unquote, urlparse
 
 from tqdm.auto import tqdm
 
@@ -45,6 +46,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Internal state
         self.__backend: BaseBackend | None = None
         self.__files: list[str] | None = None
+        self.__file_names: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
         self.__manifest_lock = Lock()
@@ -124,6 +126,17 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Return the cached files list
         return self.__files
 
+    @property
+    def file_names(self) -> list[str]:
+        """List of file names (without path) that the reader is able to read."""
+        if not self.__cache_files:
+            return [self._to_file_name(file) for file in self.files]
+
+        if self.__file_names is None:
+            self.__file_names = [self._to_file_name(file) for file in self.files]
+
+        return self.__file_names
+
     def __getstate__(self):
         """Prepare object for pickling by removing the backend."""
         state = self.__dict__.copy()
@@ -137,6 +150,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         # Clear files cache to force reloading
         state["_BaseReader__files"] = None
+        state["_BaseReader__file_names"] = None
         return state
 
     def __setstate__(self, state: dict):
@@ -178,6 +192,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         for file in reversed(file_paths):
             yield self.read_file(file)
+
+    def _to_file_name(self, file_path: str) -> str:
+        """Extract the file name from a file path."""
+        return os.path.basename(unquote(urlparse(file_path).path))
 
     def _load_manifest(self, manifest_path: str) -> dict[str, str]:
         """Load manifest from disk with thread safety."""

@@ -66,6 +66,8 @@ class BaseWriter(ABC):
 
         Args:
             reader: Reader containing DataContainers to write
+            keep_file_names: Whether to keep the original file names from the reader. If True, the argument
+                `file_name_pattern` will be ignored.
             file_name_pattern: Pattern for naming files. Use {index} for zero-padded index. If {index} is not present,
                 it will be appended to the pattern with an underscore.
                 Example: "data_{index}_name" produces "data_00000_name.hdf5", "data_00001_name.hdf5", etc.

@@ -212,6 +212,30 @@ class AzureBlobBackend(BaseBackend):
         except ResourceNotFoundError as e:
             raise FileNotFoundError(f"File not found: {file_path}") from e
 
+    def get_file_identity(self, file_path: str) -> str:
+        """Get blob identity for change detection.
+
+        Args:
+            file_path (str): Path to file.
+
+        Returns:
+            str: Blob ETag.
+
+        Raises:
+            FileNotFoundError: If file doesn't exist.
+        """
+        container, blob_name = self._parse_input(file_path)
+
+        try:
+            blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
+            properties = blob_client.get_blob_properties()
+            etag = properties.etag
+            if etag is None:
+                raise RuntimeError(f"ETag unavailable for file: {file_path}")
+            return str(etag)
+        except ResourceNotFoundError as e:
+            raise FileNotFoundError(f"File not found: {file_path}") from e
+
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Download a file from Azure Blob Storage to local filesystem.
 

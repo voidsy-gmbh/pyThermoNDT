@@ -114,6 +114,24 @@ class LocalBackend(BaseBackend):
             raise IsADirectoryError(f"Path is a directory, not a file: {path}")
         return os.path.getsize(path)
 
+    def get_file_identity(self, file_path: str) -> str:
+        """Return a low-overhead identity string for local files.
+
+        The identity is based on filesystem metadata and intended for change
+        detection, not cryptographic integrity verification.
+        """
+        path = self._parse_input(file_path)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+        if os.path.isdir(path):
+            raise IsADirectoryError(f"Path is a directory, not a file: {path}")
+
+        stat_result = os.stat(path)
+        device = getattr(stat_result, "st_dev", 0)
+        inode = getattr(stat_result, "st_ino", 0)
+
+        return f"{device}:{inode}:{stat_result.st_size}:{stat_result.st_mtime_ns}"
+
     def download_file(self, source_path: str, destination_path: str) -> None:
         raise NotImplementedError("Direct download is not supported for local files.")
 

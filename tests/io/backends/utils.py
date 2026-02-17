@@ -1,3 +1,4 @@
+import hashlib
 from dataclasses import dataclass
 from io import BytesIO
 
@@ -65,3 +66,12 @@ class MockAzureBlob:
 
             raise ResourceNotFoundError(f"Blob '{blob_name}' not found")
         return len(self.storage[container][blob_name])
+
+    def get_blob_etag(self, container: str, blob_name: str) -> str:
+        if not self.blob_exists(container, blob_name):
+            from azure.core.exceptions import ResourceNotFoundError
+
+            raise ResourceNotFoundError(f"Blob '{blob_name}' not found")
+
+        content = self.storage[container][blob_name]
+        return f'"{hashlib.md5(content, usedforsecurity=False).hexdigest()}"'

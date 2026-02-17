@@ -102,6 +102,43 @@ def test_get_file_size(backend_config, test_file):
     assert size == len(content)
 
 
+def test_get_file_identity(backend_config, test_file):
+    """Test getting a backend-specific file identity."""
+    backend_instance, _ = backend_config
+    file_path, _ = test_file
+
+    identity = backend_instance.get_file_identity(file_path)
+
+    assert isinstance(identity, str)
+    assert identity != ""
+
+
+def test_get_file_identity_changes_after_content_update(backend_config, test_file):
+    """Test identity changes when file content changes."""
+    backend_instance, _ = backend_config
+    file_path, _ = test_file
+
+    identity_before = backend_instance.get_file_identity(file_path)
+
+    backend_instance.write_file(IOPathWrapper(b"updated test content"), file_path)
+    identity_after = backend_instance.get_file_identity(file_path)
+
+    assert identity_before != identity_after
+
+
+def test_get_file_identity_not_exist(backend_config, tmp_path):
+    """Test getting identity for non-existent file raises FileNotFoundError."""
+    backend_instance, config = backend_config
+
+    if config.is_remote:
+        path = "non_existent_file.txt"
+    else:
+        path = str(tmp_path / "non_existent_file.txt")
+
+    with pytest.raises(FileNotFoundError, match="File not found:"):
+        backend_instance.get_file_identity(path)
+
+
 def test_get_file_list(backend_config, test_file):
     """Test listing a single file without any filters."""
     backend_instance, config = backend_config

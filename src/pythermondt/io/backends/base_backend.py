@@ -47,6 +47,16 @@ class BaseBackend(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
+    def get_file_identity(self, file_path: str) -> str:
+        """Get a backend-specific file identity for change detection.
+
+        Returns a non-empty identity string (e.g. ETag for remote objects).
+        Implementations should raise a descriptive error when identity cannot be
+        determined for the given file.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @abstractmethod
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Directly download a file from the source to the destination path.
 

@@ -87,6 +87,14 @@ def test_download_file_not_implemented(tmp_path: Path):
         backend.download_file("source.txt", "dest.txt")
 
 
+def test_get_file_identity_directory_raises(tmp_path: Path):
+    """Test identity lookup for directories raises IsADirectoryError."""
+    backend = LocalBackend(str(tmp_path))
+
+    with pytest.raises(IsADirectoryError, match="Path is a directory, not a file"):
+        backend.get_file_identity(str(tmp_path))
+
+
 def test_get_file_list_single_file(tmp_path: Path):
     """Test get_file_list with single file pattern."""
     test_file = tmp_path / "test.txt"

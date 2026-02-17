@@ -43,9 +43,13 @@ def test_init_with_default_credential(azure_mock):
     """Test initialization with DefaultAzureCredential when no connection_string or credential provided."""
     azure_mock.create_container("test-container")
 
-    with patch("pythermondt.io.backends.azure_backend.DefaultAzureCredential") as mock_default_cred:
+    with (
+        patch("pythermondt.io.backends.azure_backend.DefaultAzureCredential") as mock_default_cred,
+        patch("pythermondt.io.backends.azure_backend.BlobServiceClient") as mock_client_class,
+    ):
         mock_cred_instance = MagicMock()
         mock_default_cred.return_value = mock_cred_instance
+        mock_client_class.return_value = MagicMock()
 
         backend = AzureBlobBackend(
             account_url="https://test.blob.core.windows.net",
@@ -53,6 +57,7 @@ def test_init_with_default_credential(azure_mock):
         )
 
         mock_default_cred.assert_called_once()
+        mock_client_class.assert_called_once_with("https://test.blob.core.windows.net", credential=mock_cred_instance)
         backend.close()
 
 

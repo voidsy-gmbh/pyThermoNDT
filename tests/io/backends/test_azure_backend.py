@@ -70,10 +70,7 @@ def test_write_file_azure_error(azure_backend):
     """Test that AzureError during upload is wrapped in RuntimeError."""
     data = IOPathWrapper(b"test content")
 
-    with patch.object(
-        azure_backend._AzureBlobBackend__client,
-        "get_blob_client",
-    ) as mock_get_blob_client:
+    with patch.object(azure_backend._AzureBlobBackend__client, "get_blob_client") as mock_get_blob_client:
         mock_blob = MagicMock()
         mock_blob.upload_blob.side_effect = AzureError("Upload failed")
         mock_get_blob_client.return_value = mock_blob

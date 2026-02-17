@@ -110,6 +110,24 @@ def test_get_file_size_unexpected_error(s3_backend):
         assert err["Message"] == "Internal error"
 
 
+def test_get_file_identity_unexpected_error(s3_backend):
+    """Test that unexpected errors in get_file_identity() are re-raised."""
+    error_response = {
+        "Error": {"Code": "InternalError", "Message": "Internal error"},
+        "ResponseMetadata": {"HTTPStatusCode": 500},
+    }
+
+    with patch.object(s3_backend._S3Backend__client, "head_object") as mock_head:
+        mock_head.side_effect = ClientError(error_response, "HeadObject")
+
+        with pytest.raises(ClientError) as exc:
+            s3_backend.get_file_identity("test/sample.txt")
+
+        err = exc.value.response["Error"]
+        assert err["Code"] == "InternalError"
+        assert err["Message"] == "Internal error"
+
+
 def test_get_file_list_skips_directories(s3_backend_with_directory):
     """Test that get_file_list skips directory markers."""
     # Get file list

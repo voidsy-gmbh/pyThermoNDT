@@ -157,6 +157,28 @@ class S3Backend(BaseBackend):
                 raise FileNotFoundError(f"File not found: {file_path}") from e
             raise
 
+    def get_file_identity(self, file_path: str) -> str | None:
+        """Return object identity (ETag) for a file on S3.
+
+        Args:
+            file_path (str): Path to file on S3.
+
+        Returns:
+            str | None: ETag value if present.
+
+        Raises:
+            FileNotFoundError: If file doesn't exist.
+        """
+        bucket, key = self._parse_input(file_path)
+
+        try:
+            response = self.__client.head_object(Bucket=bucket, Key=key)
+            return response.get("ETag")
+        except ClientError as e:
+            if self._is_not_found_error(e):
+                raise FileNotFoundError(f"File not found: {file_path}") from e
+            raise
+
     def download_file(self, source_path: str, destination_path: str) -> None:
         """Download a file from S3 to local filesystem.
 

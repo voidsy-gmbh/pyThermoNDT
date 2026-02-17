@@ -113,6 +113,19 @@ def test_get_file_identity(backend_config, test_file):
     assert identity != ""
 
 
+def test_get_file_identity_changes_after_content_update(backend_config, test_file):
+    """Test identity changes when file content changes."""
+    backend_instance, _ = backend_config
+    file_path, _ = test_file
+
+    identity_before = backend_instance.get_file_identity(file_path)
+
+    backend_instance.write_file(IOPathWrapper(b"updated test content"), file_path)
+    identity_after = backend_instance.get_file_identity(file_path)
+
+    assert identity_before != identity_after
+
+
 def test_get_file_identity_not_exist(backend_config, tmp_path):
     """Test getting identity for non-existent file raises FileNotFoundError."""
     backend_instance, config = backend_config

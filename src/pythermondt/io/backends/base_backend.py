@@ -47,11 +47,12 @@ class BaseBackend(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def get_file_identity(self, file_path: str) -> str | None:
+    def get_file_identity(self, file_path: str) -> str:
         """Get a backend-specific file identity for change detection.
 
-        Returns an identity string when available (e.g. ETag for remote objects).
-        Backends without a native remote identity may return None.
+        Returns a non-empty identity string (e.g. ETag for remote objects).
+        Implementations should raise a descriptive error when identity cannot be
+        determined for the given file.
         """
         raise NotImplementedError("Subclasses must implement this method")
 

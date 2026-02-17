@@ -114,7 +114,7 @@ class LocalBackend(BaseBackend):
             raise IsADirectoryError(f"Path is a directory, not a file: {path}")
         return os.path.getsize(path)
 
-    def get_file_identity(self, file_path: str) -> str | None:
+    def get_file_identity(self, file_path: str) -> str:
         """Return a low-overhead identity string for local files.
 
         The identity is based on filesystem metadata and intended for change

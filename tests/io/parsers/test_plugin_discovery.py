@@ -142,3 +142,22 @@ def test_find_parser_for_extension_known(monkeypatch):
     # Simulation
     assert parsers.find_parser_for_extension(".mat") is SimulationParser
     assert parsers.find_parser_for_extension("mat") is SimulationParser
+
+
+def test_get_all_supported_extensions_includes_plugin_extensions(monkeypatch):
+    """Test supported extension aggregation includes built-ins and loaded plugins."""
+
+    def fake_entry_points(*, group: str):
+        assert group == "pythermondt.parsers"
+        return [_FakeEntryPoint("good-plugin", "tests.fake_plugin", SuccessfulPluginParser)]
+
+    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
+
+    supported_extensions = parsers.get_all_supported_extensions()
+
+    assert ".hdf5" in supported_extensions
+    assert ".h5" in supported_extensions
+    assert ".mat" in supported_extensions
+    for extension in EdevisParser.supported_extensions:
+        assert extension in supported_extensions
+    assert ".good" in supported_extensions

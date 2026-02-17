@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -37,7 +38,7 @@ class _FailingEntryPoint:
 
 
 @pytest.fixture(autouse=True)
-def clear_registry_cache() -> None:
+def clear_registry_cache() -> Generator[None]:
     """Ensure parser registry cache does not leak between tests."""
     parsers._get_registry.cache_clear()
     yield

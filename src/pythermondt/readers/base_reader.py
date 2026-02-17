@@ -8,12 +8,25 @@ from multiprocessing.pool import ThreadPool
 from threading import Lock
 from urllib.parse import unquote, urlparse
 
+from pydantic import BaseModel
 from tqdm.auto import tqdm
 
 from ..config import settings
 from ..data import DataContainer
 from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
+
+
+class ManifestEntry(BaseModel):
+    """Manifest entry for a cached file.
+
+    Attributes:
+        local_path (str): Relative path to the cached file (e.g., ./raw/hash.txt).
+        file_identity (str): Backend-specific identity (ETag for S3/Azure, stat metadata for local).
+    """
+
+    local_path: str
+    file_identity: str
 
 
 class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes

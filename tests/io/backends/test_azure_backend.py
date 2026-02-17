@@ -39,10 +39,8 @@ def azure_backend_with_directory(azure_backend, azure_mock):
     return azure_backend
 
 
-def test_init_with_default_credential(azure_mock):
+def test_init_with_default_credential():
     """Test initialization with DefaultAzureCredential when no connection_string or credential provided."""
-    azure_mock.create_container("test-container")
-
     with (
         patch("pythermondt.io.backends.azure_backend.DefaultAzureCredential") as mock_default_cred,
         patch("pythermondt.io.backends.azure_backend.BlobServiceClient") as mock_client_class,
@@ -67,7 +65,7 @@ def test_container_name_property(azure_backend):
 
 
 def test_prefix_property(azure_backend):
-    """Test prefix property returns the configured prefix with trailing slash stripped."""
+    """Test prefix property returns the configured prefix (trailing slash removed during initialization)."""
     assert azure_backend.prefix == "test"
 
 

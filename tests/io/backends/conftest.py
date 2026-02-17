@@ -94,6 +94,7 @@ def azure_mock():
                 raise ResourceNotFoundError("Blob not found")
             mock_props = MagicMock()
             mock_props.size = mock_storage.get_blob_size(container, blob)
+            mock_props.etag = mock_storage.get_blob_etag(container, blob)
             return mock_props
 
         mock_blob.get_blob_properties = get_blob_properties

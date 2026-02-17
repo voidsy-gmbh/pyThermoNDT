@@ -109,3 +109,22 @@ def test_get_all_parsers_builtins(monkeypatch):
 
     assert len(caught) == 2
     assert all_parsers == (HDF5Parser, SimulationParser, EdevisParser)
+
+
+def test_find_parser_for_extension_unknown():
+    """Test that unknown file extensions return None."""
+    assert parsers.find_parser_for_extension(".doesnotexist") is None
+    assert parsers.find_parser_for_extension("doesnotexist") is None
+
+
+def test_find_parser_for_extension_known():
+    """Test that known file extensions return the correct parser."""
+    # HDF5
+    assert parsers.find_parser_for_extension(".hdf5") is HDF5Parser
+    assert parsers.find_parser_for_extension("hdf5") is HDF5Parser
+    assert parsers.find_parser_for_extension(".h5") is HDF5Parser
+    assert parsers.find_parser_for_extension("h5") is HDF5Parser
+
+    # Simulation
+    assert parsers.find_parser_for_extension(".mat") is SimulationParser
+    assert parsers.find_parser_for_extension("mat") is SimulationParser

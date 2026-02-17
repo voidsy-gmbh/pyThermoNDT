@@ -111,14 +111,28 @@ def test_get_all_parsers_builtins(monkeypatch):
     assert all_parsers == (HDF5Parser, SimulationParser, EdevisParser)
 
 
-def test_find_parser_for_extension_unknown():
+def test_find_parser_for_extension_unknown(monkeypatch):
     """Test that unknown file extensions return None."""
+
+    def fake_entry_points(*, group: str):
+        assert group == "pythermondt.parsers"
+        return []
+
+    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
+
     assert parsers.find_parser_for_extension(".doesnotexist") is None
     assert parsers.find_parser_for_extension("doesnotexist") is None
 
 
-def test_find_parser_for_extension_known():
+def test_find_parser_for_extension_known(monkeypatch):
     """Test that known file extensions return the correct parser."""
+
+    def fake_entry_points(*, group: str):
+        assert group == "pythermondt.parsers"
+        return []
+
+    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
+
     # HDF5
     assert parsers.find_parser_for_extension(".hdf5") is HDF5Parser
     assert parsers.find_parser_for_extension("hdf5") is HDF5Parser

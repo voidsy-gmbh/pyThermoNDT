@@ -74,4 +74,4 @@ class MockAzureBlob:
             raise ResourceNotFoundError(f"Blob '{blob_name}' not found")
 
         content = self.storage[container][blob_name]
-        return f'"{hashlib.md5(content).hexdigest()}"'
+        return f'"{hashlib.md5(content, usedforsecurity=False).hexdigest()}"'

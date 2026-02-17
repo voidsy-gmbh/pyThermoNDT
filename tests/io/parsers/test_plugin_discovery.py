@@ -58,7 +58,7 @@ def test_load_parser_plugins(monkeypatch, caplog):
     monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
 
     with caplog.at_level("DEBUG", logger="pythermondt.io.parsers"):
-        msg = "Loaded parser plugin 'good-plugin' from 'tests.fake_plugin'"
+        msg = "Failed to load parser plugin 'broken-plugin': plugin import failed"
         with pytest.warns(UserWarning, match=msg) as caught:
             plugins = parsers._load_parser_plugins()
 

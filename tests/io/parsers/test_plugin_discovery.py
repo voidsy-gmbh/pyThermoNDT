@@ -45,7 +45,7 @@ def clear_registry_cache() -> Generator[None]:
     parsers._get_registry.cache_clear()
 
 
-def test_load_parser_plugins_warns_on_failure_and_logs_success(monkeypatch, caplog):
+def test_load_parser_plugins(monkeypatch, caplog):
     """Test plugin loading emits warning for failures and debug log for successes."""
 
     def fake_entry_points(*, group: str):
@@ -69,7 +69,7 @@ def test_load_parser_plugins_warns_on_failure_and_logs_success(monkeypatch, capl
     assert caught[0].lineno > 0
 
 
-def test_get_all_parsers_includes_plugins_and_builtins(monkeypatch):
+def test_get_all_parsers(monkeypatch):
     """Test registry includes built-in parsers plus successfully loaded plugins."""
 
     def fake_entry_points(*, group: str):
@@ -92,7 +92,7 @@ def test_get_all_parsers_includes_plugins_and_builtins(monkeypatch):
     assert parsers.find_parser_for_extension("good") is SuccessfulPluginParser
 
 
-def test_get_all_parsers_fails_open_when_all_plugins_fail(monkeypatch):
+def test_get_all_parsers_builtins(monkeypatch):
     """Test built-in parsers remain available even if all plugins fail to load."""
 
     def fake_entry_points(*, group: str):

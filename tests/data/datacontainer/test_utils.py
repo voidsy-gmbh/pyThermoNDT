@@ -1,7 +1,14 @@
 import pytest
 
 from pythermondt.data.datacontainer.node import DataNode, GroupNode, RootNode
-from pythermondt.data.datacontainer.utils import format_bytes, is_datanode, is_groupnode, is_rootnode
+from pythermondt.data.datacontainer.utils import (
+    format_bytes,
+    is_datanode,
+    is_groupnode,
+    is_rootnode,
+    validate_path,
+    validate_paths,
+)
 
 
 # Type guard tests
@@ -77,6 +84,28 @@ def test_format_bytes_edge_cases():
     assert format_bytes(1048576) == "1.00 MB"
     assert format_bytes(1073741824) == "1.00 GB"
     assert format_bytes(1099511627776) == "1.00 TB"
+
+
+def test_validate_path_adds_leading_slash():
+    """Test validate_path normalizes missing leading slash."""
+    assert validate_path("Data/Tdata") == "/Data/Tdata"
+
+
+def test_validate_path_removes_trailing_slash():
+    """Test validate_path removes trailing slash."""
+    assert validate_path("/Data/") == "/Data"
+
+
+def test_validate_path_raises_for_invalid_characters():
+    """Test validate_path rejects invalid characters."""
+    with pytest.raises(ValueError, match="Invalid path"):
+        validate_path("/Invalid Path")
+
+
+def test_validate_paths_returns_normalized_tuple():
+    """Test validate_paths returns normalized tuple values."""
+    result = validate_paths(["Data/Tdata", "/MetaData/"])
+    assert result == ("/Data/Tdata", "/MetaData")
 
 
 # Only run the tests in this file if it is run directly

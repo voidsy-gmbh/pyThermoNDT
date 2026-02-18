@@ -203,3 +203,12 @@ def test_pickle_roundtrip_preserves_state():
     unpickled_container.add_dataset("/test_group", "new_data", data=torch.tensor([6, 7, 8]))
     assert "/test_group/new_data" in unpickled_container.nodes.keys()
     assert unpickled_container.get_dataset("/test_group/new_data").tolist() == [6, 7, 8]
+
+
+def test_serialize_unsupported_node_type():
+    """Test serialization raises TypeError for unsupported node entries."""
+    container = DataContainer()
+    container.nodes["/invalid"] = object()  # type: ignore
+
+    with pytest.raises(TypeError, match="is not supported for serialization"):
+        container.serialize_to_hdf5()

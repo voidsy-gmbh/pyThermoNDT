@@ -2,6 +2,7 @@ import io
 import pickle
 from typing import Literal
 
+import h5py
 import pytest
 import torch
 
@@ -223,3 +224,26 @@ def test_deserialize_recreates_root_if_missing(complex_container: DataContainer)
     target.deserialize(hdf5_bytes)
 
     assert "/" in target.nodes.keys()
+
+
+def test_deserialize_raises_for_unsupported_top_level_item():
+    """Test deserialization fails for a broken top-level link item."""
+    hdf5_bytes = io.BytesIO()
+    with h5py.File(hdf5_bytes, "w") as h5_file:
+        h5_file["broken"] = h5py.SoftLink("/missing")
+
+    hdf5_bytes.seek(0)
+    with pytest.raises(TypeError, match="is not supported for deserialization"):
+        DataContainer().deserialize(hdf5_bytes)
+
+
+def test_deserialize_raises_for_unsupported_nested_item():
+    """Test deserialization fails for a broken nested link item."""
+    hdf5_bytes = io.BytesIO()
+    with h5py.File(hdf5_bytes, "w") as h5_file:
+        group = h5_file.create_group("group")
+        group["broken"] = h5py.SoftLink("/missing")
+
+    hdf5_bytes.seek(0)
+    with pytest.raises(TypeError, match="is not supported for deserialization"):
+        DataContainer().deserialize(hdf5_bytes)

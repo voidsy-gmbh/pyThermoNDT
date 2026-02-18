@@ -8,7 +8,7 @@ from multiprocessing.pool import ThreadPool
 from threading import Lock
 from urllib.parse import unquote, urlparse
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, RootModel, ValidationError
 from tqdm.auto import tqdm
 
 from ..config import settings
@@ -27,6 +27,11 @@ class ManifestEntry(BaseModel):
 
     local_path: str
     file_identity: str
+    model_config = ConfigDict(strict=True, extra="forbid")  # Forbid extra fields to ensure manifest integrity
+
+
+class CacheManifest(RootModel[dict[str, ManifestEntry]]):
+    """Manifest model mapping remote paths to manifest entries."""
 
 
 class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes

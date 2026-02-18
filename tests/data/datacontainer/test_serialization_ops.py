@@ -212,3 +212,14 @@ def test_serialize_unsupported_node_type():
 
     with pytest.raises(TypeError, match="is not supported for serialization"):
         container.serialize_to_hdf5()
+
+
+def test_deserialize_recreates_root_if_missing(complex_container: DataContainer):
+    """Test deserialize inserts root node if it was removed."""
+    hdf5_bytes = complex_container.serialize_to_hdf5()
+    target = DataContainer()
+    del target.nodes["/"]
+
+    target.deserialize(hdf5_bytes)
+
+    assert "/" in target.nodes.keys()

@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from pythermondt.data import DataContainer
+from pythermondt.data.datacontainer.base import DataContainerBase
 from pythermondt.data.datacontainer.node import DataNode, GroupNode, RootNode
 from pythermondt.data.datacontainer.utils import split_path
 
@@ -194,6 +195,12 @@ def test_node_accessor_delete_node_with_children(filled_container: DataContainer
     assert not filled_container._path_exists("/TestGroup")
     assert not filled_container._path_exists("/TestGroup/NestedGroup")
     assert not filled_container._path_exists("/TestGroup/NestedGroup/TestDataset2")
+
+
+def test_data_container_base_cannot_be_instantiated():
+    """Test that DataContainerBase cannot be instantiated directly."""
+    with pytest.raises(TypeError, match="DataContainerBase is a base class and cannot be instantiated directly."):
+        DataContainerBase()
 
 
 # Only run the tests in this file if it is run directly

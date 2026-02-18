@@ -75,3 +75,43 @@ def test_data_container_str_representation_contains_nodes(filled_container: Data
     )
 
     assert str(filled_container) == expected
+
+
+def test_eq_non_container_returns_false(filled_container: DataContainer):
+    """Test equality check with non-container object."""
+    assert (filled_container == "not-a-container") is False
+
+
+def test_eq_detects_dataset_name_mismatch(sample_tensor: Tensor):
+    """Test inequality when dataset names differ at matching paths."""
+    left = DataContainer()
+    right = DataContainer()
+
+    left.add_dataset("/", "D", sample_tensor)
+    right.add_dataset("/", "D", sample_tensor)
+    right.nodes("/D").name = "Renamed"
+
+    assert left != right
+
+
+def test_eq_detects_dataset_attribute_mismatch(sample_tensor: Tensor):
+    """Test inequality when dataset attributes differ."""
+    left = DataContainer()
+    right = DataContainer()
+
+    left.add_dataset("/", "D", sample_tensor)
+    right.add_dataset("/", "D", sample_tensor)
+    left.add_attribute("/D", "meta", "value")
+
+    assert left != right
+
+
+def test_eq_detects_dataset_data_mismatch(sample_tensor: Tensor, sample_tensor2: Tensor):
+    """Test inequality when dataset payload differs."""
+    left = DataContainer()
+    right = DataContainer()
+
+    left.add_dataset("/", "D", sample_tensor)
+    right.add_dataset("/", "D", sample_tensor2)
+
+    assert left != right

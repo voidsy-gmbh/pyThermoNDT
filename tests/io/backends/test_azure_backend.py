@@ -82,6 +82,19 @@ def test_write_file_azure_error(azure_backend):
             azure_backend.write_file(data, "test/new_file.txt")
 
 
+def test_get_file_identity_none_etag(azure_backend):
+    """Test that a None etag raises RuntimeError."""
+    with patch.object(azure_backend._AzureBlobBackend__client, "get_blob_client") as mock_get_blob_client:
+        mock_blob = MagicMock()
+        mock_props = MagicMock()
+        mock_props.etag = None
+        mock_blob.get_blob_properties.return_value = mock_props
+        mock_get_blob_client.return_value = mock_blob
+
+        with pytest.raises(RuntimeError, match="ETag unavailable"):
+            azure_backend.get_file_identity("test/sample.txt")
+
+
 def test_get_file_list_skips_directories(azure_backend_with_directory):
     """Test that get_file_list skips directory markers (blobs ending with /)."""
     files = azure_backend_with_directory.get_file_list()

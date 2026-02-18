@@ -26,6 +26,12 @@ def test_group_node_attributes(group_node: GroupNode):
     assert group_node.get_attribute("test_attr") == "test_value"
 
 
+def test_node_name_setter_updates_name(group_node: GroupNode):
+    """Test BaseNode name setter."""
+    group_node.name = "renamed_group"
+    assert group_node.name == "renamed_group"
+
+
 def test_group_node_update_attribute(group_node: GroupNode):
     """Test updating attributes of GroupNode."""
     # Test GroupNode update attribute

@@ -95,6 +95,19 @@ def test_data_node_update_attribute(data_node: DataNode):
         data_node.update_attribute("shape", "new_value")
 
 
+def test_attribute_node_clear_attributes(group_node: GroupNode):
+    """Test clearing all attributes from node."""
+    group_node.add_attributes(a=1, b=2)
+    group_node.clear_attributes()
+    assert dict(group_node.attributes) == {}
+
+
+def test_data_node_data_deleter_resets_to_empty_tensor(data_node: DataNode):
+    """Test deleting data resets DataNode tensor."""
+    del data_node.data
+    assert torch.equal(data_node.data, torch.empty(0))
+
+
 # Memory tests
 def test_root_node_memory_bytes(root_node: RootNode):
     """Test memory calculation for RootNode."""

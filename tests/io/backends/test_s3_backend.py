@@ -128,6 +128,15 @@ def test_get_file_identity_unexpected_error(s3_backend):
         assert err["Message"] == "Internal error"
 
 
+def test_get_file_identity_none_etag(s3_backend):
+    """Test that a None ETag raises RuntimeError."""
+    with patch.object(s3_backend._S3Backend__client, "head_object") as mock_head:
+        mock_head.return_value = {"ContentLength": 12}  # No ETag key
+
+        with pytest.raises(RuntimeError, match="ETag unavailable"):
+            s3_backend.get_file_identity("test/sample.txt")
+
+
 def test_get_file_list_skips_directories(s3_backend_with_directory):
     """Test that get_file_list skips directory markers."""
     # Get file list

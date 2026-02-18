@@ -65,8 +65,8 @@ def test_container_name_property(azure_backend):
 
 
 def test_prefix_property(azure_backend):
-    """Test prefix property returns the configured prefix (trailing slash removed during initialization)."""
-    assert azure_backend.prefix == "test"
+    """Test prefix property returns the configured prefix exactly as provided."""
+    assert azure_backend.prefix == "test/"
 
 
 def test_write_file_azure_error(azure_backend):
@@ -80,6 +80,19 @@ def test_write_file_azure_error(azure_backend):
 
         with pytest.raises(RuntimeError, match="Failed to upload blob"):
             azure_backend.write_file(data, "test/new_file.txt")
+
+
+def test_get_file_identity_none_etag(azure_backend):
+    """Test that a None etag raises RuntimeError."""
+    with patch.object(azure_backend._AzureBlobBackend__client, "get_blob_client") as mock_get_blob_client:
+        mock_blob = MagicMock()
+        mock_props = MagicMock()
+        mock_props.etag = None
+        mock_blob.get_blob_properties.return_value = mock_props
+        mock_get_blob_client.return_value = mock_blob
+
+        with pytest.raises(RuntimeError, match="ETag unavailable"):
+            azure_backend.get_file_identity("test/sample.txt")
 
 
 def test_get_file_list_skips_directories(azure_backend_with_directory):

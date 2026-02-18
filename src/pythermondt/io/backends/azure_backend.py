@@ -51,7 +51,7 @@ class AzureBlobBackend(BaseBackend):
             self.__client = BlobServiceClient(account_url, credential=credential)
 
         self.__container_name = container_name
-        self.__prefix = prefix.rstrip("/") if prefix else ""
+        self.__prefix = prefix
 
         logger.debug("AzureBlobBackend(container=%s, prefix=%s) initialized.", container_name, prefix)
 
@@ -171,9 +171,7 @@ class AzureBlobBackend(BaseBackend):
         blobs = []
         container_client = self.__client.get_container_client(self.__container_name)
 
-        blob_prefix = self.__prefix + "/" if self.__prefix else ""
-
-        for blob in container_client.list_blobs(name_starts_with=blob_prefix):
+        for blob in container_client.list_blobs(name_starts_with=self.prefix):
             if blob.name.endswith("/"):
                 continue
 

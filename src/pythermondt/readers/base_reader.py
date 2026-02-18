@@ -1,5 +1,5 @@
 import hashlib
-import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -15,6 +15,8 @@ from ..config import settings
 from ..data import DataContainer
 from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
+
+logger = logging.getLogger(__name__)
 
 
 class ManifestEntry(BaseModel):
@@ -215,25 +217,28 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         """Extract the file name from a file path."""
         return os.path.basename(unquote(urlparse(file_path).path))
 
-    def _load_manifest(self, manifest_path: str) -> dict[str, str]:
+    def _load_manifest(self, manifest_path: str) -> CacheManifest:
         """Load manifest from disk with thread safety."""
         with self.__manifest_lock:
             if os.path.exists(manifest_path):
                 try:
+                    # Validate the manifest file against the model
                     with open(manifest_path, encoding="utf-8") as f:
-                        return json.load(f)
-                except (json.JSONDecodeError, FileNotFoundError):
-                    return {}
-            return {}
+                        return CacheManifest.model_validate_json(f.read())
+                except ValidationError as e:
+                    logger.debug("Ignoring invalid manifest file %s: %s", manifest_path, e)
+                except OSError as e:
+                    logger.debug("Error reading manifest file %s: %s", manifest_path, e)
+        return CacheManifest(root={})
 
-    def _save_manifest(self, manifest_path: str, manifest: dict[str, str]):
+    def _save_manifest(self, manifest_path: str, manifest: CacheManifest):
         """Save manifest to disk with thread safety."""
         with self.__manifest_lock:
             os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
-            # Atomic write using temp file
+            # Atomic write using temp file t avoid corruption
             temp_path = manifest_path + ".tmp"
             with open(temp_path, "w", encoding="utf-8") as f:
-                json.dump(manifest, f, indent=2)
+                f.write(manifest.model_dump_json(indent=2))
             os.replace(temp_path, manifest_path)
 
     def _setup_cache_dir(self) -> tuple[str, str]:

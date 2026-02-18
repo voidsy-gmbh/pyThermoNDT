@@ -65,8 +65,8 @@ def test_container_name_property(azure_backend):
 
 
 def test_prefix_property(azure_backend):
-    """Test prefix property returns the configured prefix (trailing slash removed during initialization)."""
-    assert azure_backend.prefix == "test"
+    """Test prefix property returns the configured prefix exactly as provided."""
+    assert azure_backend.prefix == "test/"
 
 
 def test_write_file_azure_error(azure_backend):

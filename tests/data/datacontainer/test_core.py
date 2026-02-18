@@ -61,3 +61,17 @@ def test_different_names_inequality(filled_container: DataContainer, sample_tens
     different_names.add_dataset("/TestGroup/NestedGroup", "TestDataset2", sample_eye_tensor)
 
     assert filled_container != different_names
+
+
+def test_data_container_str_representation_contains_nodes(filled_container: DataContainer):
+    """Test string representation matches the full expected output."""
+    expected = (
+        "/: (root: NodeType.ROOT)\n"
+        "/TestGroup: (TestGroup: NodeType.GROUP)\n"
+        "/TestGroup/NestedGroup: (NestedGroup: NodeType.GROUP)\n"
+        "/TestDataset: (TestDataset: NodeType.DATASET)\n"
+        "/TestGroup/TestDataset1: (TestDataset1: NodeType.DATASET)\n"
+        "/TestGroup/NestedGroup/TestDataset2: (TestDataset2: NodeType.DATASET)\n"
+    )
+
+    assert str(filled_container) == expected

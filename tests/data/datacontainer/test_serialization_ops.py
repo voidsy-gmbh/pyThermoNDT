@@ -3,6 +3,7 @@ import pickle
 from typing import Literal
 
 import h5py
+import numpy as np
 import pytest
 import torch
 
@@ -230,7 +231,7 @@ def test_deserialize_raises_for_unsupported_top_level_item():
     """Test deserialization fails for a broken top-level link item."""
     hdf5_bytes = io.BytesIO()
     with h5py.File(hdf5_bytes, "w") as h5_file:
-        h5_file["broken"] = h5py.SoftLink("/missing")
+        h5_file["unsupported_type"] = np.dtype("float32")
 
     hdf5_bytes.seek(0)
     with pytest.raises(TypeError, match="is not supported for deserialization"):
@@ -242,7 +243,7 @@ def test_deserialize_raises_for_unsupported_nested_item():
     hdf5_bytes = io.BytesIO()
     with h5py.File(hdf5_bytes, "w") as h5_file:
         group = h5_file.create_group("group")
-        group["broken"] = h5py.SoftLink("/missing")
+        group["unsupported_type"] = np.dtype("float32")
 
     hdf5_bytes.seek(0)
     with pytest.raises(TypeError, match="is not supported for deserialization"):

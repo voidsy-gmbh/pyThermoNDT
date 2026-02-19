@@ -184,8 +184,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def __str__(self):
         return (
             f"{self.__class__.__name__}({self._get_reader_params()}, num_files={self.num_files}, "
-            f"download_remote_files={self.__download_files}, cache_files={self.cache_files}, "
-            f"parser={self.__parser.__name__ if self.__parser else None})"
+            f"download_remote_files={self.download_files}, cache_files={self.cache_files}, "
+            f"parser={self.parser.__name__ if self.parser else None})"
         )
 
     def __getitem__(self, idx: int) -> DataContainer:

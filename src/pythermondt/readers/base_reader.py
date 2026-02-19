@@ -23,11 +23,11 @@ class ManifestEntry(BaseModel):
     """Manifest entry for a cached file.
 
     Attributes:
-        local_path (str): Relative path to the cached file (e.g., ./raw/hash.txt).
+        relative_path (str): Relative path from the manifest to the cached file (e.g., ./raw/file.hdf5).
         file_identity (str): Backend-specific identity (ETag for S3/Azure, stat metadata for local).
     """
 
-    local_path: str
+    relative_path: str
     file_identity: str
     model_config = ConfigDict(strict=True, extra="forbid")  # Forbid extra fields to ensure manifest integrity
 

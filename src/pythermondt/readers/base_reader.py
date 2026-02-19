@@ -259,7 +259,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         reader_id = f"{self.__class__.__name__}_{self._get_reader_params()}"
         dir_hash = hashlib.md5(reader_id.encode()).hexdigest()
         reader_cache_dir = os.path.join(base_dir, dir_hash)
-        manifest_path = os.path.join(reader_cache_dir, "manifest.json")
+        manifest_path = os.path.join(reader_cache_dir, "downloaded.json")
 
         # Ensure directories exist
         os.makedirs(os.path.join(reader_cache_dir, "./raw"), exist_ok=True)

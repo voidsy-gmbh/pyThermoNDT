@@ -405,6 +405,70 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         manifest.root.update(results)
         self._save_manifest(self.manifest_path, manifest)
 
+    def sync(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:
+        """Ensure cached files are present and up to date with remote.
+
+        For files already in the manifest, performs HEAD requests to compare file identities and re-downloads any that
+        have changed. If the cache is empty, falls back to a regular download — so sync() can be used as a single call
+        to both populate and validate the cache.
+
+        Args:
+            file_paths (list[str], optional): Files to check. Defaults to all manifest entries.
+            num_workers (int, optional): Parallel workers. Defaults to global config.
+        """
+        # If no remote source, do nothing
+        if not self.remote_source:
+            return
+
+        manifest = self._load_manifest(self.manifest_path)
+        if not manifest.root:
+            # No cached files yet, fall back to regular download
+            self.download(file_paths=file_paths, num_workers=num_workers)
+            return
+
+        # Determine files to check
+        to_check = file_paths or list(manifest.root.keys())
+
+        def fetch_identity(remote_path: str) -> tuple[str, str | None]:
+            try:
+                return remote_path, self.backend.get_file_identity(remote_path)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning("Failed to fetch identity for %s: %s", remote_path, e)
+                return remote_path, None
+
+        # Fetch remote identities (HEAD requests)
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        if workers > 1:
+            with ThreadPool(processes=workers) as pool:
+                remote_ids = dict(pool.imap_unordered(fetch_identity, to_check))
+        else:
+            remote_ids = dict(map(fetch_identity, to_check))
+
+        # Use sets for efficient bulk comparison (skip fetch failures)
+        successfully_checked = {path for path, rid in remote_ids.items() if rid is not None}
+        cached_paths = set(manifest.root.keys())
+
+        # Files not in manifest at all => need downloading
+        uncached = successfully_checked - cached_paths
+
+        # Files in manifest => check identity mismatch or missing on disk
+        potentially_valid = successfully_checked & cached_paths
+        stale = set()
+        for path in potentially_valid:
+            entry = manifest.root[path]
+            if remote_ids[path] != entry.file_identity:
+                stale.add(path)
+            elif not os.path.exists(os.path.join(self.reader_cache_dir, entry.relative_path)):
+                stale.add(path)
+
+        # Combine all files that need to be re-downloaded and early return
+        to_redownload = uncached | stale
+        if not to_redownload:
+            return
+
+        logger.info("%s - Re-downloading %d stale file(s).", self.__class__.__name__, len(to_redownload))
+        self.download(file_paths=list(to_redownload), num_workers=num_workers, force=True)
+
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.
 

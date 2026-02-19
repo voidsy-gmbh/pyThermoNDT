@@ -323,11 +323,11 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Load manifest
         manifest = self._load_manifest(self.manifest_path)
 
-        # Download the file
-        remote_path, entry = self._download_single_file(remote_path, manifest)
+        # Download the file (not forced)
+        remote_path, entry = self._download_single_file(remote_path, manifest, force=False)
 
         # Update manifest only if the file was actually downloaded
-        if remote_path not in manifest.root or manifest.root[remote_path] != entry.relative_path:
+        if remote_path not in manifest.root or manifest.root[remote_path] != entry:
             manifest = self._load_manifest(self.manifest_path)
             manifest.root[remote_path] = entry
             self._save_manifest(self.manifest_path, manifest)

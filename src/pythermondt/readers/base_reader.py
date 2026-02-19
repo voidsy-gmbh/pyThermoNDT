@@ -176,7 +176,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def __setstate__(self, state: dict):
         """Restore object from pickled state."""
         # Just restore the state dictionary - backend will be created lazily when first accessed
-        self.__dict__.update(state)
+        vars(self).update(state)
 
         # Recreate the lock
         self.__manifest_lock = Lock()

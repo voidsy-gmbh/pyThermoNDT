@@ -313,15 +313,15 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         manifest = self._load_manifest(self.manifest_path)
 
         # Download the file
-        remote_path, relative_path = self._download_single_file(remote_path, manifest)
+        remote_path, entry = self._download_single_file(remote_path, manifest)
 
         # Update manifest only if the file was actually downloaded
-        if remote_path not in manifest or manifest[remote_path] != relative_path:
+        if remote_path not in manifest.root or manifest.root[remote_path] != entry.relative_path:
             manifest = self._load_manifest(self.manifest_path)
-            manifest[remote_path] = relative_path
+            manifest.root[remote_path] = entry
             self._save_manifest(self.manifest_path, manifest)
 
-        return os.path.join(self.reader_cache_dir, relative_path)
+        return os.path.join(self.reader_cache_dir, entry.relative_path)
 
     def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
         """Trigger the download of files from the remote source.

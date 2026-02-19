@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import shutil
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from functools import partial
@@ -225,7 +226,14 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                     with open(manifest_path, encoding="utf-8") as f:
                         return CacheManifest.model_validate_json(f.read())
                 except ValidationError as e:
-                    logger.debug("Ignoring invalid manifest file %s: %s", manifest_path, e)
+                    logger.debug("Found invalid manifest file %s: %s", manifest_path, e)
+                    # If manifest is invalid, delete the entire cache directory to avoid future issues
+                    logger.debug("Recursively deleting invalid cache directory: %s", self.reader_cache_dir)
+                    try:
+                        shutil.rmtree(self.reader_cache_dir)
+                        logger.debug("Cache directory %s deleted successfully.", self.reader_cache_dir)
+                    except OSError as e:
+                        logger.debug("Error deleting cache directory %s: %s", self.reader_cache_dir, e)
                 except OSError as e:
                     logger.debug("Error reading manifest file %s: %s", manifest_path, e)
         return CacheManifest(root={})

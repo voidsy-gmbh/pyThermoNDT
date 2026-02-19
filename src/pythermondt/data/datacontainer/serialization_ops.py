@@ -112,7 +112,8 @@ class DeserializationOps(GroupOps, DatasetOps, AttributeOps):
 
         # Check if the IOPathWrapper object is a HDF5 file
         try:
-            h5py.File(hdf5_data)
+            with h5py.File(hdf5_data, "r") as f:
+                pass
         except OSError as o:
             raise ValueError("The given IOPathWrapper object does not contain a valid HDF5 file.") from o
 

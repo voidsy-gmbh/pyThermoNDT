@@ -26,6 +26,12 @@ def test_group_node_attributes(group_node: GroupNode):
     assert group_node.get_attribute("test_attr") == "test_value"
 
 
+def test_node_name_setter_updates_name(group_node: GroupNode):
+    """Test BaseNode name setter."""
+    group_node.name = "renamed_group"
+    assert group_node.name == "renamed_group"
+
+
 def test_group_node_update_attribute(group_node: GroupNode):
     """Test updating attributes of GroupNode."""
     # Test GroupNode update attribute
@@ -87,6 +93,19 @@ def test_data_node_update_attribute(data_node: DataNode):
     # Try to update an attribute with a value that is not a list
     with pytest.raises(TypeError):
         data_node.update_attribute("shape", "new_value")
+
+
+def test_attribute_node_clear_attributes(group_node: GroupNode):
+    """Test clearing all attributes from node."""
+    group_node.add_attributes(a=1, b=2)
+    group_node.clear_attributes()
+    assert dict(group_node.attributes) == {}
+
+
+def test_data_node_data_deleter_resets_to_empty_tensor(data_node: DataNode):
+    """Test deleting data resets DataNode tensor."""
+    del data_node.data
+    assert torch.equal(data_node.data, torch.empty(0))
 
 
 # Memory tests

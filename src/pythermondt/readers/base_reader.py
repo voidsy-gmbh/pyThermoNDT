@@ -273,29 +273,32 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 f.write("*\n")
         return reader_cache_dir, manifest_path
 
-    def _download_single_file(self, remote_path: str, manifest: dict[str, str]) -> tuple[str, str]:
+    def _download_single_file(self, remote_path: str, manifest: CacheManifest) -> tuple[str, ManifestEntry]:
         """Download a single file from the remote source and return its local path.
 
         Args:
             remote_path (str): The path to the file on the remote source.
-            manifest (dict[str, str]): The manifest dictionary containing the current state of downloaded files.
+            manifest (CacheManifest): The manifest dictionary containing the current state of downloaded files.
 
         Returns:
-            tuple[str, str]: A tuple containing the relative local path to the downloaded file and its remote path.
+            tuple[str, ManifestEntry]: A tuple containing the remote path and the corresponding manifest entry for the
+                file. If the file was already cached and exists on disk, the existing manifest entry will be returned,
+                avoiding unnecessary redownloads.
         """
         # Check if already cached and exists
-        if remote_path in manifest:
-            relative_path = manifest[remote_path]
-            local_path = os.path.join(self.reader_cache_dir, relative_path)
-            if os.path.exists(local_path):
-                return remote_path, relative_path
+        if remote_path in manifest.root:
+            abs_path = os.path.join(self.reader_cache_dir, manifest.root[remote_path].relative_path)
+            if os.path.exists(abs_path):
+                return remote_path, manifest.root[remote_path]
 
         # Download the file
         filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
         relative_path = f"./raw/{filename}"
         local_path = os.path.join(self.reader_cache_dir, relative_path)
+        # TODO: Change change backends to download files and return etag in a single request
         self.backend.download_file(remote_path, local_path)
-        return remote_path, relative_path
+        file_id = self.backend.get_file_identity(remote_path)
+        return remote_path, ManifestEntry(relative_path=relative_path, file_identity=file_id)
 
     def _ensure_file_cached(self, remote_path: str) -> str:
         """Ensure a file is cached locally, return local path.

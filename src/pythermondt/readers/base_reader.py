@@ -334,7 +334,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         return os.path.join(self.reader_cache_dir, entry.relative_path)
 
-    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
+    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None, force: bool = False):  # pylint: disable=too-many-locals
         """Trigger the download of files from the remote source.
 
         This method will download the specified files from the remote source and cache them locally in the reader's
@@ -348,6 +348,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 able to read will be downloaded. Default is None.
             num_workers (int, optional): Number of workers to use for downloading files. If None, the global
                 configuration of PyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
+            force (bool, optional): If True, skip cache checks and re-download all requested files. Default is False.
         """
         # If no remote source, do nothing
         if not self.remote_source:
@@ -361,24 +362,28 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Get cache info once (not per file) from the manifest file
         manifest = self._load_manifest(self.manifest_path)
 
-        # Use sets for efficient bulk comparison
         requested_files = set(paths_to_download)
-        cached_files = set(manifest.keys())
 
-        # Find files that need downloading
-        potentially_cached = requested_files & cached_files
-        uncached_files = requested_files - cached_files
+        if force:
+            to_download = requested_files
+        else:
+            # Use sets for efficient bulk comparison
+            cached_files = set(manifest.root.keys())
 
-        # Check which "cached" files actually exist on disk
-        missing_cached_files = set()
-        for file_path in potentially_cached:
-            relative_path = manifest[file_path]
-            local_path = os.path.join(self.reader_cache_dir, relative_path)
-            if not os.path.exists(local_path):
-                missing_cached_files.add(file_path)
+            # Find files that need downloading
+            potentially_cached = requested_files & cached_files
+            uncached_files = requested_files - cached_files
 
-        # Combine files that need downloading
-        to_download = uncached_files | missing_cached_files
+            # Check which "cached" files actually exist on disk
+            missing_cached_files = set()
+            for file_path in potentially_cached:
+                entry = manifest.root[file_path]
+                local_path = os.path.join(self.reader_cache_dir, entry.relative_path)
+                if not os.path.exists(local_path):
+                    missing_cached_files.add(file_path)
+
+            # Combine files that need downloading
+            to_download = uncached_files | missing_cached_files
 
         if not to_download:
             return  # Nothing to download
@@ -388,7 +393,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         desc = f"{self.__class__.__name__} - Downloading files"
         num = len(to_download)
         workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
-        worker_fn = partial(self._download_single_file, manifest=manifest)
+        worker_fn = partial(self._download_single_file, manifest=manifest, force=force)
         if workers > 1:
             # Use ThreadPool for parallel downloads
             with ThreadPool(processes=workers) as pool:
@@ -397,7 +402,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             results = dict(tqdm(map(worker_fn, to_download), total=num, desc=desc, unit=unit))
 
         # Single manifest update after all downloads
-        manifest.update(results)
+        manifest.root.update(results)
         self._save_manifest(self.manifest_path, manifest)
 
     def read_file(self, file_path: str) -> DataContainer:

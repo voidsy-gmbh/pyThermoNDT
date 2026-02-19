@@ -281,12 +281,15 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 f.write("*\n")
         return reader_cache_dir, manifest_path
 
-    def _download_single_file(self, remote_path: str, manifest: CacheManifest) -> tuple[str, ManifestEntry]:
+    def _download_single_file(
+        self, remote_path: str, manifest: CacheManifest, force: bool = False
+    ) -> tuple[str, ManifestEntry]:
         """Download a single file from the remote source and return its local path.
 
         Args:
             remote_path (str): The path to the file on the remote source.
             manifest (CacheManifest): The manifest dictionary containing the current state of downloaded files.
+            force (bool, optional): If True, skip cache check and always re-download. Default is False.
 
         Returns:
             tuple[str, ManifestEntry]: A tuple containing the remote path and the corresponding manifest entry for the
@@ -294,7 +297,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 avoiding unnecessary redownloads.
         """
         # Check if already cached and exists
-        if remote_path in manifest.root:
+        if not force and remote_path in manifest.root:
             abs_path = os.path.join(self.reader_cache_dir, manifest.root[remote_path].relative_path)
             if os.path.exists(abs_path):
                 return remote_path, manifest.root[remote_path]

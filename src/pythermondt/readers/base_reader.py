@@ -270,6 +270,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # CACHEDIR.TAG
         tag_file = os.path.join(base_dir, "CACHEDIR.TAG")
         if not os.path.exists(tag_file):
+            logger.debug("Tag file %s not found, creating it to mark cache directories.", tag_file)
             with open(tag_file, "w", encoding="utf-8") as f:
                 f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
                 f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
@@ -278,9 +279,11 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Create .gitignore file to ignore cache files in git
         gitignore = os.path.join(base_dir, ".gitignore")
         if not os.path.exists(gitignore):
+            logger.debug("Gitignore file %s not found, creating it to ignore cache files in git.", gitignore)
             with open(gitignore, "w", encoding="utf-8") as f:
                 f.write("# Automatically created by pythermondt\n")
                 f.write("*\n")
+        logger.debug("Cache directory set up at %s with manifest at %s", reader_cache_dir, manifest_path)
         return reader_cache_dir, manifest_path
 
     def _download_single_file(

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PyThermoNDT BaseViewer</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>PyThermoNDT BaseViewer</h1>
+      <p id="status">Initializing...</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel panel-tree">
+        <h2>Hierarchy</h2>
+        <div id="tree-root"></div>
+      </section>
+
+      <section class="panel panel-details">
+        <h2>Node Details</h2>
+        <pre id="node-json">Select a node.</pre>
+
+        <div id="preview-controls" class="preview-controls" hidden>
+          <h3>Dataset Preview</h3>
+          <div class="preview-buttons">
+            <button id="preview-prev" type="button">Previous</button>
+            <button id="preview-next" type="button">Next</button>
+          </div>
+          <p id="preview-window">Offset: 0</p>
+          <pre id="preview-json"></pre>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

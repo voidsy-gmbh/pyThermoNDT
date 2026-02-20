@@ -244,7 +244,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         """Save manifest to disk with thread safety."""
         with self.__manifest_lock:
             os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
-            # Atomic write using temp file t avoid corruption
+            # Atomic write using temp file to avoid corruption
             temp_path = manifest_path + ".tmp"
             with open(temp_path, "w", encoding="utf-8") as f:
                 f.write(manifest.model_dump_json(indent=2))
@@ -310,7 +310,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
         relative_path = f"./raw/{filename}"
         local_path = os.path.join(self.reader_cache_dir, relative_path)
-        # TODO: Change change backends to download files and return etag in a single request
+        # TODO: Change backends to download files and return etag in a single request
         self.backend.download_file(remote_path, local_path)
         file_id = self.backend.get_file_identity(remote_path)
         return remote_path, ManifestEntry(relative_path=relative_path, file_identity=file_id)

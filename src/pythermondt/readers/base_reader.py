@@ -283,7 +283,6 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             with open(gitignore, "w", encoding="utf-8") as f:
                 f.write("# Automatically created by pythermondt\n")
                 f.write("*\n")
-        logger.debug("Cache directory set up at %s with manifest at %s", reader_cache_dir, manifest_path)
         return reader_cache_dir, manifest_path
 
     def _download_single_file(

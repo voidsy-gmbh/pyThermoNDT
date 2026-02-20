@@ -33,7 +33,7 @@ class ManifestEntry(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")  # Forbid extra fields to ensure manifest integrity
 
 
-class CacheManifest(RootModel[dict[str, ManifestEntry]]):
+class CacheManifest(RootModel[dict[str, ManifestEntry]]):  # pylint: disable=too-few-public-methods
     """Manifest model mapping remote paths to manifest entries."""
 
 
@@ -225,8 +225,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                     # Validate the manifest file against the model
                     with open(manifest_path, encoding="utf-8") as f:
                         return CacheManifest.model_validate_json(f.read())
-                except ValidationError as e:
-                    logger.debug("Found invalid manifest file %s: %s", manifest_path, e)
+                except ValidationError as validation_error:
+                    logger.debug("Found invalid manifest file %s: %s", manifest_path, validation_error)
                     # If manifest is invalid, delete the entire cache directory to avoid future issues
                     cache_dir = self.reader_cache_dir  # Store in local variable to avoid issues after deletion
                     logger.debug("Recursively deleting invalid cache directory: %s", cache_dir)
@@ -234,10 +234,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                         shutil.rmtree(cache_dir)
                         self.__manifest_path = self.__reader_cache_dir = None  # Reset state to trigger new setup
                         logger.debug("Cache directory %s deleted successfully.", cache_dir)
-                    except OSError as e:
-                        logger.debug("Error deleting cache directory %s: %s", cache_dir, e)
-                except OSError as e:
-                    logger.debug("Error reading manifest file %s: %s", manifest_path, e)
+                    except OSError as delete_error:
+                        logger.debug("Error deleting cache directory %s: %s", cache_dir, delete_error)
+                except OSError as read_error:
+                    logger.debug("Error reading manifest file %s: %s", manifest_path, read_error)
         return CacheManifest(root={})
 
     def _save_manifest(self, manifest_path: str, manifest: CacheManifest):
@@ -409,7 +409,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         manifest.root.update(results)
         self._save_manifest(self.manifest_path, manifest)
 
-    def sync(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:
+    def sync(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
         """Ensure cached files are present and up to date with remote.
 
         For files already in the manifest, performs HEAD requests to compare file identities and re-downloads any that

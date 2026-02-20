@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader
 from pythermondt import LocalReader, S3Reader
 from pythermondt import transforms as T
 from pythermondt.dataset import ThermoDataset, container_collate
+from pythermondt.visualization import view
 
 # Load data from different sources
 local_reader = LocalReader("./examples/example_data/**/*.hdf5", recursive=True)
@@ -39,6 +40,9 @@ processed = transform(container)
 processed.show_frame(frame_number=10)
 processed.analyse_interactive()
 
+# 2.1) Launch browser-based BaseViewer prototype (non-blocking)
+viewer = view(processed, block=False)
+
 # 3.) Combine sources in a dataset for training workflows
 dataset = ThermoDataset([local_reader, s3_reader], transform=transform)
 
@@ -54,7 +58,12 @@ for epoch in range(50):
     for thermal_data, ground_truth in dataloader:
         print(f"Thermal data shape: {thermal_data.shape}")    # [4, 96, 96, 64]
         print(f"Ground truth shape: {ground_truth.shape}")    # [4, 96, 96]
+
+viewer.stop()
 ```
+
+`view(container)` is blocking by default and keeps the webservice alive until `Ctrl+C`. Use `block=False` when you
+need the script to continue running or when running inside environments where `Ctrl+C` handling is limited.
 
 ## From here?
 PyThermoNDT is yours to use! You can start by exploring the [examples](examples/) directory for more detailed usage scenarios. The package is designed to be flexible and extensible, so feel free to modify and adapt it to your specific needs.

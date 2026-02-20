@@ -228,12 +228,14 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 except ValidationError as e:
                     logger.debug("Found invalid manifest file %s: %s", manifest_path, e)
                     # If manifest is invalid, delete the entire cache directory to avoid future issues
-                    logger.debug("Recursively deleting invalid cache directory: %s", self.reader_cache_dir)
+                    cache_dir = self.reader_cache_dir  # Store in local variable to avoid issues after deletion
+                    logger.debug("Recursively deleting invalid cache directory: %s", cache_dir)
                     try:
-                        shutil.rmtree(self.reader_cache_dir)
-                        logger.debug("Cache directory %s deleted successfully.", self.reader_cache_dir)
+                        shutil.rmtree(cache_dir)
+                        self.__manifest_path = self.__reader_cache_dir = None  # Reset state to trigger new setup
+                        logger.debug("Cache directory %s deleted successfully.", cache_dir)
                     except OSError as e:
-                        logger.debug("Error deleting cache directory %s: %s", self.reader_cache_dir, e)
+                        logger.debug("Error deleting cache directory %s: %s", cache_dir, e)
                 except OSError as e:
                     logger.debug("Error reading manifest file %s: %s", manifest_path, e)
         return CacheManifest(root={})

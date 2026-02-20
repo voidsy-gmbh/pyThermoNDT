@@ -1,6 +1,7 @@
 import hashlib
-import json
+import logging
 import os
+import shutil
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from functools import partial
@@ -8,12 +9,32 @@ from multiprocessing.pool import ThreadPool
 from threading import Lock
 from urllib.parse import unquote, urlparse
 
+from pydantic import BaseModel, ConfigDict, RootModel, ValidationError
 from tqdm.auto import tqdm
 
 from ..config import settings
 from ..data import DataContainer
 from ..io import BaseBackend, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
+
+logger = logging.getLogger(__name__)
+
+
+class ManifestEntry(BaseModel):
+    """Manifest entry for a cached file.
+
+    Attributes:
+        relative_path (str): Relative path from the manifest to the cached file (e.g., ./raw/file.hdf5).
+        file_identity (str): Backend-specific identity (ETag for S3/Azure, stat metadata for local).
+    """
+
+    relative_path: str
+    file_identity: str
+    model_config = ConfigDict(strict=True, extra="forbid")  # Forbid extra fields to ensure manifest integrity
+
+
+class CacheManifest(RootModel[dict[str, ManifestEntry]]):  # pylint: disable=too-few-public-methods
+    """Manifest model mapping remote paths to manifest entries."""
 
 
 class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
@@ -155,9 +176,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
     def __setstate__(self, state: dict):
         """Restore object from pickled state."""
-        # Just restore the state dictionary - backend will be created
-        # lazily when first accessed
-        self.__dict__.update(state)
+        # Just restore the state dictionary - backend will be created lazily when first accessed
+        vars(self).update(state)
 
         # Recreate the lock
         self.__manifest_lock = Lock()
@@ -165,8 +185,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def __str__(self):
         return (
             f"{self.__class__.__name__}({self._get_reader_params()}, num_files={self.num_files}, "
-            f"download_remote_files={self.__download_files}, cache_files={self.cache_files}, "
-            f"parser={self.__parser.__name__ if self.__parser else None})"
+            f"download_remote_files={self.download_files}, cache_files={self.cache_files}, "
+            f"parser={self.parser.__name__ if self.parser else None})"
         )
 
     def __getitem__(self, idx: int) -> DataContainer:
@@ -197,25 +217,37 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         """Extract the file name from a file path."""
         return os.path.basename(unquote(urlparse(file_path).path))
 
-    def _load_manifest(self, manifest_path: str) -> dict[str, str]:
+    def _load_manifest(self, manifest_path: str) -> CacheManifest:
         """Load manifest from disk with thread safety."""
         with self.__manifest_lock:
             if os.path.exists(manifest_path):
                 try:
+                    # Validate the manifest file against the model
                     with open(manifest_path, encoding="utf-8") as f:
-                        return json.load(f)
-                except (json.JSONDecodeError, FileNotFoundError):
-                    return {}
-            return {}
+                        return CacheManifest.model_validate_json(f.read())
+                except ValidationError as validation_error:
+                    logger.debug("Found invalid manifest file %s: %s", manifest_path, validation_error)
+                    # If manifest is invalid, delete the entire cache directory to avoid future issues
+                    cache_dir = self.reader_cache_dir  # Store in local variable to avoid issues after deletion
+                    logger.debug("Recursively deleting invalid cache directory: %s", cache_dir)
+                    try:
+                        shutil.rmtree(cache_dir)
+                        self.__manifest_path = self.__reader_cache_dir = None  # Reset state to trigger new setup
+                        logger.debug("Cache directory %s deleted successfully.", cache_dir)
+                    except OSError as delete_error:
+                        logger.debug("Error deleting cache directory %s: %s", cache_dir, delete_error)
+                except OSError as read_error:
+                    logger.debug("Error reading manifest file %s: %s", manifest_path, read_error)
+        return CacheManifest(root={})
 
-    def _save_manifest(self, manifest_path: str, manifest: dict[str, str]):
+    def _save_manifest(self, manifest_path: str, manifest: CacheManifest):
         """Save manifest to disk with thread safety."""
         with self.__manifest_lock:
             os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
-            # Atomic write using temp file
+            # Atomic write using temp file to avoid corruption
             temp_path = manifest_path + ".tmp"
             with open(temp_path, "w", encoding="utf-8") as f:
-                json.dump(manifest, f, indent=2)
+                f.write(manifest.model_dump_json(indent=2))
             os.replace(temp_path, manifest_path)
 
     def _setup_cache_dir(self) -> tuple[str, str]:
@@ -238,6 +270,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # CACHEDIR.TAG
         tag_file = os.path.join(base_dir, "CACHEDIR.TAG")
         if not os.path.exists(tag_file):
+            logger.debug("Tag file %s not found, creating it to mark cache directories.", tag_file)
             with open(tag_file, "w", encoding="utf-8") as f:
                 f.write("Signature: 8a477f597d28d172789f06886806bc55\n")
                 f.write("# This file is a cache directory tag automatically created by pythermondt.\n")
@@ -246,34 +279,41 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Create .gitignore file to ignore cache files in git
         gitignore = os.path.join(base_dir, ".gitignore")
         if not os.path.exists(gitignore):
+            logger.debug("Gitignore file %s not found, creating it to ignore cache files in git.", gitignore)
             with open(gitignore, "w", encoding="utf-8") as f:
                 f.write("# Automatically created by pythermondt\n")
                 f.write("*\n")
         return reader_cache_dir, manifest_path
 
-    def _download_single_file(self, remote_path: str, manifest: dict[str, str]) -> tuple[str, str]:
+    def _download_single_file(
+        self, remote_path: str, manifest: CacheManifest, force: bool = False
+    ) -> tuple[str, ManifestEntry]:
         """Download a single file from the remote source and return its local path.
 
         Args:
             remote_path (str): The path to the file on the remote source.
-            manifest (dict[str, str]): The manifest dictionary containing the current state of downloaded files.
+            manifest (CacheManifest): The manifest dictionary containing the current state of downloaded files.
+            force (bool, optional): If True, skip cache check and always re-download. Default is False.
 
         Returns:
-            tuple[str, str]: A tuple containing the relative local path to the downloaded file and its remote path.
+            tuple[str, ManifestEntry]: A tuple containing the remote path and the corresponding manifest entry for the
+                file. If the file was already cached and exists on disk, the existing manifest entry will be returned,
+                avoiding unnecessary redownloads.
         """
         # Check if already cached and exists
-        if remote_path in manifest:
-            relative_path = manifest[remote_path]
-            local_path = os.path.join(self.reader_cache_dir, relative_path)
-            if os.path.exists(local_path):
-                return remote_path, relative_path
+        if not force and remote_path in manifest.root:
+            abs_path = os.path.join(self.reader_cache_dir, manifest.root[remote_path].relative_path)
+            if os.path.exists(abs_path):
+                return remote_path, manifest.root[remote_path]
 
         # Download the file
         filename = hashlib.md5(remote_path.encode()).hexdigest() + os.path.splitext(remote_path)[1]
         relative_path = f"./raw/{filename}"
         local_path = os.path.join(self.reader_cache_dir, relative_path)
+        # TODO: Change backends to download files and return etag in a single request
         self.backend.download_file(remote_path, local_path)
-        return remote_path, relative_path
+        file_id = self.backend.get_file_identity(remote_path)
+        return remote_path, ManifestEntry(relative_path=relative_path, file_identity=file_id)
 
     def _ensure_file_cached(self, remote_path: str) -> str:
         """Ensure a file is cached locally, return local path.
@@ -287,18 +327,18 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Load manifest
         manifest = self._load_manifest(self.manifest_path)
 
-        # Download the file
-        remote_path, relative_path = self._download_single_file(remote_path, manifest)
+        # Download the file (not forced)
+        remote_path, entry = self._download_single_file(remote_path, manifest, force=False)
 
         # Update manifest only if the file was actually downloaded
-        if remote_path not in manifest or manifest[remote_path] != relative_path:
+        if remote_path not in manifest.root or manifest.root[remote_path] != entry:
             manifest = self._load_manifest(self.manifest_path)
-            manifest[remote_path] = relative_path
+            manifest.root[remote_path] = entry
             self._save_manifest(self.manifest_path, manifest)
 
-        return os.path.join(self.reader_cache_dir, relative_path)
+        return os.path.join(self.reader_cache_dir, entry.relative_path)
 
-    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
+    def download(self, file_paths: list[str] | None = None, num_workers: int | None = None, force: bool = False):  # pylint: disable=too-many-locals
         """Trigger the download of files from the remote source.
 
         This method will download the specified files from the remote source and cache them locally in the reader's
@@ -312,6 +352,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 able to read will be downloaded. Default is None.
             num_workers (int, optional): Number of workers to use for downloading files. If None, the global
                 configuration of PyThermoNDT will be used. If less than 1, it defaults to 1 worker. Default is None.
+            force (bool, optional): If True, skip cache checks and re-download all requested files. Default is False.
         """
         # If no remote source, do nothing
         if not self.remote_source:
@@ -325,24 +366,28 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Get cache info once (not per file) from the manifest file
         manifest = self._load_manifest(self.manifest_path)
 
-        # Use sets for efficient bulk comparison
         requested_files = set(paths_to_download)
-        cached_files = set(manifest.keys())
 
-        # Find files that need downloading
-        potentially_cached = requested_files & cached_files
-        uncached_files = requested_files - cached_files
+        if force:
+            to_download = requested_files
+        else:
+            # Use sets for efficient bulk comparison
+            cached_files = set(manifest.root.keys())
 
-        # Check which "cached" files actually exist on disk
-        missing_cached_files = set()
-        for file_path in potentially_cached:
-            relative_path = manifest[file_path]
-            local_path = os.path.join(self.reader_cache_dir, relative_path)
-            if not os.path.exists(local_path):
-                missing_cached_files.add(file_path)
+            # Find files that need downloading
+            potentially_cached = requested_files & cached_files
+            uncached_files = requested_files - cached_files
 
-        # Combine files that need downloading
-        to_download = uncached_files | missing_cached_files
+            # Check which "cached" files actually exist on disk
+            missing_cached_files = set()
+            for file_path in potentially_cached:
+                entry = manifest.root[file_path]
+                local_path = os.path.join(self.reader_cache_dir, entry.relative_path)
+                if not os.path.exists(local_path):
+                    missing_cached_files.add(file_path)
+
+            # Combine files that need downloading
+            to_download = uncached_files | missing_cached_files
 
         if not to_download:
             return  # Nothing to download
@@ -352,7 +397,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         desc = f"{self.__class__.__name__} - Downloading files"
         num = len(to_download)
         workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
-        worker_fn = partial(self._download_single_file, manifest=manifest)
+        worker_fn = partial(self._download_single_file, manifest=manifest, force=force)
         if workers > 1:
             # Use ThreadPool for parallel downloads
             with ThreadPool(processes=workers) as pool:
@@ -361,8 +406,72 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             results = dict(tqdm(map(worker_fn, to_download), total=num, desc=desc, unit=unit))
 
         # Single manifest update after all downloads
-        manifest.update(results)
+        manifest.root.update(results)
         self._save_manifest(self.manifest_path, manifest)
+
+    def sync(self, file_paths: list[str] | None = None, num_workers: int | None = None) -> None:  # pylint: disable=too-many-locals
+        """Ensure cached files are present and up to date with remote.
+
+        For files already in the manifest, performs HEAD requests to compare file identities and re-downloads any that
+        have changed. If the cache is empty, falls back to a regular download — so sync() can be used as a single call
+        to both populate and validate the cache.
+
+        Args:
+            file_paths (list[str], optional): Files to check. Defaults to all manifest entries.
+            num_workers (int, optional): Parallel workers. Defaults to global config.
+        """
+        # If no remote source, do nothing
+        if not self.remote_source:
+            return
+
+        manifest = self._load_manifest(self.manifest_path)
+        if not manifest.root:
+            # No cached files yet, fall back to regular download
+            self.download(file_paths=file_paths, num_workers=num_workers)
+            return
+
+        # Determine files to check
+        to_check = file_paths or list(manifest.root.keys())
+
+        def fetch_identity(remote_path: str) -> tuple[str, str | None]:
+            try:
+                return remote_path, self.backend.get_file_identity(remote_path)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning("Failed to fetch identity for %s: %s", remote_path, e)
+                return remote_path, None
+
+        # Fetch remote identities (HEAD requests)
+        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        if workers > 1:
+            with ThreadPool(processes=workers) as pool:
+                remote_ids = dict(pool.imap_unordered(fetch_identity, to_check))
+        else:
+            remote_ids = dict(map(fetch_identity, to_check))
+
+        # Use sets for efficient bulk comparison (skip fetch failures)
+        successfully_checked = {path for path, rid in remote_ids.items() if rid is not None}
+        cached_paths = set(manifest.root.keys())
+
+        # Files not in manifest at all => need downloading
+        uncached = successfully_checked - cached_paths
+
+        # Files in manifest => check identity mismatch or missing on disk
+        potentially_valid = successfully_checked & cached_paths
+        stale = set()
+        for path in potentially_valid:
+            entry = manifest.root[path]
+            if remote_ids[path] != entry.file_identity:
+                stale.add(path)
+            elif not os.path.exists(os.path.join(self.reader_cache_dir, entry.relative_path)):
+                stale.add(path)
+
+        # Combine all files that need to be re-downloaded and early return
+        to_redownload = uncached | stale
+        if not to_redownload:
+            return
+
+        logger.info("%s - Re-downloading %d stale file(s).", self.__class__.__name__, len(to_redownload))
+        self.download(file_paths=list(to_redownload), num_workers=num_workers, force=True)
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

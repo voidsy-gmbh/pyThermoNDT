@@ -4,7 +4,6 @@ import gc
 import multiprocessing as mp
 import sys
 from abc import ABC, abstractmethod
-from multiprocessing import Manager
 from multiprocessing.managers import ListProxy, SyncManager
 from multiprocessing.pool import ThreadPool
 from typing import Literal

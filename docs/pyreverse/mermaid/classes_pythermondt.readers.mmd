@@ -7,6 +7,7 @@ classDiagram
     backend : BaseBackend
     cache_files : bool
     download_files : bool
+    file_names : list[str]
     files : list[str]
     manifest_path : str
     num_files : int | None
@@ -19,16 +20,26 @@ classDiagram
     \_\_iter\_\_() Iterator[DataContainer]
     \_\_len\_\_() int
     \_\_reversed\_\_() Iterator[DataContainer]
-    \_\_setstate\_\_(state)
+    \_\_setstate\_\_(state: dict)
     \_\_str\_\_()
-    download(file_paths: list[str] | None, num_workers: int | None) None
+    download(file_paths: list[str] | None, num_workers: int | None, force: bool)
     read_file(file_path: str) DataContainer
+    sync(file_paths: list[str] | None, num_workers: int | None) None
   }
   style BaseReader fill:#77AADD
+  class CacheManifest {
+  }
+  style CacheManifest fill:#77AADD
   class LocalReader {
     \_\_init\_\_(pattern: str, recursive: bool, num_files: int | None, cache_files: bool, parser: type[BaseParser] | None)
   }
   style LocalReader fill:#77AADD
+  class ManifestEntry {
+    file_identity : str
+    model_config
+    relative_path : str
+  }
+  style ManifestEntry fill:#77AADD
   class S3Reader {
     \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
   }

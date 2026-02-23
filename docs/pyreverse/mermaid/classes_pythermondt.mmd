@@ -44,6 +44,7 @@ classDiagram
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
+    get_file_identity(file_path: str) str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
@@ -63,6 +64,7 @@ classDiagram
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
+    get_file_identity(file_path: str)* str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
     get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
@@ -102,14 +104,16 @@ classDiagram
     backend : BaseBackend
     cache_files : bool
     download_files : bool
+    file_names : list[str]
     files : list[str]
     manifest_path : str
     num_files : int | None
     parser : type[BaseParser] | None
     reader_cache_dir : str
     remote_source : bool
-    download(file_paths: list[str] | None, num_workers: int | None) None
+    download(file_paths: list[str] | None, num_workers: int | None, force: bool)
     read_file(file_path: str) DataContainer
+    sync(file_paths: list[str] | None, num_workers: int | None) None
   }
   style BaseReader fill:#AAAA00
   class BaseWriter {
@@ -118,6 +122,9 @@ classDiagram
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)*
   }
   style BaseWriter fill:#EE8866
+  class CacheManifest {
+  }
+  style CacheManifest fill:#AAAA00
   class CallbackTransform {
     callback : Callable[[DataContainer], _BaseTransform]
     is_random : bool
@@ -249,6 +256,7 @@ classDiagram
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
+    get_file_identity(file_path: str) str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
@@ -262,6 +270,12 @@ classDiagram
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style LocalWriter fill:#EE8866
+  class ManifestEntry {
+    file_identity : str
+    model_config
+    relative_path : str
+  }
+  style ManifestEntry fill:#AAAA00
   class MaxNormalize {
     eps : float
     forward(container: DataContainer) DataContainer
@@ -322,6 +336,7 @@ classDiagram
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
+    get_file_identity(file_path: str) str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper

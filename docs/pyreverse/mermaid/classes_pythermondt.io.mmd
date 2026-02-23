@@ -7,6 +7,7 @@ classDiagram
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
+    get_file_identity(file_path: str) str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
@@ -19,6 +20,7 @@ classDiagram
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
+    get_file_identity(file_path: str)* str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
     get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
@@ -57,6 +59,7 @@ classDiagram
     close()* None
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
+    get_file_identity(file_path: str) str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
@@ -71,6 +74,7 @@ classDiagram
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
+    get_file_identity(file_path: str) str
     get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper

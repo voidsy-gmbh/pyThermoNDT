@@ -77,7 +77,7 @@ dev = [
     "licensecheck==2025.1.0",
     "mypy==1.19.1",
     "uv==0.10.2",
-    "pylint==4.0.4",
+    "pylint==4.0.5",
     "moto==5.1.21"
 ]
 

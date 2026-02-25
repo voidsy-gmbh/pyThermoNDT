@@ -90,6 +90,8 @@ class BaseWriter(ABC):
             container = reader[idx]
             if keep_file_names:
                 file_name = os.path.splitext(reader.file_names[idx])[0]  # Remove original extension
+                if not file_name:
+                    raise ValueError(f"Invalid file name at index {idx}: '{reader.file_names[idx]}'")
             else:
                 # Replace {index} with zero-padded index
                 file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))

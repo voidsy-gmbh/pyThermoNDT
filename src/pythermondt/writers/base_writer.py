@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
 
@@ -56,6 +57,7 @@ class BaseWriter(ABC):
     def process_parallel(
         self,
         reader: BaseReader,
+        keep_file_names: bool = False,
         file_name_pattern: str = "{index}",
         compression: CompressionType = "lzf",
         compression_opts: int | None = 4,
@@ -65,6 +67,8 @@ class BaseWriter(ABC):
 
         Args:
             reader: Reader containing DataContainers to write
+            keep_file_names: Whether to keep the original file names from the reader. If True, the argument
+                `file_name_pattern` will be ignored.
             file_name_pattern: Pattern for naming files. Use {index} for zero-padded index. If {index} is not present,
                 it will be appended to the pattern with an underscore.
                 Example: "data_{index}_name" produces "data_00000_name.hdf5", "data_00001_name.hdf5", etc.
@@ -79,10 +83,18 @@ class BaseWriter(ABC):
         if "{index}" not in file_name_pattern:
             file_name_pattern += "_{index}"
 
+        if keep_file_names:
+            _ = reader.file_names  # Access file names to ensure they are loaded
+
         def write_single(idx: int):
             container = reader[idx]
-            # Replace {index} with zero-padded index
-            file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
+            if keep_file_names:
+                file_name = os.path.splitext(reader.file_names[idx])[0]  # Remove original extension
+                if not file_name:
+                    raise ValueError(f"Invalid file name at index {idx}: '{reader.file_names[idx]}'")
+            else:
+                # Replace {index} with zero-padded index
+                file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
             self.write(container, file_name, compression, compression_opts)
 
         # Use ThreadPool for writing in parallel ==> I/O bound task

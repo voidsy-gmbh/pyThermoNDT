@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
 
@@ -88,7 +89,7 @@ class BaseWriter(ABC):
         def write_single(idx: int):
             container = reader[idx]
             if keep_file_names:
-                file_name = reader.file_names[idx]
+                file_name = os.path.splitext(reader.file_names[idx])[0]  # Remove original extension
             else:
                 # Replace {index} with zero-padded index
                 file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))

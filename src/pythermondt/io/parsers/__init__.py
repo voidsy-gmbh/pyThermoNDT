@@ -78,6 +78,7 @@ def get_all_parsers() -> tuple[type[BaseParser], ...]:
 __all__ = [
     "BaseParser",
     "HDF5Parser",
+    "EdevisParser",
     "SimulationParser",
     "find_parser_for_extension",
     "get_all_supported_extensions",

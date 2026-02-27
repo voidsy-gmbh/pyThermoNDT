@@ -55,7 +55,7 @@ class IndexedThermoDataset(BaseDataset):
         """
         # Validate index
         if idx < 0 or idx >= len(self):
-            raise IndexError("Index out of range")
+            raise IndexError(f"Index {idx} out of range. Must be within [0, {len(self) - 1}]")
 
         # Load raw data using parent's logic
         return self.__parent_dataset.load_raw_data(self.__indices[idx])

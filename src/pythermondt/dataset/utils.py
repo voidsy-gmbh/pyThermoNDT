@@ -61,7 +61,8 @@ def random_split(
         # Compute the lengths of the subsets
         subset_lengths: list[int] = []
         for i, frac in enumerate(lengths):
-            if frac < 0 or frac > 1:
+            # Defensive check to ensure fractions are between 0 and 1
+            if frac < 0 or frac > 1:  # pragma: no cover
                 raise ValueError(f"Fraction at index {i} is not between 0 and 1")
             n_items_in_split = int(math.floor(len(dataset) * frac))
             subset_lengths.append(n_items_in_split)

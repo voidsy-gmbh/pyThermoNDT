@@ -7,6 +7,6 @@ bump-my-version==1.2.7
 deepdiff==8.6.1
 licensecheck==2025.1.0
 mypy==1.19.1
-uv==0.10.4
+uv==0.10.7
 pylint==4.0.5
 moto==5.1.21

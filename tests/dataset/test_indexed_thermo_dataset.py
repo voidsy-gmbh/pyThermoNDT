@@ -1,4 +1,5 @@
 import time
+from re import escape
 
 import pytest
 import torch
@@ -40,7 +41,8 @@ def test_empty_indices(sample_dataset_single_file: ThermoDataset):
 )
 def test_invalid_indices(sample_dataset_single_file: ThermoDataset, invalid_indices):
     """Test initialization with invalid indices raises IndexError."""
-    with pytest.raises(IndexError, match="out of range"):
+    msg = escape(f"Provided indices are out of range. Must be within [0, {len(sample_dataset_single_file) - 1}]")
+    with pytest.raises(IndexError, match=msg):
         IndexedThermoDataset(sample_dataset_single_file, invalid_indices)
 
 
@@ -49,7 +51,8 @@ def test_invalid_index_access(sample_dataset_three_files: ThermoDataset, idx: in
     """Test accessing an invalid index raises IndexError."""
     indexed = IndexedThermoDataset(sample_dataset_three_files, [0])
 
-    with pytest.raises(IndexError, match="Index out of range"):
+    msg = escape(f"Index {idx} out of range. Must be within [0, 0]")
+    with pytest.raises(IndexError, match=msg):
         indexed[idx]  # Accessing index that does not exist
 
 

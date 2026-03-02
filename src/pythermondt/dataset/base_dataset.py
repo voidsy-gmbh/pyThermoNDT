@@ -62,7 +62,7 @@ class BaseDataset(Dataset, ABC):
         """
         # Validate index
         if idx < 0 or idx >= len(self):
-            raise IndexError("Index out of range")
+            raise IndexError(f"Index {idx} out of range. Must be within [0, {len(self) - 1}]")
 
         if self.cache_built:
             if self.__cache[idx] is None:

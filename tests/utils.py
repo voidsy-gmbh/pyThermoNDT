@@ -5,7 +5,6 @@ from deepdiff import DeepDiff
 
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import AttributeNode, DataNode
-from pythermondt.data.units import celsius, kelvin
 from pythermondt.io.parsers import find_parser_for_extension
 from pythermondt.readers import LocalReader
 
@@ -111,21 +110,3 @@ def update_expected_outputs(source_folder: str, file_extension: str):
         updated_files.append(output_path)
 
     print(f"\nUpdated expected outputs: {updated_files}")
-
-
-if __name__ == "__main__":
-    # Example usage
-    container1 = DataContainer()
-    container2 = DataContainer()
-
-    # Add nodes and data to the containers for testing
-    # ...
-    container1.add_dataset("/", "Dataset1", torch.tensor([[1, 2], [3, 4]]))
-    container2.add_dataset("/", "Dataset1", torch.tensor([[1, 2], [7, 5]]))
-    container1.add_unit("/Dataset1", kelvin)
-    container2.add_unit("/Dataset1", celsius)
-    container1.add_attribute("/Dataset1", "Attribute1", "Value1")
-
-    # Compare the containers
-    result = containers_equal(container1, container2)
-    print(f"Containers are equal: {result}")

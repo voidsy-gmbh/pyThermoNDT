@@ -38,6 +38,15 @@ def test_random_split_zero_fraction_produces_warning(sample_dataset_three_files:
     assert len(splits[1]) == 3
 
 
+def test_random_split_remainder_distribution(sample_dataset_three_files: ThermoDataset):
+    """Test that remainder items are distributed round-robin when fractions don't divide evenly."""
+    # 3 files with [0.5, 0.5]: floor(1.5)=1, floor(1.5)=1 => remainder=1, distributed to first split
+    splits = random_split(sample_dataset_three_files, [0.5, 0.5])
+    assert len(splits[0]) + len(splits[1]) == 3
+    assert len(splits[0]) == 2  # gets the remainder
+    assert len(splits[1]) == 1
+
+
 def test_random_split_absolute_lengths_sum_too_small(sample_dataset_three_files: ThermoDataset):
     """Test that absolute lengths summing to less than dataset length raises ValueError."""
     with pytest.raises(ValueError, match="does not match the length of the original dataset"):

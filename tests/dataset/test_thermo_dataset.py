@@ -1,4 +1,6 @@
 import time
+from re import escape
+from unittest.mock import PropertyMock, patch
 
 import pytest
 import torch
@@ -140,3 +142,72 @@ def test_build_cache_thermodataset(
     assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
         f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
     )
+
+
+def test_cache_files_false_warning():
+    """Test that a reader with cache_files=False emits a warning."""
+    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", cache_files=False)
+    with pytest.warns(UserWarning, match="cache_files=False"):
+        ThermoDataset(reader)
+
+
+def test_remote_no_download_warning(localreader_with_file: LocalReader):
+    """Test that a remote reader with download_files=False emits a warning."""
+    with patch.object(type(localreader_with_file), "remote_source", new_callable=PropertyMock, return_value=True):
+        with pytest.warns(UserWarning, match="download_files=False"):
+            ThermoDataset(localreader_with_file)
+
+
+def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader):
+    """Test that an empty reader among multiple readers of same type emits a warning."""
+    reader_empty = LocalReader(pattern="nonexistent_pattern_xyz_*.mat")
+    with pytest.warns(UserWarning, match="No files found for reader of type"):
+        ThermoDataset([reader_empty, localreader_with_file])
+
+
+def test_download_delegates_to_readers(localreader_with_file: LocalReader):
+    """Test that dataset.download() calls download on remote readers."""
+    with patch.object(type(localreader_with_file), "remote_source", new_callable=PropertyMock, return_value=True):
+        dataset = ThermoDataset(localreader_with_file)
+        with patch.object(localreader_with_file, "download") as mock_download:
+            dataset.download(num_workers=1)
+            mock_download.assert_called_once_with(num_workers=1)
+
+
+def test_download_skips_local_readers(localreader_with_file: LocalReader):
+    """Test that dataset.download() skips non-remote readers."""
+    dataset = ThermoDataset(localreader_with_file)
+    dataset.download()  # No-op for local readers, should not error
+
+
+def test_load_raw_data_index_validation(sample_dataset_single_file: ThermoDataset):
+    """Test that load_raw_data validates index bounds."""
+    msg = escape(f"Index -1 out of range. Must be within [0, {len(sample_dataset_single_file) - 1}]")
+    with pytest.raises(IndexError, match=msg):
+        sample_dataset_single_file.load_raw_data(-1)
+
+    msg = escape(
+        f"Index {len(sample_dataset_single_file)} out of range. "
+        f"Must be within [0, {len(sample_dataset_single_file) - 1}]"
+    )
+    with pytest.raises(IndexError, match=msg):
+        sample_dataset_single_file.load_raw_data(len(sample_dataset_single_file))
+
+
+@pytest.mark.parametrize(
+    "error,expected_type,match_pattern",
+    [
+        (FileNotFoundError("gone"), RuntimeError, "Cannot read file"),
+        (OSError("disk error"), RuntimeError, "Cannot read file"),
+        (PermissionError("denied"), RuntimeError, "Cannot read file"),
+        (ValueError("bad format"), ValueError, "Cannot parse file"),
+    ],
+)
+def test_load_raw_data_error_handling(
+    localreader_with_file: LocalReader, error: BaseException, expected_type: type, match_pattern: str
+):
+    """Test that load_raw_data wraps reader exceptions with informative messages."""
+    dataset = ThermoDataset(localreader_with_file)
+    with patch.object(localreader_with_file, "read_file", side_effect=error):
+        with pytest.raises(expected_type, match=match_pattern):
+            dataset.load_raw_data(0)

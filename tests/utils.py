@@ -110,3 +110,20 @@ def update_expected_outputs(source_folder: str, file_extension: str):
         updated_files.append(output_path)
 
     print(f"\nUpdated expected outputs: {updated_files}")
+
+
+def make_container(*datasets: tuple[str, str, torch.Tensor]) -> DataContainer:
+    """Helper to build a DataContainer with datasets at specified paths.
+
+    Automatically creates parent groups if they don't exist.
+    """
+    c = DataContainer()
+    created_groups: set[str] = set()
+    for path, name, data in datasets:
+        if path not in created_groups:
+            # path like "/Data" -> add_group("/", "Data")
+            parent, group_name = path.rsplit("/", 1)
+            c.add_group(parent or "/", group_name)
+            created_groups.add(path)
+        c.add_dataset(path, name, data)
+    return c

@@ -161,3 +161,12 @@ def test_build_cache_thermodataset(
     assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
         f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
     )
+
+
+@pytest.mark.parametrize("idx", [-1, 1])
+def test_load_raw_data_index_validation(sample_dataset_three_files: ThermoDataset, idx: int):
+    """Test that load_raw_data validates index bounds independently of __getitem__."""
+    indexed = IndexedThermoDataset(sample_dataset_three_files, [0])
+    msg = escape(f"Index {idx} out of range. Must be within [0, 0]")
+    with pytest.raises(IndexError, match=msg):
+        indexed.load_raw_data(idx)

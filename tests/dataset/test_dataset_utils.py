@@ -1,9 +1,12 @@
-"""Tests for dataset random_split edge cases."""
+"""Tests for dataset random_split edge cases and container_collate."""
 
 import pytest
+import torch
 
 from pythermondt import ThermoDataset
-from pythermondt.dataset.utils import random_split
+from pythermondt.dataset.utils import container_collate, random_split
+
+from ..utils import make_container
 
 
 def test_random_split_more_transforms_than_splits(sample_dataset_three_files: ThermoDataset):
@@ -57,3 +60,68 @@ def test_random_split_absolute_lengths_sum_too_large(sample_dataset_three_files:
     """Test that absolute lengths summing to more than dataset length raises ValueError."""
     with pytest.raises(ValueError, match="does not match the length of the original dataset"):
         random_split(sample_dataset_three_files, [2, 2])
+
+
+def test_container_collate_no_paths():
+    """Test that container_collate with no paths raises ValueError."""
+    with pytest.raises(ValueError, match="At least one path must be specified"):
+        container_collate()
+
+
+def test_container_collate_returns_callable():
+    """Test that container_collate returns a callable."""
+    fn = container_collate("/Data/Tdata")
+    assert callable(fn)
+
+
+def test_container_collate_empty_batch():
+    """Test that collating an empty batch raises ValueError."""
+    fn = container_collate("/Data/Tdata")
+    with pytest.raises(ValueError, match="Empty batch"):
+        fn([])
+
+
+def test_container_collate_single_path():
+    """Test collating containers with a single dataset path."""
+    shape = (4, 4, 10)
+    t1, t2 = torch.randn(shape), torch.randn(shape)
+    batch = [
+        make_container(("/Data", "Tdata", t1)),
+        make_container(("/Data", "Tdata", t2)),
+    ]
+    fn = container_collate("/Data/Tdata")
+    (result,) = fn(batch)
+    assert result.shape == (2, *shape)
+    assert torch.equal(result[0], t1)
+    assert torch.equal(result[1], t2)
+
+
+def test_container_collate_multiple_paths():
+    """Test collating containers with multiple dataset paths."""
+    tdata = torch.randn(4, 4, 10)
+    mask = torch.ones(4, 4)
+    batch = [make_container(("/Data", "Tdata", tdata), ("/GroundTruth", "DefectMask", mask))]
+    fn = container_collate("/Data/Tdata", "/GroundTruth/DefectMask")
+    result = fn(batch)
+    assert len(result) == 2
+    assert result[0].shape == (1, 4, 4, 10)
+    assert result[1].shape == (1, 4, 4)
+
+
+def test_container_collate_missing_path():
+    """Test that a missing dataset path raises KeyError."""
+    batch = [make_container(("/Data", "Tdata", torch.randn(2, 2)))]
+    fn = container_collate("/Data/NonExistent")
+    with pytest.raises(KeyError, match="not found in container"):
+        fn(batch)
+
+
+def test_container_collate_incompatible_shapes():
+    """Test that incompatible tensor shapes raise RuntimeError."""
+    batch = [
+        make_container(("/Data", "Tdata", torch.randn(4, 4))),
+        make_container(("/Data", "Tdata", torch.randn(3, 5))),
+    ]
+    fn = container_collate("/Data/Tdata")
+    with pytest.raises(RuntimeError, match="Cannot stack tensors"):
+        fn(batch)

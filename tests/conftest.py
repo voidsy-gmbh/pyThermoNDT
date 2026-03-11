@@ -83,7 +83,7 @@ def localreader_no_files():
 
 @pytest.fixture
 def localreader_with_file():
-    """Fixture for a reader that has files."""
+    """Fixture for a reader that has a single file."""
     return LocalReader(pattern="./tests/assets/integration/simulation/source1.mat")
 
 

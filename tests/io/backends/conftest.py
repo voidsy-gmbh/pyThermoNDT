@@ -1,6 +1,5 @@
 """Fixtures for backend agnostic tests."""
 
-import os
 from collections.abc import Generator
 from contextlib import AbstractContextManager
 from pathlib import Path
@@ -45,17 +44,7 @@ FILE_SCENARIOS = {
 
 
 @pytest.fixture()
-def aws_creds():
-    """Mocked AWS Credentials for moto."""
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
-
-@pytest.fixture()
-def s3_client(aws_creds):
+def s3_client(fake_aws_creds):
     """Create mocked S3 client."""
     with mock_aws():
         yield boto3.client("s3")

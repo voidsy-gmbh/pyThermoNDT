@@ -174,10 +174,11 @@ def test_download_delegates_to_readers(localreader_with_file: LocalReader):
             mock_download.assert_called_once_with(num_workers=1)
 
 
-def test_download_skips_local_readers(localreader_with_file: LocalReader):
+def test_download_skips_local_readers(recwarn, localreader_with_file: LocalReader):
     """Test that dataset.download() skips non-remote readers."""
     dataset = ThermoDataset(localreader_with_file)
     dataset.download()  # No-op for local readers, should not error
+    assert len(recwarn) == 0, f"Unexpected warning when downloading with local reader: {recwarn.list}"
 
 
 def test_load_raw_data_index_validation(sample_dataset_single_file: ThermoDataset):

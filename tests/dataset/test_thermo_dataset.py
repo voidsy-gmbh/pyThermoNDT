@@ -158,11 +158,10 @@ def test_remote_no_download_warning(localreader_with_file: LocalReader):
             ThermoDataset(localreader_with_file)
 
 
-def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader):
+def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader, localreader_no_files: LocalReader):
     """Test that an empty reader among multiple readers of same type emits a warning."""
-    reader_empty = LocalReader(pattern="nonexistent_pattern_xyz_*.mat")
     with pytest.warns(UserWarning, match="No files found for reader of type"):
-        ThermoDataset([reader_empty, localreader_with_file])
+        ThermoDataset([localreader_no_files, localreader_with_file])
 
 
 def test_download_delegates_to_readers(localreader_with_file: LocalReader):

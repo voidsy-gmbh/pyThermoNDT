@@ -6,7 +6,7 @@ import pytest
 import torch
 from moto import mock_aws
 
-from pythermondt import DataContainer, LocalReader
+from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
 
 
@@ -97,6 +97,23 @@ def localreader_with_glob():
 def localreader_with_directory():
     """Fixture for a reader that has files."""
     return LocalReader(pattern="./tests/assets/integration/simulation/")
+
+
+@pytest.fixture()
+def s3reader_with_file(s3_client):
+    """Fixture for an S3 reader that has a single file."""
+    # Ensure that buckets exists
+    s3_client.create_bucket(Bucket="test-bucket")
+
+    # Upload a test file to the bucket
+    s3_client.upload_file(
+        Filename="./tests/assets/integration/simulation/source1.mat",
+        Bucket="test-bucket",
+        Key="source1.mat",
+    )
+
+    with mock_aws():
+        yield S3Reader(bucket="test-bucket", prefix="")
 
 
 @pytest.fixture

@@ -100,7 +100,7 @@ def localreader_with_directory():
 @pytest.fixture()
 def s3reader_with_file(s3_client):
     """Fixture for an S3 reader that has a single file."""
-    # Ensure that buckets exists
+    # Ensure the bucket exists
     s3_client.create_bucket(Bucket="test-bucket")
 
     # Upload a test file to the bucket
@@ -110,8 +110,7 @@ def s3reader_with_file(s3_client):
         Key="source1.mat",
     )
 
-    with mock_aws():
-        yield S3Reader(bucket="test-bucket", prefix="")
+    yield S3Reader(bucket="test-bucket", prefix="")
 
 
 @pytest.fixture

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, patch
 
-import boto3
 import pytest
 from moto import mock_aws
 
@@ -41,13 +40,6 @@ FILE_SCENARIOS = {
     },
     "many_files": {f"file{i:03d}.bin": b"x" * i for i in range(15)},
 }
-
-
-@pytest.fixture()
-def s3_client(fake_aws_creds):
-    """Create mocked S3 client."""
-    with mock_aws():
-        yield boto3.client("s3")
 
 
 @pytest.fixture()

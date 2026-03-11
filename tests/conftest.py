@@ -1,8 +1,10 @@
 import os
 
+import boto3
 import numpy as np
 import pytest
 import torch
+from moto import mock_aws
 
 from pythermondt import DataContainer, LocalReader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
@@ -16,6 +18,13 @@ def fake_aws_creds():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+
+
+@pytest.fixture()
+def s3_client(fake_aws_creds):
+    """Create mocked S3 client."""
+    with mock_aws():
+        yield boto3.client("s3")
 
 
 @pytest.fixture

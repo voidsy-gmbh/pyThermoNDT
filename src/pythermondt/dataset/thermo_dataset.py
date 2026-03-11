@@ -137,7 +137,8 @@ class ThermoDataset(BaseDataset):
         """Load raw data from readers - required by BaseDataset."""
         # Validate index first
         if idx < 0 or idx >= len(self):
-            raise IndexError(f"Index {idx} out of range. Must be within [0, {len(self) - 1}]")
+            msg = f"Index {idx} out of range."
+            raise IndexError(msg + (f" Must be within [0, {len(self) - 1}]" if len(self) > 0 else " Empty dataset"))
 
         # Extract reader and file index from the index map
         r_idx = int(self.__reader_index[idx].item())

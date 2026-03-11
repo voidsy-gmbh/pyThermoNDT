@@ -30,7 +30,7 @@ class IndexedThermoDataset(BaseDataset):
 
         # Validate the indices
         if not all(0 <= i < len(dataset) for i in indices):
-            raise IndexError(f"Provided indices are out of range. Must be within [0, {len(dataset) - 1}]")
+            raise IndexError(f"Provided indices are out of range. Must be within [0, {max(len(self) - 1, 0)}]")
 
         # Store parent dataset and indices
         self.__parent_dataset = dataset  # Parent dataset to avoid type issues with BaseDataset.parent
@@ -55,7 +55,8 @@ class IndexedThermoDataset(BaseDataset):
         """
         # Validate index
         if idx < 0 or idx >= len(self):
-            raise IndexError(f"Index {idx} out of range. Must be within [0, {len(self) - 1}]")
+            msg = f"Index {idx} out of range."
+            raise IndexError(msg + (f" Must be within [0, {len(self) - 1}]" if len(self) > 0 else " Empty dataset"))
 
         # Load raw data using parent's logic
         return self.__parent_dataset.load_raw_data(self.__indices[idx])

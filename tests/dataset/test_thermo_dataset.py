@@ -1,9 +1,11 @@
 import time
+from re import escape
+from unittest.mock import patch
 
 import pytest
 import torch
 
-from pythermondt import LocalReader, ThermoDataset, configure_logging
+from pythermondt import LocalReader, S3Reader, ThermoDataset, configure_logging
 from pythermondt.transforms import ThermoTransform
 
 from ..utils import containers_equal
@@ -140,3 +142,76 @@ def test_build_cache_thermodataset(
     assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
         f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
     )
+
+
+def test_cache_files_false_warning():
+    """Test that a reader with cache_files=False emits a warning."""
+    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", cache_files=False)
+    with pytest.warns(UserWarning, match="cache_files=False"):
+        ThermoDataset(reader)
+
+
+def test_remote_no_download_warning(s3reader_with_file: S3Reader):
+    """Test that a remote reader with download_files=False emits a warning."""
+    with pytest.warns(UserWarning, match="S3Reader is remote but download_files=False."):
+        ThermoDataset(s3reader_with_file)
+
+
+def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader, localreader_no_files: LocalReader):
+    """Test that an empty reader among multiple readers of same type emits a warning."""
+    with pytest.warns(UserWarning, match="No files found for reader of type"):
+        ThermoDataset([localreader_no_files, localreader_with_file])
+
+
+def test_download_delegates_to_readers(s3reader_with_file: S3Reader, localreader_with_file: LocalReader):
+    """Test that dataset.download() calls download on remote readers."""
+    # Expect warning because fixture has download_files=False for the S3 reader
+    with pytest.warns(UserWarning, match="S3Reader is remote but download_files=False."):
+        dataset = ThermoDataset([s3reader_with_file, localreader_with_file])
+
+    # Patch the download methods to track calls
+    with patch.object(localreader_with_file, "download") as mock_local_download:
+        with patch.object(s3reader_with_file, "download") as mock_s3_download:
+            dataset.download(num_workers=2)
+            mock_s3_download.assert_called_once_with(num_workers=2)
+            mock_local_download.assert_not_called()
+
+
+def test_download_skips_local_readers(recwarn, localreader_with_file: LocalReader):
+    """Test that dataset.download() skips non-remote readers."""
+    dataset = ThermoDataset(localreader_with_file)
+    dataset.download()  # No-op for local readers, should not error
+    assert len(recwarn) == 0, f"Unexpected warning when downloading with local reader: {recwarn.list}"
+
+
+def test_load_raw_data_index_validation(sample_dataset_single_file: ThermoDataset):
+    """Test that load_raw_data validates index bounds."""
+    msg = escape(f"Index -1 out of range. Must be within [0, {len(sample_dataset_single_file) - 1}]")
+    with pytest.raises(IndexError, match=msg):
+        sample_dataset_single_file.load_raw_data(-1)
+
+    msg = escape(
+        f"Index {len(sample_dataset_single_file)} out of range. "
+        f"Must be within [0, {len(sample_dataset_single_file) - 1}]"
+    )
+    with pytest.raises(IndexError, match=msg):
+        sample_dataset_single_file.load_raw_data(len(sample_dataset_single_file))
+
+
+@pytest.mark.parametrize(
+    "error,expected_type,match_pattern",
+    [
+        (FileNotFoundError("gone"), RuntimeError, "Cannot read file"),
+        (OSError("disk error"), RuntimeError, "Cannot read file"),
+        (PermissionError("denied"), RuntimeError, "Cannot read file"),
+        (ValueError("bad format"), ValueError, "Cannot parse file"),
+    ],
+)
+def test_load_raw_data_error_handling(
+    localreader_with_file: LocalReader, error: BaseException, expected_type: type, match_pattern: str
+):
+    """Test that load_raw_data wraps reader exceptions with informative messages."""
+    dataset = ThermoDataset(localreader_with_file)
+    with patch.object(localreader_with_file, "read_file", side_effect=error):
+        with pytest.raises(expected_type, match=match_pattern):
+            dataset.load_raw_data(0)

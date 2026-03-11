@@ -23,7 +23,7 @@ def sample_dataset_three_files(local_reader_three_files: LocalReader):
 
 
 @pytest.fixture
-def sample_dataset_simple_transform(local_reader: LocalReader, single_transform: type[ThermoTransform]):
+def sample_dataset_simple_transform(localreader_with_file: LocalReader, sample_transform: type[ThermoTransform]):
     """Create a sample ThermoDataset with a simple transform."""
-    transform = single_transform("base_level")
-    return ThermoDataset(local_reader, transform=transform)
+    transform = sample_transform("base_level")
+    return ThermoDataset(localreader_with_file, transform=transform)

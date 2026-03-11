@@ -1,9 +1,28 @@
+import boto3
 import numpy as np
 import pytest
 import torch
+from moto import mock_aws
 
-from pythermondt import DataContainer, LocalReader
+from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
+
+
+@pytest.fixture()
+def fake_aws_creds(monkeypatch):
+    """Mocked AWS Credentials for moto."""
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
+    monkeypatch.setenv("AWS_SECURITY_TOKEN", "testing")
+    monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+
+
+@pytest.fixture()
+def s3_client(fake_aws_creds):
+    """Create mocked S3 client."""
+    with mock_aws():
+        yield boto3.client("s3")
 
 
 @pytest.fixture
@@ -62,7 +81,7 @@ def localreader_no_files():
 
 @pytest.fixture
 def localreader_with_file():
-    """Fixture for a reader that has files."""
+    """Fixture for a reader that has a single file."""
     return LocalReader(pattern="./tests/assets/integration/simulation/source1.mat")
 
 
@@ -76,6 +95,22 @@ def localreader_with_glob():
 def localreader_with_directory():
     """Fixture for a reader that has files."""
     return LocalReader(pattern="./tests/assets/integration/simulation/")
+
+
+@pytest.fixture()
+def s3reader_with_file(s3_client):
+    """Fixture for an S3 reader that has a single file."""
+    # Ensure the bucket exists
+    s3_client.create_bucket(Bucket="test-bucket")
+
+    # Upload a test file to the bucket
+    s3_client.upload_file(
+        Filename="./tests/assets/integration/simulation/source1.mat",
+        Bucket="test-bucket",
+        Key="source1.mat",
+    )
+
+    yield S3Reader(bucket="test-bucket", prefix="")
 
 
 @pytest.fixture

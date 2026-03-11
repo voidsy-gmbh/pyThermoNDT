@@ -5,7 +5,6 @@ from deepdiff import DeepDiff
 
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.node import AttributeNode, DataNode
-from pythermondt.data.units import celsius, kelvin
 from pythermondt.io.parsers import find_parser_for_extension
 from pythermondt.readers import LocalReader
 
@@ -113,19 +112,18 @@ def update_expected_outputs(source_folder: str, file_extension: str):
     print(f"\nUpdated expected outputs: {updated_files}")
 
 
-if __name__ == "__main__":
-    # Example usage
-    container1 = DataContainer()
-    container2 = DataContainer()
+def make_container(*datasets: tuple[str, str, torch.Tensor]) -> DataContainer:
+    """Helper to build a DataContainer with datasets at specified paths.
 
-    # Add nodes and data to the containers for testing
-    # ...
-    container1.add_dataset("/", "Dataset1", torch.tensor([[1, 2], [3, 4]]))
-    container2.add_dataset("/", "Dataset1", torch.tensor([[1, 2], [7, 5]]))
-    container1.add_unit("/Dataset1", kelvin)
-    container2.add_unit("/Dataset1", celsius)
-    container1.add_attribute("/Dataset1", "Attribute1", "Value1")
-
-    # Compare the containers
-    result = containers_equal(container1, container2)
-    print(f"Containers are equal: {result}")
+    Automatically creates parent groups if they don't exist.
+    """
+    c = DataContainer()
+    created_groups: set[str] = set()
+    for path, name, data in datasets:
+        if path not in created_groups:
+            # path like "/Data" -> add_group("/", "Data")
+            parent, group_name = path.rsplit("/", 1)
+            c.add_group(parent or "/", group_name)
+            created_groups.add(path)
+        c.add_dataset(path, name, data)
+    return c

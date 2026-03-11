@@ -1,4 +1,5 @@
 import time
+from re import escape
 
 import pytest
 import torch
@@ -40,7 +41,8 @@ def test_empty_indices(sample_dataset_single_file: ThermoDataset):
 )
 def test_invalid_indices(sample_dataset_single_file: ThermoDataset, invalid_indices):
     """Test initialization with invalid indices raises IndexError."""
-    with pytest.raises(IndexError, match="out of range"):
+    msg = escape(f"Provided indices are out of range. Must be within [0, {len(sample_dataset_single_file) - 1}]")
+    with pytest.raises(IndexError, match=msg):
         IndexedThermoDataset(sample_dataset_single_file, invalid_indices)
 
 
@@ -49,7 +51,8 @@ def test_invalid_index_access(sample_dataset_three_files: ThermoDataset, idx: in
     """Test accessing an invalid index raises IndexError."""
     indexed = IndexedThermoDataset(sample_dataset_three_files, [0])
 
-    with pytest.raises(IndexError, match="Index out of range"):
+    msg = escape(f"Index {idx} out of range. Must be within [0, 0]")
+    with pytest.raises(IndexError, match=msg):
         indexed[idx]  # Accessing index that does not exist
 
 
@@ -158,3 +161,12 @@ def test_build_cache_thermodataset(
     assert duration_cache < duration_no_cache * 0.8 or duration_no_cache - duration_cache > 0.01, (
         f"Caching did not provide a significant speedup: no_cache={duration_no_cache:.4f}s, cache={duration_cache:.4f}s"
     )
+
+
+@pytest.mark.parametrize("idx", [-1, 1])
+def test_load_raw_data_index_validation(sample_dataset_three_files: ThermoDataset, idx: int):
+    """Test that load_raw_data validates index bounds independently of __getitem__."""
+    indexed = IndexedThermoDataset(sample_dataset_three_files, [0])
+    msg = escape(f"Index {idx} out of range. Must be within [0, 0]")
+    with pytest.raises(IndexError, match=msg):
+        indexed.load_raw_data(idx)

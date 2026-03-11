@@ -5,7 +5,7 @@ from unittest.mock import PropertyMock, patch
 import pytest
 import torch
 
-from pythermondt import LocalReader, ThermoDataset, configure_logging
+from pythermondt import LocalReader, S3Reader, ThermoDataset, configure_logging
 from pythermondt.transforms import ThermoTransform
 
 from ..utils import containers_equal
@@ -151,11 +151,10 @@ def test_cache_files_false_warning():
         ThermoDataset(reader)
 
 
-def test_remote_no_download_warning(localreader_with_file: LocalReader):
+def test_remote_no_download_warning(s3reader_with_file: S3Reader):
     """Test that a remote reader with download_files=False emits a warning."""
-    with patch.object(type(localreader_with_file), "remote_source", new_callable=PropertyMock, return_value=True):
-        with pytest.warns(UserWarning, match="download_files=False"):
-            ThermoDataset(localreader_with_file)
+    with pytest.warns(UserWarning, match="S3Reader is remote but download_files=False."):
+        ThermoDataset(s3reader_with_file)
 
 
 def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader, localreader_no_files: LocalReader):

@@ -1,6 +1,6 @@
 import time
 from re import escape
-from unittest.mock import PropertyMock, patch
+from unittest.mock import patch
 
 import pytest
 import torch
@@ -163,13 +163,18 @@ def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader, 
         ThermoDataset([localreader_no_files, localreader_with_file])
 
 
-def test_download_delegates_to_readers(localreader_with_file: LocalReader):
+def test_download_delegates_to_readers(s3reader_with_file: S3Reader, localreader_with_file: LocalReader):
     """Test that dataset.download() calls download on remote readers."""
-    with patch.object(type(localreader_with_file), "remote_source", new_callable=PropertyMock, return_value=True):
-        dataset = ThermoDataset(localreader_with_file)
-        with patch.object(localreader_with_file, "download") as mock_download:
-            dataset.download(num_workers=1)
-            mock_download.assert_called_once_with(num_workers=1)
+    # Expect warning because fixture has download_files=False for the S3 reader
+    with pytest.warns(UserWarning, match="S3Reader is remote but download_files=False."):
+        dataset = ThermoDataset([s3reader_with_file, localreader_with_file])
+
+    # Patch the download methods to track calls
+    with patch.object(localreader_with_file, "download") as mock_local_download:
+        with patch.object(s3reader_with_file, "download") as mock_s3_download:
+            dataset.download(num_workers=2)
+            mock_s3_download.assert_called_once_with(num_workers=2)
+            mock_local_download.assert_not_called()
 
 
 def test_download_skips_local_readers(recwarn, localreader_with_file: LocalReader):

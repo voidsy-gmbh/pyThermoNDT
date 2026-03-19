@@ -73,6 +73,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # 4.) Initialize state variables
             # Store selected points and their profiles
             self.selected_points: list[tuple[int, int]] = []
+            self.point_markers = []
+            self.profile_lines = []
             self.colors = ["red", "blue", "green", "purple"]  # Colors for up to 4 points
             self._last_hover_pixel: tuple[int, int] | None = None
             self._closed = False
@@ -90,11 +92,14 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.frame_ax.add_artist(self.cursor_annotation_box)
 
             # 5.) Connect events
-            self.frame_slider.on_changed(self.update_frame)
-            self.clear_button.on_clicked(self.clear_points)
-            self.fig.canvas.mpl_connect("button_press_event", self.on_click)
-            self.fig.canvas.mpl_connect("motion_notify_event", self.on_mouse_move)
-            self.annotation_toggle.on_clicked(self.toggle_annotation)
+            self._slider_cid = self.frame_slider.on_changed(self.update_frame)
+            self._clear_btn_cid = self.clear_button.on_clicked(self.clear_points)
+            self._annotation_cid = self.annotation_toggle.on_clicked(self.toggle_annotation)
+            self._canvas_connection_ids = [
+                self.fig.canvas.mpl_connect("button_press_event", self.on_click),
+                self.fig.canvas.mpl_connect("motion_notify_event", self.on_mouse_move),
+                self.fig.canvas.mpl_connect("close_event", self.on_close),
+            ]
 
             # 6.) Initialize blitting for faster rendering (if possible)
             self.fig.canvas.draw_idle()
@@ -133,6 +138,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Hide annotation if disabled
             if not self.annotation_toggle.get_status()[0]:
                 self.cursor_annotation_box.set_visible(False)
+                self._last_hover_pixel = None
                 self.fig.canvas.draw_idle()
 
         def on_mouse_move(self, event):
@@ -142,14 +148,22 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 return
 
             if event.inaxes != self.frame_ax:
-                self.cursor_annotation_box.set_visible(False)
-                self.fig.canvas.draw_idle()
+                if self.cursor_annotation_box.get_visible():
+                    self.cursor_annotation_box.set_visible(False)
+                    self._last_hover_pixel = None
+                    self.fig.canvas.draw_idle()
+                return
+
+            if event.xdata is None or event.ydata is None:
                 return
 
             # Get mouse coordinates
             x, y = int(round(event.xdata)), int(round(event.ydata))
 
             if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
+                if self._last_hover_pixel == (x, y) and self.cursor_annotation_box.get_visible():
+                    return
+
                 # Get current value
                 val = self.current_frame_data[y, x]
 
@@ -157,14 +171,19 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 self.cursor_annotation_box.xy = (x, y)
                 self.cursor_annotation_text.set_text(f"({x}, {y})\n{val:.5f}")
                 self.cursor_annotation_box.set_visible(True)
+                self._last_hover_pixel = (x, y)
 
+                self.fig.canvas.draw_idle()
+            elif self.cursor_annotation_box.get_visible():
+                self.cursor_annotation_box.set_visible(False)
+                self._last_hover_pixel = None
                 self.fig.canvas.draw_idle()
 
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
             # Extract frame data
             self.current_frame = int(frame_idx)
-            self.current_frame_data = self.tdata[self.current_frame].squeeze()
+            self.current_frame_data = self.tdata[self.current_frame]
 
             # Update image data and title
             self.frame_img.set_data(self.current_frame_data)
@@ -177,10 +196,6 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Directly set the image norm, because set_clim does call color sanitation inside
             # This can lead to wrong updates
             self.frame_img.norm = Normalize(vmin, vmax)
-
-            # Redraw points on the new frame
-            for idx, (x, y) in enumerate(self.selected_points):
-                self.frame_ax.plot(x, y, "x", color=self.colors[idx], markersize=10)
 
             # Redraw
             self.fig.canvas.draw_idle()
@@ -204,11 +219,13 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.selected_points.append((x, y))
 
             # Plot point on frame
-            self.frame_ax.plot(x, y, "x", color=color, markersize=10)
+            marker = self.frame_ax.plot(x, y, "x", color=color, markersize=10)[0]
+            self.point_markers.append(marker)
 
             # Plot temperature profile
             profile = self.tdata[:, y, x]
-            self.profile_ax.plot(self.domain_values, profile, color=color, label=f"Point ({x}, {y})")
+            line = self.profile_ax.plot(self.domain_values, profile, color=color, label=f"Point ({x}, {y})")[0]
+            self.profile_lines.append(line)
             self.profile_ax.legend()
 
             self.fig.canvas.draw_idle()
@@ -218,14 +235,15 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.selected_points.clear()
             self.profile_ax.clear()
 
+            for marker in self.point_markers:
+                marker.remove()
+            self.point_markers.clear()
+            self.profile_lines.clear()
+
             # Reset profile plot
             self.profile_ax.set_xlabel(generate_label(self.domain_unit))
             self.profile_ax.set_ylabel(generate_label(self.data_unit))
             self.profile_ax.grid(True)
-
-            # Remove points from frame plot
-            for artist in self.frame_ax.lines:
-                artist.remove()
 
             # Redraw frame without points
             self.frame_img.set_data(self.current_frame_data)

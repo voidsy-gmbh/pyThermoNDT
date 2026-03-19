@@ -324,5 +324,5 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
     def analyse_interactive(self):
         """Launch interactive analysis session for thermographic data visualization."""
-        self.InteractiveAnalyzer(self)
+        self._interactive_analyzer = self.InteractiveAnalyzer(self)
         plt.show()

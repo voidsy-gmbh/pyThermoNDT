@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np  # noqa: F401
 import torch
 from matplotlib import ticker
-from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
 
@@ -197,9 +196,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             vmin = round(self.current_frame_data.min(), 8)
             vmax = round(self.current_frame_data.max(), 8)
 
-            # Directly set the image norm, because set_clim does call color sanitation inside
-            # This can lead to wrong updates
-            self.frame_img.norm = Normalize(vmin, vmax)
+            current_vmin, current_vmax = self.frame_img.get_clim()
+            if current_vmin != vmin or current_vmax != vmax:
+                self.frame_img.set_clim(vmin=vmin, vmax=vmax)
 
             # Redraw
             self.fig.canvas.draw_idle()

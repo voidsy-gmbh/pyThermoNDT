@@ -181,9 +181,13 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
+            new_frame = int(frame_idx)
+            if new_frame == self.current_frame:
+                return
+
             # Extract frame data
-            self.current_frame = int(frame_idx)
-            self.current_frame_data = self.tdata[self.current_frame]
+            self.current_frame = new_frame
+            self.current_frame_data = self.tdata[new_frame]
 
             # Update image data and title
             self.frame_img.set_data(self.current_frame_data)

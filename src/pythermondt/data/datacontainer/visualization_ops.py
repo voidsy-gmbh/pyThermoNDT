@@ -74,6 +74,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Store selected points and their profiles
             self.selected_points: list[tuple[int, int]] = []
             self.colors = ["red", "blue", "green", "purple"]  # Colors for up to 4 points
+            self._last_hover_pixel: tuple[int, int] | None = None
+            self._closed = False
 
             # Initialize annotation box once
             self.cursor_annotation_text = TextArea("", textprops={"color": "white", "backgroundcolor": "black"})
@@ -96,6 +98,35 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             # 6.) Initialize blitting for faster rendering (if possible)
             self.fig.canvas.draw_idle()
+
+        @property
+        def closed(self) -> bool:
+            """Whether the interactive analyzer has been closed and cleaned up."""
+            return self._closed
+
+        def close(self, close_figure: bool = False):
+            """Disconnect callbacks and release analyzer resources."""
+            if self._closed:
+                return
+
+            self._closed = True
+
+            for connection_id in self._canvas_connection_ids:
+                self.fig.canvas.mpl_disconnect(connection_id)
+
+            self.frame_slider.disconnect(self._slider_cid)
+            self.clear_button.disconnect(self._clear_btn_cid)
+            self.annotation_toggle.disconnect(self._annotation_cid)
+
+            if hasattr(self.container, "_interactive_analyzer") and self.container._interactive_analyzer is self:
+                del self.container._interactive_analyzer
+
+            if close_figure and plt.fignum_exists(self.fig.number):
+                plt.close(self.fig)
+
+        def on_close(self, event):  # pylint: disable=unused-argument
+            """Handle figure close event by disconnecting callbacks."""
+            self.close(close_figure=False)
 
         def toggle_annotation(self, event):  # pylint: disable=unused-argument
             """Toggle cursor annotation on/off."""

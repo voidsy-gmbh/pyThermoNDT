@@ -200,7 +200,7 @@ class BaseDataset(Dataset, ABC):
             else:
                 self.__cache = [self._load_cache_item(i) for i in tqdm(range(num), desc=desc, unit=unit)]
         elif mode == "lazy":
-            # Choose context based on platform to avoid issues with shared memory and process forking
+            # Choose context based on platform to avoid deprecated 'fork' in multithreaded processes (Python 3.12+):
             ctx = mp.get_context("forkserver" if sys.platform == "linux" else "spawn")
             self.__manager = ctx.Manager()
             # Create a shared list for lazy loading using a list proxy

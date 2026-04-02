@@ -191,6 +191,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.current_frame = new_frame
             self.current_frame_data = self.tdata[new_frame]
 
+            # Invalidate hover cache because pixel values changed with the frame
+            self._last_hover_pixel = None
+            self.cursor_annotation_box.set_visible(False)
+
             # Update image data and title
             self.frame_img.set_data(self.current_frame_data)
             self.frame_ax.set_title(f"Frame {self.current_frame}")
@@ -199,8 +203,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             vmin = round(self.current_frame_data.min(), 8)
             vmax = round(self.current_frame_data.max(), 8)
 
-            current_vmin, current_vmax = self.frame_img.get_clim()
-            if current_vmin != vmin or current_vmax != vmax:
+            old_min, old_max = self.frame_img.get_clim()
+            if not np.isclose(old_min, vmin, atol=1e-8, rtol=0.0) or not np.isclose(old_max, vmax, atol=1e-8, rtol=0.0):
                 self.frame_img.set_clim(vmin=vmin, vmax=vmax)
 
             # Redraw

@@ -14,6 +14,7 @@ from .group_ops import GroupOps
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     _interactive_analyzer: "VisualizationOps.InteractiveAnalyzer | None" = None
 
+    # TODO: Refactor visualization logic to reduce the tight coupling between data handling and visualization.
     class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.

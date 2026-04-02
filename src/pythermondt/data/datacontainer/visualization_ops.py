@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np  # noqa: F401
 import torch
 from matplotlib import ticker
+from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
 
@@ -75,8 +76,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # 4.) Initialize state variables
             # Store selected points and their profiles
             self.selected_points: list[tuple[int, int]] = []
-            self.point_markers = []
-            self.profile_lines = []
+            self.point_markers: list[Line2D] = []
+            self.profile_lines: list[Line2D] = []
             self.colors = ["red", "blue", "green", "purple"]  # Colors for up to 4 points
             self._last_hover_pixel: tuple[int, int] | None = None
             self._closed = False

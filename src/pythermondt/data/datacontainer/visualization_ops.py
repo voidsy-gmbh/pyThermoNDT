@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy as np  # noqa: F401
+import numpy as np
 import torch
 from matplotlib import ticker
 from matplotlib.lines import Line2D

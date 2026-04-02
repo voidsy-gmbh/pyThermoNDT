@@ -14,24 +14,24 @@ from .writers import LocalWriter, S3Writer
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 __all__ = [
-    "__version__",
     "DataContainer",
+    "HDF5Parser",
+    "IndexedThermoDataset",
+    "LocalReader",
+    "LocalWriter",
+    "S3Reader",
+    "S3Writer",
+    "SimulationParser",
     "ThermoContainer",
     "ThermoDataset",
-    "IndexedThermoDataset",
-    "HDF5Parser",
-    "SimulationParser",
-    "LocalReader",
-    "S3Reader",
+    "__version__",
     "augmentation",
+    "configure_logging",
     "normalization",
     "preprocessing",
     "sampling",
-    "utils",
-    "LocalWriter",
-    "S3Writer",
     "settings",
-    "configure_logging",
+    "utils",
 ]
 
 # TODO: Implement async data loading

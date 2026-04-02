@@ -12,6 +12,8 @@ from .group_ops import GroupOps
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
+    _interactive_analyzer: "VisualizationOps.InteractiveAnalyzer | None" = None
+
     class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.
@@ -345,5 +347,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
     def analyse_interactive(self):
         """Launch interactive analysis session for thermographic data visualization."""
+        if self._interactive_analyzer is not None and not self._interactive_analyzer.closed:
+            self._interactive_analyzer.close(close_figure=True)
         self._interactive_analyzer = self.InteractiveAnalyzer(self)
         plt.show()

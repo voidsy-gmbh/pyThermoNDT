@@ -118,7 +118,7 @@ classDiagram
   style BaseReader fill:#AAAA00
   class BaseWriter {
     backend : BaseBackend
-    process_parallel(reader: BaseReader, file_name_pattern: str, compression: CompressionType, compression_opts: int | None, num_workers: int | None)
+    process_parallel(reader: BaseReader, keep_file_names: bool, file_name_pattern: str, compression: CompressionType, compression_opts: int | None, num_workers: int | None)
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)*
   }
   style BaseWriter fill:#EE8866
@@ -225,6 +225,7 @@ classDiagram
   class InteractiveAnalyzer {
     annotation_toggle
     clear_button
+    closed : bool
     colorbar
     colors : list
     container : str
@@ -239,11 +240,15 @@ classDiagram
     frame_ax
     frame_img
     frame_slider
+    point_markers : list[Line2D]
     profile_ax
+    profile_lines : list[Line2D]
     selected_points : list[tuple[int, int]]
     tdata
     clear_points(event)
+    close(close_figure: bool)
     on_click(event)
+    on_close(event)
     on_mouse_move(event)
     toggle_annotation(event)
     update_frame(frame_idx: float)
@@ -412,6 +417,7 @@ classDiagram
   style Unit fill:#99DDFF
   class VisualizationOps {
     analyse_interactive()
+    release_interactive_analyzer(analyzer: 'VisualizationOps.InteractiveAnalyzer') None
     show_frame(frame_number: int, option: str, cmap: str)
     show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
   }

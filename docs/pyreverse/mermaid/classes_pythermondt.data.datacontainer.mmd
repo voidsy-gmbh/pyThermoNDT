@@ -77,6 +77,7 @@ classDiagram
   class InteractiveAnalyzer {
     annotation_toggle
     clear_button
+    closed : bool
     colorbar
     colors : list
     container : str
@@ -91,11 +92,15 @@ classDiagram
     frame_ax
     frame_img
     frame_slider
+    point_markers : list[Line2D]
     profile_ax
+    profile_lines : list[Line2D]
     selected_points : list[tuple[int, int]]
     tdata
     clear_points(event)
+    close(close_figure: bool)
     on_click(event)
+    on_close(event)
     on_mouse_move(event)
     toggle_annotation(event)
     update_frame(frame_idx: float)
@@ -121,6 +126,7 @@ classDiagram
   style SerializationOps fill:#77AADD
   class VisualizationOps {
     analyse_interactive()
+    release_interactive_analyzer(analyzer: 'VisualizationOps.InteractiveAnalyzer') None
     show_frame(frame_number: int, option: str, cmap: str)
     show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
   }

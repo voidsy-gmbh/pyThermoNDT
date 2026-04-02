@@ -124,8 +124,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.clear_button.disconnect(self._clear_btn_cid)
             self.annotation_toggle.disconnect(self._annotation_cid)
 
-            if hasattr(self.container, "_interactive_analyzer") and self.container._interactive_analyzer is self:
-                del self.container._interactive_analyzer
+            self.container.release_interactive_analyzer(self)
 
             if close_figure and plt.fignum_exists(self.fig.number):
                 plt.close(self.fig)
@@ -344,6 +343,11 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         plt.xlabel(generate_label(domain_unit))
         plt.ylabel(generate_label(data_unit))
         plt.show()
+
+    def release_interactive_analyzer(self, analyzer: "VisualizationOps.InteractiveAnalyzer") -> None:
+        """Release the stored interactive analyzer if it matches the provided instance."""
+        if self._interactive_analyzer is analyzer:
+            self._interactive_analyzer = None
 
     def analyse_interactive(self):
         """Launch interactive analysis session for thermographic data visualization."""

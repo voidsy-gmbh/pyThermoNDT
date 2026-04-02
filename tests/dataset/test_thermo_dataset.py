@@ -23,7 +23,8 @@ def test_empty_readers_list():
     """Test initialization with empty reader list."""
     # Initialize ThermoDataset with an empty list
     with pytest.raises(
-        ValueError, match="No readers provided. Please provide at least one BaseReader instance or a list of them."
+        ValueError,
+        match=escape("No readers provided. Please provide at least one BaseReader instance or a list of them."),
     ):
         ThermoDataset([])
 

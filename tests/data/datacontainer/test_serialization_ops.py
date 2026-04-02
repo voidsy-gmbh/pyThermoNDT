@@ -1,5 +1,6 @@
 import io
 import pickle
+from re import escape
 from typing import Literal
 
 import h5py
@@ -82,14 +83,14 @@ def test_serialize_file_operations(
 def test_serialize_empty_bytes():
     """Test that deserializing empty bytes raises appropriate error."""
     empty_bytes = io.BytesIO()
-    with pytest.raises(ValueError, match="The given IOPathWrapper object is empty."):
+    with pytest.raises(ValueError, match=escape("The given IOPathWrapper object is empty.")):
         DataContainer(empty_bytes)
 
 
 def test_serialize_invalid_hdf5():
     """Test that deserializing invalid HDF5 data raises appropriate error."""
     invalid_bytes = io.BytesIO(b"not an hdf5 file")
-    with pytest.raises(ValueError, match="The given IOPathWrapper object does not contain a valid HDF5 file."):
+    with pytest.raises(ValueError, match=escape("The given IOPathWrapper object does not contain a valid HDF5 file.")):
         DataContainer(invalid_bytes)
 
 

@@ -11,13 +11,13 @@ from ..utils import make_container
 
 def test_random_split_more_transforms_than_splits(sample_dataset_three_files: ThermoDataset):
     """Test that more transforms than splits raises ValueError."""
-    with pytest.raises(ValueError, match="Number of transforms.*must match number of splits"):
+    with pytest.raises(ValueError, match=r"Number of transforms.*must match number of splits"):
         random_split(sample_dataset_three_files, [0.5, 0.5], transforms=[None, None, None])
 
 
 def test_random_split_fewer_transforms_than_splits(sample_dataset_three_files: ThermoDataset):
     """Test that fewer transforms than splits raises ValueError."""
-    with pytest.raises(ValueError, match="Number of transforms.*must match number of splits"):
+    with pytest.raises(ValueError, match=r"Number of transforms.*must match number of splits"):
         random_split(sample_dataset_three_files, [0.5, 0.5], transforms=[None])
 
 

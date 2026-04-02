@@ -280,7 +280,7 @@ class EdevisParser(BaseParser):
                 return container
 
         except Exception as e:
-            raise ValueError(f"Error parsing Edevis file: {str(e)}") from e
+            raise ValueError(f"Error parsing Edevis file: {e}") from e
 
 
 def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | None) -> dict:

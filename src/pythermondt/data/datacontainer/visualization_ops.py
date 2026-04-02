@@ -162,7 +162,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 return
 
             # Get mouse coordinates
-            x, y = int(round(event.xdata)), int(round(event.ydata))
+            x, y = round(event.xdata), round(event.ydata)
 
             if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
                 if self._last_hover_pixel == (x, y) and self.cursor_annotation_box.get_visible():

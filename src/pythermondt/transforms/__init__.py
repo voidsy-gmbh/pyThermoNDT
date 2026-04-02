@@ -6,7 +6,7 @@ from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
 from .sampling import NonUniformSampling, SelectFrameRange, SelectFrames
 from .utils import CallbackTransform, Compose
 
-__all__ = [ # noqa: RUF022
+__all__ = [  # noqa: RUF022
     # Base classes
     "ThermoTransform",
     "RandomThermoTransform",

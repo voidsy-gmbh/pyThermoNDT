@@ -40,8 +40,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Initialize the frame display
             self.current_frame = 0  # type: int
             self.current_frame_data = self.tdata[self.current_frame]  # type: np.ndarray
+            initialize_vmin = round(self.current_frame_data.min(), 8)
+            initialize_vmax = round(self.current_frame_data.max(), 8)
             self.frame_img = self.frame_ax.imshow(
-                self.current_frame_data, aspect="auto", cmap="plasma", vmin=self.tdata.min(), vmax=self.tdata.max()
+                self.current_frame_data, aspect="auto", cmap="plasma", vmin=initialize_vmin, vmax=initialize_vmax
             )
             self.frame_ax.set_title(f"Frame {self.current_frame}")
 

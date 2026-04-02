@@ -14,14 +14,14 @@ from .utils import generate_label
 
 __all__ = [
     "Unit",
-    "generate_label",
-    "dimensionless",
     "arbitrary",
-    "undefined",
-    "kelvin",
     "celsius",
-    "second",
-    "millisecond",
+    "dimensionless",
+    "generate_label",
     "hertz",
+    "kelvin",
+    "millisecond",
     "print_available_units",
+    "second",
+    "undefined",
 ]

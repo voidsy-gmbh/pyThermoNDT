@@ -2,6 +2,7 @@
 
 import os
 from io import BytesIO
+from re import escape
 
 import pytest
 from pytest import FixtureRequest, MonkeyPatch
@@ -46,7 +47,7 @@ def test_valid_values(valid_values):
 def test_unsupported_source_type(invalid_values):
     """Test that an integer source raises ValueError on file_obj access."""
     wrapper = IOPathWrapper(invalid_values)  # type: ignore[arg-type]
-    with pytest.raises(ValueError, match="Unsupported source type. Must be str, bytes, or BytesIO."):
+    with pytest.raises(ValueError, match=escape("Unsupported source type. Must be str, bytes, or BytesIO.")):
         _ = wrapper.file_obj
 
 

@@ -1,3 +1,5 @@
+from re import escape
+
 import pytest
 import torch
 
@@ -133,25 +135,25 @@ def test_print_memory_usage(filled_container: DataContainer, capsys):
 
 def test_node_accessor_get_node_non_existent(empty_container: DataContainer):
     """Test that getting a non-existent node raises a KeyError."""
-    with pytest.raises(KeyError, match="Node at path '/nonexistent' does not exist."):
+    with pytest.raises(KeyError, match=escape("Node at path '/nonexistent' does not exist.")):
         empty_container.nodes["/nonexistent"]
 
 
 def test_node_accessor_get_node_wrong_type(filled_container: DataContainer):
     """Test that getting a node with the wrong type raises a TypeError."""
-    with pytest.raises(TypeError, match="Node at path '/TestGroup' is not of type: DataNode."):
+    with pytest.raises(TypeError, match=escape("Node at path '/TestGroup' is not of type: DataNode.")):
         filled_container.nodes("/TestGroup", DataNode)
 
 
 def test_node_accessor_set_node_overwrite_fails(filled_container: DataContainer):
     """Test that overwriting an existing node raises a KeyError."""
-    with pytest.raises(KeyError, match="Node at path '/TestGroup' already exists."):
+    with pytest.raises(KeyError, match=escape("Node at path '/TestGroup' already exists.")):
         filled_container.nodes["/TestGroup"] = GroupNode("NewGroup")
 
 
 def test_node_accessor_set_root_node_wrong_path(empty_container: DataContainer):
     """Test that setting a RootNode at a wrong path raises a ValueError."""
-    with pytest.raises(ValueError, match="RootNode must be placed at the root path '/'"):
+    with pytest.raises(ValueError, match=escape("RootNode must be placed at the root path '/'")):
         # Need to delete the existing root to attempt to add a new one
         del empty_container.nodes["/"]
         empty_container.nodes["/wrong"] = RootNode()
@@ -159,32 +161,34 @@ def test_node_accessor_set_root_node_wrong_path(empty_container: DataContainer):
 
 def test_node_accessor_set_root_node_already_exists(empty_container: DataContainer):
     """Test that adding a second RootNode raises a ValueError."""
-    with pytest.raises(ValueError, match="RootNode already exists in the DataContainer. RootNode must be unique"):
+    with pytest.raises(
+        ValueError, match=escape("RootNode already exists in the DataContainer. RootNode must be unique")
+    ):
         empty_container.nodes["/"] = RootNode()
 
 
 def test_node_accessor_set_node_with_no_root_node(empty_container: DataContainer):
     """Test that adding a node when no RootNode exists raises a KeyError."""
     del empty_container.nodes["/"]  # Ensure no root node exists
-    with pytest.raises(KeyError, match="RootNode does not exist in this container."):
+    with pytest.raises(KeyError, match=escape("RootNode does not exist in this container.")):
         empty_container.nodes["/new_node"] = GroupNode("NewNode")
 
 
 def test_node_accessor_set_node_no_parent(empty_container: DataContainer):
     """Test that setting a node with a non-existent parent raises a KeyError."""
-    with pytest.raises(KeyError, match="Parent node at path '/nonexistent' does not exist."):
+    with pytest.raises(KeyError, match=escape("Parent node at path '/nonexistent' does not exist.")):
         empty_container.nodes["/nonexistent/new"] = GroupNode("new")
 
 
 def test_node_accessor_set_node_parent_is_datanode(filled_container: DataContainer):
     """Test that setting a node under a DataNode raises a TypeError."""
-    with pytest.raises(TypeError, match="Parent node at path '/TestDataset' must be a RootNode or GroupNode."):
+    with pytest.raises(TypeError, match=escape("Parent node at path '/TestDataset' must be a RootNode or GroupNode.")):
         filled_container.nodes["/TestDataset/new"] = GroupNode("new")
 
 
 def test_node_accessor_delete_node_non_existent(empty_container: DataContainer):
     """Test that deleting a non-existent node raises a KeyError."""
-    with pytest.raises(KeyError, match="Node at path '/nonexistent' does not exist."):
+    with pytest.raises(KeyError, match=escape("Node at path '/nonexistent' does not exist.")):
         del empty_container.nodes["/nonexistent"]
 
 
@@ -199,7 +203,9 @@ def test_node_accessor_delete_node_with_children(filled_container: DataContainer
 
 def test_data_container_base_cannot_be_instantiated():
     """Test that DataContainerBase cannot be instantiated directly."""
-    with pytest.raises(TypeError, match="DataContainerBase is a base class and cannot be instantiated directly."):
+    with pytest.raises(
+        TypeError, match=escape("DataContainerBase is a base class and cannot be instantiated directly.")
+    ):
         DataContainerBase()
 
 

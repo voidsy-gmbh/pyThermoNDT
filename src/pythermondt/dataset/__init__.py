@@ -3,8 +3,8 @@ from .thermo_dataset import ThermoDataset
 from .utils import container_collate, random_split
 
 __all__ = [
-    "ThermoDataset",
     "IndexedThermoDataset",
-    "random_split",
+    "ThermoDataset",
     "container_collate",
+    "random_split",
 ]

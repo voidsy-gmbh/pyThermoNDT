@@ -64,7 +64,7 @@ def random_split(
             # Defensive check to ensure fractions are between 0 and 1
             if frac < 0 or frac > 1:  # pragma: no cover
                 raise ValueError(f"Fraction at index {i} is not between 0 and 1")
-            n_items_in_split = int(math.floor(len(dataset) * frac))
+            n_items_in_split = math.floor(len(dataset) * frac)
             subset_lengths.append(n_items_in_split)
 
         # Compute remainder

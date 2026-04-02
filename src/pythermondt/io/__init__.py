@@ -3,13 +3,13 @@ from .parsers import BaseParser, EdevisParser, HDF5Parser, SimulationParser
 from .utils import IOPathWrapper
 
 __all__ = [
-    "BaseParser",
-    "HDF5Parser",
-    "SimulationParser",
-    "EdevisParser",
-    "IOPathWrapper",
-    "BaseBackend",
     "AzureBlobBackend",
+    "BaseBackend",
+    "BaseParser",
+    "EdevisParser",
+    "HDF5Parser",
+    "IOPathWrapper",
     "LocalBackend",
     "S3Backend",
+    "SimulationParser",
 ]

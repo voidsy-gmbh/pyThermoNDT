@@ -7,7 +7,7 @@ classDiagram
   class BaseWriter {
     backend : BaseBackend
     \_\_init\_\_()
-    process_parallel(reader: BaseReader, file_name_pattern: str, compression: CompressionType, compression_opts: int | None, num_workers: int | None)
+    process_parallel(reader: BaseReader, keep_file_names: bool, file_name_pattern: str, compression: CompressionType, compression_opts: int | None, num_workers: int | None)
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)*
   }
   style BaseWriter fill:#77AADD

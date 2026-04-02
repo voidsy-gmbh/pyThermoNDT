@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np  # noqa: F401
 import torch
 from matplotlib import ticker
-from matplotlib.colors import Normalize
+from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
 
@@ -13,6 +13,9 @@ from .group_ops import GroupOps
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
+    _interactive_analyzer: "VisualizationOps.InteractiveAnalyzer | None" = None
+
+    # TODO: Refactor visualization logic to reduce the tight coupling between data handling and visualization.
     class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
         def __init__(self, parent: "VisualizationOps"):
             """Initialize the interactive analyzer for thermographic data visualization.
@@ -37,8 +40,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Initialize the frame display
             self.current_frame = 0  # type: int
             self.current_frame_data = self.tdata[self.current_frame]  # type: np.ndarray
+            initialize_vmin = round(self.current_frame_data.min(), 8)
+            initialize_vmax = round(self.current_frame_data.max(), 8)
             self.frame_img = self.frame_ax.imshow(
-                self.current_frame_data, aspect="auto", cmap="plasma", vmin=self.tdata.min(), vmax=self.tdata.max()
+                self.current_frame_data, aspect="auto", cmap="plasma", vmin=initialize_vmin, vmax=initialize_vmax
             )
             self.frame_ax.set_title(f"Frame {self.current_frame}")
 
@@ -73,7 +78,11 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # 4.) Initialize state variables
             # Store selected points and their profiles
             self.selected_points: list[tuple[int, int]] = []
+            self.point_markers: list[Line2D] = []
+            self.profile_lines: list[Line2D] = []
             self.colors = ["red", "blue", "green", "purple"]  # Colors for up to 4 points
+            self._last_hover_pixel: tuple[int, int] | None = None
+            self._closed = False
 
             # Initialize annotation box once
             self.cursor_annotation_text = TextArea("", textprops={"color": "white", "backgroundcolor": "black"})
@@ -88,20 +97,52 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.frame_ax.add_artist(self.cursor_annotation_box)
 
             # 5.) Connect events
-            self.frame_slider.on_changed(self.update_frame)
-            self.clear_button.on_clicked(self.clear_points)
-            self.fig.canvas.mpl_connect("button_press_event", self.on_click)
-            self.fig.canvas.mpl_connect("motion_notify_event", self.on_mouse_move)
-            self.annotation_toggle.on_clicked(self.toggle_annotation)
+            self._slider_cid = self.frame_slider.on_changed(self.update_frame)
+            self._clear_btn_cid = self.clear_button.on_clicked(self.clear_points)
+            self._annotation_cid = self.annotation_toggle.on_clicked(self.toggle_annotation)
+            self._canvas_connection_ids = [
+                self.fig.canvas.mpl_connect("button_press_event", self.on_click),
+                self.fig.canvas.mpl_connect("motion_notify_event", self.on_mouse_move),
+                self.fig.canvas.mpl_connect("close_event", self.on_close),
+            ]
 
             # 6.) Initialize blitting for faster rendering (if possible)
             self.fig.canvas.draw_idle()
+
+        @property
+        def closed(self) -> bool:
+            """Whether the interactive analyzer has been closed and cleaned up."""
+            return self._closed
+
+        def close(self, close_figure: bool = False):
+            """Disconnect callbacks and release analyzer resources."""
+            if self._closed:
+                return
+
+            self._closed = True
+
+            for connection_id in self._canvas_connection_ids:
+                self.fig.canvas.mpl_disconnect(connection_id)
+
+            self.frame_slider.disconnect(self._slider_cid)
+            self.clear_button.disconnect(self._clear_btn_cid)
+            self.annotation_toggle.disconnect(self._annotation_cid)
+
+            self.container.release_interactive_analyzer(self)
+
+            if close_figure and plt.fignum_exists(self.fig.number):
+                plt.close(self.fig)
+
+        def on_close(self, event):  # pylint: disable=unused-argument
+            """Handle figure close event by disconnecting callbacks."""
+            self.close(close_figure=False)
 
         def toggle_annotation(self, event):  # pylint: disable=unused-argument
             """Toggle cursor annotation on/off."""
             # Hide annotation if disabled
             if not self.annotation_toggle.get_status()[0]:
                 self.cursor_annotation_box.set_visible(False)
+                self._last_hover_pixel = None
                 self.fig.canvas.draw_idle()
 
         def on_mouse_move(self, event):
@@ -111,14 +152,22 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 return
 
             if event.inaxes != self.frame_ax:
-                self.cursor_annotation_box.set_visible(False)
-                self.fig.canvas.draw_idle()
+                if self.cursor_annotation_box.get_visible():
+                    self.cursor_annotation_box.set_visible(False)
+                    self._last_hover_pixel = None
+                    self.fig.canvas.draw_idle()
+                return
+
+            if event.xdata is None or event.ydata is None:
                 return
 
             # Get mouse coordinates
             x, y = int(round(event.xdata)), int(round(event.ydata))
 
             if 0 <= y < self.current_frame_data.shape[0] and 0 <= x < self.current_frame_data.shape[1]:
+                if self._last_hover_pixel == (x, y) and self.cursor_annotation_box.get_visible():
+                    return
+
                 # Get current value
                 val = self.current_frame_data[y, x]
 
@@ -126,14 +175,27 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 self.cursor_annotation_box.xy = (x, y)
                 self.cursor_annotation_text.set_text(f"({x}, {y})\n{val:.5f}")
                 self.cursor_annotation_box.set_visible(True)
+                self._last_hover_pixel = (x, y)
 
+                self.fig.canvas.draw_idle()
+            elif self.cursor_annotation_box.get_visible():
+                self.cursor_annotation_box.set_visible(False)
+                self._last_hover_pixel = None
                 self.fig.canvas.draw_idle()
 
         def update_frame(self, frame_idx: float):
             """Update the displayed frame."""
+            new_frame = int(frame_idx)
+            if new_frame == self.current_frame:
+                return
+
             # Extract frame data
-            self.current_frame = int(frame_idx)
-            self.current_frame_data = self.tdata[self.current_frame].squeeze()
+            self.current_frame = new_frame
+            self.current_frame_data = self.tdata[new_frame]
+
+            # Invalidate hover cache because pixel values changed with the frame
+            self._last_hover_pixel = None
+            self.cursor_annotation_box.set_visible(False)
 
             # Update image data and title
             self.frame_img.set_data(self.current_frame_data)
@@ -143,13 +205,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             vmin = round(self.current_frame_data.min(), 8)
             vmax = round(self.current_frame_data.max(), 8)
 
-            # Directly set the image norm, because set_clim does call color sanitation inside
-            # This can lead to wrong updates
-            self.frame_img.norm = Normalize(vmin, vmax)
-
-            # Redraw points on the new frame
-            for idx, (x, y) in enumerate(self.selected_points):
-                self.frame_ax.plot(x, y, "x", color=self.colors[idx], markersize=10)
+            old_min, old_max = self.frame_img.get_clim()
+            if not np.isclose(old_min, vmin, atol=1e-8, rtol=0.0) or not np.isclose(old_max, vmax, atol=1e-8, rtol=0.0):
+                self.frame_img.set_clim(vmin=vmin, vmax=vmax)
 
             # Redraw
             self.fig.canvas.draw_idle()
@@ -173,11 +231,13 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.selected_points.append((x, y))
 
             # Plot point on frame
-            self.frame_ax.plot(x, y, "x", color=color, markersize=10)
+            marker = self.frame_ax.plot(x, y, "x", color=color, markersize=10)[0]
+            self.point_markers.append(marker)
 
             # Plot temperature profile
             profile = self.tdata[:, y, x]
-            self.profile_ax.plot(self.domain_values, profile, color=color, label=f"Point ({x}, {y})")
+            line = self.profile_ax.plot(self.domain_values, profile, color=color, label=f"Point ({x}, {y})")[0]
+            self.profile_lines.append(line)
             self.profile_ax.legend()
 
             self.fig.canvas.draw_idle()
@@ -187,14 +247,15 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.selected_points.clear()
             self.profile_ax.clear()
 
+            for marker in self.point_markers:
+                marker.remove()
+            self.point_markers.clear()
+            self.profile_lines.clear()
+
             # Reset profile plot
             self.profile_ax.set_xlabel(generate_label(self.domain_unit))
             self.profile_ax.set_ylabel(generate_label(self.data_unit))
             self.profile_ax.grid(True)
-
-            # Remove points from frame plot
-            for artist in self.frame_ax.lines:
-                artist.remove()
 
             # Redraw frame without points
             self.frame_img.set_data(self.current_frame_data)
@@ -291,7 +352,14 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         plt.ylabel(generate_label(data_unit))
         plt.show()
 
+    def release_interactive_analyzer(self, analyzer: "VisualizationOps.InteractiveAnalyzer") -> None:
+        """Release the stored interactive analyzer if it matches the provided instance."""
+        if self._interactive_analyzer is analyzer:
+            self._interactive_analyzer = None
+
     def analyse_interactive(self):
         """Launch interactive analysis session for thermographic data visualization."""
-        self.InteractiveAnalyzer(self)
+        if self._interactive_analyzer is not None and not self._interactive_analyzer.closed:
+            self._interactive_analyzer.close(close_figure=True)
+        self._interactive_analyzer = self.InteractiveAnalyzer(self)
         plt.show()

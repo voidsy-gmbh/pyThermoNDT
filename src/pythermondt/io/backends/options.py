@@ -1,11 +1,12 @@
 from dataclasses import dataclass, fields
+from typing import Any
 
 
 @dataclass(slots=True, frozen=True)
 class BackendClientOptions:
     """Shared helpers for backend client option dataclasses."""
 
-    def as_kwargs(self) -> dict[str, object]:
+    def as_kwargs(self) -> dict[str, Any]:
         """Return only configured client kwargs."""
         return {field.name: value for field in fields(self) if (value := getattr(self, field.name)) is not None}
 

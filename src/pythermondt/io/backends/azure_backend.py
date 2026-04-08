@@ -58,7 +58,12 @@ class AzureBlobBackend(BaseBackend):
         self.__container_name = container_name
         self.__prefix = prefix
 
-        logger.debug("AzureBlobBackend(container=%s, prefix=%s) initialized.", container_name, prefix)
+        logger.debug(
+            "AzureBlobBackend initialized: container=%s, prefix=%s, client_options=%s",
+            container_name,
+            prefix,
+            client_options or "default",
+        )
 
     @property
     def remote_source(self) -> bool:

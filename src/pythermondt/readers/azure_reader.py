@@ -1,6 +1,6 @@
 from azure.core.credentials import TokenCredential
 
-from ..io import AzureBlobBackend, BaseParser
+from ..io import AzureBlobBackend, AzureBlobClientOptions, BaseParser
 from .base_reader import BaseReader
 
 
@@ -12,6 +12,7 @@ class AzureBlobReader(BaseReader):
         prefix: str,
         connection_string: str | None = None,
         credential: TokenCredential | None = None,
+        client_options: AzureBlobClientOptions | None = None,
         num_files: int | None = None,
         download_files: bool = False,
         cache_files: bool = True,
@@ -28,6 +29,7 @@ class AzureBlobReader(BaseReader):
             prefix (str): Prefix (folder path) within container
             connection_string (str | None): Optional connection string (overrides default auth)
             credential (TokenCredential | None): Optional Azure TokenCredential (overrides default auth)
+            client_options (AzureBlobClientOptions | None): Optional Azure client tuning options.
             num_files (int | None): Maximum number of files to read. If None, reads all files.
             download_files (bool): If True, downloads and caches files locally during operations.
                 If False, files are accessed on-demand without local caching. Default: False.
@@ -42,6 +44,7 @@ class AzureBlobReader(BaseReader):
         self.__connection_string = connection_string
         self.__account_url = account_url
         self.__credential = credential
+        self.__client_options = client_options
 
     def _create_backend(self) -> AzureBlobBackend:
         """Create a new AzureBlobBackend instance.
@@ -54,6 +57,7 @@ class AzureBlobReader(BaseReader):
             prefix=self.__prefix,
             connection_string=self.__connection_string,
             credential=self.__credential,
+            client_options=self.__client_options,
         )
 
     def _get_reader_params(self) -> str:

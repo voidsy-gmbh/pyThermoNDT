@@ -1,6 +1,6 @@
 import boto3
 
-from ..io import BaseParser, S3Backend
+from ..io import BaseParser, S3Backend, S3ClientOptions
 from .base_reader import BaseReader
 
 
@@ -11,6 +11,7 @@ class S3Reader(BaseReader):
         prefix: str,
         region_name: str | None = None,
         profile_name: str | None = None,
+        client_options: S3ClientOptions | None = None,
         num_files: int | None = None,
         download_files: bool = False,
         cache_files: bool = True,
@@ -29,6 +30,7 @@ class S3Reader(BaseReader):
                 Default is None, which uses the default region from the AWS configuration.
             profile_name (str, optional): The AWS profile name to use for authentication. Default is None, which uses
                 the default profile from the AWS configuration.
+            client_options (S3ClientOptions | None): Optional S3 client tuning options.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
             download_files (bool, optional): Whether to automatically cache remote files locally during operations.
@@ -46,6 +48,7 @@ class S3Reader(BaseReader):
         self.__prefix = prefix
         self.__region_name = region_name
         self.__profile_name = profile_name
+        self.__client_options = client_options
 
     def _create_backend(self) -> S3Backend:
         """Create a new S3Backend instance.
@@ -53,7 +56,7 @@ class S3Reader(BaseReader):
         This method is called to create or recreate the backend when needed or after unpickling.
         """
         session = boto3.Session(region_name=self.__region_name, profile_name=self.__profile_name)
-        return S3Backend(self.__bucket, self.__prefix, session)
+        return S3Backend(self.__bucket, self.__prefix, session, self.__client_options)
 
     def _get_reader_params(self) -> str:
         """Get a string representation of the reader parameters used to create the backend."""

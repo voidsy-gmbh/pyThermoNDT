@@ -2,7 +2,7 @@ from azure.core.credentials import TokenCredential
 
 from ..data import DataContainer
 from ..data.datacontainer.serialization_ops import CompressionType
-from ..io import AzureBlobBackend, IOPathWrapper
+from ..io import AzureBlobBackend, AzureBlobClientOptions, IOPathWrapper
 from .base_writer import BaseWriter
 
 
@@ -14,6 +14,7 @@ class AzureBlobWriter(BaseWriter):
         prefix: str,
         connection_string: str | None = None,
         credential: TokenCredential | None = None,
+        client_options: AzureBlobClientOptions | None = None,
     ):
         """Initialize writer for Azure Blob Storage.
 
@@ -26,6 +27,7 @@ class AzureBlobWriter(BaseWriter):
             prefix (str): Prefix (folder path) within container
             connection_string (str | None): Optional connection string (overrides default auth)
             credential (TokenCredential | None): Optional Azure TokenCredential (overrides default auth)
+            client_options (AzureBlobClientOptions | None): Optional Azure client tuning options.
         """
         super().__init__()
         self.__account_url = account_url
@@ -33,6 +35,7 @@ class AzureBlobWriter(BaseWriter):
         self.__prefix = prefix
         self.__connection_string = connection_string
         self.__credential = credential
+        self.__client_options = client_options
 
     def _create_backend(self) -> AzureBlobBackend:
         """Create a new AzureBlobBackend instance."""
@@ -43,6 +46,7 @@ class AzureBlobWriter(BaseWriter):
             prefix=self.__prefix,
             connection_string=self.__connection_string,
             credential=self.__credential,
+            client_options=self.__client_options,
         )
         # pylint: enable=duplicate-code
 

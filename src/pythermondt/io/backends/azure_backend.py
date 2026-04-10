@@ -10,6 +10,7 @@ from tqdm.auto import tqdm
 
 from ..utils import IOPathWrapper
 from .base_backend import BaseBackend
+from .options import AzureBlobClientOptions
 from .progress import TqdmCallback, get_tqdm_default_kwargs
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class AzureBlobBackend(BaseBackend):
         prefix: str = "",
         connection_string: str | None = None,
         credential: TokenCredential | None = None,
+        client_options: AzureBlobClientOptions | None = None,
     ) -> None:
         """Initialize Azure Blob Storage backend.
 
@@ -40,20 +42,28 @@ class AzureBlobBackend(BaseBackend):
             prefix (str, optional): Prefix within the specified container
             connection_string (str, optional): Connection string (optional, for dev/researchers)
             credential (TokenCredential, optional): Azure TokenCredential (optional, defaults to DefaultAzureCredential)
+            client_options (AzureBlobClientOptions | None): Optional Azure client tuning options.
         """
+        client_kwargs = client_options.as_kwargs() if client_options else {}
+
         if connection_string:
-            self.__client = BlobServiceClient.from_connection_string(connection_string)
+            self.__client = BlobServiceClient.from_connection_string(connection_string, **client_kwargs)
             logger.debug("Client initialized using connection string.")
         else:
             if credential is None:
                 credential = DefaultAzureCredential()
                 logger.debug("Using DefaultAzureCredential for authentication.")
-            self.__client = BlobServiceClient(account_url, credential=credential)
+            self.__client = BlobServiceClient(account_url, credential=credential, **client_kwargs)
 
         self.__container_name = container_name
         self.__prefix = prefix
 
-        logger.debug("AzureBlobBackend(container=%s, prefix=%s) initialized.", container_name, prefix)
+        logger.debug(
+            "AzureBlobBackend initialized: container=%s, prefix=%s, client_options=%s",
+            container_name,
+            prefix,
+            client_options or "default",
+        )
 
     @property
     def remote_source(self) -> bool:

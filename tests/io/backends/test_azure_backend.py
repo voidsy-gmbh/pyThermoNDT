@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from azure.core.exceptions import AzureError
 
-from pythermondt.io import AzureBlobBackend, IOPathWrapper
+from pythermondt.io import AzureBlobBackend, AzureBlobClientOptions, IOPathWrapper
 
 
 @pytest.fixture
@@ -56,6 +56,59 @@ def test_init_with_default_credential():
 
         mock_default_cred.assert_called_once()
         mock_client_class.assert_called_once_with("https://test.blob.core.windows.net", credential=mock_cred_instance)
+        backend.close()
+
+
+def test_init_with_client_options_uses_blob_service_client_kwargs():
+    """Test client options are forwarded when using explicit credentials."""
+    client_options = AzureBlobClientOptions(
+        max_single_put_size=0,
+        max_block_size=8 * 1024 * 1024,
+        connection_timeout=600,
+        read_timeout=600,
+    )
+
+    with patch("pythermondt.io.backends.azure_backend.BlobServiceClient") as mock_client_class:
+        mock_client_class.return_value = MagicMock()
+        credential = MagicMock()
+
+        backend = AzureBlobBackend(
+            account_url="https://test.blob.core.windows.net",
+            container_name="test-container",
+            credential=credential,
+            client_options=client_options,
+        )
+
+        mock_client_class.assert_called_once_with(
+            "https://test.blob.core.windows.net",
+            credential=credential,
+            max_single_put_size=0,
+            max_block_size=8 * 1024 * 1024,
+            connection_timeout=600,
+            read_timeout=600,
+        )
+        backend.close()
+
+
+def test_init_with_connection_string_forwards_client_options():
+    """Test client options are forwarded for connection-string auth too."""
+    client_options = AzureBlobClientOptions(max_single_put_size=0, read_timeout=600)
+
+    with patch("pythermondt.io.backends.azure_backend.BlobServiceClient") as mock_client_class:
+        mock_client_class.from_connection_string.return_value = MagicMock()
+
+        backend = AzureBlobBackend(
+            account_url="https://test.blob.core.windows.net",
+            container_name="test-container",
+            connection_string="DefaultEndpointsProtocol=https;AccountName=test;AccountKey=fake==;EndpointSuffix=core.windows.net",
+            client_options=client_options,
+        )
+
+        mock_client_class.from_connection_string.assert_called_once_with(
+            "DefaultEndpointsProtocol=https;AccountName=test;AccountKey=fake==;EndpointSuffix=core.windows.net",
+            max_single_put_size=0,
+            read_timeout=600,
+        )
         backend.close()
 
 

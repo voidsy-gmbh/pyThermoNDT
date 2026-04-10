@@ -5,6 +5,7 @@ from .base_reader import BaseReader
 
 
 class S3Reader(BaseReader):
+    # pylint: disable=duplicate-code
     def __init__(
         self,
         bucket: str,

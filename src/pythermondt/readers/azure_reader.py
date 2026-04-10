@@ -5,6 +5,7 @@ from .base_reader import BaseReader
 
 
 class AzureBlobReader(BaseReader):
+    # pylint: disable=duplicate-code
     def __init__(
         self,
         account_url: str,

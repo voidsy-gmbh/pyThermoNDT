@@ -7,6 +7,7 @@ from .base_writer import BaseWriter
 
 
 class S3Writer(BaseWriter):
+    # pylint: disable=duplicate-code
     def __init__(
         self,
         bucket: str,
@@ -35,10 +36,8 @@ class S3Writer(BaseWriter):
         self.__client_options = client_options
 
     def _create_backend(self) -> S3Backend:
-        # pylint: disable=duplicate-code
         session = boto3.Session(region_name=self.__region_name, profile_name=self.__profile_name)
         return S3Backend(self.__bucket, self.__prefix, session, self.__client_options)
-        # pylint: enable=duplicate-code
 
     def write(
         self,

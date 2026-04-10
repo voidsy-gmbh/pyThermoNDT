@@ -1,12 +1,13 @@
 """S3-specific backend tests."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from pythermondt.io import IOPathWrapper, S3Backend
+from pythermondt.io import IOPathWrapper, S3Backend, S3ClientOptions
 
 
 @pytest.fixture
@@ -72,6 +73,24 @@ def test_write_file_upload_error(s3_backend):
             s3_backend.write_file(data, "test/new_file.txt")
 
         assert "Failed to upload file to S3" in str(exc.value)
+
+
+def test_init_with_client_options_builds_botocore_config():
+    """Test S3 client options are converted into botocore config."""
+    session = MagicMock()
+    session.client.return_value = MagicMock()
+    client_options = S3ClientOptions(connect_timeout=10, read_timeout=20, max_pool_connections=30)
+
+    backend = S3Backend(bucket="test-bucket", prefix="test/", session=session, client_options=client_options)
+
+    session.client.assert_called_once()
+    assert session.client.call_args.args == ("s3",)
+    config = session.client.call_args.kwargs["config"]
+    assert isinstance(config, Config)
+    assert config.connect_timeout == 10  # type: ignore
+    assert config.read_timeout == 20  # type: ignore
+    assert config.max_pool_connections == 30  # type: ignore
+    backend.close()
 
 
 def test_exists_unexpected_error(s3_backend):

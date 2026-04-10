@@ -1,197 +1,71 @@
 # Claude Code Instructions for PyThermoNDT
 
-## Foundation
+Read `AGENTS.md` first. It defines the project architecture, domain rules, and the preferred coding style.
 
-**Read [AGENTS.md](AGENTS.md) first** - it contains project architecture, conventions, and patterns.
+Keep this file intentionally concise.
 
-This file provides Claude-specific tool usage and workflow guidance.
+- Include only non-obvious, high-value guidance.
+- Prefer concrete rules over repository overviews.
+- Do not duplicate documentation that is easy to discover elsewhere in the repo.
 
-## Tool Usage
+## Canonical Style References
 
-### When to Use Which Tool
+Match these implementations unless the surrounding file clearly uses a different local pattern:
 
-**Explore agent** - Open-ended codebase exploration:
-- "How is RemoveFlash implemented?"
-- "What test fixtures exist?"
-- "Find transforms that modify DomainValues"
+- `src/pythermondt/transforms/sampling.py` - `NonUniformSampling`
+- `src/pythermondt/dataset/base_dataset.py` - `BaseDataset`
 
-**Read tool** - Known specific files:
-```
-Read: src/pythermondt/transforms/sampling.py
-Read: tests/conftest.py
-```
+Target that style on the first try:
 
-**Glob tool** - Pattern matching:
-```
-Glob: src/pythermondt/transforms/*.py
-Glob: tests/**/test_*.py
-```
+- minimal and direct
+- readable top-to-bottom
+- helpful docstrings, not verbose docstrings
+- sparse comments that explain intent, not mechanics
+- early validation with descriptive errors
 
-**Grep tool** - Content search:
-```
-Grep: "class.*Transform" in src/pythermondt/transforms/
-Grep: "@pytest.fixture" in tests/
-```
+## Working Rules
 
-### Before Any Edit
+### Before Editing
 
-**CRITICAL**: Always read files before editing them.
+- Read the file you will edit.
+- Read at least one nearby reference implementation when style or structure matters.
+- Prefer the smallest correct change.
 
-```
-❌ BAD:  User: "Fix sampling.py" → Edit tool immediately
-✅ GOOD: User: "Fix sampling.py" → Read sampling.py → Understand → Edit
-```
+### Tool Use
 
-### Parallel vs Sequential
+- Use `Read` for known files.
+- Use `Glob` for filename discovery.
+- Use `Grep` for content search.
+- Parallelize independent reads and searches.
+- Use `Explore` only for open-ended codebase questions.
 
-**Parallel** (independent operations):
-```python
-# ✅ Read multiple files at once
-Read(file1) + Read(file2) + Read(file3)
+### Editing Style
 
-# ✅ Run independent checks
-Bash(pytest) + Bash(ruff check) + Bash(mypy)
-```
+- Keep methods linear: load -> validate -> compute -> update -> return.
+- Extract helpers only for reused logic, dense math, or real domain concepts.
+- Keep names concrete and domain-specific.
+- Do not add abstraction just to look organized.
 
-**Sequential** (dependent operations):
-```python
-# ✅ Edit before testing the edit
-Edit(file.py) → Bash(pytest tests/)
-```
+### Verification
 
-## Common Workflows
-
-### Adding a Transform
-
-1. **Explore**: `Task(Explore, "Find similar transforms like UniformSampling")`
-2. **Read**: Base class + similar transform
-3. **Implement**: Follow pattern from AGENTS.md
-4. **Verify**: `pytest tests/ && ruff check --fix .`
-
-### Fixing a Bug
-
-1. **Read**: Affected file + test file
-2. **Test first**: Add failing test that reproduces bug
-3. **Fix**: Minimal change to fix issue
-4. **Verify**: Test passes, all tests pass, ruff passes
-
-### Debugging Test Failures
+For functional changes, run the smallest relevant checks first, then broader validation as needed:
 
 ```bash
-# Run specific test with verbose output
-pytest tests/path/test_file.py::test_name -vv
-
-# Common issues:
-# - Tensor shape mismatches (check H×W×T dimensions)
-# - Missing DataContainer paths
-# - Temporal inconsistency (Tdata vs DomainValues)
-# - Unit mismatches after transforms
+pytest tests/
+pytest -k "test_name"
+pytest --benchmark-skip
+ruff check --fix .
+ruff format .
+mypy src/pythermondt
+pre-commit run --all-files
 ```
 
-## Quick Command Reference
+## Common Pitfalls
 
-```bash
-# Testing
-pytest tests/                          # All tests
-pytest -k "test_name"                 # Pattern match
-pytest --benchmark-skip               # Skip benchmarks
-pytest -x                             # Stop on first failure
+- Frame operations must keep `Tdata`, `DomainValues`, and `ExcitationSignal` in sync.
+- Temporal transforms should preserve or intentionally reset the domain origin.
+- Update units when a transform changes physical meaning.
+- Prefer tensor operations over loops.
+- All functionality changes require tests.
 
-# Quality
-ruff check --fix . && ruff format .   # Lint and format
-mypy src/pythermondt                  # Type check
-pre-commit run --all-files            # All hooks
-
-# Development
-uv venv && uv pip install -e . && uv pip install -r requirements_dev.txt && pre-commit install
-```
-
-## Critical Patterns
-
-### Temporal Consistency (Most Common Mistake)
-
-**Always update Tdata and DomainValues together**:
-```python
-# ✅ CORRECT
-new_tdata = tdata[..., indices]
-new_domain = domain[indices] - domain[indices[0]]  # Zero-base!
-container.update_datasets(
-    ("/Data/Tdata", new_tdata),
-    ("/MetaData/DomainValues", new_domain)
-)
-
-# ❌ WRONG - Only updating Tdata
-container.update_dataset("/Data/Tdata", tdata[..., indices])
-```
-
-### Validate Early
-
-```python
-# ✅ At the start of forward()
-if tdata.ndim != 3:
-    raise ValueError(f"Expected 3D (H×W×T), got {tdata.shape}")
-```
-
-### Unit Updates
-
-```python
-# When transform changes physical meaning (e.g., ApplyLUT)
-from pythermondt.data.units import Units
-container.set_unit("/Data/Tdata", Units.KELVIN)
-```
-
-## Key File Locations
-
-```
-src/pythermondt/
-├── transforms/
-│   ├── base.py                # Base classes
-│   ├── preprocessing.py       # ApplyLUT, RemoveFlash, CropFrames
-│   ├── sampling.py            # Frame sampling
-│   ├── normalization.py       # MinMax, Z-score
-│   └── augmentation.py        # Data augmentation
-├── readers/
-│   ├── local_reader.py
-│   └── s3_reader.py
-├── data/datacontainer/
-│   └── datacontainer.py       # Core container
-└── config.py
-
-tests/
-├── conftest.py                # Global fixtures
-├── integration/               # Integration tests
-├── data/                      # Data module tests
-├── dataset/                   # Dataset tests
-└── io/                        # I/O tests (backends, parsers)
-```
-
-## When to Use EnterPlanMode
-
-**Use for**:
-- New features (transforms, readers)
-- Multi-file changes
-- Architectural changes
-- Multiple valid approaches
-
-**Skip for**:
-- Typos, single-line fixes
-- Simple test additions
-- Obvious bug fixes
-
-## Common Fixtures (from tests/conftest.py)
-
-- `sample_tensor` - 3D tensor (96×96×100)
-- `sample_container` - DataContainer with test data
-- `localreader_with_file` - LocalReader with test file
-- `sample_transform` - Example transform instance
-
-## Essential Reminders
-
-1. **Read before editing** - Never propose changes to unread code
-2. **Maintain temporal consistency** - Update Tdata + DomainValues together
-3. **Validate early** - Check shapes/dimensions at start of methods
-4. **Test thoroughly** - Mirror structure, use parametrize
-5. **Follow conventions** - Ruff (120 chars), Google docstrings, type hints
-6. **Never mix** - Functionality and whitespace in same commit
-
-See [AGENTS.md](AGENTS.md) for detailed architecture, patterns, and examples.
+If `AGENTS.md` and local file style disagree, follow the local file style unless it conflicts with an explicit project rule.

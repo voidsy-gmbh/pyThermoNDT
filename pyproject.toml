@@ -176,8 +176,8 @@ disable = [
 [tool.pylint.design]
 max-parents = 12 # Increase because mixin classes have more parents
 min-public-methods = 1 # Set to 1 because static parser classes have only 1 public method
-max-args = 10 # Some Reader classes have many arguments to configure
-max-positional-arguments = 10 # Some Reader classes require many positional arguments to configure
+max-args = 12 # Some Reader classes have many arguments to configure
+max-positional-arguments = 12 # Some Reader classes require many positional arguments to configure
 
 # typos
 [tool.typos]

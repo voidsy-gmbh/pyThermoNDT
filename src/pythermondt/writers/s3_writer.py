@@ -19,7 +19,7 @@ class S3Writer(BaseWriter):
         """
         super().__init__()
 
-        # Use default boto3 session if none is provided
+        # Maintain state for what is needed to create the backend
         self.__bucket = bucket
         self.__prefix = prefix
         self.__region_name = region_name

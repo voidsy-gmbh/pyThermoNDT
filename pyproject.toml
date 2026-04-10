@@ -60,8 +60,7 @@ dependencies = [
     # Azure
     "azure-storage-blob>=12.20",
     "azure-identity>=1.20",
-    # TODO: Update when wheels are available for newer Python versions
-    "azure-identity-broker>=1.1.0; sys_platform == 'win32' and python_version < '3.14'",
+    "azure-identity-broker>=1.1.0; sys_platform == 'win32'",
 ]
 
 [dependency-groups]

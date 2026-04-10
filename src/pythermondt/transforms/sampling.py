@@ -60,7 +60,7 @@ class SelectFrameRange(ThermoTransform):
 
         Args:
             start (int, optional): Start index of the frame range. Default is None, which means the start index is 0.
-            end (int, optional): End index of the frame range, which is inclusiv.
+            end (int, optional): End index of the frame range, which is inclusive.
                 Default is None, which means the end index is the last frame.
         """
         super().__init__()
@@ -164,7 +164,7 @@ class NonUniformSampling(ThermoTransform):
             float: The minimum tau value that satisfies the constraint.
         """
         low = dt_min  # use dt_min as lower bound
-        high = t_end  # use t_end as a upper bond because tau >= t_end makes no sense
+        high = t_end  # use t_end as an upper bound because tau >= t_end makes no sense
 
         # 1.) Binary search
         while high - low > self.precision:

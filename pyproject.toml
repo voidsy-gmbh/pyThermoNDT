@@ -155,7 +155,7 @@ quote-style = "double"
 [tool.pylint.messages_control]
 # Config general
 source-roots = ["src"]
-fail-on = "I" # Fail on informatioal messages aswell ==> to catch useless suppressions
+fail-on = "I" # Fail on informational messages as well ==> to catch useless suppressions
 py-version = "3.10" # Set Python version to 3.10
 
 # Configure messages
@@ -168,7 +168,7 @@ disable = [
     "missing-class-docstring",      # C0115
     "missing-function-docstring",   # C0116
     "fixme", # W0511
-    "line-too-long", # C0301 ==> this is handled by ruff aswell
+    "line-too-long", # C0301 ==> this is handled by ruff as well
 ]
 
 [tool.pylint.design]

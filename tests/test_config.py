@@ -12,17 +12,18 @@ def test_num_workers_zero_raises():
         Settings(num_workers=0)
 
 
-@pytest.mark.parametrize("num_workers", [-5, -1])
+@pytest.mark.parametrize("num_workers", [-5, -1, "-5", "-1"])
 def test_num_workers_negative_raises(num_workers):
     """Test that negative num_workers raises ValidationError."""
     with pytest.raises(ValidationError, match="num_workers must be at least 1"):
         Settings(num_workers=num_workers)
 
 
-def test_num_workers_valid():
-    """Test that a valid num_workers is accepted."""
-    s = Settings(num_workers=2)
-    assert s.num_workers == 2
+@pytest.mark.parametrize("num_workers", [1, 2, "1", "2"])
+def test_num_workers_valid(num_workers):
+    """Test that valid num_workers values are accepted."""
+    s = Settings(num_workers=num_workers)
+    assert s.num_workers == int(num_workers)
 
 
 def test_invalid_log_level_raises():

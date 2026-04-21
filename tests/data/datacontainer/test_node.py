@@ -1,7 +1,10 @@
+from sys import getsizeof
+
 import pytest
 import torch
 from torch import Tensor
 
+from pythermondt.data import units
 from pythermondt.data.datacontainer.node import DataNode, GroupNode, NodeType, RootNode
 
 
@@ -133,6 +136,83 @@ def test_group_node_memory_with_attributes(group_node: GroupNode):
     assert memory_with_attr > memory_empty
 
 
+@pytest.mark.parametrize(
+    ("attributes", "expected_attribute_bytes"),
+    [
+        ({}, getsizeof({})),
+        (
+            {"test_attr": "test_value"},
+            getsizeof({"test_attr": "test_value"}) + getsizeof("test_value"),
+        ),
+        (
+            {"shape": [5, 6]},
+            getsizeof({"shape": [5, 6]}) + getsizeof([5, 6]) + getsizeof(5) + getsizeof(6),
+        ),
+        (
+            {"Unit": units.kelvin},
+            getsizeof({"Unit": units.kelvin})
+            + getsizeof(units.kelvin)
+            + getsizeof(units.kelvin.__dict__)
+            + sum(getsizeof(value) for value in vars(units.kelvin).values()),
+        ),
+        (
+            {
+                "Source": "Simulation",
+                "NoiseLevel": 0.1,
+                "LabelIds": [1, 2, 3],
+                "Unit": units.arbitrary,
+            },
+            getsizeof(
+                {
+                    "Source": "Simulation",
+                    "NoiseLevel": 0.1,
+                    "LabelIds": [1, 2, 3],
+                    "Unit": units.arbitrary,
+                }
+            )
+            + getsizeof("Simulation")
+            + getsizeof(0.1)
+            + getsizeof([1, 2, 3])
+            + getsizeof(1)
+            + getsizeof(2)
+            + getsizeof(3)
+            + getsizeof(units.arbitrary)
+            + getsizeof(units.arbitrary.__dict__)
+            + getsizeof("arbitrary")
+            + getsizeof("a. u."),
+        ),
+    ],
+)
+def test_group_node_memory_bytes_matches_expected_values(attributes: dict[str, object], expected_attribute_bytes: int):
+    """Test GroupNode memory using explicit `sys.getsizeof` formulas.
+
+    This follows objsize's own testing strategy: compute the expectation from the
+    known object graph instead of copying the deep-size traversal into the test.
+    """
+    group_node = GroupNode("parity_group")
+    group_node.add_attributes(**attributes)  # type: ignore
+
+    expected_memory_bytes = getsizeof(group_node) + getsizeof(group_node.name) + getsizeof(group_node.type)
+    assert group_node.memory_bytes() == expected_memory_bytes + expected_attribute_bytes
+
+
+def test_group_node_memory_bytes_matches_expected_values_with_shared_references():
+    """Test GroupNode memory counts shared attribute objects only once."""
+    shared_list = ["hot", "cold"]
+    group_node = GroupNode("shared_group")
+    group_node.add_attributes(a=shared_list, b=shared_list, meta={"labels": shared_list})
+
+    expected_attribute_bytes = (
+        getsizeof({"a": shared_list, "b": shared_list, "meta": {"labels": shared_list}})
+        + getsizeof(shared_list)
+        + getsizeof("hot")
+        + getsizeof("cold")
+        + getsizeof({"labels": shared_list})
+    )
+    expected_memory_bytes = getsizeof(group_node) + getsizeof(group_node.name) + getsizeof(group_node.type)
+    assert group_node.memory_bytes() == expected_memory_bytes + expected_attribute_bytes
+
+
 def test_data_node_memory_bytes(data_node: DataNode):
     """Test memory calculation for DataNode."""
     memory = data_node.memory_bytes()
@@ -160,6 +240,47 @@ def test_data_node_empty_tensor_memory():
     memory = empty_node.memory_bytes()
     assert isinstance(memory, int)
     assert memory > 0
+
+
+def test_data_node_memory_bytes_matches_expected_values_for_attributes(sample_tensor: Tensor):
+    """Test DataNode memory using explicit `sys.getsizeof` formulas."""
+    data_node = DataNode("parity_data", sample_tensor)
+    data_node.add_attributes(
+        Source="Simulation",
+        LabelIds=[1, 2, 3],
+        Shapes={"Circle": 2, "Line": 1},
+        Unit=units.kelvin,
+    )
+
+    expected_attribute_bytes = (
+        getsizeof(
+            {
+                "Source": "Simulation",
+                "LabelIds": [1, 2, 3],
+                "Shapes": {"Circle": 2, "Line": 1},
+                "Unit": units.kelvin,
+            }
+        )
+        + getsizeof("Simulation")
+        + getsizeof([1, 2, 3])
+        + getsizeof(1)
+        + getsizeof(2)
+        + getsizeof(3)
+        + getsizeof({"Circle": 2, "Line": 1})
+        + getsizeof(units.kelvin)
+        + getsizeof(units.kelvin.__dict__)
+        + sum(getsizeof(value) for value in vars(units.kelvin).values())
+    )
+    expected_memory_bytes = (
+        getsizeof(data_node)
+        + getsizeof(data_node.name)
+        + getsizeof(data_node.type)
+        + expected_attribute_bytes
+        + getsizeof(data_node.data)
+        + data_node.data.element_size() * data_node.data.numel()
+    )
+
+    assert data_node.memory_bytes() == expected_memory_bytes
 
 
 # Node Type Enum tests

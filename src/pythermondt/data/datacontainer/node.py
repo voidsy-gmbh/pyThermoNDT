@@ -1,11 +1,10 @@
+import gc
+import types
 from abc import ABC, abstractmethod
 from collections.abc import ItemsView, Iterator
 from enum import Enum
-import gc
 from sys import getsizeof
-import types
 
-import objsize
 import torch
 from torch import Tensor
 
@@ -146,7 +145,7 @@ class AttributeNode(BaseNode, ABC):
 
     def memory_bytes(self) -> int:
         """Returns the memory size of the node in bytes."""
-        return super().memory_bytes() + objsize.get_deep_size(self.__attributes)
+        return super().memory_bytes() + _deep_size(self.__attributes)
 
 
 class GroupNode(AttributeNode):

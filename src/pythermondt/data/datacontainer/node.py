@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from collections.abc import ItemsView
+from collections.abc import ItemsView, Iterator
 from enum import Enum
+import gc
 from sys import getsizeof
+import types
 
 import objsize
 import torch
@@ -10,6 +12,49 @@ from torch import Tensor
 from ..units import Unit
 
 AttributeTypes = str | int | float | list | tuple | dict | Unit
+
+_SHARED_ATTRIBUTE_OBJECT_TYPES = (
+    type,
+    types.ModuleType,
+    types.FrameType,
+    types.BuiltinFunctionType,
+    types.FunctionType,
+    types.LambdaType,
+)
+
+
+def _iter_referents(*objs: object) -> Iterator[object]:
+    """Yield referents for deep-size traversal."""
+    yield from gc.get_referents(*objs)
+
+    # `gc.get_referents()` does not consistently expose `__dict__` across Python versions.
+    for obj in objs:
+        try:
+            yield vars(obj)
+        except (TypeError, AttributeError):
+            pass
+
+
+def _deep_size(*objs: object) -> int:
+    """Calculate deep size without double-counting shared objects."""
+    seen = {id(None)}
+    total = 0
+    queue = list(objs)
+
+    while queue:
+        current: list[object] = []
+        for obj in queue:
+            obj_id = id(obj)
+            if obj_id in seen or isinstance(obj, _SHARED_ATTRIBUTE_OBJECT_TYPES):
+                continue
+
+            seen.add(obj_id)
+            current.append(obj)
+            total += getsizeof(obj)
+
+        queue = list(_iter_referents(*current)) if current else []
+
+    return total
 
 
 class NodeType(Enum):

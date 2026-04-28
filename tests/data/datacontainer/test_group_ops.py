@@ -136,8 +136,3 @@ def test_remove_group_with_datasets(empty_container: DataContainer, sample_tenso
     # Verify group and dataset were removed
     assert "/group1" not in empty_container.nodes.keys()
     assert "/group1/dataset1" not in empty_container.nodes.keys()
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

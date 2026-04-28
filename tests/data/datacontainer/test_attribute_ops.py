@@ -201,8 +201,3 @@ def test_missing_unit(attr_container: DataContainer):
     """Test getting a unit from a dataset that does not have unit information returns undefined."""
     unit = attr_container.get_unit("/testdata")
     assert unit == units.undefined
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

@@ -106,8 +106,3 @@ def test_validate_paths_returns_normalized_tuple():
     """Test validate_paths returns normalized tuple values."""
     result = validate_paths(["Data/Tdata", "/MetaData/"])
     assert result == ("/Data/Tdata", "/MetaData")
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

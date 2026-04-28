@@ -135,3 +135,44 @@ class DatasetOps(BaseOps):
         """
         for path, data in updates:
             self.update_dataset(path, data)
+
+    def set_dataset(self, path: str, name: str, data: Tensor | ndarray | None = None):
+        """Set a dataset at a specified path (upsert).
+
+        Adds the dataset if it does not exist, updates it if it does.
+
+        Args:
+            path (str): The path to the parent group.
+            name (str): The name of the dataset.
+            data (Tensor | ndarray, optional): The data to store. If None, an empty dataset is created.
+
+        Raises:
+            KeyError: If the parent group does not exist.
+        """
+        key, _, _ = generate_key(path, name)
+
+        if isinstance(data, ndarray):
+            data = torch.from_numpy(data)
+
+        if key in self.nodes:
+            if data is None:
+                data = torch.empty(0)
+            self.nodes(key, DataNode).data = data
+        else:
+            self.nodes[key] = DataNode(name, data)
+
+    def set_datasets(self, path: str, **datasets: Tensor | ndarray | None):
+        """Set multiple datasets at a specified path (upsert).
+
+        Adds datasets if they do not exist, updates them if they do.
+
+        Args:
+            path (str): The path to the parent group.
+            **datasets (Dict[str, Optional[Tensor | ndarray]]): The datasets to set.
+                The specified key will become the name of the dataset.
+
+        Raises:
+            KeyError: If the parent group does not exist.
+        """
+        for name, data in datasets.items():
+            self.set_dataset(path, name, data)

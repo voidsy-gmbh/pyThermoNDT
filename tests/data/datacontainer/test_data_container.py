@@ -294,6 +294,43 @@ def test_set_dataset_existing_with_none(empty_container: DataContainer, sample_t
     assert result.shape == torch.empty(0).shape
 
 
+def test_set_attribute_existing_type_change_raises(empty_container: DataContainer):
+    """Test set_attribute raises TypeError when type changes with check_type=True (default)."""
+    empty_container.add_group("/", "TestGroup")
+    empty_container.add_attribute("/TestGroup", "my_attr", "string_value")
+
+    with pytest.raises(TypeError):
+        empty_container.set_attribute("/TestGroup", "my_attr", 123)
+
+
+def test_set_attribute_existing_type_change_allowed(empty_container: DataContainer):
+    """Test set_attribute allows type change when check_type=False."""
+    empty_container.add_group("/", "TestGroup")
+    empty_container.add_attribute("/TestGroup", "my_attr", "string_value")
+
+    empty_container.set_attribute("/TestGroup", "my_attr", 123, check_type=False)
+    assert empty_container.get_attribute("/TestGroup", "my_attr") == 123
+
+
+def test_set_attributes_type_change_raises(empty_container: DataContainer):
+    """Test set_attributes raises TypeError when type changes with check_type=True (default)."""
+    empty_container.add_group("/", "TestGroup")
+    empty_container.add_attributes("/TestGroup", attr1="string_value", attr2=42)
+
+    with pytest.raises(TypeError):
+        empty_container.set_attributes("/TestGroup", check_type=True, attr1=999)
+
+
+def test_set_attributes_type_change_allowed(empty_container: DataContainer):
+    """Test set_attributes allows type changes when check_type=False."""
+    empty_container.add_group("/", "TestGroup")
+    empty_container.add_attributes("/TestGroup", attr1="string_value", attr2=42)
+
+    empty_container.set_attributes("/TestGroup", check_type=False, attr1=999, attr2="new_string")
+    assert empty_container.get_attribute("/TestGroup", "attr1") == 999
+    assert empty_container.get_attribute("/TestGroup", "attr2") == "new_string"
+
+
 # Only run the tests in this file if it is run directly
 if __name__ == "__main__":
     pytest.main(["-v", __file__])

@@ -152,7 +152,14 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).update_attributes(**attributes)  # type: ignore[union-attr]
 
-    def set_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | Unit):
+    def set_attribute(
+        self,
+        path: str,
+        key: str,
+        value: str | int | float | list | tuple | dict | Unit,
+        *,
+        check_type: bool = True,
+    ):
         """Set an attribute in a specified group or dataset (upsert).
 
         Adds the attribute if it does not exist, updates it if it does.
@@ -161,25 +168,40 @@ class AttributeOps(BaseOps):
             path (str): The path to the group or dataset.
             key (str): The key of the attribute.
             value (str | int | float | list | tuple | dict | Unit): The value of the attribute.
+            check_type (bool): If True (default), enforce type consistency for existing
+                attributes. If False, allow type changes on existing attributes.
 
         Raises:
             KeyError: If the group or dataset does not exist.
+            TypeError: If check_type is True and the value type does not match the
+                existing attribute.
         """
-        self.nodes(path, DataNode, GroupNode).set_attribute(key, value)  # type: ignore[union-attr]
+        self.nodes(path, DataNode, GroupNode).set_attribute(key, value, check_type=check_type)  # type: ignore[union-attr]
 
-    def set_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
+    def set_attributes(
+        self,
+        path: str,
+        *,
+        check_type: bool = True,
+        **attributes: str | int | float | list | tuple | dict | Unit,
+    ):
         """Set multiple attributes in a specified group or dataset (upsert).
 
         Adds attributes if they do not exist, updates them if they do.
 
         Args:
             path (str): The path to the group or dataset.
-            **attributes (Dict[str, str | int | float | list | tuple | dict | Unit]): The attributes to set.
+            check_type (bool): If True (default), enforce type consistency for existing
+                attributes. If False, allow type changes on existing attributes.
+            **attributes (Dict[str, str | int | float | list | tuple | dict | Unit]):
+                The attributes to set.
 
         Raises:
             KeyError: If the group or dataset does not exist.
+            TypeError: If check_type is True and a value type does not match an
+                existing attribute.
         """
-        self.nodes(path, DataNode, GroupNode).set_attributes(**attributes)  # type: ignore[union-attr]
+        self.nodes(path, DataNode, GroupNode).set_attributes(check_type=check_type, **attributes)  # type: ignore[union-attr]
 
     def update_unit(self, path: str, unit: Unit):
         """Update the unit information of the specified dataset.

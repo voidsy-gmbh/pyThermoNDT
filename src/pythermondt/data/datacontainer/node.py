@@ -140,14 +140,33 @@ class AttributeNode(BaseNode, ABC):
         for update_key, update_value in attributes.items():
             self.update_attribute(update_key, update_value)
 
-    def set_attribute(self, key: str, value: AttributeTypes) -> None:
-        """Set an attribute (add if missing, update if present)."""
-        self.__attributes[key] = value
+    def set_attribute(self, key: str, value: AttributeTypes, *, check_type: bool = True) -> None:
+        """Set an attribute (add if missing, update if present).
 
-    def set_attributes(self, **attributes: AttributeTypes) -> None:
-        """Set multiple attributes (add if missing, update if present)."""
+        Args:
+            key (str): The attribute key.
+            value (AttributeTypes): The attribute value.
+            check_type (bool): If True (default), use update_attribute for existing keys to enforce type consistency.
+                If False, allow type changes on existing attributes via direct assignment.
+        """
+        if key in self.__attributes:
+            if check_type:
+                self.update_attribute(key, value)
+            else:
+                self.__attributes[key] = value
+        else:
+            self.add_attribute(key, value)
+
+    def set_attributes(self, *, check_type: bool = True, **attributes: AttributeTypes) -> None:
+        """Set multiple attributes (add if missing, update if present).
+
+        Args:
+            check_type (bool): If True (default), use update_attribute for existing keys to enforce type consistency.
+                If False, allow type changes on existing attributes via direct assignment.
+            **attributes (AttributeTypes): The attributes to set.
+        """
         for key, value in attributes.items():
-            self.__attributes[key] = value
+            self.set_attribute(key, value, check_type=check_type)
 
     def clear_attributes(self) -> None:
         self.__attributes.clear()

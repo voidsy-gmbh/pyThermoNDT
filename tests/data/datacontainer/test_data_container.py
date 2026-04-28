@@ -276,6 +276,24 @@ def test_set_datasets_parent_group_not_exist(empty_container: DataContainer, sam
         empty_container.set_datasets("/NonExistentGroup", Data=sample_tensor)
 
 
+def test_set_dataset_new_with_none(empty_container: DataContainer):
+    """Test set_dataset creates empty dataset when data is None and dataset does not exist."""
+    empty_container.set_dataset("/", "EmptyData", None)
+    assert "EmptyData" in empty_container.get_all_dataset_names()
+    result = empty_container.get_dataset("/EmptyData")
+    assert result.shape == torch.empty(0).shape
+
+
+def test_set_dataset_existing_with_none(empty_container: DataContainer, sample_tensor: Tensor):
+    """Test set_dataset sets data to empty when data is None and dataset exists."""
+    empty_container.add_dataset("/", "ExistingData", sample_tensor)
+    assert torch.equal(empty_container.get_dataset("/ExistingData"), sample_tensor)
+
+    empty_container.set_dataset("/", "ExistingData", None)
+    result = empty_container.get_dataset("/ExistingData")
+    assert result.shape == torch.empty(0).shape
+
+
 # Only run the tests in this file if it is run directly
 if __name__ == "__main__":
     pytest.main(["-v", __file__])

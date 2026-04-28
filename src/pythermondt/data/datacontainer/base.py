@@ -103,6 +103,9 @@ class NodeAccessor:
     def __setitem__(self, key: str, value: NodeTypes):
         self.__set_node(key, value)
 
+    def __contains__(self, key: str) -> bool:
+        return key in self.__nodes
+
     # Overriding the call method to access nodes ==> Makes the node property callable like a function
     @overload
     def __call__(self, key: str) -> NodeTypes: ...

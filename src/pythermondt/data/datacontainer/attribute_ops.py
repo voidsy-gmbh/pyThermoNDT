@@ -152,6 +152,35 @@ class AttributeOps(BaseOps):
         """
         self.nodes(path, DataNode, GroupNode).update_attributes(**attributes)  # type: ignore[union-attr]
 
+    def set_attribute(self, path: str, key: str, value: str | int | float | list | tuple | dict | Unit):
+        """Set an attribute in a specified group or dataset (upsert).
+
+        Adds the attribute if it does not exist, updates it if it does.
+
+        Args:
+            path (str): The path to the group or dataset.
+            key (str): The key of the attribute.
+            value (str | int | float | list | tuple | dict | Unit): The value of the attribute.
+
+        Raises:
+            KeyError: If the group or dataset does not exist.
+        """
+        self.nodes(path, DataNode, GroupNode).set_attribute(key, value)  # type: ignore[union-attr]
+
+    def set_attributes(self, path: str, **attributes: str | int | float | list | tuple | dict | Unit):
+        """Set multiple attributes in a specified group or dataset (upsert).
+
+        Adds attributes if they do not exist, updates them if they do.
+
+        Args:
+            path (str): The path to the group or dataset.
+            **attributes (Dict[str, str | int | float | list | tuple | dict | Unit]): The attributes to set.
+
+        Raises:
+            KeyError: If the group or dataset does not exist.
+        """
+        self.nodes(path, DataNode, GroupNode).set_attributes(**attributes)  # type: ignore[union-attr]
+
     def update_unit(self, path: str, unit: Unit):
         """Update the unit information of the specified dataset.
 

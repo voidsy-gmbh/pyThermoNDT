@@ -140,6 +140,15 @@ class AttributeNode(BaseNode, ABC):
         for update_key, update_value in attributes.items():
             self.update_attribute(update_key, update_value)
 
+    def set_attribute(self, key: str, value: AttributeTypes) -> None:
+        """Set an attribute (add if missing, update if present)."""
+        self.__attributes[key] = value
+
+    def set_attributes(self, **attributes: AttributeTypes) -> None:
+        """Set multiple attributes (add if missing, update if present)."""
+        for key, value in attributes.items():
+            self.__attributes[key] = value
+
     def clear_attributes(self) -> None:
         self.__attributes.clear()
 

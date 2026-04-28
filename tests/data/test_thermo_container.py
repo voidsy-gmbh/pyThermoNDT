@@ -1,4 +1,3 @@
-import pytest
 from torch import Tensor
 
 from pythermondt.data import ThermoContainer
@@ -42,8 +41,3 @@ def test_attribute_operations(thermo_container: ThermoContainer):
     teststring = "Test_value"
     thermo_container.add_attribute("/MetaData/DomainValues", "Test_attr", teststring)
     assert thermo_container.get_attribute("/MetaData/DomainValues", "Test_attr") == teststring
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

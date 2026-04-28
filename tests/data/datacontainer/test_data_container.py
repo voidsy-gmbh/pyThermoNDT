@@ -329,8 +329,3 @@ def test_set_attributes_type_change_allowed(empty_container: DataContainer):
     empty_container.set_attributes("/TestGroup", check_type=False, attr1=999, attr2="new_string")
     assert empty_container.get_attribute("/TestGroup", "attr1") == 999
     assert empty_container.get_attribute("/TestGroup", "attr2") == "new_string"
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

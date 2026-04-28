@@ -207,8 +207,3 @@ def test_data_container_base_cannot_be_instantiated():
         TypeError, match=escape("DataContainerBase is a base class and cannot be instantiated directly.")
     ):
         DataContainerBase()
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

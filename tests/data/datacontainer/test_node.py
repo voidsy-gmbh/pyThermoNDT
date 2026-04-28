@@ -289,8 +289,3 @@ def test_node_type_enum():
     assert NodeType.ROOT.value == "root"
     assert NodeType.GROUP.value == "group"
     assert NodeType.DATASET.value == "dataset"
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

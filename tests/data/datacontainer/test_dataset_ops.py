@@ -629,8 +629,3 @@ def test_update_datasets_non_existing(
     # Assert that the expected error is raised
     with pytest.raises(expected_error):
         dataset_container.update_datasets(*update_data)
-
-
-# Only run the tests in this file if it is run directly
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

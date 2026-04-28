@@ -4,7 +4,7 @@ classDiagram
     prefix : str
     remote_source : bool
     scheme : str
-    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None) None
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, client_options: AzureBlobClientOptions | None) None
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
@@ -15,6 +15,19 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str) None
   }
   style AzureBlobBackend fill:#77AADD
+  class AzureBlobClientOptions {
+    connection_timeout : int | None
+    max_block_size : int | None
+    max_single_put_size : int | None
+    read_timeout : int | None
+    \_\_init\_\_(self, max_single_put_size: int | None, max_block_size: int | None, connection_timeout: int | None, read_timeout: int | None) None
+  }
+  style AzureBlobClientOptions fill:#77AADD
+  class BackendClientOptions {
+    \_\_init\_\_()* None
+    as_kwargs() dict[str, Any]
+  }
+  style BackendClientOptions fill:#77AADD
   class BaseBackend {
     remote_source : bool
     scheme : str
@@ -48,7 +61,7 @@ classDiagram
     prefix : str
     remote_source : bool
     scheme : str
-    \_\_init\_\_(bucket: str, prefix: str, session: boto3.Session | None) None
+    \_\_init\_\_(bucket: str, prefix: str, session: boto3.Session | None, client_options: S3ClientOptions | None) None
     close() None
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
@@ -59,6 +72,13 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str) None
   }
   style S3Backend fill:#77AADD
+  class S3ClientOptions {
+    connect_timeout : int | float | None
+    max_pool_connections : int | None
+    read_timeout : int | float | None
+    \_\_init\_\_(self, connect_timeout: int | float | None, read_timeout: int | float | None, max_pool_connections: int | None) None
+  }
+  style S3ClientOptions fill:#77AADD
   class TqdmCallback {
     \_\_init\_\_(total: int, desc: str, delay: float)
     callback(bytes_amount: int) None
@@ -66,4 +86,6 @@ classDiagram
   style TqdmCallback fill:#77AADD
   AzureBlobBackend --|> BaseBackend
   LocalBackend --|> BaseBackend
+  AzureBlobClientOptions --|> BackendClientOptions
+  S3ClientOptions --|> BackendClientOptions
   S3Backend --|> BaseBackend

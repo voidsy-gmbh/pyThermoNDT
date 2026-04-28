@@ -1,6 +1,6 @@
 classDiagram
   class AzureBlobReader {
-    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, client_options: AzureBlobClientOptions | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
   }
   style AzureBlobReader fill:#77AADD
   class BaseReader {
@@ -41,7 +41,7 @@ classDiagram
   }
   style ManifestEntry fill:#77AADD
   class S3Reader {
-    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
+    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, client_options: S3ClientOptions | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
   }
   style S3Reader fill:#77AADD
   AzureBlobReader --|> BaseReader

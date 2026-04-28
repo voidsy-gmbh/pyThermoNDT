@@ -18,6 +18,8 @@ classDiagram
     get_attribute(key: str) AttributeTypes
     memory_bytes() int
     remove_attribute(key: str) None
+    set_attribute(key: str, value: AttributeTypes) None
+    set_attributes() None
     update_attribute(key: str, value: AttributeTypes) None
     update_attributes()
   }
@@ -31,6 +33,8 @@ classDiagram
     get_attributes(path: str) tuple[str | int | float | list | tuple | dict | Unit, ...]
     get_unit(path: str) Unit
     remove_attribute(path: str, key: str)
+    set_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
+    set_attributes(path: str)
     update_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
     update_attributes(path: str)
     update_unit(path: str, unit: Unit)
@@ -51,6 +55,13 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str) None
   }
   style AzureBlobBackend fill:#BBCC33
+  class AzureBlobClientOptions {
+    connection_timeout : int | None
+    max_block_size : int | None
+    max_single_put_size : int | None
+    read_timeout : int | None
+  }
+  style AzureBlobClientOptions fill:#BBCC33
   class AzureBlobReader {
   }
   style AzureBlobReader fill:#AAAA00
@@ -58,6 +69,10 @@ classDiagram
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style AzureBlobWriter fill:#EE8866
+  class BackendClientOptions {
+    as_kwargs() dict[str, Any]
+  }
+  style BackendClientOptions fill:#BBCC33
   class BaseBackend {
     remote_source : bool
     scheme : str
@@ -168,6 +183,8 @@ classDiagram
     get_dataset(path: str) Tensor
     get_datasets() tuple[Tensor, ...]
     remove_dataset(path: str)
+    set_dataset(path: str, name: str, data: Tensor | ndarray | None)
+    set_datasets(path: str)
     update_dataset(path: str, data: Tensor | ndarray)
     update_datasets()
   }
@@ -348,6 +365,12 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str) None
   }
   style S3Backend fill:#BBCC33
+  class S3ClientOptions {
+    connect_timeout : int | float | None
+    max_pool_connections : int | None
+    read_timeout : int | float | None
+  }
+  style S3ClientOptions fill:#BBCC33
   class S3Reader {
   }
   style S3Reader fill:#AAAA00
@@ -459,6 +482,8 @@ classDiagram
   ThermoDataset --|> BaseDataset
   AzureBlobBackend --|> BaseBackend
   LocalBackend --|> BaseBackend
+  AzureBlobClientOptions --|> BackendClientOptions
+  S3ClientOptions --|> BackendClientOptions
   S3Backend --|> BaseBackend
   EdevisParser --|> BaseParser
   HDF5Parser --|> BaseParser

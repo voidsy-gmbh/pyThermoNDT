@@ -159,10 +159,7 @@ class DatasetOps(BaseOps):
                 data = torch.empty(0)
             self.nodes(key, DataNode).data = data
         else:
-            if data is None:
-                self.nodes[key] = DataNode(name)
-            else:
-                self.nodes[key] = DataNode(name, data)
+            self.nodes[key] = DataNode(name, data)
 
     def set_datasets(self, path: str, **datasets: Tensor | ndarray | None):
         """Set multiple datasets at a specified path (upsert).

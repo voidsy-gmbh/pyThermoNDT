@@ -7,6 +7,8 @@ classDiagram
     get_attribute(key: str) AttributeTypes
     memory_bytes() int
     remove_attribute(key: str) None
+    set_attribute(key: str, value: AttributeTypes) None
+    set_attributes() None
     update_attribute(key: str, value: AttributeTypes) None
     update_attributes()
   }
@@ -20,6 +22,8 @@ classDiagram
     get_attributes(path: str) tuple[str | int | float | list | tuple | dict | Unit, ...]
     get_unit(path: str) Unit
     remove_attribute(path: str, key: str)
+    set_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
+    set_attributes(path: str)
     update_attribute(path: str, key: str, value: str | int | float | list | tuple | dict | Unit)
     update_attributes(path: str)
     update_unit(path: str, unit: Unit)
@@ -56,6 +60,8 @@ classDiagram
     get_dataset(path: str) Tensor
     get_datasets() tuple[Tensor, ...]
     remove_dataset(path: str)
+    set_dataset(path: str, name: str, data: Tensor | ndarray | None)
+    set_datasets(path: str)
     update_dataset(path: str, data: Tensor | ndarray)
     update_datasets()
   }

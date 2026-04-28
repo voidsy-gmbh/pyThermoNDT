@@ -1,6 +1,6 @@
 classDiagram
   class AzureBlobWriter {
-    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None)
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, client_options: AzureBlobClientOptions | None)
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style AzureBlobWriter fill:#77AADD
@@ -17,7 +17,7 @@ classDiagram
   }
   style LocalWriter fill:#77AADD
   class S3Writer {
-    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None)
+    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, client_options: S3ClientOptions | None)
     write(container: DataContainer, file_name: str, compression: CompressionType, compression_opts: int | None)
   }
   style S3Writer fill:#77AADD

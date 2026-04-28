@@ -14,6 +14,17 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str) None
   }
   style AzureBlobBackend fill:#77AADD
+  class AzureBlobClientOptions {
+    connection_timeout : int | None
+    max_block_size : int | None
+    max_single_put_size : int | None
+    read_timeout : int | None
+  }
+  style AzureBlobClientOptions fill:#77AADD
+  class BackendClientOptions {
+    as_kwargs() dict[str, Any]
+  }
+  style BackendClientOptions fill:#77AADD
   class BaseBackend {
     remote_source : bool
     scheme : str
@@ -81,6 +92,12 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str) None
   }
   style S3Backend fill:#77AADD
+  class S3ClientOptions {
+    connect_timeout : int | float | None
+    max_pool_connections : int | None
+    read_timeout : int | float | None
+  }
+  style S3ClientOptions fill:#77AADD
   class SimulationParser {
     supported_extensions : tuple
     parse(data: IOPathWrapper) DataContainer
@@ -92,6 +109,8 @@ classDiagram
   style TqdmCallback fill:#77AADD
   AzureBlobBackend --|> BaseBackend
   LocalBackend --|> BaseBackend
+  AzureBlobClientOptions --|> BackendClientOptions
+  S3ClientOptions --|> BackendClientOptions
   S3Backend --|> BaseBackend
   EdevisParser --|> BaseParser
   HDF5Parser --|> BaseParser

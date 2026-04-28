@@ -83,6 +83,9 @@ classDiagram
   class local_backend {
   }
   style local_backend fill:#BBCC33
+  class options {
+  }
+  style options fill:#BBCC33
   class progress {
   }
   style progress fill:#BBCC33
@@ -217,11 +220,14 @@ classDiagram
   backends --> azure_backend
   backends --> base_backend
   backends --> local_backend
+  backends --> options
   backends --> s3_backend
   azure_backend --> base_backend
+  azure_backend --> options
   azure_backend --> progress
   local_backend --> base_backend
   s3_backend --> base_backend
+  s3_backend --> options
   s3_backend --> progress
   parsers --> base_parser
   parsers --> edevis_parser

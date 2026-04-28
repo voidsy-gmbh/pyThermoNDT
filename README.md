@@ -88,5 +88,6 @@ For detailed usage examples, check out the Jupyter Notebooks in the [examples](e
 Contributions are welcome! Please see the [Contributing Guidelines](CONTRIBUTING.md) for details on [setting up a development environment](CONTRIBUTING.md#setting-up-development-environment), [coding standards](CONTRIBUTING.md#code-quality-and-validation), and the [pull request process](CONTRIBUTING.md#pull-request-process).
 
 ## Funding
-This project was partially funded by the Austrian Research Promotion Agency ([FFG](https://www.ffg.at/))
-- under grant numbers 920062 and 901177 as part of the project 'Thermal tomography'
+This project was partially funded by 
+- the Austrian Research Promotion Agency ([FFG](https://www.ffg.at/)) under grant numbers 920062 and 901177 as part of the project 'Thermal tomography'
+- the Austrian Research Promotion Agency ([FFG](https://www.ffg.at/)) under grant numbers 921380 as part of the project 'FLARE'

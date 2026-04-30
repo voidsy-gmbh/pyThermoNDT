@@ -337,10 +337,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 Must be within the dataset's second dimension range.
             pixel_pos_y (int): The Y-coordinate (row index) of the pixel.
                 Must be within the dataset's first dimension range.
-        """
-        # Clear the current figure
-        plt.clf()
 
+        Raises:
+            ValueError: If pixel position is outside valid data bounds.
+        """
         # Extract the data from the container
         data = self.get_dataset("/Data/Tdata")
         domainvalues = self.get_dataset("/MetaData/DomainValues")
@@ -348,8 +348,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         domain_unit = self.get_unit("/MetaData/DomainValues")
 
         # Validate pixel positions to be within the data dimensions
-        if pixel_pos_x < 0 or pixel_pos_y < 0 or pixel_pos_x >= data.shape[0] or pixel_pos_y >= data.shape[1]:
-            raise ValueError("Pixel positions must be within the range of data dimensions.")
+        height, width = data.shape[:2]
+        if not (0 <= pixel_pos_x < width and 0 <= pixel_pos_y < height):
+            raise ValueError(f"Pixel ({pixel_pos_x}, {pixel_pos_y}) out of bounds [{width}x{height}]")
 
         # Extract temperature profile of the pixel
         temperature_profile = data[pixel_pos_y, pixel_pos_x, :]

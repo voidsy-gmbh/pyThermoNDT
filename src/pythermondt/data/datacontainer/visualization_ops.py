@@ -272,16 +272,20 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
         Args:
             frame_number (int): The frame number to visualize.
-            option (str): The visualization option to apply.
+            option (FrameOption): The visualization option to apply.
                 Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
-            cmap (str): The color map to use for the visualization. Defaults to 'plasma'.
-        """
-        # Clear current figure
-        plt.clf()
+            cmap (str): The color map to use for the visualization. Defaults to "plasma".
 
-        # Extract the data from the container
+        Raises:
+            ValueError: If frame_number is out of valid range.
+        """
         data = self.get_dataset("/Data/Tdata")
         groundtruth = self.get_dataset("/GroundTruth/DefectMask")
+
+        # Validate frame number
+        total_frames = data.shape[2]
+        if not 0 <= frame_number < total_frames:
+            raise ValueError(f"Frame {frame_number} out of range [0, {total_frames})")
 
         # Get the frame to show
         data_to_show = data[:, :, frame_number]

@@ -1,3 +1,5 @@
+from typing import Literal, TypeAlias
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -10,6 +12,9 @@ from ..units import generate_label
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
+
+# Type aliases for visualization options
+FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
@@ -262,7 +267,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             self.fig.canvas.draw_idle()
 
-    def show_frame(self, frame_number: int, option: str = "", cmap: str = "plasma"):
+    def show_frame(self, frame_number: int, option: FrameOption = "", cmap: str = "plasma"):
         """Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
         Args:

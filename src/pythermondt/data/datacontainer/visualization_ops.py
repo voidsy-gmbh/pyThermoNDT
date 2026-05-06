@@ -3,6 +3,7 @@ from typing import Literal, TypeAlias
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
+from matplotlib.colors import to_rgba
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
@@ -345,8 +346,12 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
                     frame_ax.imshow(overlay, aspect="auto", interpolation="none")
 
-                    # Add contour outline for defect boundaries
-                    frame_ax.contour(binary_gt.astype(float), levels=[0.5], colors="darkred", linewidths=1.5)
+                    # Compute darker version of overlay color for contour
+                    r, g, b, _ = to_rgba(overlay_color)
+                    contour_color = (r * 0.6, g * 0.6, b * 0.6)
+
+                    # Add contour outline for defect boundaries (darker than overlay)
+                    frame_ax.contour(binary_gt.astype(float), levels=[0.5], colors=[contour_color], linewidths=1.5)
 
                 plt.colorbar(im, ax=frame_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
 

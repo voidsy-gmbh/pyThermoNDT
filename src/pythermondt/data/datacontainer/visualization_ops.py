@@ -15,6 +15,7 @@ from .group_ops import GroupOps
 
 # Type aliases for visualization options
 FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
+OverlayColorOption: TypeAlias = Literal["red", "green", "blue"]
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
@@ -267,7 +268,14 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             self.fig.canvas.draw_idle()
 
-    def show_frame(self, frame_number: int, option: FrameOption = "", cmap: str = "plasma"):
+    def show_frame(
+        self,
+        frame_number: int,
+        option: FrameOption = "",
+        cmap: str = "plasma",
+        overlay_color: OverlayColorOption = "red",
+        overlay_alpha: float = 0.6,
+    ):
         """Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
         Args:
@@ -275,6 +283,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             option (FrameOption): The visualization option to apply.
                 Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
             cmap (str): The color map to use for the visualization. Defaults to "plasma".
+            overlay_color (OverlayColorOption): Color for the ground truth overlay. Defaults to "red".
+            overlay_alpha (float): Opacity for the ground truth overlay. Defaults to 0.6.
 
         Raises:
             ValueError: If frame_number is out of valid range.
@@ -322,11 +332,16 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                     gt: np.ndarray = groundtruth.numpy(force=True)
                     binary_gt: np.ndarray = gt > 0
 
-                    # Create RGBA overlay: red with 60% opacity
+                    # Create RGBA overlay with configurable color and alpha
                     rows, cols = binary_gt.shape
                     overlay = np.zeros((rows, cols, 4))  # RGBA
-                    overlay[binary_gt, 0] = 1.0  # Red channel
-                    overlay[binary_gt, 3] = 0.5  # Alpha channel
+                    if overlay_color == "red":
+                        overlay[binary_gt, 0] = 1.0  # Red channel
+                    elif overlay_color == "green":
+                        overlay[binary_gt, 1] = 1.0  # Green channel
+                    elif overlay_color == "blue":
+                        overlay[binary_gt, 2] = 1.0  # Blue channel
+                    overlay[binary_gt, 3] = overlay_alpha  # Alpha channel
 
                     frame_ax.imshow(overlay, aspect="auto", interpolation="none")
 

@@ -7,6 +7,7 @@ from matplotlib import ticker
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ..units import generate_label
 from .attribute_ops import AttributeOps
@@ -293,17 +294,29 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         # Show the frame with the selected option
         match option:
             case "ShowGroundTruth":
-                plt.subplot(1, 2, 1)
-                image = plt.imshow(data_to_show, aspect="auto", cmap=cmap)
-                plt.title(f"Frame Number: {frame_number}")
+                # Create a figure with two subplots: one for the frame and one for the ground truth
+                fig = plt.figure(figsize=(11, 5.5), layout="constrained")
+                gs = fig.add_gridspec(1, 2, width_ratios=[1, 1], wspace=0.2)
+                frame_ax = fig.add_subplot(gs[0])
+                gt_ax = fig.add_subplot(gs[1])
 
-                plt.subplot(1, 2, 2)
-                plt.imshow(groundtruth, aspect="auto")
-                plt.title("Ground Truth")
+                # Display the frame and ground truth
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
+                frame_ax.set_title(f"Frame {frame_number}")
+                gt_ax.imshow(groundtruth, aspect="auto")
+                gt_ax.set_title("Ground Truth")
+
+                # Attach colorbar tightly to the thermal image
+                divider = make_axes_locatable(frame_ax)
+                cbar_ax = divider.append_axes("right", size="8%", pad=0.16)
+                cbar = fig.colorbar(im, cax=cbar_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
+                cbar.ax.tick_params(pad=4)
 
             case "OverlayGroundTruth":
-                image = plt.imshow(data_to_show, aspect="auto", cmap=cmap)  # Display the original data
-                plt.title(f"Frame Number: {frame_number}")
+                _, frame_ax = plt.subplots(figsize=(7, 6))
+
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)  # Display the original data
+                frame_ax.set_title(f"Frame {frame_number}")
 
                 if groundtruth is not None:
                     # Prepare the overlay
@@ -312,18 +325,20 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                     gt_overlay = torch.zeros((rows, cols, 3))  # Initialize an all-zero RGB image for the overlay
                     gt_overlay[:, :, 1] = binary_gt  # Apply green in the binary mask areas
 
-                    plt.imshow(gt_overlay, alpha=0.5)  # Display overlay with transparency
+                    frame_ax.imshow(gt_overlay, alpha=0.5)  # Display overlay with transparency
+
+                plt.colorbar(im, ax=frame_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
 
             # Default case, just show the frame data
             case _:
-                image = plt.imshow(data_to_show, aspect="auto", cmap=cmap)
-                plt.title(f"Frame Number: {frame_number}")
+                _, frame_ax = plt.subplots(figsize=(7, 6))
 
-        # Custom formatter for the colorbar to ensure that the colorbar ticks are displayed without offset
-        formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
+                frame_ax.set_title(f"Frame {frame_number}")
+
+                plt.colorbar(im, ax=frame_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
 
         # Show the plot
-        plt.colorbar(image, format=formatter)
         plt.show()
 
     def show_pixel_profile(self, pixel_pos_x: int, pixel_pos_y: int):

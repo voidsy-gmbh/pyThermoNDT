@@ -2,7 +2,6 @@ from typing import Literal, TypeAlias
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from matplotlib import ticker
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
@@ -315,17 +314,24 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             case "OverlayGroundTruth":
                 _, frame_ax = plt.subplots(figsize=(7, 6))
 
-                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)  # Display the original data
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
                 frame_ax.set_title(f"Frame {frame_number}")
 
                 if groundtruth is not None:
-                    # Prepare the overlay
-                    binary_gt = groundtruth > 0  # Create a binary mask of the ground truth
-                    rows, cols = groundtruth.shape
-                    gt_overlay = torch.zeros((rows, cols, 3))  # Initialize an all-zero RGB image for the overlay
-                    gt_overlay[:, :, 1] = binary_gt  # Apply green in the binary mask areas
+                    # Convert to numpy for matplotlib compatibility
+                    gt: np.ndarray = groundtruth.numpy(force=True)
+                    binary_gt: np.ndarray = gt > 0
 
-                    frame_ax.imshow(gt_overlay, alpha=0.5)  # Display overlay with transparency
+                    # Create RGBA overlay: red with 60% opacity
+                    rows, cols = binary_gt.shape
+                    overlay = np.zeros((rows, cols, 4))  # RGBA
+                    overlay[binary_gt, 0] = 1.0  # Red channel
+                    overlay[binary_gt, 3] = 0.5  # Alpha channel
+
+                    frame_ax.imshow(overlay, aspect="auto", interpolation="none")
+
+                    # Add contour outline for defect boundaries
+                    frame_ax.contour(binary_gt.astype(float), levels=[0.5], colors="darkred", linewidths=1.5)
 
                 plt.colorbar(im, ax=frame_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
 

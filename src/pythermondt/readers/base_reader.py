@@ -67,6 +67,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Internal state
         self.__backend: BaseBackend | None = None
         self.__files: list[str] | None = None
+        self.__file_uris: list[str] | None = None
         self.__file_names: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
@@ -135,17 +136,32 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
     @property
     def files(self) -> list[str]:
-        """List of files that the reader is able to read."""
+        """List of files that the reader is able to read (human-readable, decoded paths)."""
+        uris = self.file_uris
+        # Only decode file:// URIs — S3/Azure keys may contain literal %XX
+        if self.backend.scheme != "file":
+            return uris
+        if not self.__cache_files:
+            return [unquote(u) for u in uris]
+        if self.__files is None:
+            self.__files = [unquote(u) for u in uris]
+        return self.__files
+
+    @property
+    def file_uris(self) -> list[str]:
+        """List of URL-encoded URIs for internal use (reading, downloading, caching)."""
         # If caching is disabled return the file list from the backend
         if not self.__cache_files:
             return self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
 
-        # If files have never been loaded, load them from the backend
-        if self.__files is None:
-            self.__files = self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+        # If URIs have never been loaded, load them from the backend
+        if self.__file_uris is None:
+            self.__file_uris = self.backend.get_file_list(
+                extensions=self.__supported_extensions, num_files=self.num_files
+            )
 
-        # Return the cached files list
-        return self.__files
+        # Return the cached URIs list
+        return self.__file_uris
 
     @property
     def file_names(self) -> list[str]:

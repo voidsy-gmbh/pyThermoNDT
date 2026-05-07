@@ -113,8 +113,10 @@ class ThermoDataset(BaseDataset):
         reader_indices: list[int] = []
         file_indices: list[int] = []
         for reader_idx, reader in enumerate(self.__readers):
-            reader_indices.extend([reader_idx] * len(reader.files))
-            file_indices.extend(range(len(reader.files)))
+            # Use file_uris for indexing to match __getitem__ behavior
+            num_files = len(reader.file_uris)
+            reader_indices.extend([reader_idx] * num_files)
+            file_indices.extend(range(num_files))
 
         self.__reader_index = torch.tensor(reader_indices, dtype=torch.uint8, requires_grad=False)
         self.__file_index = torch.tensor(file_indices, dtype=torch.int32, requires_grad=False)
@@ -147,11 +149,11 @@ class ThermoDataset(BaseDataset):
         try:
             return self.__readers[r_idx][f_idx]
         except (FileNotFoundError, OSError, PermissionError) as e:
-            # File system errors
+            # File system errors - use decoded files for user-readable error message
             msg = f"{self.__readers[r_idx].__class__.__name__}: Cannot read file '{self.files[idx]}' at index {f_idx}"
             raise RuntimeError(msg) from e
         except ValueError as e:
-            # Parser/extension errors from BaseReader
+            # Parser/extension errors from BaseReader - use decoded files for user-readable error message
             msg = f"{self.__readers[r_idx].__class__.__name__}: Cannot parse file '{self.files[idx]}' at index {f_idx}"
             raise ValueError(msg) from e
 

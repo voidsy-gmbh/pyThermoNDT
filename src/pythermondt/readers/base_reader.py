@@ -167,10 +167,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def file_names(self) -> list[str]:
         """List of file names (without path) that the reader is able to read."""
         if not self.__cache_files:
-            return [self._to_file_name(file) for file in self.files]
+            return [self._to_file_name(file) for file in self.file_uris]
 
         if self.__file_names is None:
-            self.__file_names = [self._to_file_name(file) for file in self.files]
+            self.__file_names = [self._to_file_name(file) for file in self.file_uris]
 
         return self.__file_names
 
@@ -209,26 +209,26 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def __getitem__(self, idx: int) -> DataContainer:
         if idx < 0 or idx >= len(self.files):
             raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)}[")
-        return self.read_file(self.files[idx])
+        return self.read_file(self.file_uris[idx])
 
     def __len__(self) -> int:
         return len(self.files)
 
     def __iter__(self) -> Iterator[DataContainer]:
-        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
-        # and caching is off
-        file_paths = self.files
+        # Take a snapshot of the file URI list ==> to avoid undefined behavior when the file list changes during
+        # iteration and caching is off. Use file_uris for internal operations (encoded for correct file access).
+        file_uris = self.file_uris
 
-        for file in file_paths:
-            yield self.read_file(file)
+        for uri in file_uris:
+            yield self.read_file(uri)
 
     def __reversed__(self) -> Iterator[DataContainer]:
-        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
-        # and caching is off
-        file_paths = self.files
+        # Take a snapshot of the file URI list ==> to avoid undefined behavior when the file list changes during
+        # iteration and caching is off. Use file_uris for internal operations (encoded for correct file access).
+        file_uris = self.file_uris
 
-        for file in reversed(file_paths):
-            yield self.read_file(file)
+        for uri in reversed(file_uris):
+            yield self.read_file(uri)
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""
@@ -376,7 +376,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             return
 
         # If file_paths is None, download all files that the reader is able to read
-        paths_to_download = file_paths or self.files
+        # Use file_uris for internal operations (properly encoded)
+        paths_to_download = file_paths or self.file_uris
         if not paths_to_download:
             return
 

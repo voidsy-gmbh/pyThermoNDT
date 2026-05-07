@@ -285,10 +285,11 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
             cmap (str): The color map to use for the visualization. Defaults to "plasma".
             overlay_color (OverlayColorOption): Color for the ground truth overlay. Defaults to "red".
-            overlay_alpha (float): Opacity for the ground truth overlay. Defaults to 0.6.
+            overlay_alpha (float): Opacity for the ground truth overlay, in the range [0, 1]. Defaults to 0.6.
 
         Raises:
             ValueError: If frame_number is out of valid range.
+            ValueError: If overlay_alpha is not in the range [0, 1].
         """
         data = self.get_dataset("/Data/Tdata")
         groundtruth = self.get_dataset("/GroundTruth/DefectMask")
@@ -327,6 +328,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
                 im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
                 frame_ax.set_title(f"Frame {frame_number}")
+
+                # Validate alpha range
+                if not 0 <= overlay_alpha <= 1:
+                    raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
 
                 if groundtruth is not None:
                     # Convert to numpy for matplotlib compatibility

@@ -300,7 +300,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             raise ValueError(f"Frame {frame_number} out of range [0, {total_frames})")
 
         # Get the frame to show
-        data_to_show = data[:, :, frame_number]
+        data_to_show = data[:, :, frame_number].numpy(force=True)
 
         # Show the frame with the selected option
         match option:
@@ -314,7 +314,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 # Display the frame and ground truth
                 im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
                 frame_ax.set_title(f"Frame {frame_number}")
-                gt_ax.imshow(groundtruth, aspect="auto")
+                gt_ax.imshow(groundtruth.numpy(force=True), aspect="auto")
                 gt_ax.set_title("Ground Truth")
 
                 # Attach colorbar tightly to the thermal image
@@ -402,7 +402,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         temperature_profile = data[pixel_pos_y, pixel_pos_x, :]
 
         # Plot the temperature profile
-        plt.plot(domainvalues, temperature_profile)
+        plt.plot(domainvalues.numpy(force=True), temperature_profile.numpy(force=True))
         plt.title(f"Profile of Pixel: {pixel_pos_x},{pixel_pos_y}")
         plt.xlabel(generate_label(domain_unit))
         plt.ylabel(generate_label(data_unit))

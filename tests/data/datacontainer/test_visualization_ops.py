@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.collections import Collection
@@ -63,8 +64,6 @@ def test_alpha_valid(thermo_container: ThermoContainer, alpha):
 
 def test_default_mode_figure(thermo_container: ThermoContainer):
     """Default mode creates figure with correct size, title, and colorbar."""
-    import matplotlib.pyplot as plt
-
     thermo_container.show_frame(0)
 
     fig = plt.gcf()
@@ -76,8 +75,6 @@ def test_default_mode_figure(thermo_container: ThermoContainer):
 
 def test_show_ground_truth_figure(thermo_container: ThermoContainer):
     """ShowGroundTruth mode creates two subplots with correct titles."""
-    import matplotlib.pyplot as plt
-
     thermo_container.show_frame(0, option="ShowGroundTruth")
 
     fig = plt.gcf()
@@ -89,8 +86,6 @@ def test_show_ground_truth_figure(thermo_container: ThermoContainer):
 
 def test_overlay_mode_figure(thermo_container: ThermoContainer):
     """OverlayGroundTruth mode creates figure with colorbar."""
-    import matplotlib.pyplot as plt
-
     thermo_container.show_frame(0, option="OverlayGroundTruth")
 
     fig = plt.gcf()
@@ -103,8 +98,6 @@ def test_overlay_mode_figure(thermo_container: ThermoContainer):
 def test_overlay_rgba_channel(thermo_container: ThermoContainer, color):
     """Each overlay color activates the correct RGBA channel."""
     thermo_container.show_frame(0, option="OverlayGroundTruth", overlay_color=color)
-
-    import matplotlib.pyplot as plt
 
     fig = plt.gcf()
     ax = fig.axes[0]
@@ -137,8 +130,6 @@ def test_overlay_contour_color(thermo_container: ThermoContainer, color):
     expected_contour = (expected_r * 0.6, expected_g * 0.6, expected_b * 0.6)
 
     thermo_container.show_frame(0, option="OverlayGroundTruth", overlay_color=color)
-
-    import matplotlib.pyplot as plt
 
     fig = plt.gcf()
     ax = fig.axes[0]

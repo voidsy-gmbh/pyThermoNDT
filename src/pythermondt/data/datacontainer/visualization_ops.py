@@ -1,15 +1,22 @@
+from typing import Literal, TypeAlias
+
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from matplotlib import ticker
+from matplotlib.colors import to_rgba
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ..units import generate_label
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
+
+# Type aliases for visualization options
+FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
+OverlayColorOption: TypeAlias = Literal["red", "green", "blue"]
 
 
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
@@ -262,59 +269,110 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
             self.fig.canvas.draw_idle()
 
-    def show_frame(self, frame_number: int, option: str = "", cmap: str = "plasma"):
+    def show_frame(
+        self,
+        frame_number: int,
+        option: FrameOption = "",
+        cmap: str = "plasma",
+        overlay_color: OverlayColorOption = "red",
+        overlay_alpha: float = 0.6,
+    ):  # pylint: disable=too-many-locals
         """Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
         Args:
             frame_number (int): The frame number to visualize.
-            option (str): The visualization option to apply.
+            option (FrameOption): The visualization option to apply.
                 Options are "ShowGroundTruth", "OverlayGroundTruth", or an empty string.
-            cmap (str): The color map to use for the visualization. Defaults to 'plasma'.
-        """
-        # Clear current figure
-        plt.clf()
+            cmap (str): The color map to use for the visualization. Defaults to "plasma".
+            overlay_color (OverlayColorOption): Color for the ground truth overlay. Defaults to "red".
+            overlay_alpha (float): Opacity for the ground truth overlay, in the range [0, 1]. Defaults to 0.6.
 
-        # Extract the data from the container
+        Raises:
+            ValueError: If frame_number is out of valid range.
+            ValueError: If overlay_color is not one of "red", "green", "blue".
+            ValueError: If overlay_alpha is not in the range [0, 1].
+        """
         data = self.get_dataset("/Data/Tdata")
         groundtruth = self.get_dataset("/GroundTruth/DefectMask")
 
+        # Validate frame number
+        total_frames = data.shape[2]
+        if not 0 <= frame_number < total_frames:
+            raise ValueError(f"Frame {frame_number} out of range [0, {total_frames})")
+
         # Get the frame to show
-        data_to_show = data[:, :, frame_number]
+        data_to_show = data[:, :, frame_number].numpy(force=True)
 
         # Show the frame with the selected option
         match option:
             case "ShowGroundTruth":
-                plt.subplot(1, 2, 1)
-                image = plt.imshow(data_to_show, aspect="auto", cmap=cmap)
-                plt.title(f"Frame Number: {frame_number}")
+                # Create a figure with two subplots: one for the frame and one for the ground truth
+                fig = plt.figure(figsize=(11, 5.5), layout="constrained")
+                gs = fig.add_gridspec(1, 2, width_ratios=[1, 1], wspace=0.2)
+                frame_ax = fig.add_subplot(gs[0])
+                gt_ax = fig.add_subplot(gs[1])
 
-                plt.subplot(1, 2, 2)
-                plt.imshow(groundtruth, aspect="auto")
-                plt.title("Ground Truth")
+                # Display the frame and ground truth
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
+                frame_ax.set_title(f"Frame {frame_number}")
+                gt_ax.imshow(groundtruth.numpy(force=True), aspect="auto")
+                gt_ax.set_title("Ground Truth")
+
+                # Attach colorbar tightly to the thermal image
+                divider = make_axes_locatable(frame_ax)
+                cbar_ax = divider.append_axes("right", size="8%", pad=0.16)
+                cbar = fig.colorbar(im, cax=cbar_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
+                cbar.ax.tick_params(pad=4)
 
             case "OverlayGroundTruth":
-                image = plt.imshow(data_to_show, aspect="auto", cmap=cmap)  # Display the original data
-                plt.title(f"Frame Number: {frame_number}")
+                _, frame_ax = plt.subplots(figsize=(7, 6))
+
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
+                frame_ax.set_title(f"Frame {frame_number}")
+
+                # Validate overlay parameters
+                if overlay_color not in {"red", "green", "blue"}:
+                    raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
+                if not 0 <= overlay_alpha <= 1:
+                    raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
 
                 if groundtruth is not None:
-                    # Prepare the overlay
-                    binary_gt = groundtruth > 0  # Create a binary mask of the ground truth
-                    rows, cols = groundtruth.shape
-                    gt_overlay = torch.zeros((rows, cols, 3))  # Initialize an all-zero RGB image for the overlay
-                    gt_overlay[:, :, 1] = binary_gt  # Apply green in the binary mask areas
+                    # Convert to numpy for matplotlib compatibility
+                    gt: np.ndarray = groundtruth.numpy(force=True)
+                    binary_gt: np.ndarray = gt > 0
 
-                    plt.imshow(gt_overlay, alpha=0.5)  # Display overlay with transparency
+                    # Create RGBA overlay with configurable color and alpha
+                    rows, cols = binary_gt.shape
+                    overlay = np.zeros((rows, cols, 4))  # RGBA
+                    if overlay_color == "red":
+                        overlay[binary_gt, 0] = 1.0  # Red channel
+                    elif overlay_color == "green":
+                        overlay[binary_gt, 1] = 1.0  # Green channel
+                    elif overlay_color == "blue":
+                        overlay[binary_gt, 2] = 1.0  # Blue channel
+                    overlay[binary_gt, 3] = overlay_alpha  # Alpha channel
+
+                    frame_ax.imshow(overlay, aspect="auto", interpolation="none")
+
+                    # Compute darker version of overlay color for contour
+                    r, g, b, _ = to_rgba(overlay_color)
+                    contour_color = (r * 0.6, g * 0.6, b * 0.6)
+
+                    # Add contour outline for defect boundaries (darker than overlay)
+                    frame_ax.contour(binary_gt.astype(float), levels=[0.5], colors=[contour_color], linewidths=1.5)
+
+                plt.colorbar(im, ax=frame_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
 
             # Default case, just show the frame data
             case _:
-                image = plt.imshow(data_to_show, aspect="auto", cmap=cmap)
-                plt.title(f"Frame Number: {frame_number}")
+                _, frame_ax = plt.subplots(figsize=(7, 6))
 
-        # Custom formatter for the colorbar to ensure that the colorbar ticks are displayed without offset
-        formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
+                im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
+                frame_ax.set_title(f"Frame {frame_number}")
+
+                plt.colorbar(im, ax=frame_ax, format=ticker.ScalarFormatter(useMathText=False, useOffset=False))
 
         # Show the plot
-        plt.colorbar(image, format=formatter)
         plt.show()
 
     def show_pixel_profile(self, pixel_pos_x: int, pixel_pos_y: int):
@@ -328,10 +386,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 Must be within the dataset's second dimension range.
             pixel_pos_y (int): The Y-coordinate (row index) of the pixel.
                 Must be within the dataset's first dimension range.
-        """
-        # Clear the current figure
-        plt.clf()
 
+        Raises:
+            ValueError: If pixel position is outside valid data bounds.
+        """
         # Extract the data from the container
         data = self.get_dataset("/Data/Tdata")
         domainvalues = self.get_dataset("/MetaData/DomainValues")
@@ -339,14 +397,15 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         domain_unit = self.get_unit("/MetaData/DomainValues")
 
         # Validate pixel positions to be within the data dimensions
-        if pixel_pos_x < 0 or pixel_pos_y < 0 or pixel_pos_x >= data.shape[0] or pixel_pos_y >= data.shape[1]:
-            raise ValueError("Pixel positions must be within the range of data dimensions.")
+        height, width = data.shape[:2]
+        if not (0 <= pixel_pos_x < width and 0 <= pixel_pos_y < height):
+            raise ValueError(f"Pixel ({pixel_pos_x}, {pixel_pos_y}) out of bounds [{width}x{height}]")
 
         # Extract temperature profile of the pixel
         temperature_profile = data[pixel_pos_y, pixel_pos_x, :]
 
         # Plot the temperature profile
-        plt.plot(domainvalues, temperature_profile)
+        plt.plot(domainvalues.numpy(force=True), temperature_profile.numpy(force=True))
         plt.title(f"Profile of Pixel: {pixel_pos_x},{pixel_pos_y}")
         plt.xlabel(generate_label(domain_unit))
         plt.ylabel(generate_label(data_unit))

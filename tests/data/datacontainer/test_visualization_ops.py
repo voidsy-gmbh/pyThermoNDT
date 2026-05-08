@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-from matplotlib.collections import Collection
 from matplotlib.colors import to_rgba
+from matplotlib.contour import QuadContourSet
 
 from pythermondt.data import ThermoContainer
 from pythermondt.readers import LocalReader
@@ -126,6 +126,7 @@ def test_overlay_rgba_channel(thermo_container: ThermoContainer, color):
 @pytest.mark.parametrize("color", ["red", "green", "blue"])
 def test_overlay_contour_color(thermo_container: ThermoContainer, color):
     """Contour color should be 0.6x darker than the overlay color."""
+    # Calculate expected contour color as 0.6 times the RGBA values of the overlay color
     expected_r, expected_g, expected_b, _ = to_rgba(color)
     expected_contour = (expected_r * 0.6, expected_g * 0.6, expected_b * 0.6)
 
@@ -133,16 +134,20 @@ def test_overlay_contour_color(thermo_container: ThermoContainer, color):
 
     fig = plt.gcf()
     ax = fig.axes[0]
-    contours = list(ax.collections)  # Contour adds LineCollection objects to the axis
-    if contours:
-        first: Collection = contours[0]
-        if hasattr(first, "get_colors"):
-            actual_colors = first.get_colors()
-            if len(actual_colors) > 0:
-                actual = actual_colors[0][:3]
-                assert np.allclose(actual, expected_contour, atol=0.01), (
-                    f"Contour color {actual} does not match expected {expected_contour}"
-                )
+    # Contour adds QuadContourSet collections to the axis
+    contours = list(ax.collections)
+    assert contours, "Expected contour collections not found in the plot"
+    assert all(isinstance(c, QuadContourSet) for c in contours), "Expected contour collections to be QuadContourSet"
+
+    # Extract the first contour set and check its color
+    first = contours[0]
+    assert isinstance(first, QuadContourSet), f"Expected a QuadContourSet, got {type(first)}"
+    actual_colors = first.colors
+    assert isinstance(actual_colors, list), "Expected contour colors to be defined"
+    actual = actual_colors[0][:3]
+    assert np.allclose(actual, expected_contour, atol=0.01), (
+        f"Contour color {actual} does not match expected {expected_contour}"
+    )
 
 
 def test_coordinate_negative_x(thermo_container: ThermoContainer):

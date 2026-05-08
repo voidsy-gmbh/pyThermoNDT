@@ -276,7 +276,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         cmap: str = "plasma",
         overlay_color: OverlayColorOption = "red",
         overlay_alpha: float = 0.6,
-    ):
+    ):  # pylint: disable=too-many-locals
         """Visualize a specific frame from the dataset with optional ground truth visualization and color mapping.
 
         Args:

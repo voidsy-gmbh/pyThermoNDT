@@ -24,6 +24,10 @@ def _setup_matplotlib(monkeypatch):
 
     matplotlib.use("Agg")
     monkeypatch.setattr("matplotlib.pyplot.show", lambda *args, **kwargs: None)
+    yield
+    import matplotlib.pyplot as plt
+
+    plt.close("all")
 
 
 def test_frame_number_negative(thermo_container: ThermoContainer):
@@ -60,6 +64,19 @@ def test_alpha_out_of_range(thermo_container: ThermoContainer, alpha):
 def test_alpha_valid(thermo_container: ThermoContainer, alpha):
     """Overlay alpha within [0, 1] does not raise."""
     thermo_container.show_frame(0, option="OverlayGroundTruth", overlay_alpha=alpha)
+
+
+@pytest.mark.parametrize("color", ["purple", "yellow", "cyan", ""])
+def test_overlay_color_invalid(thermo_container: ThermoContainer, color):
+    """Unsupported overlay color raises ValueError."""
+    with pytest.raises(ValueError, match=r"Invalid overlay_color"):
+        thermo_container.show_frame(0, option="OverlayGroundTruth", overlay_color=color)
+
+
+@pytest.mark.parametrize("color", ["red", "green", "blue"])
+def test_overlay_color_valid(thermo_container: ThermoContainer, color):
+    """Valid overlay colors do not raise."""
+    thermo_container.show_frame(0, option="OverlayGroundTruth", overlay_color=color)
 
 
 def test_default_mode_figure(thermo_container: ThermoContainer):

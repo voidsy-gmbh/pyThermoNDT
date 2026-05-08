@@ -289,6 +289,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
         Raises:
             ValueError: If frame_number is out of valid range.
+            ValueError: If overlay_color is not one of "red", "green", "blue".
             ValueError: If overlay_alpha is not in the range [0, 1].
         """
         data = self.get_dataset("/Data/Tdata")
@@ -329,7 +330,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 im = frame_ax.imshow(data_to_show, aspect="auto", cmap=cmap)
                 frame_ax.set_title(f"Frame {frame_number}")
 
-                # Validate alpha range
+                # Validate overlay parameters
+                if overlay_color not in {"red", "green", "blue"}:
+                    raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
                 if not 0 <= overlay_alpha <= 1:
                     raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
 

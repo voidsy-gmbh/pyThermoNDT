@@ -46,8 +46,8 @@ class ApplyLUT(ThermoTransform):
         if tdata.dtype != torch.uint16 and tdata.negative().any():
             raise ValueError("Invalid values in Tdata. Applying LookUpTable is not supported.")
 
-        # Except invalid indices. Negative indices are not allowed because indexing in negative values in tdata creates
-        # ambiguous results when applying the LUT. However if Tdata is unsigned this will not be a problem.
+        # Catch invalid indices. Negative indices are not allowed because negative values in Tdata create
+        # ambiguous results when applying the LUT. If Tdata is unsigned this will not be a problem.
         try:
             tdata = torch.take(lut, tdata.flatten().long()).reshape(tdata.shape)
         except IndexError as e:

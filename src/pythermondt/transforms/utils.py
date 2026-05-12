@@ -63,7 +63,7 @@ class CallbackTransform(_BaseTransform):
             callback (Callable[[DataContainer], _BaseTransform]): A function that takes a DataContainer and returns a
                 transform instance. This function will be called each time the transform is applied.
             is_random (bool | None, optional): Whether the transform is random. If None, randomness is inferred from
-                the callback function, with fall to deterministic if inference fails. Defaults to None.
+                the callback function, falling back to deterministic if inference fails. Defaults to None.
         """
         super().__init__()
         self.callback = callback

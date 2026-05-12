@@ -6,7 +6,6 @@ import torch
 from pythermondt.data import DataContainer
 from pythermondt.data.datacontainer.base import DataContainerBase
 from pythermondt.data.datacontainer.node import DataNode, GroupNode, RootNode
-from pythermondt.data.datacontainer.utils import split_path
 
 
 def test_path_exists(filled_container: DataContainer):
@@ -55,8 +54,6 @@ def test_is_groupnode(filled_container: DataContainer):
 
 def test_is_rootnode(filled_container: DataContainer):
     # Test the root path
-    print(split_path("/"))
-    print(filled_container.nodes.keys())
     assert filled_container._is_rootnode("/") is True
 
     # Test non-root paths

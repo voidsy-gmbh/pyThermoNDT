@@ -63,9 +63,6 @@ def test_duplicate_files(caplog, paths: tuple[str, str]):
     localreader1 = LocalReader(pattern=paths[0])
     localreader2 = LocalReader(pattern=paths[1])
 
-    print(f"Files in localreader1: {localreader1.files}")
-    print(f"Files in localreader2: {localreader2.files}")
-
     with pytest.warns(UserWarning, match="Duplicate files found for reader of type LocalReader"):
         ThermoDataset([localreader1, localreader2])
 
@@ -85,9 +82,6 @@ def test_no_false_positive_duplicates(paths: tuple[str, str]):
     """Test that duplicate detection doesn't produce false positives for non-overlapping sources."""
     localreader1 = LocalReader(pattern=paths[0])
     localreader2 = LocalReader(pattern=paths[1])
-
-    print(f"Files in localreader1: {localreader1.files}")
-    print(f"Files in localreader2: {localreader2.files}")
 
     # This should NOT raise an exception
     try:

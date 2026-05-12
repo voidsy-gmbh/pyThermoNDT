@@ -17,7 +17,7 @@ class SimulationParser(BaseParser):
     def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-branches
         """Parses the data from the given IOPathWrapper object into a DataContainer object.
 
-        The IOPathWrapper object must contain a .mat file with simulattion data from COMSOL.
+        The IOPathWrapper object must contain a .mat file with simulation data from COMSOL.
 
         Args:
             data (IOPathWrapper): IOPathWrapper object containing the data to be parsed.
@@ -38,7 +38,7 @@ class SimulationParser(BaseParser):
         except MatReadError as o:
             raise ValueError("The given IOPathWrapper object does not contain a valid .mat file.") from o
 
-        # Create an empty Thermocontainer ==> predefined structure
+        # Create an empty ThermoContainer ==> predefined structure
         datacontainer = ThermoContainer()
 
         # Add source as an attribute

@@ -176,7 +176,7 @@ class EdevisParser(BaseParser):
                             buffer = bytearray(data_bytes.read(lut_size * 4))  # 4 bytes per LUT entry assuming float32
                             lut_data = torch.frombuffer(buffer, dtype=torch.float32)
 
-                            # Convert LUT data to Kelvin because Thermocontainer stores LUT in Kelvin
+                            # Convert LUT data to Kelvin because ThermoContainer stores LUT in Kelvin
                             container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
 
                     # Define supported bit depths for each data type

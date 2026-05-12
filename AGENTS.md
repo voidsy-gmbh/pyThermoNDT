@@ -1,49 +1,126 @@
 # PyThermoNDT Agent Instructions
 
-Hello agent. You are one of the most talented programmers of your generation, ready to improve PyThermoNDT - a PyTorch-compatible package for thermographic Non-Destructive Testing (NDT) data processing.
+## Style Baseline
+
+Treat these as the canonical examples of the preferred style:
+
+- `src/pythermondt/transforms/sampling.py` - `NonUniformSampling`
+- `src/pythermondt/dataset/base_dataset.py` - `BaseDataset`
+
+New code should feel like those implementations on the first pass:
+
+- minimal, but not cryptic
+- readable from top to bottom
+- well documented, but only where documentation adds value
+- explicit about validation, assumptions, and update steps
+
+## Context File Scope
+
+Keep this file intentionally concise.
+
+- Include only non-obvious, high-value guidance that helps agents avoid mistakes in this repository.
+- Prefer concrete rules and reference implementations over broad repository overviews.
+- Do not restate information that is easy to discover from file names, README content, or normal code exploration.
+- If a rule is not important enough to be followed on most tasks, omit it.
 
 ## Philosophy
 
-- **Clarity over Complexity**: Every transform must earn its place in the pipeline
-- **Scientific Rigor**: Maintain physical accuracy in thermal data processing
-- **PyTorch Compatible**: Seamless integration with PyTorch workflows
-- **Never mix functionality and whitespace changes** - separate commits
-- **All functionality changes must include tests**
+- **Clarity over complexity**: Prefer direct control flow over clever abstractions.
+- **Scientific rigor**: Preserve the physical meaning of thermal data and metadata.
+- **PyTorch compatibility**: Keep transforms and datasets natural to use in PyTorch pipelines.
+- **Smallest correct change**: Do not add helpers, layers, or backward-compatibility code without a concrete need.
+- **No mixed commits**: Never mix functionality and whitespace-only cleanup in the same commit.
+- **Tests for behavior changes**: All functional changes must include tests.
 
 ## Architecture
 
-```
-Readers → DataContainers → Transforms → Datasets → PyTorch DataLoaders
-```
-
-**Tech Stack**: Python 3.10-3.14, PyTorch ≥2.0, NumPy, h5py, boto3 (S3), pytest, ruff, mypy
-
-### DataContainer Structure (Standard Paths)
-
-```
-/Data/Tdata                    # Thermal data (H×W×T)
-/GroundTruth/DefectMask        # Defect masks (H×W)
-/MetaData/LookUpTable          # Temperature conversion (Uint16→Float64)
-/MetaData/DomainValues         # Time values (T,)
-/MetaData/ExcitationSignal     # Heating pattern
+```text
+Readers -> DataContainers -> Transforms -> Datasets -> PyTorch DataLoaders
 ```
 
-**Access Pattern**:
+Tech stack: Python 3.10-3.14, PyTorch >= 2.0, NumPy, h5py, boto3, pytest, ruff, mypy
+
+### Standard DataContainer Paths
+
+```text
+/Data/Tdata                    # Thermal data (H x W x T)
+/GroundTruth/DefectMask        # Defect mask (H x W)
+/MetaData/LookUpTable          # Temperature conversion (uint16 -> float64)
+/MetaData/DomainValues         # Domain values, usually time (T,)
+/MetaData/ExcitationSignal     # Heating pattern (T,)
+```
+
+Use `container.get_datasets(...)` and `container.update_datasets(...)` when several paths move together.
+
+## Coding Style
+
+### Preferred Structure
+
+Inside a method, prefer a simple sequence like this:
+
+1. Load the relevant data.
+2. Validate inputs and invariants early.
+3. Compute the result with direct tensor operations.
+4. Update the container or return the result.
+
+That shape is preferred over deeply nested branches or many tiny helpers.
+
+### Helpers
+
+Extract a private helper only when it does at least one of these:
+
+- names a real domain concept
+- isolates dense math or interpolation logic
+- is reused
+- materially improves readability of the public method
+
+`NonUniformSampling` is a good model: the helper methods isolate non-trivial math, while `forward()` stays linear and readable.
+
+### Naming
+
+- Use concrete domain names: `domain_values`, `excitation_signal`, `det_transforms`, `runtime_transforms`.
+- Avoid vague names like `data2`, `temp`, `helper`, `manager2`, `process_data_wrapper`.
+- Keep public APIs boring and obvious.
+
+### Comments
+
+- Use comments sparingly.
+- Good comments explain why something is done or mark a phase boundary.
+- Do not narrate obvious lines.
+
+### Docstrings
+
+- Use Google-style docstrings.
+- Start with a short summary sentence.
+- Document intent, important constraints, and non-obvious behavior.
+- Document `Args`, `Returns`, and `Raises` when they add useful information.
+- Avoid docstrings that merely restate the code.
+
+### Errors and Validation
+
+- Validate dimensions, bounds, modes, and units at the start of the relevant method.
+- Raise descriptive exceptions with concrete context.
+
+Example:
+
 ```python
-# Get datasets (efficient for multiple)
-tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
-
-# Update datasets
-container.update_datasets(
-    ("/Data/Tdata", processed_tdata),
-    ("/MetaData/DomainValues", new_domain_values)
-)
+if idx < 0 or idx >= len(self):
+    raise IndexError(f"Index {idx} out of range [0, {len(self) - 1}].")
 ```
+
+### Type Hints and Formatting
+
+- Use modern Python 3.10+ type hints: `list[str]`, `dict[str, float] | None`
+- Follow Ruff formatting and lint rules.
+- Use double quotes.
+- Keep lines within 120 characters.
+
+## Project Patterns
 
 ### Transform Pattern
 
 ```python
-class MyTransform(ThermoTransform):  # or RandomThermoTransform for stochastic
+class MyTransform(ThermoTransform):
     def __init__(self, param: int):
         super().__init__()
         self.param = param
@@ -51,136 +128,104 @@ class MyTransform(ThermoTransform):  # or RandomThermoTransform for stochastic
     def forward(self, container: DataContainer) -> DataContainer:
         tdata = container.get_dataset("/Data/Tdata")
 
-        # Validate early
         if tdata.ndim != 3:
-            raise ValueError(f"Expected 3D tensor (H×W×T), got {tdata.shape}")
+            raise ValueError(f"Expected 3D tensor (H x W x T), got {tdata.shape}.")
 
-        # Process (use tensor ops, not loops)
         processed = self._process(tdata)
-
         container.update_dataset("/Data/Tdata", processed)
         return container
-
-    def extra_repr(self) -> str:
-        return f"param={self.param}"
 ```
 
-## Code Conventions
+Keep `forward()` easy to scan. If a transform contains dense math, isolate that math in private helpers and keep the main path linear.
 
-**Ruff** (line length: 120, Google docstrings, double quotes):
-```python
-def method(self, param: int, optional: str | None = None) -> DataContainer:
-    """Short summary ending with period.
+### Dataset Pattern
 
-    Args:
-        param (int): Description.
-        optional (str, optional): Description. Defaults to None.
+`BaseDataset` is the reference for dataset code:
 
-    Returns:
-        DataContainer: Description.
+- keep `__getitem__()` direct and explicit
+- validate indices before any load
+- keep cache behavior readable and local
+- use private state only where it clearly simplifies the public API
 
-    Raises:
-        ValueError: When param is invalid.
-    """
-```
-
-**Type Hints** (modern Python 3.10+):
-```python
-def process(data: list[int]) -> dict[str, float] | None:  # Not List, Optional
-    pass
-```
-
-**Naming**:
-- Classes: `PascalCase`
-- Functions/methods: `snake_case`
-- Private: `__double_underscore`
-
-**Errors** (descriptive with context):
-```python
-raise ValueError(f"Frame {idx} out of range [0, {total_frames})")
-```
-
-## Testing
-
-**Test organization**:
-- Tests organized by domain: `tests/{data,dataset,io,integration}/test_*.py`
-- Use fixtures from `tests/conftest.py`
-
-**Pattern**:
-```python
-@pytest.mark.parametrize("num_frames,expected", [(10, (96,96,10)), (32, (96,96,32))])
-def test_feature(sample_container, num_frames, expected):
-    # Test implementation
-    assert result.shape == expected
-```
-
-**Common commands**:
-```bash
-pytest tests/                    # All tests
-pytest -k "test_name"           # Pattern match
-pytest --benchmark-skip         # Skip benchmarks (faster)
-ruff check --fix .              # Lint and fix
-mypy src/pythermondt            # Type check
-pre-commit run --all-files      # All quality checks
-```
-
-## Critical Details
+## Critical Domain Rules
 
 ### Temporal Consistency
-When selecting frames, **always update temporal metadata together**:
-```python
-# Select frames
-new_tdata = tdata[..., indices]
-new_domain_values = domain_values[indices] - domain_values[indices[0]]  # Zero-base!
 
-# Update together
+Whenever frames are selected, resampled, or reordered, update the temporal metadata together:
+
+```python
 container.update_datasets(
     ("/Data/Tdata", new_tdata),
-    ("/MetaData/DomainValues", new_domain_values)
+    ("/MetaData/DomainValues", new_domain_values),
+    ("/MetaData/ExcitationSignal", new_excitation_signal),
 )
 ```
 
+If the new sequence starts at a later time, zero-base `DomainValues` when that is the established behavior of the transform.
+
 ### Unit Management
+
+Update units when a transform changes physical meaning:
+
 ```python
 from pythermondt.data.units import Units
 
-# Update units when transformation changes physical meaning
-container.set_unit("/Data/Tdata", Units.KELVIN)  # After ApplyLUT: arbitrary→kelvin
+container.set_unit("/Data/Tdata", Units.KELVIN)
 ```
 
 ### Performance
-- Use tensor operations over loops: `processed = tdata * scale` not `for i in range(...)`
-- Validate dimensions early: `if tdata.ndim != 3: raise ValueError(...)`
-- Leverage `settings.num_workers` for parallelism
+
+- Prefer tensor operations over Python loops.
+- Flatten only when it clearly simplifies vectorized computation.
+- Keep memory behavior understandable; do not hide expensive copies.
+- Use `settings.num_workers` when worker count should follow project configuration.
+
+## Testing
+
+- All functional changes must include tests.
+- Mirror the source layout under `tests/`.
+- Use fixtures from `tests/conftest.py`.
+- Prefer parametrized tests for shape, bounds, and mode coverage.
+- For bug fixes, add or update a test that fails before the fix and passes after it.
+
+Common locations:
+
+- `tests/data/`
+- `tests/dataset/`
+- `tests/io/`
+- `tests/integration/`
+
+## Validation Commands
+
+```bash
+pytest tests/
+pytest -k "test_name"
+pytest --benchmark-skip
+ruff check --fix .
+ruff format .
+mypy src/pythermondt
+pre-commit run --all-files
+```
+
+Run the smallest relevant test set during development, then run the broader checks appropriate for the change.
 
 ## Key Locations
 
-**Transforms**: `src/pythermondt/transforms/{base,preprocessing,sampling,normalization,augmentation}.py`
-**Readers**: `src/pythermondt/readers/{local_reader,s3_reader}.py`
-**Tests**: `tests/conftest.py` (fixtures), `tests/{data,dataset,io,integration}/test_*.py`
-**Config**: `pyproject.toml`, `src/pythermondt/config.py`
-
-## Development Workflow
-
-```bash
-# Setup
-uv venv && uv pip install -e . && uv pip install -r requirements_dev.txt && pre-commit install
-
-# Quality checks (run before commit)
-ruff check --fix . && ruff format . && mypy src/pythermondt && pytest tests/
-```
+- Transforms: `src/pythermondt/transforms/{base,preprocessing,sampling,normalization,augmentation}.py`
+- Datasets: `src/pythermondt/dataset/`
+- Readers: `src/pythermondt/readers/{local_reader,s3_reader}.py`
+- Tests: `tests/conftest.py`, `tests/{data,dataset,io,integration}/`
+- Config: `pyproject.toml`, `src/pythermondt/config.py`
 
 ## Essential Rules
 
-1. Never mix functionality and whitespace changes
-2. All functionality changes must include tests
-3. Run pre-commit hooks before committing
-4. Validate tensor dimensions early with clear errors
-5. Maintain temporal consistency (Tdata, DomainValues, ExcitationSignal)
-6. Update units when physical meaning changes
-7. Use tensor operations over loops
-8. Follow PyTorch Module patterns (inherit from ThermoTransform/RandomThermoTransform)
+1. Match the coding style of `NonUniformSampling` and `BaseDataset`.
+2. Prefer direct, linear implementations over extra abstraction.
+3. Validate early and fail with clear, contextual errors.
+4. Maintain temporal consistency across `Tdata`, `DomainValues`, and `ExcitationSignal`.
+5. Update units when physical meaning changes.
+6. Use tensor operations over loops when possible.
+7. Include tests for every functional change.
+8. Do not mix functionality and whitespace-only cleanup.
 
-Your contributions should feel native to the codebase. Follow patterns, maintain consistency, prioritize clarity and correctness.
-
-Welcome aboard!
+Contributions should feel native to the codebase: compact, readable, explicit, and scientifically correct.

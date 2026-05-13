@@ -5,7 +5,7 @@ from matplotlib.colors import to_rgba
 from matplotlib.contour import QuadContourSet
 
 from pythermondt.data import ThermoContainer
-from pythermondt.data.datacontainer.visualization_ops import VisualizationOps
+from pythermondt.data.datacontainer.visualization_ops import OverlayColorOption, VisualizationOps
 from pythermondt.readers import LocalReader
 
 
@@ -266,7 +266,9 @@ def test_interactive_groundtruth_persists_across_frames(interactive_analyzer: Vi
 
 
 @pytest.mark.parametrize("color, expected_channel", [("red", 0), ("green", 1), ("blue", 2)])
-def test_interactive_overlay_color_configuration(thermo_container: ThermoContainer, color: str, expected_channel: int):
+def test_interactive_overlay_color_configuration(
+    thermo_container: ThermoContainer, color: OverlayColorOption, expected_channel: int
+):
     """Each overlay color activates the correct RGBA channel in the overlay."""
     analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color=color)
     assert analyzer._overlay_color == color
@@ -294,4 +296,4 @@ def test_interactive_overlay_color_configuration(thermo_container: ThermoContain
 def test_interactive_invalid_overlay_color_raises(thermo_container: ThermoContainer):
     """Invalid overlay_color passed to InteractiveAnalyzer raises ValueError."""
     with pytest.raises(ValueError, match=r"Invalid overlay_color"):
-        VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color="purple")
+        VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color="purple")  # type: ignore

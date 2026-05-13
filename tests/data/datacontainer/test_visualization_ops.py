@@ -5,6 +5,7 @@ from matplotlib.colors import to_rgba
 from matplotlib.contour import QuadContourSet
 
 from pythermondt.data import ThermoContainer
+from pythermondt.data.datacontainer.visualization_ops import VisualizationOps
 from pythermondt.readers import LocalReader
 
 
@@ -28,6 +29,12 @@ def _setup_matplotlib(monkeypatch):
     import matplotlib.pyplot as plt
 
     plt.close("all")
+
+
+@pytest.fixture(scope="function")
+def interactive_analyzer(thermo_container: ThermoContainer) -> VisualizationOps.InteractiveAnalyzer:
+    """Create an InteractiveAnalyzer instance from the test ThermoContainer."""
+    return VisualizationOps.InteractiveAnalyzer(thermo_container)
 
 
 def test_frame_number_negative(thermo_container: ThermoContainer):
@@ -191,3 +198,100 @@ def test_coordinate_out_of_range(thermo_container: ThermoContainer):
 def test_coordinate_valid(thermo_container: ThermoContainer, x, y):
     """Valid coordinates do not raise."""
     thermo_container.show_pixel_profile(x, y)
+
+
+def test_interactive_groundtruth_toggle_on_adds_overlay(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Toggling Show GT on adds an RGBA overlay image and contour to the frame axes."""
+    assert interactive_analyzer._has_defects, "Test fixture must have defect pixels"
+    assert interactive_analyzer._overlay_img is None
+    assert interactive_analyzer._overlay_contour is None
+
+    # Simulate toggling the checkbox on through the real CheckButtons callback path
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+
+    # Verify overlay state
+    assert interactive_analyzer._overlay_img is not None, "Overlay image should exist after toggle on"
+    assert interactive_analyzer._overlay_contour is not None, "Contour should exist after toggle on"
+
+    # Verify overlay image is on the axes
+    overlay_imgs = [
+        im
+        for im in interactive_analyzer.frame_ax.get_images()
+        if (arr := im.get_array()) is not None and arr.shape[-1] == 4
+    ]
+    assert len(overlay_imgs) == 1, f"Expected 1 RGBA overlay image on axes, got {len(overlay_imgs)}"
+    overlay_arr = overlay_imgs[0].get_array()
+    assert overlay_arr is not None
+
+    # Verify contour exists on axes
+    contours = [c for c in interactive_analyzer.frame_ax.collections if isinstance(c, QuadContourSet)]
+    assert len(contours) >= 1, "Expected at least 1 contour on frame axes"
+
+
+def test_interactive_groundtruth_toggle_off_removes_overlay(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Toggling Show GT off removes the overlay image and contour."""
+    # First toggle on
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+    assert interactive_analyzer._overlay_img is not None
+
+    # Then toggle off
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+
+    assert interactive_analyzer._overlay_img is None, "Overlay image should be removed after toggle off"
+    assert interactive_analyzer._overlay_contour is None, "Contour should be removed after toggle off"
+
+
+def test_interactive_groundtruth_persists_across_frames(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Ground truth overlay persists when navigating to a different frame."""
+    # Toggle overlay on
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+
+    # Collect overlay pixels for verification
+    assert interactive_analyzer._overlay_img is not None
+    overlay_img = interactive_analyzer._overlay_img
+
+    # Navigate to a different frame
+    current_frame = interactive_analyzer.current_frame
+    total_frames = interactive_analyzer.tdata.shape[0]
+    assert total_frames > 1, "Test fixture must have more than one frame"
+    new_frame = (current_frame + 1) % total_frames
+    interactive_analyzer.update_frame(float(new_frame))
+
+    # Verify frame changed
+    assert interactive_analyzer.current_frame == new_frame
+
+    # Verify the overlay is still on the axes (same artist object)
+    assert interactive_analyzer._overlay_img is overlay_img
+    assert overlay_img in interactive_analyzer.frame_ax.get_images()
+
+
+@pytest.mark.parametrize("color, expected_channel", [("red", 0), ("green", 1), ("blue", 2)])
+def test_interactive_overlay_color_configuration(thermo_container: ThermoContainer, color: str, expected_channel: int):
+    """Each overlay color activates the correct RGBA channel in the overlay."""
+    analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color=color)
+    assert analyzer._overlay_color == color
+
+    # Toggle on
+    analyzer.groundtruth_toggle.set_active(0)
+
+    overlay_imgs = [
+        im for im in analyzer.frame_ax.get_images() if (arr := im.get_array()) is not None and arr.shape[-1] == 4
+    ]
+    assert len(overlay_imgs) == 1
+    overlay_data = overlay_imgs[0].get_array()
+    assert overlay_data is not None
+
+    # Verify the correct RGBA channel is set to 1.0 on defect pixels
+    gt = thermo_container.get_dataset("/GroundTruth/DefectMask").numpy(force=True)
+    defect_mask = gt > 0
+    if defect_mask.any():
+        channel_values = overlay_data[defect_mask, expected_channel]
+        assert np.allclose(channel_values, 1.0), f"{color} channel not set on defect pixels"
+
+    analyzer.close(close_figure=True)
+
+
+def test_interactive_invalid_overlay_color_raises(thermo_container: ThermoContainer):
+    """Invalid overlay_color passed to InteractiveAnalyzer raises ValueError."""
+    with pytest.raises(ValueError, match=r"Invalid overlay_color"):
+        VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color="purple")

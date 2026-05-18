@@ -65,6 +65,11 @@ viewer.stop()
 `view(container)` is blocking by default and keeps the webservice alive until `Ctrl+C`. Use `block=False` when you
 need the script to continue running or when running inside environments where `Ctrl+C` handling is limited.
 
+The BaseViewer includes a generic plot layer for dataset exploration:
+- Shape-based default view mode (line/heatmap)
+- Manual mode switching between matrix, line, and heatmap
+- 3D datasets as frame heatmaps or frame matrices with axis/frame controls
+
 ## From here?
 PyThermoNDT is yours to use! You can start by exploring the [examples](examples/) directory for more detailed usage scenarios. The package is designed to be flexible and extensible, so feel free to modify and adapt it to your specific needs.
 

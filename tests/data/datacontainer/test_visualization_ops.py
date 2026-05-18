@@ -376,6 +376,9 @@ def test_interactive_no_defect_skips_toggle(no_defect_analyzer: VisualizationOps
     assert no_defect_analyzer.groundtruth is None
     assert not hasattr(no_defect_analyzer, "groundtruth_toggle")
 
+    # The toggle method itself should be a harmless no-op when ground truth is absent
+    no_defect_analyzer.toggle_groundtruth(None)
+
 
 # ── analyse_interactive public API flow ─────────────────────────────────────
 

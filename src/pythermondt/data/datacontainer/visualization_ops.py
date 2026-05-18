@@ -50,12 +50,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # Load ground truth and check for any defect pixels
             gt_tensor = parent.get_dataset("/GroundTruth/DefectMask")
             self.groundtruth: np.ndarray | None = None
-            self._has_defects = False
             if gt_tensor is not None:
                 gt = gt_tensor.numpy(force=True)
                 if (gt > 0).any():
                     self.groundtruth = gt
-                    self._has_defects = True
 
             # 3.) Setup the figure, axes and colorbar
             # Create a dedicated bottom row for controls so widgets never overlap plot labels.
@@ -103,7 +101,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             )
 
             # Create checkbox for ground truth overlay toggle (only if defects exist)
-            if self._has_defects:
+            if self.groundtruth is not None:
                 check_gt_ax = self.fig.add_subplot(gs[1, 14:])
                 self.groundtruth_toggle = CheckButtons(
                     check_gt_ax,
@@ -141,7 +139,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self._clear_btn_cid = self.clear_button.on_clicked(self.clear_points)
             self._annotation_cid = self.annotation_toggle.on_clicked(self.toggle_annotation)
             self._gt_cid: int | None = None
-            if self._has_defects:
+            if self.groundtruth is not None:
                 self._gt_cid = self.groundtruth_toggle.on_clicked(self.toggle_groundtruth)
             self._canvas_connection_ids = [
                 self.fig.canvas.mpl_connect("button_press_event", self.on_click),

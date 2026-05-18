@@ -511,12 +511,17 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         if self._interactive_analyzer is analyzer:
             self._interactive_analyzer = None
 
-    def analyse_interactive(self, overlay_color: OverlayColorOption = "red"):
+    def analyse_interactive(self, overlay_color: OverlayColorOption = "red", overlay_alpha: float = 0.6):
         """Launch interactive analysis session for thermographic data visualization.
 
         Args:
             overlay_color: Color for the ground truth overlay when the "Show GT" toggle is active.
                 Must be one of "red", "green", "blue". Defaults to "red".
+            overlay_alpha: Opacity for the ground truth overlay, in the range [0, 1]. Defaults to 0.6.
+
+        Raises:
+            ValueError: If overlay_color is not one of "red", "green", "blue".
+            ValueError: If overlay_alpha is not in the range [0, 1].
         """
         if self._interactive_analyzer is not None and not self._interactive_analyzer.closed:
             self._interactive_analyzer.close(close_figure=True)

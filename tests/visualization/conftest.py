@@ -9,6 +9,8 @@ def viewer_container() -> ThermoContainer:
     """Container fixture for visualization tests."""
     container = ThermoContainer()
     container.update_dataset("/Data/Tdata", torch.arange(24, dtype=torch.float32).reshape(2, 3, 4))
+    container.add_dataset("/Data", "Image2D", torch.arange(12, dtype=torch.float32).reshape(3, 4))
+    container.add_dataset("/Data", "Tensor4D", torch.arange(120, dtype=torch.float32).reshape(2, 3, 4, 5))
     container.update_dataset("/MetaData/DomainValues", torch.linspace(0.0, 0.3, 4, dtype=torch.float32))
     container.add_attribute("/Data/Tdata", "Description", "Thermal data")
     container.add_group("/MetaData", "Acquisition")

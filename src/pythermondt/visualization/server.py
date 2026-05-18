@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import threading
 import webbrowser
 from http import HTTPStatus
@@ -10,7 +11,22 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from .adapter import DataContainerAdapter
-from .contracts import API_PREFIX, DEFAULT_PREVIEW_LIMIT, JsonObject
+from .contracts import (
+    API_PREFIX,
+    ARRAY_ORDER,
+    BINARY_CONTENT_TYPE,
+    DEFAULT_MATRIX_COLS,
+    DEFAULT_MATRIX_ROWS,
+    DEFAULT_VECTOR_COUNT,
+    HEADER_COUNT,
+    HEADER_DTYPE,
+    HEADER_FRAME_AXIS,
+    HEADER_FRAME_INDEX,
+    HEADER_NDIM,
+    HEADER_ORDER,
+    HEADER_SHAPE,
+    JsonObject,
+)
 
 
 class ViewerServer:
@@ -109,21 +125,24 @@ class ViewerServer:
 
                 try:
                     if route in ("/", "/index.html"):
-                        self._send_static_file(
-                            static_dir.joinpath("index.html").read_bytes(), "text/html; charset=utf-8"
-                        )
+                        self._send_static_path(static_dir.joinpath("index.html"))
                         return
 
                     if route == "/app.js":
-                        self._send_static_file(
-                            static_dir.joinpath("app.js").read_bytes(), "application/javascript; charset=utf-8"
-                        )
+                        self._send_static_path(static_dir.joinpath("app.js"))
                         return
 
                     if route == "/styles.css":
-                        self._send_static_file(
-                            static_dir.joinpath("styles.css").read_bytes(), "text/css; charset=utf-8"
-                        )
+                        self._send_static_path(static_dir.joinpath("styles.css"))
+                        return
+
+                    if route.startswith("/vendor/"):
+                        rel_path = route.removeprefix("/vendor/")
+                        if not rel_path or ".." in rel_path:
+                            self._send_json(HTTPStatus.NOT_FOUND, {"error": f"Route '{route}' not found."})
+                            return
+                        static_path = static_dir.joinpath("vendor").joinpath(*rel_path.split("/"))
+                        self._send_static_path(static_path)
                         return
 
                     if route == f"{API_PREFIX}/health":
@@ -140,15 +159,54 @@ class ViewerServer:
                         self._send_json(HTTPStatus.OK, adapter.get_node_details(path))
                         return
 
-                    if route == f"{API_PREFIX}/preview":
+                    if route == f"{API_PREFIX}/plot/meta":
                         path = self._get_query_value(query, "path", "/")
-                        offset = self._get_query_int(query, "offset", 0)
-                        limit = self._get_query_int(query, "limit", DEFAULT_PREVIEW_LIMIT)
-                        self._send_json(HTTPStatus.OK, adapter.get_dataset_preview(path, offset=offset, limit=limit))
+                        self._send_json(HTTPStatus.OK, adapter.get_plot_meta(path))
+                        return
+
+                    if route == f"{API_PREFIX}/plot/vector.bin":
+                        path = self._get_query_value(query, "path", "/")
+                        start = self._get_query_int(query, "start", 0)
+                        count = self._get_query_int(query, "count", DEFAULT_VECTOR_COUNT)
+                        stride = self._get_query_int(query, "stride", 1)
+                        payload, metadata = adapter.get_vector_binary(path, start=start, count=count, stride=stride)
+                        self._send_binary(HTTPStatus.OK, payload, metadata)
+                        return
+
+                    if route == f"{API_PREFIX}/plot/frame.bin":
+                        path = self._get_query_value(query, "path", "/")
+                        frame_axis = self._get_optional_query_int(query, "frame_axis")
+                        frame_index = self._get_optional_query_int(query, "frame_index")
+                        payload, metadata = adapter.get_frame_binary(
+                            path, frame_axis=frame_axis, frame_index=frame_index
+                        )
+                        self._send_binary(HTTPStatus.OK, payload, metadata)
+                        return
+
+                    if route == f"{API_PREFIX}/plot/matrix":
+                        path = self._get_query_value(query, "path", "/")
+                        frame_axis = self._get_optional_query_int(query, "frame_axis")
+                        frame_index = self._get_optional_query_int(query, "frame_index")
+                        row_start = self._get_query_int(query, "row_start", 0)
+                        row_count = self._get_query_int(query, "row_count", DEFAULT_MATRIX_ROWS)
+                        col_start = self._get_query_int(query, "col_start", 0)
+                        col_count = self._get_query_int(query, "col_count", DEFAULT_MATRIX_COLS)
+                        matrix_payload = adapter.get_matrix_data(
+                            path,
+                            frame_axis=frame_axis,
+                            frame_index=frame_index,
+                            row_start=row_start,
+                            row_count=row_count,
+                            col_start=col_start,
+                            col_count=col_count,
+                        )
+                        self._send_json(HTTPStatus.OK, matrix_payload)
                         return
 
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": f"Route '{route}' not found."})
 
+                except FileNotFoundError:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": f"Route '{route}' not found."})
                 except KeyError as error:
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": self._exception_message(error)})
                 except (TypeError, ValueError) as error:
@@ -171,6 +229,39 @@ class ViewerServer:
                 self.end_headers()
                 self.wfile.write(content)
 
+            def _send_static_path(self, path) -> None:
+                if not path.is_file():
+                    raise FileNotFoundError(path)
+
+                content_type, _ = mimetypes.guess_type(str(path))
+                if content_type is None:
+                    content_type = "application/octet-stream"
+                if content_type.startswith("text/") or content_type in {
+                    "application/javascript",
+                    "application/json",
+                }:
+                    content_type = f"{content_type}; charset=utf-8"
+
+                self._send_static_file(path.read_bytes(), content_type)
+
+            def _send_binary(self, status: HTTPStatus, payload: bytes, metadata: JsonObject) -> None:
+                self.send_response(int(status))
+                self.send_header("Content-Type", BINARY_CONTENT_TYPE)
+                self.send_header("Content-Length", str(len(payload)))
+                self.send_header(HEADER_DTYPE, str(metadata["dtype"]))
+                self.send_header(HEADER_SHAPE, self._serialize_shape(metadata["shape"]))
+                self.send_header(HEADER_NDIM, str(metadata["ndim"]))
+                self.send_header(HEADER_COUNT, str(metadata["count"]))
+                self.send_header(HEADER_ORDER, ARRAY_ORDER)
+
+                if "frame_axis" in metadata:
+                    self.send_header(HEADER_FRAME_AXIS, str(metadata["frame_axis"]))
+                if "frame_index" in metadata:
+                    self.send_header(HEADER_FRAME_INDEX, str(metadata["frame_index"]))
+
+                self.end_headers()
+                self.wfile.write(payload)
+
             @staticmethod
             def _get_query_value(query: dict[str, list[str]], key: str, default: str) -> str:
                 values = query.get(key)
@@ -182,6 +273,19 @@ class ViewerServer:
             def _get_query_int(query: dict[str, list[str]], key: str, default: int) -> int:
                 value = Handler._get_query_value(query, key, str(default))
                 return int(value)
+
+            @staticmethod
+            def _get_optional_query_int(query: dict[str, list[str]], key: str) -> int | None:
+                values = query.get(key)
+                if not values:
+                    return None
+                return int(values[0])
+
+            @staticmethod
+            def _serialize_shape(shape: Any) -> str:
+                if not isinstance(shape, list):
+                    return ""
+                return ",".join(str(int(dim)) for dim in shape)
 
             @staticmethod
             def _exception_message(error: Exception) -> str:

@@ -1,7 +1,9 @@
 import json
+from http.client import HTTPMessage
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
+import numpy as np
 import pytest
 
 from pythermondt.visualization import view
@@ -13,6 +15,12 @@ def _read_json(url: str) -> tuple[int, dict]:
     with urlopen(url, timeout=3) as response:  # noqa: S310
         payload = json.loads(response.read().decode("utf-8"))
         return response.status, payload
+
+
+def _read_binary(url: str) -> tuple[int, HTTPMessage, bytes]:
+    with urlopen(url, timeout=3) as response:  # noqa: S310
+        payload = response.read()
+        return response.status, response.headers, payload
 
 
 def test_viewer_health_endpoint(viewer_container):
@@ -46,19 +54,83 @@ def test_viewer_tree_and_node_endpoints(viewer_container):
     assert node_payload["shape"] == [2, 3, 4]
 
 
-def test_viewer_preview_endpoint(viewer_container):
-    """Viewer serves dataset preview slices."""
+def test_viewer_plot_meta_endpoint(viewer_container):
+    """Viewer serves plot metadata for datasets."""
     viewer = view(viewer_container, open_browser=False, block=False)
 
     try:
-        status, payload = _read_json(f"{viewer.url}/api/v1/preview?path=/Data/Tdata&offset=4&limit=4")
+        status, payload = _read_json(f"{viewer.url}/api/v1/plot/meta?path=/Data/Tdata")
     finally:
         viewer.stop()
 
     assert status == 200
-    assert payload["offset"] == 4
-    assert payload["returned"] == 4
-    assert payload["values"] == [4.0, 5.0, 6.0, 7.0]
+    assert payload["render_mode"] == "frames"
+    assert payload["default_mode"] == "heatmap"
+    assert payload["available_modes"] == ["matrix", "line", "heatmap"]
+    assert payload["default_frame_axis"] == 2
+    assert payload["default_frame_count"] == 4
+
+
+def test_viewer_vector_binary_endpoint(viewer_container):
+    """Viewer serves vector payloads as binary float32."""
+    viewer = view(viewer_container, open_browser=False, block=False)
+
+    try:
+        status, headers, payload = _read_binary(
+            f"{viewer.url}/api/v1/plot/vector.bin?path=/MetaData/DomainValues&start=0&count=2&stride=2"
+        )
+    finally:
+        viewer.stop()
+
+    assert status == 200
+    assert headers["Content-Type"] == "application/octet-stream"
+    assert headers["X-PTNDT-Dtype"] == "float32"
+    assert headers["X-PTNDT-Shape"] == "2"
+    assert headers["X-PTNDT-Ndim"] == "1"
+
+    values = np.frombuffer(payload, dtype=np.float32)
+    assert np.allclose(values, np.array([0.0, 0.2], dtype=np.float32))
+
+
+def test_viewer_frame_binary_endpoint(viewer_container):
+    """Viewer serves frame payloads as binary float32."""
+    viewer = view(viewer_container, open_browser=False, block=False)
+
+    try:
+        status, headers, payload = _read_binary(
+            f"{viewer.url}/api/v1/plot/frame.bin?path=/Data/Tdata&frame_axis=2&frame_index=1"
+        )
+    finally:
+        viewer.stop()
+
+    assert status == 200
+    assert headers["Content-Type"] == "application/octet-stream"
+    assert headers["X-PTNDT-Dtype"] == "float32"
+    assert headers["X-PTNDT-Shape"] == "2,3"
+    assert headers["X-PTNDT-Frame-Axis"] == "2"
+    assert headers["X-PTNDT-Frame-Index"] == "1"
+
+    values = np.frombuffer(payload, dtype=np.float32)
+    assert np.array_equal(values, np.array([1, 5, 9, 13, 17, 21], dtype=np.float32))
+
+
+def test_viewer_matrix_endpoint(viewer_container):
+    """Viewer serves matrix table payloads for dataset inspection."""
+    viewer = view(viewer_container, open_browser=False, block=False)
+
+    try:
+        status, payload = _read_json(
+            f"{viewer.url}/api/v1/plot/matrix?path=/Data/Tdata&frame_axis=2&frame_index=2&row_count=2&col_count=2"
+        )
+    finally:
+        viewer.stop()
+
+    assert status == 200
+    assert payload["shape"] == [2, 3]
+    assert payload["row_start"] == 0
+    assert payload["row_end"] == 2
+    assert payload["col_end"] == 2
+    assert payload["values"] == [[2.0, 6.0], [14.0, 18.0]]
 
 
 def test_viewer_invalid_path_returns_404(viewer_container):
@@ -76,19 +148,27 @@ def test_viewer_invalid_path_returns_404(viewer_container):
     assert "does not exist" in response_body["error"]
 
 
-def test_viewer_serves_index_html(viewer_container):
-    """Viewer serves the static frontend."""
+def test_viewer_serves_static_assets(viewer_container):
+    """Viewer serves the static frontend and vendored scripts."""
     viewer = view(viewer_container, open_browser=False, block=False)
 
     try:
-        with urlopen(f"{viewer.url}/", timeout=3) as response:  # noqa: S310
-            status = response.status
-            html = response.read().decode("utf-8")
+        with urlopen(f"{viewer.url}/", timeout=3) as index_response:  # noqa: S310
+            index_status = index_response.status
+            html = index_response.read().decode("utf-8")
+
+        with urlopen(f"{viewer.url}/vendor/plotly-3.4.0.min.js", timeout=3) as script_response:  # noqa: S310
+            script_status = script_response.status
+            script_content_type = script_response.headers["Content-Type"]
+            script_head = script_response.read(128).decode("utf-8", errors="ignore")
     finally:
         viewer.stop()
 
-    assert status == 200
+    assert index_status == 200
     assert "PyThermoNDT BaseViewer" in html
+    assert script_status == 200
+    assert "javascript" in script_content_type
+    assert "plotly" in script_head.lower()
 
 
 def test_wait_uses_polling_join(viewer_container):

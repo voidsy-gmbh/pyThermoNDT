@@ -7,3 +7,4 @@ def test_static_assets_are_available():
     assert static_dir.joinpath("index.html").is_file()
     assert static_dir.joinpath("app.js").is_file()
     assert static_dir.joinpath("styles.css").is_file()
+    assert static_dir.joinpath("vendor").joinpath("plotly-3.4.0.min.js").is_file()

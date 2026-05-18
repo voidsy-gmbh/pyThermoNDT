@@ -300,3 +300,99 @@ def test_interactive_invalid_overlay_color_raises(thermo_container: ThermoContai
     """Invalid overlay_color passed to InteractiveAnalyzer raises ValueError."""
     with pytest.raises(ValueError, match=r"Invalid overlay_color"):
         VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color="purple")  # type: ignore
+
+
+def test_interactive_close_double_call_no_error(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Closing an already-closed analyzer is a no-op."""
+    interactive_analyzer.close(close_figure=False)
+    interactive_analyzer.close(close_figure=False)  # Should not raise
+
+
+def test_interactive_closed_property_after_close(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Closed returns True after close()."""
+    assert not interactive_analyzer.closed
+    interactive_analyzer.close(close_figure=False)
+    assert interactive_analyzer.closed
+
+
+def test_interactive_update_frame_noop(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """update_frame with the current frame value is a no-op."""
+    current = interactive_analyzer.current_frame
+    interactive_analyzer.update_frame(float(current))
+    assert interactive_analyzer.current_frame == current
+
+
+def test_interactive_clear_points(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """clear_points removes all selected points, markers, and profile lines."""
+    # Manually simulate a click by adding state directly
+    interactive_analyzer.selected_points.append((10, 10))
+    marker = interactive_analyzer.frame_ax.plot(10, 10, "x", color="red", markersize=10)[0]
+    interactive_analyzer.point_markers.append(marker)
+    line = interactive_analyzer.profile_ax.plot([0, 1], [0, 1], color="red")[0]
+    interactive_analyzer.profile_lines.append(line)
+
+    interactive_analyzer.clear_points(None)
+
+    assert interactive_analyzer.selected_points == []
+    assert interactive_analyzer.point_markers == []
+    assert interactive_analyzer.profile_lines == []
+    assert marker not in interactive_analyzer.frame_ax.lines
+    assert line not in interactive_analyzer.profile_ax.lines
+
+
+def test_interactive_toggle_annotation_off(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Toggling Show Value off hides the cursor annotation box."""
+    # Show the annotation first so we can verify it gets hidden
+    interactive_analyzer.cursor_annotation_box.set_visible(True)
+    interactive_analyzer._last_hover_pixel = (5, 5)
+
+    # Simulate unchecked checkbox
+    orig_get_status = interactive_analyzer.annotation_toggle.get_status
+    interactive_analyzer.annotation_toggle.get_status = lambda: [False]
+    try:
+        interactive_analyzer.toggle_annotation(None)
+    finally:
+        interactive_analyzer.annotation_toggle.get_status = orig_get_status
+
+    assert not interactive_analyzer.cursor_annotation_box.get_visible()
+    assert interactive_analyzer._last_hover_pixel is None
+
+
+# ── No-defect ground truth edge case ────────────────────────────────────────
+
+
+@pytest.fixture(scope="function")
+def no_defect_analyzer() -> VisualizationOps.InteractiveAnalyzer:
+    """InteractiveAnalyzer backed by a container with no defect pixels."""
+    container = ThermoContainer()
+    container.update_dataset("/Data/Tdata", np.zeros((5, 5, 3)))
+    container.update_dataset("/MetaData/DomainValues", np.arange(3, dtype=np.float64))
+    # DefectMask is empty → _has_defects will be False
+    return VisualizationOps.InteractiveAnalyzer(container)
+
+
+def test_interactive_no_defect_skips_toggle(no_defect_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """When no defect pixels exist, the Show GT checkbox is not created."""
+    assert not no_defect_analyzer._has_defects
+    assert no_defect_analyzer.groundtruth is None
+    assert not hasattr(no_defect_analyzer, "groundtruth_toggle")
+
+
+# ── analyse_interactive public API flow ─────────────────────────────────────
+
+
+def test_analyse_interactive_flow(thermo_container: ThermoContainer):
+    """analyse_interactive creates an analyzer, registers it, and releases on close."""
+    thermo_container.analyse_interactive()
+    analyzer = thermo_container._interactive_analyzer
+    assert analyzer is not None
+    assert not analyzer.closed
+
+    # Close the analyzer — this should trigger release_interactive_analyzer
+    analyzer.close(close_figure=True)
+    assert thermo_container._interactive_analyzer is None
+
+    # Opening a new analyzer after close works
+    thermo_container.analyse_interactive(overlay_color="green")
+    assert thermo_container._interactive_analyzer is not None
+    thermo_container._interactive_analyzer.close(close_figure=True)

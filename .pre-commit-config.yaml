@@ -1,5 +1,5 @@
 # Global exclude pattern for all hooks
-exclude: '^(examples/|docs/pyreverse/)'
+exclude: '^(examples/|docs/pyreverse/|src/pythermondt/visualization/static/vendor/.*)'
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks

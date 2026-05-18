@@ -92,7 +92,13 @@ build-backend = "setuptools.build_meta"
 where = ["./src"]
 
 [tool.setuptools.package-data]
-"pythermondt.visualization" = ["static/*.html", "static/*.js", "static/*.css"]
+"pythermondt.visualization" = [
+    "static/*.html",
+    "static/*.js",
+    "static/*.css",
+    "static/vendor/*.js",
+    "static/vendor/*.txt",
+]
 
 # Configure additional tools
 # Pytest
@@ -185,6 +191,7 @@ max-positional-arguments = 12 # Some Reader classes require many positional argu
 ignore-hidden = true
 extend-exclude = [
     "docs/pyreverse/*", # Exclude the pyreverse output from typos
+    "src/pythermondt/visualization/static/vendor/*", # Exclude the vendor files from typos
 ]
 
 # MyPy

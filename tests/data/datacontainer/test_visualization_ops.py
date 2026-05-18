@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -5,6 +7,7 @@ from matplotlib.colors import to_rgba
 from matplotlib.contour import QuadContourSet
 
 from pythermondt.data import ThermoContainer
+from pythermondt.data.datacontainer.visualization_ops import OverlayColorOption, VisualizationOps
 from pythermondt.readers import LocalReader
 
 
@@ -28,6 +31,26 @@ def _setup_matplotlib(monkeypatch):
     import matplotlib.pyplot as plt
 
     plt.close("all")
+
+
+@pytest.fixture(scope="function")
+def interactive_analyzer(thermo_container: ThermoContainer) -> Generator[VisualizationOps.InteractiveAnalyzer]:
+    """Create an InteractiveAnalyzer instance from the test ThermoContainer."""
+    analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container)
+    yield analyzer
+    analyzer.close(close_figure=True)
+
+
+@pytest.fixture(scope="function")
+def no_defect_analyzer() -> Generator[VisualizationOps.InteractiveAnalyzer]:
+    """InteractiveAnalyzer backed by a container with no defect pixels."""
+    container = ThermoContainer()
+    container.update_dataset("/Data/Tdata", np.zeros((5, 5, 3)))
+    container.update_dataset("/MetaData/DomainValues", np.arange(3, dtype=np.float64))
+    # DefectMask is empty → groundtruth remains None
+    analyzer = VisualizationOps.InteractiveAnalyzer(container)
+    yield analyzer
+    analyzer.close(close_figure=True)
 
 
 def test_frame_number_negative(thermo_container: ThermoContainer):
@@ -191,3 +214,205 @@ def test_coordinate_out_of_range(thermo_container: ThermoContainer):
 def test_coordinate_valid(thermo_container: ThermoContainer, x, y):
     """Valid coordinates do not raise."""
     thermo_container.show_pixel_profile(x, y)
+
+
+# ============================================================================
+# Test InteractiveAnalyzer
+# ============================================================================
+def test_interactive_groundtruth_toggle_on_adds_overlay(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Toggling Show GT on adds an RGBA overlay image and contour to the frame axes."""
+    assert interactive_analyzer.groundtruth is not None, "Test fixture must have defect pixels"
+    assert interactive_analyzer._overlay_img is None
+    assert interactive_analyzer._overlay_contour is None
+
+    # Simulate toggling the checkbox on through the real CheckButtons callback path
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+
+    # Verify overlay state
+    assert interactive_analyzer._overlay_img is not None, "Overlay image should exist after toggle on"
+    assert interactive_analyzer._overlay_contour is not None, "Contour should exist after toggle on"
+
+    # Verify overlay image is on the axes
+    overlay_imgs = [
+        im
+        for im in interactive_analyzer.frame_ax.get_images()
+        if (arr := im.get_array()) is not None and arr.shape[-1] == 4
+    ]
+    assert len(overlay_imgs) == 1, f"Expected 1 RGBA overlay image on axes, got {len(overlay_imgs)}"
+    overlay_arr = overlay_imgs[0].get_array()
+    assert overlay_arr is not None
+
+    # Verify contour exists on axes
+    contours = [c for c in interactive_analyzer.frame_ax.collections if isinstance(c, QuadContourSet)]
+    assert len(contours) >= 1, "Expected at least 1 contour on frame axes"
+
+
+def test_interactive_groundtruth_toggle_off_removes_overlay(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Toggling Show GT off removes the overlay image and contour."""
+    # First toggle on
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+    assert interactive_analyzer._overlay_img is not None
+
+    # Then toggle off
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+
+    assert interactive_analyzer._overlay_img is None, "Overlay image should be removed after toggle off"
+    assert interactive_analyzer._overlay_contour is None, "Contour should be removed after toggle off"
+
+
+def test_interactive_groundtruth_persists_across_frames(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Ground truth overlay persists when navigating to a different frame."""
+    # Toggle overlay on
+    interactive_analyzer.groundtruth_toggle.set_active(0)
+
+    # Collect overlay pixels for verification
+    assert interactive_analyzer._overlay_img is not None
+    overlay_img = interactive_analyzer._overlay_img
+
+    # Navigate to a different frame
+    current_frame = interactive_analyzer.current_frame
+    total_frames = interactive_analyzer.tdata.shape[0]
+    assert total_frames > 1, "Test fixture must have more than one frame"
+    new_frame = (current_frame + 1) % total_frames
+    interactive_analyzer.update_frame(float(new_frame))
+
+    # Verify frame changed
+    assert interactive_analyzer.current_frame == new_frame
+
+    # Verify the overlay is still on the axes (same artist object)
+    assert interactive_analyzer._overlay_img is overlay_img
+    assert overlay_img in interactive_analyzer.frame_ax.get_images()
+
+
+@pytest.mark.parametrize("color, expected_channel", [("red", 0), ("green", 1), ("blue", 2)])
+def test_interactive_overlay_color_configuration(
+    thermo_container: ThermoContainer, color: OverlayColorOption, expected_channel: int
+):
+    """Each overlay color activates the correct RGBA channel in the overlay."""
+    analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color=color)
+    assert analyzer._overlay_color == color
+
+    # Toggle on
+    analyzer.groundtruth_toggle.set_active(0)
+
+    overlay_imgs = [
+        im for im in analyzer.frame_ax.get_images() if (arr := im.get_array()) is not None and arr.shape[-1] == 4
+    ]
+    assert len(overlay_imgs) == 1
+    overlay_data = overlay_imgs[0].get_array()
+    assert overlay_data is not None
+
+    # Verify the correct RGBA channel is set to 1.0 on defect pixels
+    gt = thermo_container.get_dataset("/GroundTruth/DefectMask").numpy(force=True)
+    defect_mask = gt > 0
+    if defect_mask.any():
+        channel_values = overlay_data[defect_mask, expected_channel]
+        assert np.allclose(channel_values, 1.0), f"{color} channel not set on defect pixels"
+
+    analyzer.close(close_figure=True)
+
+
+def test_interactive_invalid_overlay_color_raises(thermo_container: ThermoContainer):
+    """Invalid overlay_color passed to InteractiveAnalyzer raises ValueError."""
+    with pytest.raises(ValueError, match=r"Invalid overlay_color"):
+        VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color="purple")  # type: ignore
+
+
+@pytest.mark.parametrize("alpha", [-0.1, 1.1, -0.5, 1.5])
+def test_interactive_alpha_out_of_range(thermo_container: ThermoContainer, alpha: float):
+    """Invalid overlay_alpha passed to InteractiveAnalyzer raises ValueError."""
+    with pytest.raises(ValueError, match=r"Overlay alpha must be in the range \[0, 1\], got"):
+        VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_alpha=alpha)
+
+
+@pytest.mark.parametrize("alpha", [0.0, 1.0, 0.6])
+def test_interactive_alpha_valid(thermo_container: ThermoContainer, alpha: float):
+    """Valid overlay_alpha within [0, 1] is stored and does not raise."""
+    analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_alpha=alpha)
+    assert analyzer._overlay_alpha == alpha
+    analyzer.close(close_figure=True)
+
+
+def test_interactive_close_double_call_no_error(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Closing an already-closed analyzer is a no-op."""
+    interactive_analyzer.close(close_figure=False)
+    interactive_analyzer.close(close_figure=False)  # Should not raise
+
+
+def test_interactive_closed_property_after_close(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Closed returns True after close()."""
+    assert not interactive_analyzer.closed
+    interactive_analyzer.close(close_figure=False)
+    assert interactive_analyzer.closed
+
+
+def test_interactive_update_frame_noop(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """update_frame with the current frame value is a no-op."""
+    current = interactive_analyzer.current_frame
+    interactive_analyzer.update_frame(float(current))
+    assert interactive_analyzer.current_frame == current
+
+
+def test_interactive_clear_points(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """clear_points removes all selected points, markers, and profile lines."""
+    # Manually simulate a click by adding state directly
+    interactive_analyzer.selected_points.append((10, 10))
+    marker = interactive_analyzer.frame_ax.plot(10, 10, "x", color="red", markersize=10)[0]
+    interactive_analyzer.point_markers.append(marker)
+    line = interactive_analyzer.profile_ax.plot([0, 1], [0, 1], color="red")[0]
+    interactive_analyzer.profile_lines.append(line)
+
+    interactive_analyzer.clear_points(None)
+
+    assert interactive_analyzer.selected_points == []
+    assert interactive_analyzer.point_markers == []
+    assert interactive_analyzer.profile_lines == []
+    assert marker not in interactive_analyzer.frame_ax.lines
+    assert line not in interactive_analyzer.profile_ax.lines
+
+
+def test_interactive_toggle_annotation_off(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """Toggling Show Value off hides the cursor annotation box."""
+    # Show the annotation first so we can verify it gets hidden
+    interactive_analyzer.cursor_annotation_box.set_visible(True)
+    interactive_analyzer._last_hover_pixel = (5, 5)
+
+    # Simulate unchecked checkbox
+    orig_get_status = interactive_analyzer.annotation_toggle.get_status
+    interactive_analyzer.annotation_toggle.get_status = lambda: [False]
+    try:
+        interactive_analyzer.toggle_annotation(None)
+    finally:
+        interactive_analyzer.annotation_toggle.get_status = orig_get_status
+
+    assert not interactive_analyzer.cursor_annotation_box.get_visible()
+    assert interactive_analyzer._last_hover_pixel is None
+
+
+def test_interactive_no_defect_skips_toggle(no_defect_analyzer: VisualizationOps.InteractiveAnalyzer):
+    """When no defect pixels exist, the Show GT checkbox is not created."""
+    assert no_defect_analyzer.groundtruth is None
+    assert not hasattr(no_defect_analyzer, "groundtruth_toggle")
+
+    # The toggle method itself should be a harmless no-op when ground truth is absent
+    no_defect_analyzer.toggle_groundtruth(None)
+
+
+# ── analyse_interactive public API flow ─────────────────────────────────────
+
+
+def test_analyse_interactive_flow(thermo_container: ThermoContainer):
+    """analyse_interactive creates an analyzer, registers it, and releases on close."""
+    thermo_container.analyse_interactive()
+    analyzer = thermo_container._interactive_analyzer
+    assert analyzer is not None
+    assert not analyzer.closed
+
+    # Close the analyzer — this should trigger release_interactive_analyzer
+    analyzer.close(close_figure=True)
+    assert thermo_container._interactive_analyzer is None
+
+    # Opening a new analyzer after close works
+    thermo_container.analyse_interactive(overlay_color="green")
+    assert thermo_container._interactive_analyzer is not None
+    thermo_container._interactive_analyzer.close(close_figure=True)

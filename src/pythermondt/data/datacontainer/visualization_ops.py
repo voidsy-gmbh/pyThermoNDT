@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
 from matplotlib.colors import to_rgba
+from matplotlib.contour import QuadContourSet
+from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
@@ -19,18 +21,65 @@ FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
 OverlayColorOption: TypeAlias = Literal["red", "green", "blue"]
 
 
+def _create_overlay_rgba(
+    binary_mask: np.ndarray,
+    color: OverlayColorOption,
+    alpha: float = 0.6,
+) -> np.ndarray:
+    """Build an RGBA overlay array for a ground truth binary mask.
+
+    Args:
+        binary_mask: Boolean array (H x W) where True marks defect pixels.
+        color: One of "red", "green", "blue".
+        alpha: Overlay opacity in the range [0, 1]. Defaults to 0.6.
+
+    Returns:
+        RGBA array (H x W x 4) with the configured color channel set to 1.0
+        on defect pixels and the alpha channel set to *alpha*.
+    """
+    height, width = binary_mask.shape
+    channel_idx = {"red": 0, "green": 1, "blue": 2}[color]
+
+    overlay = np.zeros((height, width, 4))
+    overlay[binary_mask, channel_idx] = 1.0
+    overlay[binary_mask, 3] = alpha
+
+    return overlay
+
+
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     _interactive_analyzer: "VisualizationOps.InteractiveAnalyzer | None" = None
 
     # TODO: Refactor visualization logic to reduce the tight coupling between data handling and visualization.
-    class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
-        def __init__(self, parent: "VisualizationOps"):
+    class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes, too-many-statements
+        def __init__(
+            self,
+            parent: "VisualizationOps",
+            overlay_color: OverlayColorOption = "red",
+            overlay_alpha: float = 0.6,
+        ):
             """Initialize the interactive analyzer for thermographic data visualization.
 
             Args:
                 parent (VisualizationOps): The parent container for the interactive analysis.
+                overlay_color: Color for the ground truth overlay. One of "red", "green", "blue".
+                    Defaults to "red".
+                overlay_alpha: Opacity for the ground truth overlay, in the range [0, 1].
+                    Defaults to 0.6.
+
+            Raises:
+                ValueError: If overlay_color is not one of "red", "green", "blue".
+                ValueError: If overlay_alpha is not in the range [0, 1].
             """
-            # 1.) Retrieve data from the container
+            # 1.) Validate and store overlay configuration
+            if overlay_color not in {"red", "green", "blue"}:
+                raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
+            if not 0 <= overlay_alpha <= 1:
+                raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
+            self._overlay_color: OverlayColorOption = overlay_color
+            self._overlay_alpha: float = overlay_alpha
+
+            # 2.) Retrieve data from the container
             self.container = parent
             # Transpose to (frame, y, x) for faster access - this avoids the need to squeeze the data
             self.tdata = parent.get_dataset("/Data/Tdata").numpy(force=True).transpose(2, 0, 1)
@@ -38,11 +87,20 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.data_unit = parent.get_unit("/Data/Tdata")
             self.domain_unit = parent.get_unit("/MetaData/DomainValues")
 
-            # 2.) Setup the figure, axes and colorbar
-            # Create the main figure with two subplots
-            self.fig = plt.figure(figsize=(15, 6))
-            self.frame_ax = plt.subplot2grid((1, 2), (0, 0))
-            self.profile_ax = plt.subplot2grid((1, 2), (0, 1))
+            # Load ground truth and check for any defect pixels
+            gt_tensor = parent.get_dataset("/GroundTruth/DefectMask")
+            self.groundtruth: np.ndarray | None = None
+            if gt_tensor is not None:
+                gt = gt_tensor.numpy(force=True)
+                if (gt > 0).any():
+                    self.groundtruth = gt
+
+            # 3.) Setup the figure, axes and colorbar
+            # Create a dedicated bottom row for controls so widgets never overlap plot labels.
+            self.fig = plt.figure(figsize=(16, 7))
+            gs = self.fig.add_gridspec(2, 16, height_ratios=[24, 1], hspace=0.35, wspace=0.7)
+            self.frame_ax = self.fig.add_subplot(gs[0, :8])
+            self.profile_ax = self.fig.add_subplot(gs[0, 8:])
 
             # Initialize the frame display
             self.current_frame = 0  # type: int
@@ -63,26 +121,35 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             formatter = ticker.ScalarFormatter(useMathText=False, useOffset=False)
             self.colorbar = plt.colorbar(self.frame_img, ax=self.frame_ax, format=formatter)
 
-            # 3.) Setup the interactive elements
+            # 4.) Setup the interactive elements in the dedicated bottom row
             # Setup the slider
-            slider_ax = plt.axes((0.2, 0.02, 0.6, 0.03))
+            slider_ax = self.fig.add_subplot(gs[1, :9])
             self.frame_slider = Slider(
                 ax=slider_ax, label="Frame", valmin=0, valmax=self.tdata.shape[0] - 1, valinit=0, valstep=1
             )
 
             # Setup the clear button
-            clear_ax = plt.axes((0.85, 0.02, 0.1, 0.03))
+            clear_ax = self.fig.add_subplot(gs[1, 10:12])
             self.clear_button = Button(clear_ax, "Clear Points")
 
             # Create checkbox for annotation toggle
-            check_ax = plt.axes((0.85, 0.07, 0.1, 0.03))  # Position below clear button
+            check_ax = self.fig.add_subplot(gs[1, 12:14])
             self.annotation_toggle = CheckButtons(
                 check_ax,
                 ["Show Value"],
                 [True],  # Initially checked
             )
 
-            # 4.) Initialize state variables
+            # Create checkbox for ground truth overlay toggle (only if defects exist)
+            if self.groundtruth is not None:
+                check_gt_ax = self.fig.add_subplot(gs[1, 14:])
+                self.groundtruth_toggle = CheckButtons(
+                    check_gt_ax,
+                    ["Show GT"],
+                    [False],  # Initially unchecked
+                )
+
+            # 5.) Initialize state variables
             # Store selected points and their profiles
             self.selected_points: list[tuple[int, int]] = []
             self.point_markers: list[Line2D] = []
@@ -90,6 +157,10 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.colors = ["red", "blue", "green", "purple"]  # Colors for up to 4 points
             self._last_hover_pixel: tuple[int, int] | None = None
             self._closed = False
+
+            # Ground truth overlay state
+            self._overlay_img: AxesImage | None = None
+            self._overlay_contour: QuadContourSet | None = None
 
             # Initialize annotation box once
             self.cursor_annotation_text = TextArea("", textprops={"color": "white", "backgroundcolor": "black"})
@@ -103,17 +174,20 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.cursor_annotation_box.set_visible(False)  # Hide initially
             self.frame_ax.add_artist(self.cursor_annotation_box)
 
-            # 5.) Connect events
+            # 6.) Connect events
             self._slider_cid = self.frame_slider.on_changed(self.update_frame)
             self._clear_btn_cid = self.clear_button.on_clicked(self.clear_points)
             self._annotation_cid = self.annotation_toggle.on_clicked(self.toggle_annotation)
+            self._gt_cid: int | None = None
+            if self.groundtruth is not None:
+                self._gt_cid = self.groundtruth_toggle.on_clicked(self.toggle_groundtruth)
             self._canvas_connection_ids = [
                 self.fig.canvas.mpl_connect("button_press_event", self.on_click),
                 self.fig.canvas.mpl_connect("motion_notify_event", self.on_mouse_move),
                 self.fig.canvas.mpl_connect("close_event", self.on_close),
             ]
 
-            # 6.) Initialize blitting for faster rendering (if possible)
+            # 7.) Initialize blitting for faster rendering (if possible)
             self.fig.canvas.draw_idle()
 
         @property
@@ -134,6 +208,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.frame_slider.disconnect(self._slider_cid)
             self.clear_button.disconnect(self._clear_btn_cid)
             self.annotation_toggle.disconnect(self._annotation_cid)
+            if self._gt_cid is not None:
+                self.groundtruth_toggle.disconnect(self._gt_cid)
 
             self.container.release_interactive_analyzer(self)
 
@@ -151,6 +227,33 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 self.cursor_annotation_box.set_visible(False)
                 self._last_hover_pixel = None
                 self.fig.canvas.draw_idle()
+
+        def toggle_groundtruth(self, event):  # pylint: disable=unused-argument
+            """Toggle ground truth overlay on/off."""
+            if self.groundtruth is None:
+                return
+            if self.groundtruth_toggle.get_status()[0]:
+                # Show overlay: create RGBA mask and contour from ground truth based on requested color
+                binary_gt = self.groundtruth > 0
+                overlay = _create_overlay_rgba(binary_gt, self._overlay_color, self._overlay_alpha)
+                self._overlay_img = self.frame_ax.imshow(overlay, aspect="auto", interpolation="none")
+
+                # Add contour outline in a darker shade of the overlay color
+                r, g, b, _ = to_rgba(self._overlay_color)
+                contour_color = (r * 0.6, g * 0.6, b * 0.6)
+                self._overlay_contour = self.frame_ax.contour(
+                    binary_gt.astype(float), levels=[0.5], colors=[contour_color], linewidths=1.5
+                )
+            else:
+                # Remove overlay and contour
+                if self._overlay_img is not None:
+                    self._overlay_img.remove()
+                    self._overlay_img = None
+                if self._overlay_contour is not None:
+                    self._overlay_contour.remove()
+                    self._overlay_contour = None
+
+            self.fig.canvas.draw_idle()
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
@@ -341,16 +444,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                     gt: np.ndarray = groundtruth.numpy(force=True)
                     binary_gt: np.ndarray = gt > 0
 
-                    # Create RGBA overlay with configurable color and alpha
-                    rows, cols = binary_gt.shape
-                    overlay = np.zeros((rows, cols, 4))  # RGBA
-                    if overlay_color == "red":
-                        overlay[binary_gt, 0] = 1.0  # Red channel
-                    elif overlay_color == "green":
-                        overlay[binary_gt, 1] = 1.0  # Green channel
-                    elif overlay_color == "blue":
-                        overlay[binary_gt, 2] = 1.0  # Blue channel
-                    overlay[binary_gt, 3] = overlay_alpha  # Alpha channel
+                    # Create RGBA overlay with specified color and alpha
+                    overlay = _create_overlay_rgba(binary_gt, overlay_color, overlay_alpha)
 
                     frame_ax.imshow(overlay, aspect="auto", interpolation="none")
 
@@ -416,9 +511,19 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         if self._interactive_analyzer is analyzer:
             self._interactive_analyzer = None
 
-    def analyse_interactive(self):
-        """Launch interactive analysis session for thermographic data visualization."""
+    def analyse_interactive(self, overlay_color: OverlayColorOption = "red", overlay_alpha: float = 0.6):
+        """Launch interactive analysis session for thermographic data visualization.
+
+        Args:
+            overlay_color: Color for the ground truth overlay when the "Show GT" toggle is active.
+                Must be one of "red", "green", "blue". Defaults to "red".
+            overlay_alpha: Opacity for the ground truth overlay, in the range [0, 1]. Defaults to 0.6.
+
+        Raises:
+            ValueError: If overlay_color is not one of "red", "green", "blue".
+            ValueError: If overlay_alpha is not in the range [0, 1].
+        """
         if self._interactive_analyzer is not None and not self._interactive_analyzer.closed:
             self._interactive_analyzer.close(close_figure=True)
-        self._interactive_analyzer = self.InteractiveAnalyzer(self)
+        self._interactive_analyzer = self.InteractiveAnalyzer(self, overlay_color, overlay_alpha)
         plt.show()

@@ -200,6 +200,9 @@ def test_coordinate_valid(thermo_container: ThermoContainer, x, y):
     thermo_container.show_pixel_profile(x, y)
 
 
+# ============================================================================
+# Test InteractiveAnalyzer
+# ============================================================================
 def test_interactive_groundtruth_toggle_on_adds_overlay(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
     """Toggling Show GT on adds an RGBA overlay image and contour to the frame axes."""
     assert interactive_analyzer._has_defects, "Test fixture must have defect pixels"

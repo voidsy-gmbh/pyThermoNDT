@@ -63,7 +63,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             # 1.) Validate and store overlay configuration
             if overlay_color not in {"red", "green", "blue"}:
                 raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
-            self._overlay_color = overlay_color
+            self._overlay_color: OverlayColorOption = overlay_color
 
             # 2.) Retrieve data from the container
             self.container = parent

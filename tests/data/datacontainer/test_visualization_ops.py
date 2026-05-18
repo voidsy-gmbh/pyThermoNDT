@@ -318,6 +318,21 @@ def test_interactive_invalid_overlay_color_raises(thermo_container: ThermoContai
         VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_color="purple")  # type: ignore
 
 
+@pytest.mark.parametrize("alpha", [-0.1, 1.1, -0.5, 1.5])
+def test_interactive_alpha_out_of_range(thermo_container: ThermoContainer, alpha: float):
+    """Invalid overlay_alpha passed to InteractiveAnalyzer raises ValueError."""
+    with pytest.raises(ValueError, match=r"Overlay alpha must be in the range \[0, 1\], got"):
+        VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_alpha=alpha)
+
+
+@pytest.mark.parametrize("alpha", [0.0, 1.0, 0.6])
+def test_interactive_alpha_valid(thermo_container: ThermoContainer, alpha: float):
+    """Valid overlay_alpha within [0, 1] is stored and does not raise."""
+    analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container, overlay_alpha=alpha)
+    assert analyzer._overlay_alpha == alpha
+    analyzer.close(close_figure=True)
+
+
 def test_interactive_close_double_call_no_error(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
     """Closing an already-closed analyzer is a no-op."""
     interactive_analyzer.close(close_figure=False)

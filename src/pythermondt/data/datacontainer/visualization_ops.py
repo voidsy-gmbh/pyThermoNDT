@@ -140,6 +140,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self._slider_cid = self.frame_slider.on_changed(self.update_frame)
             self._clear_btn_cid = self.clear_button.on_clicked(self.clear_points)
             self._annotation_cid = self.annotation_toggle.on_clicked(self.toggle_annotation)
+            self._gt_cid: int | None = None
             if self._has_defects:
                 self._gt_cid = self.groundtruth_toggle.on_clicked(self.toggle_groundtruth)
             self._canvas_connection_ids = [
@@ -169,7 +170,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             self.frame_slider.disconnect(self._slider_cid)
             self.clear_button.disconnect(self._clear_btn_cid)
             self.annotation_toggle.disconnect(self._annotation_cid)
-            if hasattr(self, "_gt_cid"):
+            if self._gt_cid is not None:
                 self.groundtruth_toggle.disconnect(self._gt_cid)
 
             self.container.release_interactive_analyzer(self)

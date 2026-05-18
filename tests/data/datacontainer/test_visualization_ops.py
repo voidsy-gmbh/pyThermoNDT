@@ -205,7 +205,7 @@ def test_coordinate_valid(thermo_container: ThermoContainer, x, y):
 # ============================================================================
 def test_interactive_groundtruth_toggle_on_adds_overlay(interactive_analyzer: VisualizationOps.InteractiveAnalyzer):
     """Toggling Show GT on adds an RGBA overlay image and contour to the frame axes."""
-    assert interactive_analyzer._has_defects, "Test fixture must have defect pixels"
+    assert interactive_analyzer.groundtruth is not None, "Test fixture must have defect pixels"
     assert interactive_analyzer._overlay_img is None
     assert interactive_analyzer._overlay_contour is None
 
@@ -367,13 +367,12 @@ def no_defect_analyzer() -> VisualizationOps.InteractiveAnalyzer:
     container = ThermoContainer()
     container.update_dataset("/Data/Tdata", np.zeros((5, 5, 3)))
     container.update_dataset("/MetaData/DomainValues", np.arange(3, dtype=np.float64))
-    # DefectMask is empty → _has_defects will be False
+    # DefectMask is empty → groundtruth remains None
     return VisualizationOps.InteractiveAnalyzer(container)
 
 
 def test_interactive_no_defect_skips_toggle(no_defect_analyzer: VisualizationOps.InteractiveAnalyzer):
     """When no defect pixels exist, the Show GT checkbox is not created."""
-    assert not no_defect_analyzer._has_defects
     assert no_defect_analyzer.groundtruth is None
     assert not hasattr(no_defect_analyzer, "groundtruth_toggle")
 

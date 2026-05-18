@@ -21,6 +21,32 @@ FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
 OverlayColorOption: TypeAlias = Literal["red", "green", "blue"]
 
 
+def _create_overlay_rgba(
+    binary_mask: np.ndarray,
+    color: OverlayColorOption,
+    alpha: float = 0.6,
+) -> np.ndarray:
+    """Build an RGBA overlay array for a ground truth binary mask.
+
+    Args:
+        binary_mask: Boolean array (H x W) where True marks defect pixels.
+        color: One of "red", "green", "blue".
+        alpha: Overlay opacity in the range [0, 1]. Defaults to 0.6.
+
+    Returns:
+        RGBA array (H x W x 4) with the configured color channel set to 1.0
+        on defect pixels and the alpha channel set to *alpha*.
+    """
+    height, width = binary_mask.shape
+    channel_idx = {"red": 0, "green": 1, "blue": 2}[color]
+
+    overlay = np.zeros((height, width, 4))
+    overlay[binary_mask, channel_idx] = 1.0
+    overlay[binary_mask, 3] = alpha
+
+    return overlay
+
+
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     _interactive_analyzer: "VisualizationOps.InteractiveAnalyzer | None" = None
 
@@ -193,16 +219,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             if self.groundtruth is None:
                 return
             if self.groundtruth_toggle.get_status()[0]:
-                # Show overlay: create RGBA mask and contour from ground truth
+                # Show overlay: create RGBA mask and contour from ground truth based on requested color
                 binary_gt = self.groundtruth > 0
-                height, width = binary_gt.shape
-
-                # Build RGBA overlay matching the configured color
-                overlay = np.zeros((height, width, 4))
-                channel_idx = {"red": 0, "green": 1, "blue": 2}[self._overlay_color]
-                overlay[binary_gt, channel_idx] = 1.0
-                overlay[binary_gt, 3] = 0.6  # Alpha
-
+                overlay = _create_overlay_rgba(binary_gt, self._overlay_color)
                 self._overlay_img = self.frame_ax.imshow(overlay, aspect="auto", interpolation="none")
 
                 # Add contour outline in a darker shade of the overlay color
@@ -411,16 +430,8 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                     gt: np.ndarray = groundtruth.numpy(force=True)
                     binary_gt: np.ndarray = gt > 0
 
-                    # Create RGBA overlay with configurable color and alpha
-                    rows, cols = binary_gt.shape
-                    overlay = np.zeros((rows, cols, 4))  # RGBA
-                    if overlay_color == "red":
-                        overlay[binary_gt, 0] = 1.0  # Red channel
-                    elif overlay_color == "green":
-                        overlay[binary_gt, 1] = 1.0  # Green channel
-                    elif overlay_color == "blue":
-                        overlay[binary_gt, 2] = 1.0  # Blue channel
-                    overlay[binary_gt, 3] = overlay_alpha  # Alpha channel
+                    # Create RGBA overlay with specified color and alpha
+                    overlay = _create_overlay_rgba(binary_gt, overlay_color, overlay_alpha)
 
                     frame_ax.imshow(overlay, aspect="auto", interpolation="none")
 

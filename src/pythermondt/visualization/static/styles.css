@@ -122,7 +122,7 @@ pre {
   margin: 0;
   padding: 10px;
   overflow: auto;
-  max-height: 40vh;
+  max-height: 28vh;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fbfcfd;
@@ -131,39 +131,130 @@ pre {
   line-height: 1.4;
 }
 
-.preview-controls {
+.plot-panel {
   margin-top: 12px;
 }
 
-.preview-buttons {
+.mode-controls {
   display: flex;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.preview-buttons button {
+.mode-controls label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mode-controls select {
   border: 1px solid var(--border);
   background: #f7f9fb;
   color: var(--text);
   padding: 6px 10px;
   border-radius: 6px;
-  cursor: pointer;
 }
 
-.preview-buttons button:hover:enabled {
-  border-color: var(--accent);
-  color: var(--accent);
+.mode-origin {
+  color: var(--muted);
+  font-size: 12px;
 }
 
-.preview-buttons button:disabled {
-  cursor: not-allowed;
-  color: #9ba5b1;
-}
-
-#preview-window {
+.plot-info {
   margin: 0 0 8px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.plot-message {
+  min-height: 18px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.plot-message-error {
+  color: var(--error);
+}
+
+.frame-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.frame-controls label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.frame-controls select,
+.frame-controls input,
+.frame-controls button {
+  border: 1px solid var(--border);
+  background: #f7f9fb;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+#frame-slider {
+  min-width: 170px;
+}
+
+#frame-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#plot-container {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.matrix-container {
+  width: 100%;
+  min-height: 120px;
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+}
+
+.matrix-caption {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.matrix-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 11px;
+}
+
+.matrix-table th,
+.matrix-table td {
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.matrix-table thead th {
+  background: #eef2f6;
+}
+
+.matrix-table tbody th {
+  background: #f7f9fb;
 }
 
 @media (max-width: 900px) {
@@ -176,6 +267,14 @@ pre {
   }
 
   pre {
-    max-height: 30vh;
+    max-height: 24vh;
+  }
+
+  #plot-container {
+    min-height: 320px;
+  }
+
+  .matrix-container {
+    max-height: 320px;
   }
 }

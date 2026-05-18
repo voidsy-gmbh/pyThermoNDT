@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PyThermoNDT BaseViewer</title>
     <link rel="stylesheet" href="/styles.css" />
+    <script src="/vendor/plotly-3.4.0.min.js" defer></script>
     <script src="/app.js" defer></script>
   </head>
   <body>
@@ -23,14 +24,28 @@
         <h2>Node Details</h2>
         <pre id="node-json">Select a node.</pre>
 
-        <div id="preview-controls" class="preview-controls" hidden>
-          <h3>Dataset Preview</h3>
-          <div class="preview-buttons">
-            <button id="preview-prev" type="button">Previous</button>
-            <button id="preview-next" type="button">Next</button>
+        <div id="plot-panel" class="plot-panel" hidden>
+          <h3>Dataset Plot</h3>
+          <p id="plot-info" class="plot-info"></p>
+
+          <div class="mode-controls">
+            <label for="view-mode">View mode</label>
+            <select id="view-mode"></select>
+            <span id="mode-origin" class="mode-origin"></span>
           </div>
-          <p id="preview-window">Offset: 0</p>
-          <pre id="preview-json"></pre>
+
+          <div id="frame-controls" class="frame-controls" hidden>
+            <label for="frame-axis">Frame axis</label>
+            <select id="frame-axis"></select>
+
+            <label for="frame-slider">Frame index</label>
+            <input id="frame-slider" type="range" min="0" max="0" value="0" step="1" />
+            <span id="frame-label">0 / 0</span>
+          </div>
+
+          <p id="plot-message" class="plot-message"></p>
+          <div id="plot-container"></div>
+          <div id="matrix-container" class="matrix-container" hidden></div>
         </div>
       </section>
     </main>

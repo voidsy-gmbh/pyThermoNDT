@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -32,7 +34,7 @@ def _setup_matplotlib(monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def interactive_analyzer(thermo_container: ThermoContainer) -> VisualizationOps.InteractiveAnalyzer:
+def interactive_analyzer(thermo_container: ThermoContainer) -> Generator[VisualizationOps.InteractiveAnalyzer]:
     """Create an InteractiveAnalyzer instance from the test ThermoContainer."""
     analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container)
     yield analyzer
@@ -40,7 +42,7 @@ def interactive_analyzer(thermo_container: ThermoContainer) -> VisualizationOps.
 
 
 @pytest.fixture(scope="function")
-def no_defect_analyzer() -> VisualizationOps.InteractiveAnalyzer:
+def no_defect_analyzer() -> Generator[VisualizationOps.InteractiveAnalyzer]:
     """InteractiveAnalyzer backed by a container with no defect pixels."""
     container = ThermoContainer()
     container.update_dataset("/Data/Tdata", np.zeros((5, 5, 3)))

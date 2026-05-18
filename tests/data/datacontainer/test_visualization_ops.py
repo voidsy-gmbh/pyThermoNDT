@@ -34,7 +34,21 @@ def _setup_matplotlib(monkeypatch):
 @pytest.fixture(scope="function")
 def interactive_analyzer(thermo_container: ThermoContainer) -> VisualizationOps.InteractiveAnalyzer:
     """Create an InteractiveAnalyzer instance from the test ThermoContainer."""
-    return VisualizationOps.InteractiveAnalyzer(thermo_container)
+    analyzer = VisualizationOps.InteractiveAnalyzer(thermo_container)
+    yield analyzer
+    analyzer.close(close_figure=True)
+
+
+@pytest.fixture(scope="function")
+def no_defect_analyzer() -> VisualizationOps.InteractiveAnalyzer:
+    """InteractiveAnalyzer backed by a container with no defect pixels."""
+    container = ThermoContainer()
+    container.update_dataset("/Data/Tdata", np.zeros((5, 5, 3)))
+    container.update_dataset("/MetaData/DomainValues", np.arange(3, dtype=np.float64))
+    # DefectMask is empty → groundtruth remains None
+    analyzer = VisualizationOps.InteractiveAnalyzer(container)
+    yield analyzer
+    analyzer.close(close_figure=True)
 
 
 def test_frame_number_negative(thermo_container: ThermoContainer):
@@ -356,19 +370,6 @@ def test_interactive_toggle_annotation_off(interactive_analyzer: VisualizationOp
 
     assert not interactive_analyzer.cursor_annotation_box.get_visible()
     assert interactive_analyzer._last_hover_pixel is None
-
-
-# ── No-defect ground truth edge case ────────────────────────────────────────
-
-
-@pytest.fixture(scope="function")
-def no_defect_analyzer() -> VisualizationOps.InteractiveAnalyzer:
-    """InteractiveAnalyzer backed by a container with no defect pixels."""
-    container = ThermoContainer()
-    container.update_dataset("/Data/Tdata", np.zeros((5, 5, 3)))
-    container.update_dataset("/MetaData/DomainValues", np.arange(3, dtype=np.float64))
-    # DefectMask is empty → groundtruth remains None
-    return VisualizationOps.InteractiveAnalyzer(container)
 
 
 def test_interactive_no_defect_skips_toggle(no_defect_analyzer: VisualizationOps.InteractiveAnalyzer):

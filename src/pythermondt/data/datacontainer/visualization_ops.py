@@ -52,18 +52,32 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
     # TODO: Refactor visualization logic to reduce the tight coupling between data handling and visualization.
     class InteractiveAnalyzer:  # pylint: disable=too-many-instance-attributes
-        def __init__(self, parent: "VisualizationOps", overlay_color: OverlayColorOption = "red"):
+        def __init__(
+            self,
+            parent: "VisualizationOps",
+            overlay_color: OverlayColorOption = "red",
+            overlay_alpha: float = 0.6,
+        ):
             """Initialize the interactive analyzer for thermographic data visualization.
 
             Args:
                 parent (VisualizationOps): The parent container for the interactive analysis.
                 overlay_color: Color for the ground truth overlay. One of "red", "green", "blue".
                     Defaults to "red".
+                overlay_alpha: Opacity for the ground truth overlay, in the range [0, 1].
+                    Defaults to 0.6.
+
+            Raises:
+                ValueError: If overlay_color is not one of "red", "green", "blue".
+                ValueError: If overlay_alpha is not in the range [0, 1].
             """
             # 1.) Validate and store overlay configuration
             if overlay_color not in {"red", "green", "blue"}:
                 raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
+            if not 0 <= overlay_alpha <= 1:
+                raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
             self._overlay_color: OverlayColorOption = overlay_color
+            self._overlay_alpha: float = overlay_alpha
 
             # 2.) Retrieve data from the container
             self.container = parent
@@ -221,7 +235,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             if self.groundtruth_toggle.get_status()[0]:
                 # Show overlay: create RGBA mask and contour from ground truth based on requested color
                 binary_gt = self.groundtruth > 0
-                overlay = _create_overlay_rgba(binary_gt, self._overlay_color)
+                overlay = _create_overlay_rgba(binary_gt, self._overlay_color, self._overlay_alpha)
                 self._overlay_img = self.frame_ax.imshow(overlay, aspect="auto", interpolation="none")
 
                 # Add contour outline in a darker shade of the overlay color

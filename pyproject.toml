@@ -222,6 +222,10 @@ filename = "src/pythermondt/__pkginfo__.py"
 search = "__version__ = \"{current_version}\""
 replace = "__version__ = \"{new_version}\""
 
+# uv
+[tool.uv]
+exclude-newer = "7 days"
+
 [tool.licensecheck]
 skip_dependencies = [
     "azure-identity", # Buggy with complex license

@@ -38,7 +38,7 @@ jobs:
       # Step 1.1: Checkout repository (workflow_call)
       - name: Checkout code
         if: github.event.workflow != '.github/workflows/generate_diagrams.yml'
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ inputs.ref }}
           ssh-key: ${{ secrets.WRITE_KEY }}
@@ -46,13 +46,13 @@ jobs:
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout code
         if: github.event.workflow == '.github/workflows/generate_diagrams.yml'
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ssh-key: ${{ secrets.WRITE_KEY }}
 
       # Step 2: Setup uv
       - name: Set up Python
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           version-file: requirements_dev.txt
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}

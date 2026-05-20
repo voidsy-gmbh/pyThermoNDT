@@ -48,7 +48,7 @@ jobs:
           path: dist/
 
       - name: Sign artifacts and upload to GitHub Release
-        uses: sigstore/gh-action-sigstore-python@v3.3.0
+        uses: sigstore/gh-action-sigstore-python@04cffa1d795717b140764e8b640de88853c92acc
         with:
           inputs: |
             ./dist/*.tar.gz

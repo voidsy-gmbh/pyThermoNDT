@@ -68,7 +68,7 @@ dev = [
     "pytest==9.0.3",
     "pytest-cov==7.1.0",
     "pytest-benchmark==5.2.3",
-    "ruff==0.15.13",
+    "ruff==0.15.12",
     "pre-commit==4.6.0",
     "bump-my-version==1.3.0",
     "deepdiff==8.6.2",
@@ -221,6 +221,10 @@ values = [
 filename = "src/pythermondt/__pkginfo__.py"
 search = "__version__ = \"{current_version}\""
 replace = "__version__ = \"{new_version}\""
+
+# uv
+[tool.uv]
+exclude-newer = "7 days"
 
 [tool.licensecheck]
 skip_dependencies = [

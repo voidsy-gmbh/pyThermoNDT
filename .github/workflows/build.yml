@@ -27,6 +27,7 @@ jobs:
           python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
           activate-environment: true
           save-cache: false # Disable cache for pip build
+          restore-cache: false # Disable cache for pip build
 
         # Step 3: Build the package
       - name: Build package

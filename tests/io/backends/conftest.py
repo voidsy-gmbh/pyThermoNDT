@@ -1,113 +1,26 @@
-"""Fixtures for backend agnostic tests."""
-
 from collections.abc import Generator
 from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import cast
-from unittest.mock import MagicMock, patch
 
 import pytest
 from moto import mock_aws
 
-from pythermondt.io import AzureBlobBackend, BaseBackend, IOPathWrapper, LocalBackend, S3Backend
-
-from .utils import MockAzureBlob, TestConfig
-
-BACKENDS = [
-    TestConfig(backend_cls=LocalBackend, scheme="file", is_remote=False),
-    TestConfig(backend_cls=S3Backend, scheme="s3", is_remote=True),
-    TestConfig(backend_cls=AzureBlobBackend, scheme="az", is_remote=True),
-]
-
-# Single file test data
-TEST_FILES = {
-    "sample.txt": b"test content",
-    "data.bin": b"\x00\x01\x02\x03",
-    "large.tiff": b"fake thermal data" * 100,
-}
-
-# Multi-file scenarios for list/filter tests
-FILE_SCENARIOS = {
-    "mixed_types": {
-        "sample.txt": b"test content",
-        "data.bin": b"\x00\x01\x02\x03",
-        "large.tiff": b"fake thermal data" * 100,
-    },
-    "single_type": {
-        "thermal1.tiff": b"data1",
-        "thermal2.tiff": b"data2",
-        "thermal3.tiff": b"data3",
-    },
-    "many_files": {f"file{i:03d}.bin": b"x" * i for i in range(15)},
-}
+from pythermondt.io import AzureBlobBackend, BaseBackend, LocalBackend, S3Backend
+from tests.support.storage import (
+    BACKENDS,
+    FILE_SCENARIOS,
+    TEST_FILES,
+    TestConfig,
+    mocked_azure_blob_storage,
+    prepare_file,
+)
 
 
 @pytest.fixture()
 def azure_mock():
     """Create mocked Azure Blob Storage."""
-    mock_storage = MockAzureBlob()
-
-    def make_blob_client(container: str, blob: str):
-        mock_blob = MagicMock()
-
-        # Mock download_blob - FIX: chunks() must return an iterator
-        def download_blob():
-            data = mock_storage.download_blob(container, blob)
-            mock_stream = MagicMock()
-            # Make chunks() return a callable that yields the data
-            mock_stream.chunks = lambda: iter([data])
-            return mock_stream
-
-        mock_blob.download_blob = download_blob
-
-        # Mock upload_blob
-        def upload_blob(data, overwrite=True):
-            content = data.read()
-            mock_storage.upload_blob(container, blob, content)
-
-        mock_blob.upload_blob = upload_blob
-
-        # Mock get_blob_properties
-        def get_blob_properties():
-            if not mock_storage.blob_exists(container, blob):
-                from azure.core.exceptions import ResourceNotFoundError
-
-                raise ResourceNotFoundError("Blob not found")
-            mock_props = MagicMock()
-            mock_props.size = mock_storage.get_blob_size(container, blob)
-            mock_props.etag = mock_storage.get_blob_etag(container, blob)
-            return mock_props
-
-        mock_blob.get_blob_properties = get_blob_properties
-
-        return mock_blob
-
-    def make_container_client(container: str):
-        mock_container = MagicMock()
-
-        def list_blobs(name_starts_with=""):
-            blob_names = mock_storage.list_blobs(container, name_starts_with)
-            mock_blobs = []
-            for name in blob_names:
-                mock_blob = MagicMock()
-                mock_blob.name = name
-                mock_blobs.append(mock_blob)
-            return mock_blobs
-
-        mock_container.list_blobs = list_blobs
-
-        return mock_container
-
-    with patch("pythermondt.io.backends.azure_backend.BlobServiceClient") as mock_client_class:
-        mock_client = MagicMock()
-        mock_client.get_blob_client = make_blob_client
-        mock_client.get_container_client = make_container_client
-        mock_client.close = MagicMock()
-
-        # Both from_connection_string and __init__ return the same mock
-        mock_client_class.from_connection_string.return_value = mock_client
-        mock_client_class.return_value = mock_client
-
+    with mocked_azure_blob_storage() as mock_storage:
         yield mock_storage
 
 
@@ -148,17 +61,7 @@ def backend_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[
 
 def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_path: Path) -> str:
     """Prepare file and return path."""
-    if isinstance(backend_instance, LocalBackend):
-        file_path = tmp_path / name
-        file_path.write_bytes(content)
-        return file_path.as_uri()
-    elif isinstance(backend_instance, AzureBlobBackend):
-        backend_instance.write_file(IOPathWrapper(content), name)
-        return f"az://test-container/{name}"
-    elif isinstance(backend_instance, S3Backend):
-        backend_instance.write_file(IOPathWrapper(content), name)
-        return "s3://test-bucket/" + name
-    raise NotImplementedError("Unsupported backend for file preparation.")
+    return prepare_file(backend_instance, name, content, tmp_path)
 
 
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x[0])

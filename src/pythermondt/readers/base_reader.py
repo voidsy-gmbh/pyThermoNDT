@@ -67,6 +67,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Internal state
         self.__backend: BaseBackend | None = None
         self.__files: list[str] | None = None
+        self.__file_uris: list[str] | None = None
         self.__file_names: list[str] | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
@@ -135,26 +136,41 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
     @property
     def files(self) -> list[str]:
-        """List of files that the reader is able to read."""
+        """List of files that the reader is able to read (human-readable, decoded paths)."""
+        uris = self.file_uris
+        # Only decode file:// URIs — S3/Azure keys may contain literal %XX
+        if self.backend.scheme != "file":
+            return uris
+        if not self.__cache_files:
+            return [unquote(u) for u in uris]
+        if self.__files is None:
+            self.__files = [unquote(u) for u in uris]
+        return self.__files
+
+    @property
+    def file_uris(self) -> list[str]:
+        """List of URL-encoded URIs for internal use (reading, downloading, caching)."""
         # If caching is disabled return the file list from the backend
         if not self.__cache_files:
             return self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
 
-        # If files have never been loaded, load them from the backend
-        if self.__files is None:
-            self.__files = self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+        # If URIs have never been loaded, load them from the backend
+        if self.__file_uris is None:
+            self.__file_uris = self.backend.get_file_list(
+                extensions=self.__supported_extensions, num_files=self.num_files
+            )
 
-        # Return the cached files list
-        return self.__files
+        # Return the cached URIs list
+        return self.__file_uris
 
     @property
     def file_names(self) -> list[str]:
         """List of file names (without path) that the reader is able to read."""
         if not self.__cache_files:
-            return [self._to_file_name(file) for file in self.files]
+            return [self._to_file_name(file) for file in self.file_uris]
 
         if self.__file_names is None:
-            self.__file_names = [self._to_file_name(file) for file in self.files]
+            self.__file_names = [self._to_file_name(file) for file in self.file_uris]
 
         return self.__file_names
 
@@ -171,6 +187,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         # Clear files cache to force reloading
         state["_BaseReader__files"] = None
+        state["_BaseReader__file_uris"] = None
         state["_BaseReader__file_names"] = None
         return state
 
@@ -192,26 +209,26 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def __getitem__(self, idx: int) -> DataContainer:
         if idx < 0 or idx >= len(self.files):
             raise IndexError(f"Index out of bounds. Must be in range [0, {len(self.files)}[")
-        return self.read_file(self.files[idx])
+        return self.read_file(self.file_uris[idx])
 
     def __len__(self) -> int:
         return len(self.files)
 
     def __iter__(self) -> Iterator[DataContainer]:
-        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
-        # and caching is off
-        file_paths = self.files
+        # Take a snapshot of the file URI list ==> to avoid undefined behavior when the file list changes during
+        # iteration and caching is off. Use file_uris for internal operations (encoded for correct file access).
+        file_uris = self.file_uris
 
-        for file in file_paths:
-            yield self.read_file(file)
+        for uri in file_uris:
+            yield self.read_file(uri)
 
     def __reversed__(self) -> Iterator[DataContainer]:
-        # Take a snapshot of the file list ==> to avoid undefined behavior when the file list changes during iteration
-        # and caching is off
-        file_paths = self.files
+        # Take a snapshot of the file URI list ==> to avoid undefined behavior when the file list changes during
+        # iteration and caching is off. Use file_uris for internal operations (encoded for correct file access).
+        file_uris = self.file_uris
 
-        for file in reversed(file_paths):
-            yield self.read_file(file)
+        for uri in reversed(file_uris):
+            yield self.read_file(uri)
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""
@@ -359,7 +376,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             return
 
         # If file_paths is None, download all files that the reader is able to read
-        paths_to_download = file_paths or self.files
+        # Use file_uris for internal operations (properly encoded)
+        paths_to_download = file_paths or self.file_uris
         if not paths_to_download:
             return
 

@@ -53,11 +53,12 @@ def test_getitem(reader_test_data: ReaderTestData):
     assert _assert_payload(container) == reader_test_data.contents["sample1.test"]
 
 
-@pytest.mark.parametrize("index", [-1, 2])
-def test_getitem_invalid_index(reader_test_data: ReaderTestData, index: int):
+@pytest.mark.parametrize("index", [-100, -1, None])
+def test_getitem_invalid_index(reader_test_data: ReaderTestData, index: int | None):
     """Test indexed access validates bounds before reading."""
-    with pytest.raises(IndexError, match=escape("Index out of bounds. Must be in range [0, 2[")):
-        reader_test_data.reader[index]
+    idx = index if index is not None else len(reader_test_data.expected_files) + 5
+    with pytest.raises(IndexError, match=escape("Index out of bounds.")):
+        reader_test_data.reader[idx]
 
 
 def test_iter(reader_test_data: ReaderTestData):

@@ -33,6 +33,11 @@ def test_files_use_parser_extensions(reader_test_data: ReaderTestData):
     assert reader_test_data.files["ignored.txt"] not in reader_test_data.reader.files
 
 
+def test_files_and_file_uris_same_count(reader_test_data: ReaderTestData):
+    """Test that files and file_uris return the same number of entries for all backends."""
+    assert len(reader_test_data.reader.files) == len(reader_test_data.reader.file_uris)
+
+
 @pytest.mark.parametrize("num_files", [1, 3, 10, 100, None], ids=["1", "3", "10", "100", "None"])
 def test_num_files_limits_reader_files(reader_test_data: ReaderTestData, num_files: int | None):
     """Test that num_files limits the discovered reader files."""

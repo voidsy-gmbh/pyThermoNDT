@@ -1,10 +1,10 @@
 from collections.abc import Generator
-from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import cast
 
 import pytest
 from moto import mock_aws
+from moto.core.models import MockAWS
 
 from pythermondt.io import AzureBlobBackend, BaseBackend, LocalBackend, S3Backend
 from tests.support.storage import (
@@ -29,7 +29,7 @@ def backend_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[
     """Create backend from configuration."""
     config = cast(TestConfig, request.param)
 
-    mock: AbstractContextManager | None = None
+    mock: MockAWS | None = None
     if config.backend_cls == LocalBackend:
         backend_instance = LocalBackend(pattern=str(tmp_path))
     elif config.backend_cls == S3Backend:

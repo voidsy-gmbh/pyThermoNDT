@@ -59,17 +59,12 @@ def backend_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[
         mock.stop()
 
 
-def _prepare_file(backend_instance: BaseBackend, name: str, content: bytes, tmp_path: Path) -> str:
-    """Prepare file and return path."""
-    return prepare_file(backend_instance, name, content, tmp_path)
-
-
 @pytest.fixture(params=TEST_FILES.items(), ids=lambda x: x[0])
 def test_file(request, backend_config, tmp_path: Path) -> tuple[str, bytes]:
     """Single test file - returns (path, content) tuple."""
     name, content = request.param
     backend_instance, _ = backend_config
-    file_path = _prepare_file(backend_instance, name, content, tmp_path)
+    file_path = prepare_file(backend_instance, name, content, tmp_path)
     return file_path, content
 
 
@@ -77,7 +72,7 @@ def test_file(request, backend_config, tmp_path: Path) -> tuple[str, bytes]:
 def test_files_all(backend_config, tmp_path: Path) -> dict[str, str]:
     """All test files - returns dict of {name: path}."""
     backend_instance, _ = backend_config
-    return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in TEST_FILES.items()}
+    return {name: prepare_file(backend_instance, name, content, tmp_path) for name, content in TEST_FILES.items()}
 
 
 @pytest.fixture(params=FILE_SCENARIOS.items(), ids=lambda x: x[0])
@@ -85,4 +80,4 @@ def test_files_scenario(request, backend_config, tmp_path: Path) -> dict[str, st
     """Parameterized multi-file scenarios - returns dict of {name: path}."""
     _, files = request.param
     backend_instance, _ = backend_config
-    return {name: _prepare_file(backend_instance, name, content, tmp_path) for name, content in sorted(files.items())}
+    return {name: prepare_file(backend_instance, name, content, tmp_path) for name, content in sorted(files.items())}

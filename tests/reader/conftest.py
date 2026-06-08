@@ -5,7 +5,7 @@ from typing import Protocol, cast
 
 import pytest
 
-from pythermondt.io import AzureBlobBackend, LocalBackend, S3Backend
+from pythermondt.io import AzureBlobBackend, BaseBackend, LocalBackend, S3Backend
 from pythermondt.io.parsers import BaseParser
 from pythermondt.readers import AzureBlobReader, BaseReader, LocalReader, S3Reader
 from tests.support import storage
@@ -62,6 +62,7 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
     """Create a reader and a storage setup callback from configuration."""
     config = cast(storage.TestConfig, request.param)
 
+    backend: BaseBackend
     if config.reader_cls == LocalReader:
         backend = LocalBackend(pattern=str(tmp_path))
 

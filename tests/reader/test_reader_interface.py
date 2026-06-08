@@ -26,19 +26,20 @@ def test_parser_class(reader_config: ReaderTestContext):
 
 def test_files_use_parser_extensions(reader_test_data: ReaderTestData):
     """Test that reader file discovery respects parser-supported extensions."""
+    expected_scheme = reader_test_data.context.config.scheme
     assert reader_test_data.reader.files == reader_test_data.expected_files
-    assert all(
-        path.startswith(f"{reader_test_data.context.config.scheme}://") for path in reader_test_data.reader.files
-    )
+    assert all(path.startswith(f"{expected_scheme}://") for path in reader_test_data.reader.files)
     assert all(path.endswith(".test") for path in reader_test_data.reader.files)
     assert reader_test_data.files["ignored.txt"] not in reader_test_data.reader.files
 
 
-def test_num_files_limits_reader_files(reader_test_data: ReaderTestData):
+@pytest.mark.parametrize("num_files", [1, 3, 10, 100, None], ids=["1", "3", "10", "100", "None"])
+def test_num_files_limits_reader_files(reader_test_data: ReaderTestData, num_files: int | None):
     """Test that num_files limits the discovered reader files."""
-    reader = reader_test_data.context.make_reader(parser=PlainTextParser, num_files=1)
+    reader = reader_test_data.context.make_reader(parser=PlainTextParser, num_files=num_files)
+    expected_files = reader_test_data.expected_files
 
-    assert reader.files == reader_test_data.expected_files[:1]
+    assert reader.files == expected_files[:num_files] if num_files else expected_files
 
 
 def test_file_names(reader_test_data: ReaderTestData):

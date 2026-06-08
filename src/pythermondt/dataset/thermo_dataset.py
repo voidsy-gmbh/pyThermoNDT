@@ -162,7 +162,7 @@ class ThermoDataset(BaseDataset):
         return [file for reader in self.__readers for file in reader.files]
 
     def __len__(self) -> int:
-        return sum(len(reader.files) for reader in self.__readers)
+        return sum(len(reader.file_uris) for reader in self.__readers)
 
     def __iter__(self) -> Iterator[DataContainer]:
         return (self[i] for i in range(len(self)))

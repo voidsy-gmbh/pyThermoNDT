@@ -3,7 +3,7 @@ from re import escape
 import pytest
 
 from pythermondt.data import DataContainer
-from tests.reader.conftest import ReaderTestData
+from tests.reader.conftest import ReaderTestContext, ReaderTestData
 from tests.support.storage import PlainTextParser
 
 
@@ -14,9 +14,14 @@ def _assert_payload(container: DataContainer) -> str:
     return payload
 
 
-def test_remote_source(reader_config):
+def test_remote_source(reader_config: ReaderTestContext):
     """Test that readers expose the backend remote/local source type."""
     assert reader_config.reader.remote_source == reader_config.config.is_remote
+
+
+def test_parser_class(reader_config: ReaderTestContext):
+    """Test that readers expose the configured parser class (in this case always PlainTextParser)."""
+    assert reader_config.reader.parser == PlainTextParser
 
 
 def test_files_use_parser_extensions(reader_test_data: ReaderTestData):

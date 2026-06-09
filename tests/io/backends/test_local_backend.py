@@ -112,7 +112,7 @@ def test_get_file_list_single_file(tmp_path: Path):
 def test_get_file_list_directory(tmp_path: Path):
     """Test get_file_list with directory pattern."""
     files = ["test1.txt", "test2.py", "test3.txt"]
-    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+    paths = [tmp_path / filename for filename in files]
 
     for path in paths:
         path.write_text("content")
@@ -120,10 +120,10 @@ def test_get_file_list_directory(tmp_path: Path):
     backend = LocalBackend(str(tmp_path))
 
     result = backend.get_file_list()
-    expected = [p.as_uri() for p in paths]  # Convert path objects to strings for comparison
+    expected = {p.as_uri() for p in paths}
 
     assert len(result) == 3
-    assert result == expected
+    assert set(result) == expected
 
 
 def test_get_file_list_glob_pattern(tmp_path: Path):

@@ -76,7 +76,7 @@ class LocalBackend(BaseBackend):
         # Nothing to close for local files
         pass
 
-    def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
+    def get_file_list(self) -> list[str]:
         # Handle different pattern types
         all_files = []
         match self.__source_type:
@@ -89,17 +89,6 @@ class LocalBackend(BaseBackend):
                     all_files = [f.path for f in os.scandir(self.pattern) if f.is_file()]
             case "glob":
                 all_files = glob(self.pattern, recursive=self.__recursive)
-
-        # Filter by extension if provided
-        if extensions:
-            all_files = [f for f in all_files if any(f.endswith(ext) for ext in extensions)]
-
-        # Sort for deterministic behavior
-        all_files.sort()
-
-        # Limit number of results if specified
-        if num_files is not None:
-            all_files = all_files[:num_files]
 
         # Convert to absolute paths and normalize before returning
         all_files = [self._to_url(os.path.normpath(os.path.abspath(f))) for f in all_files]

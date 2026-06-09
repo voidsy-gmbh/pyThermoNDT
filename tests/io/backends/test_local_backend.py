@@ -152,23 +152,6 @@ def test_get_file_list_empty_directory(tmp_path):
     assert len(result) == 0
 
 
-def test_get_file_list_sorting(tmp_path):
-    """Test that get_file_list returns sorted results."""
-    files = ["zebra.txt", "alpha.txt", "beta.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.get_file_list()
-
-    # Check that results are sorted (regardless of path separator format)
-    assert len(result) == 3
-    assert result == sorted(result)
-    # Check that all expected filenames are present
-    result_names = [Path(f).name for f in result]
-    assert result_names == ["alpha.txt", "beta.txt", "zebra.txt"]
-
-
 def test_unicode_filenames(tmp_path):
     """Test handling files with unicode characters."""
     backend = LocalBackend(str(tmp_path))

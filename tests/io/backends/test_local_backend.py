@@ -129,7 +129,7 @@ def test_get_file_list_directory(tmp_path: Path):
 def test_get_file_list_glob_pattern(tmp_path: Path):
     """Test get_file_list with glob pattern."""
     files = ["test1.txt", "test2.py", "other.txt"]
-    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+    paths = [tmp_path / filename for filename in files]
 
     for path in paths:
         path.write_text("content")

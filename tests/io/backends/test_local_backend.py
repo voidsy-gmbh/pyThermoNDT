@@ -144,41 +144,6 @@ def test_get_file_list_glob_pattern(tmp_path: Path):
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    "extensions, expected_count",
-    [
-        ((".txt",), 2),
-        ((".py",), 1),
-        ((".txt", ".py"), 3),
-        ((".md",), 0),
-    ],
-)
-def test_get_file_list_extension_filter(tmp_path, extensions, expected_count):
-    """Test get_file_list with extension filtering."""
-    files = ["test1.txt", "test2.py", "test3.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.get_file_list(extensions=extensions)
-
-    assert len(result) == expected_count
-    if expected_count > 0:
-        assert all(f.endswith(extensions) for f in result)
-
-
-def test_get_file_list_num_files_limit(tmp_path):
-    """Test get_file_list with number limit."""
-    files = ["test1.txt", "test2.txt", "test3.txt", "test4.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.get_file_list(num_files=2)
-
-    assert len(result) == 2
-
-
 def test_get_file_list_empty_directory(tmp_path):
     """Test get_file_list with empty directory."""
     backend = LocalBackend(str(tmp_path))

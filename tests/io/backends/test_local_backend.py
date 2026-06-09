@@ -204,7 +204,9 @@ def test_full_workflow(tmp_path):
     all_files = backend.get_file_list()
     assert len(all_files) == 4
 
-    txt_files = backend.get_file_list(extensions=(".txt",))
+    # Test listing filtered by extension (filtering is a reader concern;
+    # backends return all files, so we filter manually here for the test)
+    txt_files = [f for f in all_files if f.endswith(".txt")]
     assert len(txt_files) == 2
 
     # Test reading

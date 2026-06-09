@@ -152,13 +152,11 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         """List of URL-encoded URIs for internal use (reading, downloading, caching)."""
         # If caching is disabled return the file list from the backend
         if not self.__cache_files:
-            return self.backend.get_file_list(extensions=self.__supported_extensions, num_files=self.num_files)
+            return self._filter_and_limit(self.backend.get_file_list())
 
         # If URIs have never been loaded, load them from the backend
         if self.__file_uris is None:
-            self.__file_uris = self.backend.get_file_list(
-                extensions=self.__supported_extensions, num_files=self.num_files
-            )
+            self.__file_uris = self._filter_and_limit(self.backend.get_file_list())
 
         # Return the cached URIs list
         return self.__file_uris
@@ -233,6 +231,24 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""
         return os.path.basename(unquote(urlparse(file_path).path))
+
+    def _filter_and_limit(self, files: list[str]) -> list[str]:
+        """Apply extension filtering, sort, and num_files limit.
+
+        Filtering is applied in the reader so backends stay portable and only
+        need to return the complete, unfiltered file listing.
+        """
+        # Filter by extension if provided
+        if self.__supported_extensions:
+            files = [f for f in files if any(f.endswith(ext) for ext in self.__supported_extensions)]
+
+        # Sort for deterministic behavior
+        files.sort()
+
+        # Limit number of results if specified
+        if self.num_files is not None:
+            files = files[: self.num_files]
+        return files
 
     def _load_manifest(self, manifest_path: str) -> CacheManifest:
         """Load manifest from disk with thread safety."""

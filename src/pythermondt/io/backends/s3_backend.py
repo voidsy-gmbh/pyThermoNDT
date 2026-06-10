@@ -121,16 +121,8 @@ class S3Backend(BaseBackend):
         """
         self.__client.close()
 
-    def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
-        """Get list of files from S3 with optional filtering.
-
-        Args:
-            extensions (tuple[str, ...], optional): Filter by file extensions
-            num_files (int, optional): Limit number of files returned
-
-        Returns:
-            list[str]: List of file paths
-        """
+    def get_file_list(self) -> list[str]:
+        """Return all objects under the configured prefix as unsorted S3 URIs."""
         # List all objects with the given prefix
         paginator = self.__client.get_paginator("list_objects_v2")
 
@@ -145,17 +137,6 @@ class S3Backend(BaseBackend):
 
                     # Add full S3 path
                     files.append(self._to_url(self.bucket, key))
-
-        # Filter by extension if provided
-        if extensions:
-            files = [f for f in files if any(f.lower().endswith(ext.lower()) for ext in extensions)]
-
-        # Sort for deterministic behavior
-        files.sort()
-
-        # Limit results if specified
-        if num_files is not None:
-            files = files[:num_files]
 
         return files
 

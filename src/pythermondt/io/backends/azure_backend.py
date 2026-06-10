@@ -168,16 +168,8 @@ class AzureBlobBackend(BaseBackend):
         """
         self.__client.close()
 
-    def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
-        """Get list of files from Azure Blob Storage with optional filtering.
-
-        Args:
-            extensions (tuple[str, ...], optional): Filter by file extensions
-            num_files (int, optional): Limit number of files returned
-
-        Returns:
-            list[str]: List of file paths
-        """
+    def get_file_list(self) -> list[str]:
+        """Return all blobs under the configured prefix as unsorted Azure URIs."""
         blobs = []
         container_client = self.__client.get_container_client(self.__container_name)
 
@@ -187,14 +179,6 @@ class AzureBlobBackend(BaseBackend):
 
             # Add full Azure path using _to_url
             blobs.append(self._to_url(self.__container_name, blob.name))
-
-        if extensions:
-            blobs = [b for b in blobs if any(b.lower().endswith(ext.lower()) for ext in extensions)]
-
-        blobs.sort()
-
-        if num_files is not None:
-            blobs = blobs[:num_files]
 
         return blobs
 

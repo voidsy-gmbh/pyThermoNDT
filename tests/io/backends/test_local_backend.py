@@ -112,7 +112,7 @@ def test_get_file_list_single_file(tmp_path: Path):
 def test_get_file_list_directory(tmp_path: Path):
     """Test get_file_list with directory pattern."""
     files = ["test1.txt", "test2.py", "test3.txt"]
-    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+    paths = [tmp_path / filename for filename in files]
 
     for path in paths:
         path.write_text("content")
@@ -120,16 +120,16 @@ def test_get_file_list_directory(tmp_path: Path):
     backend = LocalBackend(str(tmp_path))
 
     result = backend.get_file_list()
-    expected = [p.as_uri() for p in paths]  # Convert path objects to strings for comparison
+    expected = {p.as_uri() for p in paths}
 
     assert len(result) == 3
-    assert result == expected
+    assert set(result) == expected
 
 
 def test_get_file_list_glob_pattern(tmp_path: Path):
     """Test get_file_list with glob pattern."""
     files = ["test1.txt", "test2.py", "other.txt"]
-    paths = sorted(tmp_path / filename for filename in files)  # Should be sorted to match the backend's behavior
+    paths = [tmp_path / filename for filename in files]
 
     for path in paths:
         path.write_text("content")
@@ -144,64 +144,12 @@ def test_get_file_list_glob_pattern(tmp_path: Path):
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    "extensions, expected_count",
-    [
-        ((".txt",), 2),
-        ((".py",), 1),
-        ((".txt", ".py"), 3),
-        ((".md",), 0),
-    ],
-)
-def test_get_file_list_extension_filter(tmp_path, extensions, expected_count):
-    """Test get_file_list with extension filtering."""
-    files = ["test1.txt", "test2.py", "test3.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.get_file_list(extensions=extensions)
-
-    assert len(result) == expected_count
-    if expected_count > 0:
-        assert all(f.endswith(extensions) for f in result)
-
-
-def test_get_file_list_num_files_limit(tmp_path):
-    """Test get_file_list with number limit."""
-    files = ["test1.txt", "test2.txt", "test3.txt", "test4.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.get_file_list(num_files=2)
-
-    assert len(result) == 2
-
-
 def test_get_file_list_empty_directory(tmp_path):
     """Test get_file_list with empty directory."""
     backend = LocalBackend(str(tmp_path))
     result = backend.get_file_list()
 
     assert len(result) == 0
-
-
-def test_get_file_list_sorting(tmp_path):
-    """Test that get_file_list returns sorted results."""
-    files = ["zebra.txt", "alpha.txt", "beta.txt"]
-    for filename in files:
-        (tmp_path / filename).write_text("content")
-
-    backend = LocalBackend(str(tmp_path))
-    result = backend.get_file_list()
-
-    # Check that results are sorted (regardless of path separator format)
-    assert len(result) == 3
-    assert result == sorted(result)
-    # Check that all expected filenames are present
-    result_names = [Path(f).name for f in result]
-    assert result_names == ["alpha.txt", "beta.txt", "zebra.txt"]
 
 
 def test_unicode_filenames(tmp_path):
@@ -256,7 +204,9 @@ def test_full_workflow(tmp_path):
     all_files = backend.get_file_list()
     assert len(all_files) == 4
 
-    txt_files = backend.get_file_list(extensions=(".txt",))
+    # Test listing filtered by extension (filtering is a reader concern;
+    # backends return all files, so we filter manually here for the test)
+    txt_files = [f for f in all_files if f.endswith(".txt")]
     assert len(txt_files) == 2
 
     # Test reading

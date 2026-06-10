@@ -37,8 +37,8 @@ class BaseBackend(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def get_file_list(self, extensions: tuple[str, ...] | None = None, num_files: int | None = None) -> list[str]:
-        """Get a list of files matching the specified pattern/extensions."""
+    def get_file_list(self) -> list[str]:
+        """Return all files under the configured pattern or prefix as unsorted URIs."""
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod

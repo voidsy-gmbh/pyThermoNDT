@@ -14,7 +14,9 @@ from tqdm.auto import tqdm
 from ..config import settings
 from ..data import DataContainer
 from ..data.datacontainer.utils import format_bytes
-from ..transforms.utils import Compose, _BaseTransform, _flatten_transforms, split_transforms_for_caching
+from ..transforms.base import _BaseTransform
+from ..transforms.compose import Compose
+from ..transforms.utils import _flatten_transforms, split_transforms_for_caching
 
 CacheMode = Literal["immediate", "lazy"]
 

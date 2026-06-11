@@ -5,7 +5,7 @@ import torch
 
 from ..data import DataContainer
 from ..readers.base_reader import BaseReader
-from ..transforms.utils import _BaseTransform
+from ..transforms.base import _BaseTransform
 from .base_dataset import BaseDataset
 
 

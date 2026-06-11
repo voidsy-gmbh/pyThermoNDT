@@ -1,7 +1,9 @@
 from collections.abc import Sequence
 
+import torch
+
 from ..data import DataContainer
-from .base import ThermoTransform, _BaseTransform
+from .base import RandomThermoTransform, ThermoTransform, _BaseTransform
 
 
 class Compose(ThermoTransform):
@@ -39,4 +41,61 @@ class Compose(ThermoTransform):
     def forward(self, container: DataContainer) -> DataContainer:
         for t in self.transforms:
             container = t(container)
+        return container
+
+
+class RandomCompose(RandomThermoTransform):
+    """Apply each transform independently with probability p.
+
+    Unlike Compose (which applies all transforms sequentially),
+    RandomCompose applies each transform with probability p.
+
+    Args:
+        transforms: List of transforms to apply randomly.
+        p: Probability for each transform. Scalar (same for all) or
+           list of probabilities (one per transform). Default: 0.5
+
+    Example:
+        >>> # Each augmentation applied independently with 30% chance
+        >>> augmentation_pipeline = T.RandomCompose(
+        ...     [
+        ...         T.AdaptiveGaussianNoise(),
+        ...         T.RandomFlip(),
+        ...     ],
+        ...     p=0.3,
+        ... )
+
+        >>> # Different probabilities per transform
+        >>> augmentation_pipeline = T.RandomCompose(
+        ...     [
+        ...         T.AdaptiveGaussianNoise(),
+        ...         T.RandomFlip(),
+        ...     ],
+        ...     p=0.3,
+        ... )
+    """
+
+    def __init__(self, transforms: Sequence[_BaseTransform], p: float | Sequence[float] = 0.5):
+        """Compose a sequence of transforms together into a single transform, applying each with probability p.
+
+        Args:
+            transforms (Sequence[_BaseTransform]): List of transforms to apply randomly.
+            p (float | Sequence[float]): Probability for each transform. Can either be a scalar (same for all) or
+                sequence of probabilities (one per transform). Default: 0.5
+        """
+        super().__init__()
+        self.transforms = transforms
+
+        # Handle scalar or list of probabilities
+        if isinstance(p, (int, float)):
+            self.probs = [float(p)] * len(transforms)
+        else:
+            if len(p) != len(transforms):
+                raise ValueError(f"Length of p ({len(p)}) must match transforms ({len(transforms)})")
+            self.probs = [float(pi) for pi in p]
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        for transform, prob in zip(self.transforms, self.probs, strict=True):
+            if torch.rand(1).item() < prob:
+                container = transform(container)
         return container

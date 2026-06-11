@@ -6,6 +6,14 @@ from ..data import DataContainer
 from .base import RandomThermoTransform, ThermoTransform, _BaseTransform
 
 
+def _indent_str(s: str, indent: str = "    ") -> str:
+    """Indent all lines after the first of a multi-line string."""
+    if "\n" not in s:
+        return s
+    lines = s.split("\n")
+    return "\n".join([lines[0]] + [indent + line for line in lines[1:]])
+
+
 class Compose(ThermoTransform):
     # fmt: off
     """Compose a sequence of transforms together into a single transform by applying them sequentially.
@@ -45,8 +53,8 @@ class Compose(ThermoTransform):
         if not self.transforms:
             return "Compose([])"
 
-        # Show transforms in a clean format
-        transform_strs = [str(t) for t in self.transforms]
+        # Show transforms in a clean format, indent nested containers
+        transform_strs = [_indent_str(str(t)) for t in self.transforms]
         if len(transform_strs) == 1:
             return f"Compose([{transform_strs[0]}])"
 
@@ -112,8 +120,8 @@ class RandomCompose(RandomThermoTransform):
         if not self.transforms:
             return "RandomCompose([])"
 
-        # Show transforms in a clean format with probabilities
-        transform_strs = [f"{t} (p={p:.2f})" for t, p in zip(self.transforms, self.probs, strict=True)]
+        # Show transforms in a clean format with probabilities, indent nested containers
+        transform_strs = [_indent_str(f"{t} (p={p:.2f})") for t, p in zip(self.transforms, self.probs, strict=True)]
         if len(transform_strs) == 1:
             return f"RandomCompose([{transform_strs[0]}])"
 

@@ -7,15 +7,26 @@ from .base import RandomThermoTransform, ThermoTransform, _BaseTransform
 
 
 class Compose(ThermoTransform):
-    """Compose a sequence of transforms together into a single transform.
+    """Compose a sequence of transforms together into a single transform by applying them sequentially.
 
-    This transform sequentially applies a list of transforms to the input container.
+    Each transform is applied in the order provided to the constructor.
+
+    Example:
+        >>> train_pipeline = T.Compose(
+        ...     [
+        ...         T.ApplyLUT(),
+        ...         T.RemoveFlash(),
+        ...         T.SubtractFrame(0),
+        ...         T.MinMaxNormalize(),
+        ...     ]
+        ... )
     """
 
     def __init__(self, transforms: Sequence[_BaseTransform]):
-        """Compose a sequence of transforms together into a single transform.
+        """Compose a sequence of transforms together into a single transform by applying them sequentially.
 
-        This transform sequentially applies a list of transforms to the input container.
+        Args:
+            transforms (Sequence[_BaseTransform]): List of transforms to apply sequentially.
         """
         super().__init__()
 
@@ -49,11 +60,6 @@ class RandomCompose(RandomThermoTransform):
 
     Unlike Compose (which applies all transforms sequentially),
     RandomCompose applies each transform with probability p.
-
-    Args:
-        transforms: List of transforms to apply randomly.
-        p: Probability for each transform. Scalar (same for all) or
-           list of probabilities (one per transform). Default: 0.5
 
     Example:
         >>> # Each augmentation applied independently with 30% chance

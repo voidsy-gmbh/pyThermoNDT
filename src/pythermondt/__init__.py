@@ -6,7 +6,7 @@ from .data import DataContainer, ThermoContainer
 from .dataset import IndexedThermoDataset, ThermoDataset
 from .io import HDF5Parser, SimulationParser
 from .readers import AzureBlobReader, LocalReader, S3Reader
-from .transforms import augmentation, frequency, normalization, preprocessing, sampling, utils
+from .transforms import augmentation, compose, frequency, normalization, preprocessing, sampling, utils
 from .writers import AzureBlobWriter, LocalWriter, S3Writer
 
 # Set up logging per Python best practices: https://docs.python.org/3/howto/logging.html
@@ -28,6 +28,7 @@ __all__ = [
     "ThermoDataset",
     "__version__",
     "augmentation",
+    "compose",
     "configure_logging",
     "frequency",
     "normalization",

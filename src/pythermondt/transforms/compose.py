@@ -94,6 +94,20 @@ class RandomCompose(RandomThermoTransform):
                 raise ValueError(f"Length of p ({len(p)}) must match transforms ({len(transforms)})")
             self.probs = [float(pi) for pi in p]
 
+    def __str__(self) -> str:
+        """Custom repr for RandomCompose - no type label, cleaner format."""
+        if not self.transforms:
+            return "RandomCompose([])"
+
+        # Show transforms in a clean format with probabilities
+        transform_strs = [f"{t} (p={p:.2f})" for t, p in zip(self.transforms, self.probs, strict=True)]
+        if len(transform_strs) == 1:
+            return f"RandomCompose([{transform_strs[0]}])"
+
+        # Multi-line format for multiple transforms
+        transforms_str = ",\n    ".join(transform_strs)
+        return f"RandomCompose([\n    {transforms_str}\n])"
+
     def forward(self, container: DataContainer) -> DataContainer:
         for transform, prob in zip(self.transforms, self.probs, strict=True):
             if torch.rand(1).item() < prob:

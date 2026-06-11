@@ -7,26 +7,31 @@ from .base import RandomThermoTransform, ThermoTransform, _BaseTransform
 
 
 class Compose(ThermoTransform):
+    # fmt: off
     """Compose a sequence of transforms together into a single transform by applying them sequentially.
 
     Each transform is applied in the order provided to the constructor.
 
     Example:
-        >>> train_pipeline = T.Compose(
-        ...     [
-        ...         T.ApplyLUT(),
-        ...         T.RemoveFlash(),
-        ...         T.SubtractFrame(0),
-        ...         T.MinMaxNormalize(),
-        ...     ]
-        ... )
+        >>> train_pipeline = T.Compose([
+        ...     T.ApplyLUT(),
+        ...     T.SubtractFrame(0),
+        ...     T.RemoveFlash(method='excitation_signal'),
+        ...     T.NonUniformSampling(64),
+        ...     T.RandomFlip(p_height=0.3, p_width=0.3),
+        ...     T.GaussianNoise(std=25e-3),
+        ...     T.MinMaxNormalize(),
+        ... ])
     """
-
+    # fmt: on
     def __init__(self, transforms: Sequence[_BaseTransform]):
-        """Compose a sequence of transforms together into a single transform by applying them sequentially.
+        """Initialize the Compose transform.
 
         Args:
             transforms (Sequence[_BaseTransform]): List of transforms to apply sequentially.
+
+        Raises:
+            TypeError: If not all transforms inherit from _BaseTransform.
         """
         super().__init__()
 
@@ -56,6 +61,7 @@ class Compose(ThermoTransform):
 
 
 class RandomCompose(RandomThermoTransform):
+    # fmt: off
     """Apply each transform independently with probability p.
 
     Unlike Compose (which applies all transforms sequentially),
@@ -63,26 +69,20 @@ class RandomCompose(RandomThermoTransform):
 
     Example:
         >>> # Each augmentation applied independently with 30% chance
-        >>> augmentation_pipeline = T.RandomCompose(
-        ...     [
-        ...         T.AdaptiveGaussianNoise(),
-        ...         T.RandomFlip(),
-        ...     ],
-        ...     p=0.3,
-        ... )
+        >>> augmentations = T.RandomCompose([
+        ...     T.AdaptiveGaussianNoise(),
+        ...     T.RandomFlip(),
+        ... ], p=0.3)
 
         >>> # Different probabilities per transform
-        >>> augmentation_pipeline = T.RandomCompose(
-        ...     [
-        ...         T.AdaptiveGaussianNoise(),
-        ...         T.RandomFlip(),
-        ...     ],
-        ...     p=[0.5, 0.2],
-        ... )
+        >>> augmentations = T.RandomCompose([
+        ...     T.AdaptiveGaussianNoise(),
+        ...     T.RandomFlip(),
+        ... ], p=[0.5, 0.2])
     """
-
+    # fmt: on
     def __init__(self, transforms: Sequence[_BaseTransform], p: float | Sequence[float] = 0.5):
-        """Apply each transform independently with probability p.
+        """Initialize the RandomCompose transform.
 
         Args:
             transforms (Sequence[_BaseTransform]): List of transforms to apply randomly.

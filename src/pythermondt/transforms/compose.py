@@ -88,8 +88,15 @@ class RandomCompose(RandomThermoTransform):
             transforms (Sequence[_BaseTransform]): List of transforms to apply randomly.
             p (float | Sequence[float]): Probability for each transform. Can either be a scalar (same for all) or
                 sequence of probabilities (one per transform). Default: 0.5
+
+        Raises:
+            TypeError: If not all transforms inherit from _BaseTransform.
+            ValueError: If p is a sequence and its length doesn't match transforms.
         """
         super().__init__()
+
+        if not all(isinstance(t, _BaseTransform) for t in transforms):
+            raise TypeError("Not all transforms inherit from _BaseTransform.")
         self.transforms = transforms
 
         # Handle scalar or list of probabilities
@@ -97,7 +104,7 @@ class RandomCompose(RandomThermoTransform):
             self.probs = [float(p)] * len(transforms)
         else:
             if len(p) != len(transforms):
-                raise ValueError(f"Length of p ({len(p)}) must match transforms ({len(transforms)})")
+                raise ValueError(f"Length of p ({len(p)}) must match transforms ({len(transforms)}).")
             self.probs = [float(pi) for pi in p]
 
     def __str__(self) -> str:

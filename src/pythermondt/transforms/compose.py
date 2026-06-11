@@ -77,12 +77,12 @@ class RandomCompose(RandomThermoTransform):
         ...         T.AdaptiveGaussianNoise(),
         ...         T.RandomFlip(),
         ...     ],
-        ...     p=0.3,
+        ...     p=[0.5, 0.2],
         ... )
     """
 
     def __init__(self, transforms: Sequence[_BaseTransform], p: float | Sequence[float] = 0.5):
-        """Compose a sequence of transforms together into a single transform, applying each with probability p.
+        """Apply each transform independently with probability p.
 
         Args:
             transforms (Sequence[_BaseTransform]): List of transforms to apply randomly.

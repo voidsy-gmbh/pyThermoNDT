@@ -136,59 +136,69 @@ def test_group_node_memory_with_attributes(group_node: GroupNode):
     assert memory_with_attr > memory_empty
 
 
-@pytest.mark.parametrize(
-    ("attributes", "expected_attribute_bytes"),
-    [
-        ({}, getsizeof({})),
-        (
-            {"test_attr": "test_value"},
-            getsizeof({"test_attr": "test_value"}) + getsizeof("test_value"),
-        ),
-        (
-            {"shape": [5, 6]},
-            getsizeof({"shape": [5, 6]}) + getsizeof([5, 6]) + getsizeof(5) + getsizeof(6),
-        ),
-        (
-            {"Unit": units.kelvin},
-            getsizeof({"Unit": units.kelvin})
-            + getsizeof(units.kelvin)
-            + getsizeof(units.kelvin.__dict__)
-            + sum(getsizeof(value) for value in vars(units.kelvin).values()),
-        ),
-        (
-            {
+@pytest.fixture
+def group_node_memory_case(request: pytest.FixtureRequest) -> tuple[dict[str, object], int]:
+    """Build memory test cases at runtime because `getsizeof` depends on current object state."""
+    match request.param:
+        case "empty":
+            attributes: dict[str, object] = {}
+            expected_attribute_bytes = getsizeof(attributes)
+        case "string":
+            attributes = {"test_attr": "test_value"}
+            expected_attribute_bytes = getsizeof(attributes) + getsizeof("test_value")
+        case "list":
+            shape = [5, 6]
+            attributes = {"shape": shape}
+            expected_attribute_bytes = (
+                getsizeof(attributes) + getsizeof(shape) + sum(getsizeof(value) for value in shape)
+            )
+        case "unit":
+            unit = units.kelvin
+            attributes = {"Unit": unit}
+            expected_attribute_bytes = (
+                getsizeof(attributes)
+                + getsizeof(unit)
+                + getsizeof(unit.__dict__)
+                + sum(getsizeof(value) for value in vars(unit).values())
+            )
+        case "mixed-unit":
+            label_ids = [1, 2, 3]
+            unit = units.arbitrary
+            attributes = {
                 "Source": "Simulation",
                 "NoiseLevel": 0.1,
-                "LabelIds": [1, 2, 3],
-                "Unit": units.arbitrary,
-            },
-            getsizeof(
-                {
-                    "Source": "Simulation",
-                    "NoiseLevel": 0.1,
-                    "LabelIds": [1, 2, 3],
-                    "Unit": units.arbitrary,
-                }
+                "LabelIds": label_ids,
+                "Unit": unit,
+            }
+            expected_attribute_bytes = (
+                getsizeof(attributes)
+                + getsizeof("Simulation")
+                + getsizeof(0.1)
+                + getsizeof(label_ids)
+                + sum(getsizeof(value) for value in label_ids)
+                + getsizeof(unit)
+                + getsizeof(unit.__dict__)
+                + getsizeof("arbitrary")
+                + getsizeof("a. u.")
             )
-            + getsizeof("Simulation")
-            + getsizeof(0.1)
-            + getsizeof([1, 2, 3])
-            + getsizeof(1)
-            + getsizeof(2)
-            + getsizeof(3)
-            + getsizeof(units.arbitrary)
-            + getsizeof(units.arbitrary.__dict__)
-            + getsizeof("arbitrary")
-            + getsizeof("a. u."),
-        ),
-    ],
+        case _:
+            raise ValueError(f"Unknown group node memory case: {request.param}.")
+
+    return attributes, expected_attribute_bytes
+
+
+@pytest.mark.parametrize(
+    "group_node_memory_case",
+    ["empty", "string", "list", "unit", "mixed-unit"],
+    indirect=True,
 )
-def test_group_node_memory_bytes_matches_expected_values(attributes: dict[str, object], expected_attribute_bytes: int):
+def test_group_node_memory_bytes_matches_expected_values(group_node_memory_case: tuple[dict[str, object], int]):
     """Test GroupNode memory using explicit `sys.getsizeof` formulas.
 
     This follows objsize's own testing strategy: compute the expectation from the
     known object graph instead of copying the deep-size traversal into the test.
     """
+    attributes, expected_attribute_bytes = group_node_memory_case
     group_node = GroupNode("parity_group")
     group_node.add_attributes(**attributes)  # type: ignore
 

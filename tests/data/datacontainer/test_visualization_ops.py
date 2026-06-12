@@ -403,9 +403,8 @@ def test_interactive_no_defect_skips_toggle(no_defect_analyzer: VisualizationOps
 
 def test_analyse_interactive_flow(thermo_container: ThermoContainer):
     """analyse_interactive creates an analyzer, registers it, and releases on close."""
-    thermo_container.analyse_interactive()
-    analyzer = thermo_container._interactive_analyzer
-    assert analyzer is not None
+    analyzer = thermo_container.analyse_interactive()
+    assert analyzer is thermo_container._interactive_analyzer
     assert not analyzer.closed
 
     # Close the analyzer — this should trigger release_interactive_analyzer
@@ -416,3 +415,36 @@ def test_analyse_interactive_flow(thermo_container: ThermoContainer):
     thermo_container.analyse_interactive(overlay_color="green")
     assert thermo_container._interactive_analyzer is not None
     thermo_container._interactive_analyzer.close(close_figure=True)
+
+
+def test_analyse_interactive_reuses_active_analyzer(thermo_container: ThermoContainer, monkeypatch):
+    """Repeated calls reuse the open analyzer instead of opening a new WebAgg page."""
+    show_calls = []
+    monkeypatch.setattr("matplotlib.pyplot.show", lambda *args, **kwargs: show_calls.append((args, kwargs)))
+
+    first = thermo_container.analyse_interactive()
+    second = thermo_container.analyse_interactive()
+
+    assert second is first
+    assert thermo_container._interactive_analyzer is first
+    assert not second.closed
+    assert len(show_calls) == 1
+
+    first.close(close_figure=True)
+
+
+def test_analyse_interactive_updates_existing_overlay_options(thermo_container: ThermoContainer):
+    """Overlay options can change without replacing the active analyzer figure."""
+    analyzer = thermo_container.analyse_interactive()
+    analyzer.groundtruth_toggle.set_active(0)
+    first_overlay = analyzer._overlay_img
+
+    reused = thermo_container.analyse_interactive(overlay_color="green", overlay_alpha=0.4)
+
+    assert reused is analyzer
+    assert analyzer._overlay_color == "green"
+    assert analyzer._overlay_alpha == 0.4
+    assert analyzer._overlay_img is not None
+    assert analyzer._overlay_img is not first_overlay
+
+    analyzer.close(close_figure=True)

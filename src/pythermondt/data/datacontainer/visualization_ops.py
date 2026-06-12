@@ -47,6 +47,14 @@ def _create_overlay_rgba(
     return overlay
 
 
+def _validate_overlay_options(overlay_color: OverlayColorOption, overlay_alpha: float) -> None:
+    """Validate ground truth overlay display options."""
+    if overlay_color not in {"red", "green", "blue"}:
+        raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
+    if not 0 <= overlay_alpha <= 1:
+        raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
+
+
 class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
     _interactive_analyzer: "VisualizationOps.InteractiveAnalyzer | None" = None
 
@@ -72,10 +80,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 ValueError: If overlay_alpha is not in the range [0, 1].
             """
             # 1.) Validate and store overlay configuration
-            if overlay_color not in {"red", "green", "blue"}:
-                raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
-            if not 0 <= overlay_alpha <= 1:
-                raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
+            _validate_overlay_options(overlay_color, overlay_alpha)
             self._overlay_color: OverlayColorOption = overlay_color
             self._overlay_alpha: float = overlay_alpha
 
@@ -233,27 +238,50 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
             if self.groundtruth is None:
                 return
             if self.groundtruth_toggle.get_status()[0]:
-                # Show overlay: create RGBA mask and contour from ground truth based on requested color
-                binary_gt = self.groundtruth > 0
-                overlay = _create_overlay_rgba(binary_gt, self._overlay_color, self._overlay_alpha)
-                self._overlay_img = self.frame_ax.imshow(overlay, aspect="auto", interpolation="none")
-
-                # Add contour outline in a darker shade of the overlay color
-                r, g, b, _ = to_rgba(self._overlay_color)
-                contour_color = (r * 0.6, g * 0.6, b * 0.6)
-                self._overlay_contour = self.frame_ax.contour(
-                    binary_gt.astype(float), levels=[0.5], colors=[contour_color], linewidths=1.5
-                )
+                self._show_groundtruth_overlay()
             else:
-                # Remove overlay and contour
-                if self._overlay_img is not None:
-                    self._overlay_img.remove()
-                    self._overlay_img = None
-                if self._overlay_contour is not None:
-                    self._overlay_contour.remove()
-                    self._overlay_contour = None
+                self._clear_groundtruth_overlay()
 
             self.fig.canvas.draw_idle()
+
+        def update_overlay_options(self, overlay_color: OverlayColorOption, overlay_alpha: float) -> None:
+            """Update overlay options without replacing the interactive figure."""
+            _validate_overlay_options(overlay_color, overlay_alpha)
+            if self._overlay_color == overlay_color and self._overlay_alpha == overlay_alpha:
+                return
+
+            overlay_is_active = self._overlay_img is not None
+            self._overlay_color = overlay_color
+            self._overlay_alpha = overlay_alpha
+
+            if overlay_is_active:
+                self._clear_groundtruth_overlay()
+                self._show_groundtruth_overlay()
+                self.fig.canvas.draw_idle()
+
+        def _show_groundtruth_overlay(self) -> None:
+            """Show the ground truth overlay using the current overlay options."""
+            if self.groundtruth is None:
+                return
+
+            binary_gt = self.groundtruth > 0
+            overlay = _create_overlay_rgba(binary_gt, self._overlay_color, self._overlay_alpha)
+            self._overlay_img = self.frame_ax.imshow(overlay, aspect="auto", interpolation="none")
+
+            r, g, b, _ = to_rgba(self._overlay_color)
+            contour_color = (r * 0.6, g * 0.6, b * 0.6)
+            self._overlay_contour = self.frame_ax.contour(
+                binary_gt.astype(float), levels=[0.5], colors=[contour_color], linewidths=1.5
+            )
+
+        def _clear_groundtruth_overlay(self) -> None:
+            """Remove any active ground truth overlay artists."""
+            if self._overlay_img is not None:
+                self._overlay_img.remove()
+                self._overlay_img = None
+            if self._overlay_contour is not None:
+                self._overlay_contour.remove()
+                self._overlay_contour = None
 
         def on_mouse_move(self, event):
             """Update annotation when mouse moves over the image."""
@@ -434,10 +462,7 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
                 frame_ax.set_title(f"Frame {frame_number}")
 
                 # Validate overlay parameters
-                if overlay_color not in {"red", "green", "blue"}:
-                    raise ValueError(f"Invalid overlay_color '{overlay_color}'. Must be one of: red, green, blue")
-                if not 0 <= overlay_alpha <= 1:
-                    raise ValueError(f"Overlay alpha must be in the range [0, 1], got {overlay_alpha}")
+                _validate_overlay_options(overlay_color, overlay_alpha)
 
                 if groundtruth is not None:
                     # Convert to numpy for matplotlib compatibility
@@ -511,7 +536,9 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         if self._interactive_analyzer is analyzer:
             self._interactive_analyzer = None
 
-    def analyse_interactive(self, overlay_color: OverlayColorOption = "red", overlay_alpha: float = 0.6):
+    def analyse_interactive(
+        self, overlay_color: OverlayColorOption = "red", overlay_alpha: float = 0.6
+    ) -> "VisualizationOps.InteractiveAnalyzer":
         """Launch interactive analysis session for thermographic data visualization.
 
         Args:
@@ -522,8 +549,23 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
         Raises:
             ValueError: If overlay_color is not one of "red", "green", "blue".
             ValueError: If overlay_alpha is not in the range [0, 1].
+
+        Returns:
+            The active interactive analyzer. Repeated calls reuse the existing open analyzer.
         """
-        if self._interactive_analyzer is not None and not self._interactive_analyzer.closed:
-            self._interactive_analyzer.close(close_figure=True)
-        self._interactive_analyzer = self.InteractiveAnalyzer(self, overlay_color, overlay_alpha)
+        _validate_overlay_options(overlay_color, overlay_alpha)
+
+        if self._interactive_analyzer is not None:
+            analyzer = self._interactive_analyzer
+            if analyzer.closed or not plt.fignum_exists(analyzer.fig.number):
+                analyzer.close(close_figure=False)
+            else:
+                analyzer.update_overlay_options(overlay_color, overlay_alpha)
+                plt.figure(analyzer.fig.number)
+                analyzer.fig.canvas.draw_idle()
+                return analyzer
+
+        analyzer = self.InteractiveAnalyzer(self, overlay_color, overlay_alpha)
+        self._interactive_analyzer = analyzer
         plt.show()
+        return analyzer

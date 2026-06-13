@@ -6,6 +6,7 @@ import sys
 from abc import ABC, abstractmethod
 from multiprocessing.managers import ListProxy, SyncManager
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import Literal
 
 from torch.utils.data import Dataset
@@ -32,6 +33,8 @@ class BaseDataset(Dataset, ABC):
         self.__manager: SyncManager | None = None
         self.__cache_built = False
         self.__cache: list | ListProxy = []
+        self.__cache_dir: Path | None = None
+        self.__cache_storage: Literal["memory", "disk"] = "memory"
         self.__det_transforms: _BaseTransform | None = None
         self.__runtime_transforms: _BaseTransform | None = None
 
@@ -79,10 +82,14 @@ class BaseDataset(Dataset, ABC):
             raise IndexError(msg + (f" Must be within [0, {len(self) - 1}]" if len(self) > 0 else " Empty dataset"))
 
         if self.cache_built:
-            if self.__cache[idx] is None:
-                # Load the item if it was not cached
-                self.__cache[idx] = self._load_cache_item(idx)
-            data = copy.deepcopy(self.__cache[idx])
+            if self.__cache_storage == "disk":
+                data = DataContainer()
+                data.load_from_hdf5(str(self.__cache[idx]))
+            else:
+                if self.__cache[idx] is None:
+                    # Load the item if it was not cached
+                    self.__cache[idx] = self._load_cache_item(idx)
+                data = copy.deepcopy(self.__cache[idx])
             return self.__runtime_transforms(data) if self.__runtime_transforms else data
 
         # Get the data
@@ -117,6 +124,14 @@ class BaseDataset(Dataset, ABC):
         """Load a single item and apply deterministic transforms."""
         return self.__det_transforms(self.load_raw_data(idx)) if self.__det_transforms else self.load_raw_data(idx)
 
+    def _save_cache_item_to_disk(self, idx: int) -> Path:
+        """Load a single item, apply deterministic transforms, and save it to disk."""
+        assert self.__cache_dir is not None
+        container = self._load_cache_item(idx)
+        path = self.__cache_dir / f"{idx:06d}.h5"
+        container.save_to_hdf5(str(path))
+        return path
+
     def memory_bytes(self) -> int:
         """Calculate the memory usage of this dataset.
 
@@ -125,6 +140,9 @@ class BaseDataset(Dataset, ABC):
         Returns:
             int: Memory usage in bytes
         """
+        if self.__cache_storage == "disk":
+            return sys.getsizeof(self) + sys.getsizeof(self.__cache)
+
         container_size = sum(c.memory_bytes() for c in self.__cache if isinstance(c, DataContainer))
         return container_size + sys.getsizeof(self) + sys.getsizeof(self.__cache)
 
@@ -132,7 +150,11 @@ class BaseDataset(Dataset, ABC):
         """Print the memory usage of this dataset."""
         print(f"{self.__class__.__name__} Overview:")
         print("-" * len(f"{self.__class__.__name__} Overview:"))
-        print(f"Currently there are {sum(1 for item in self.__cache if item)} items in the cache")
+        if self.__cache_storage == "disk":
+            print(f"Disk cache active at: {self.__cache_dir}")
+            print(f"Currently there are {sum(1 for item in self.__cache if item)} cached files")
+        else:
+            print(f"Currently there are {sum(1 for item in self.__cache if item)} items in the cache")
         print(f"Total memory usage of the cache: {format_bytes(self.memory_bytes())}")
         print("\n")
 
@@ -152,13 +174,21 @@ class BaseDataset(Dataset, ABC):
 
         return Compose(list(transforms))
 
-    def build_cache(self, mode: CacheMode = "lazy", num_workers: int | None = None):
+    def build_cache(
+        self,
+        mode: CacheMode = "lazy",
+        num_workers: int | None = None,
+        cache_dir: str | Path | None = None,
+    ):
         # fmt: off
-        """Build an in-memory cache of preprocessed data for faster training.
+        """Build a cache of preprocessed data for faster training.
 
         Automatically splits the transform pipeline at the first random transform:
         - Deterministic transforms are applied once and cached
         - Random transforms + subsequent operations run at runtime
+
+        When ``cache_dir`` is provided, the deterministic outputs are written to disk as one HDF5 file per sample
+        instead of being kept in memory. The directory is managed manually by the caller.
 
         Platform Considerations:
             **Windows / spawn**: Prefer lazy mode so workers share one cache via a manager list instead of each
@@ -175,6 +205,9 @@ class BaseDataset(Dataset, ABC):
             num_workers (int, optional): Number of workers used for cache building. This setting only applies if `mode`
                 is "immediate". If num_workers is None, the global configuration of PyThermoNDT will be used.
                 If less than 1, it defaults to 1 worker. Default is None.
+            cache_dir (str | Path | None, optional): Directory where the cache is stored on disk. If provided, the cache
+                is written to disk instead of memory. Existing files in the directory are reused if their count matches
+                the dataset length. Default is None.
 
         Example with a common preprocessing pipeline:
             >>> train_pipeline = T.Compose([
@@ -194,6 +227,9 @@ class BaseDataset(Dataset, ABC):
             >>> # Production: parallel cache building (Only recommended on linux)
             >>> dataset.build_cache(mode="immediate", num_workers=8)
             >>> loader = DataLoader(dataset, num_workers=8, persistent_workers=True)
+
+            >>> # Disk cache for hyperparameter search
+            >>> dataset.build_cache(mode="immediate", num_workers=8, cache_dir="./cache/preprocessed")
         """
         # fmt: on
         # Skip if cache already built
@@ -203,7 +239,38 @@ class BaseDataset(Dataset, ABC):
         # Get the complete transform chain and split it into deterministic and runtime transforms
         self.__det_transforms, self.__runtime_transforms = split_transforms_for_caching(self.get_transform_chain())
 
-        # Initialize the cache based on the mode
+        # Configure disk cache
+        self.__cache_dir = Path(cache_dir) if cache_dir is not None else None
+        self.__cache_storage = "disk" if self.__cache_dir is not None else "memory"
+
+        if self.__cache_storage == "disk":
+            if mode != "immediate":
+                raise ValueError("Disk cache currently only supports mode='immediate'.")
+
+            assert self.__cache_dir is not None
+            self.__cache_dir.mkdir(parents=True, exist_ok=True)
+            num = len(self)
+            expected_files = [self.__cache_dir / f"{i:06d}.h5" for i in range(num)]
+
+            # Reuse existing files if the count matches; otherwise build them
+            existing_files = sorted(self.__cache_dir.glob("*.h5"))
+            if len(existing_files) != num:
+                unit = "files"
+                desc = f"{self.__class__.__name__} - Building disk cache"
+                workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+                disk_worker_fn = self._save_cache_item_to_disk
+                if workers > 1:
+                    with ThreadPool(processes=workers) as pool:
+                        list(tqdm(pool.imap(disk_worker_fn, range(num)), desc=desc, unit=unit, total=num))
+                else:
+                    for i in tqdm(range(num), desc=desc, unit=unit):
+                        disk_worker_fn(i)
+
+            self.__cache = expected_files
+            self.__cache_built = True
+            return
+
+        # Initialize the in-memory cache based on the mode
         if mode == "immediate":
             unit = "files"
             desc = f"{self.__class__.__name__} - Building cache"
@@ -239,6 +306,8 @@ class BaseDataset(Dataset, ABC):
         self.__det_transforms = None
         self.__runtime_transforms = None
         self.__cache_built = False
+        self.__cache_dir = None
+        self.__cache_storage = "memory"
 
         # Ensure that the manager process is terminated
         if self.__manager:

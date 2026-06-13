@@ -132,6 +132,13 @@ class BaseDataset(Dataset, ABC):
         container.save_to_hdf5(str(path))
         return path
 
+    def _load_cache_item_from_disk(self, idx: int) -> DataContainer:
+        """Load a single preprocessed item from disk."""
+        assert self.__cache_dir is not None
+        container = DataContainer()
+        container.load_from_hdf5(str(self.__cache_dir / f"{idx:06d}.hdf5"))
+        return container
+
     def memory_bytes(self) -> int:
         """Calculate the memory usage of this dataset.
 
@@ -155,6 +162,8 @@ class BaseDataset(Dataset, ABC):
             print(f"Currently there are {sum(1 for item in self.__cache if item)} cached files")
         else:
             print(f"Currently there are {sum(1 for item in self.__cache if item)} items in the cache")
+            if self.__cache_dir is not None:
+                print(f"Disk backup at: {self.__cache_dir}")
         print(f"Total memory usage of the cache: {format_bytes(self.memory_bytes())}")
         print("\n")
 
@@ -179,6 +188,7 @@ class BaseDataset(Dataset, ABC):
         mode: CacheMode = "lazy",
         num_workers: int | None = None,
         cache_dir: str | Path | None = None,
+        keep_in_memory: bool = False,
     ):
         # fmt: off
         """Build a cache of preprocessed data for faster training.
@@ -187,8 +197,10 @@ class BaseDataset(Dataset, ABC):
         - Deterministic transforms are applied once and cached
         - Random transforms + subsequent operations run at runtime
 
-        When ``cache_dir`` is provided, the deterministic outputs are written to disk as one HDF5 file per sample
-        instead of being kept in memory. The directory is managed manually by the caller.
+        When ``cache_dir`` is provided, the deterministic outputs are written to disk as one HDF5 file per sample.
+        If ``keep_in_memory`` is also True, the files are additionally loaded into the in-memory cache so that
+        runtime access is memory-backed while the disk copy remains available for reuse. The directory is managed
+        manually by the caller.
 
         Platform Considerations:
             **Windows / spawn**: Prefer lazy mode so workers share one cache via a manager list instead of each
@@ -208,6 +220,8 @@ class BaseDataset(Dataset, ABC):
             cache_dir (str | Path | None, optional): Directory where the cache is stored on disk. If provided, the cache
                 is written to disk instead of memory. Existing files in the directory are reused if their count matches
                 the dataset length. Default is None.
+            keep_in_memory (bool, optional): If True and ``cache_dir`` is provided, load the saved files back into the
+                in-memory cache so runtime access is memory-backed. Default is False.
 
         Example with a common preprocessing pipeline:
             >>> train_pipeline = T.Compose([
@@ -230,6 +244,11 @@ class BaseDataset(Dataset, ABC):
 
             >>> # Disk cache for hyperparameter search
             >>> dataset.build_cache(mode="immediate", num_workers=8, cache_dir="./cache/preprocessed")
+
+            >>> # Disk-backed memory cache: persisted to disk, held in memory at runtime
+            >>> dataset.build_cache(
+            ...     mode="immediate", num_workers=8, cache_dir="./cache/preprocessed", keep_in_memory=True
+            ... )
         """
         # fmt: on
         # Skip if cache already built
@@ -242,6 +261,9 @@ class BaseDataset(Dataset, ABC):
         # Configure disk cache
         self.__cache_dir = Path(cache_dir) if cache_dir is not None else None
         self.__cache_storage = "disk" if self.__cache_dir is not None else "memory"
+
+        if keep_in_memory and self.__cache_dir is None:
+            raise ValueError("keep_in_memory=True requires cache_dir to be set.")
 
         if self.__cache_storage == "disk":
             if mode != "immediate":
@@ -266,7 +288,21 @@ class BaseDataset(Dataset, ABC):
                     for i in tqdm(range(num), desc=desc, unit=unit):
                         disk_worker_fn(i)
 
-            self.__cache = expected_files
+            if keep_in_memory:
+                # Load saved files into memory so runtime access is memory-backed
+                unit = "files"
+                desc = f"{self.__class__.__name__} - Loading disk cache into memory"
+                workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+                load_fn = self._load_cache_item_from_disk
+                if workers > 1:
+                    with ThreadPool(processes=workers) as pool:
+                        self.__cache = list(tqdm(pool.imap(load_fn, range(num)), desc=desc, unit=unit, total=num))
+                else:
+                    self.__cache = [load_fn(i) for i in tqdm(range(num), desc=desc, unit=unit)]
+                self.__cache_storage = "memory"
+            else:
+                self.__cache = expected_files
+
             self.__cache_built = True
             return
 

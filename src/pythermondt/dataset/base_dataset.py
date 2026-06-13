@@ -128,7 +128,7 @@ class BaseDataset(Dataset, ABC):
         """Load a single item, apply deterministic transforms, and save it to disk."""
         assert self.__cache_dir is not None
         container = self._load_cache_item(idx)
-        path = self.__cache_dir / f"{idx:06d}.h5"
+        path = self.__cache_dir / f"{idx:06d}.hdf5"
         container.save_to_hdf5(str(path))
         return path
 
@@ -250,10 +250,10 @@ class BaseDataset(Dataset, ABC):
             assert self.__cache_dir is not None
             self.__cache_dir.mkdir(parents=True, exist_ok=True)
             num = len(self)
-            expected_files = [self.__cache_dir / f"{i:06d}.h5" for i in range(num)]
+            expected_files = [self.__cache_dir / f"{i:06d}.hdf5" for i in range(num)]
 
             # Reuse existing files if the count matches; otherwise build them
-            existing_files = sorted(self.__cache_dir.glob("*.h5"))
+            existing_files = sorted(self.__cache_dir.glob("*.hdf5"))
             if len(existing_files) != num:
                 unit = "files"
                 desc = f"{self.__class__.__name__} - Building disk cache"

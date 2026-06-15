@@ -109,11 +109,11 @@ class RandomCompose(RandomThermoTransform):
 
         # Handle scalar or list of probabilities
         if isinstance(p, (int, float)):
-            self.probs = [float(p)] * len(transforms)
+            self.p = [float(p)] * len(transforms)
         else:
             if len(p) != len(transforms):
                 raise ValueError(f"Length of p ({len(p)}) must match transforms ({len(transforms)}).")
-            self.probs = [float(pi) for pi in p]
+            self.p = [float(pi) for pi in p]
 
     def __str__(self) -> str:
         """Custom repr for RandomCompose - no type label, cleaner format."""

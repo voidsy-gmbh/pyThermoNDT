@@ -49,7 +49,7 @@ classDiagram
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
-    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_list() list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -80,7 +80,7 @@ classDiagram
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str)* bool
     get_file_identity(file_path: str)* str
-    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None)* list[str]
+    get_file_list()* list[str]
     get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str)* None
@@ -120,6 +120,7 @@ classDiagram
     cache_files : bool
     download_files : bool
     file_names : list[str]
+    file_uris : list[str]
     files : list[str]
     manifest_path : str
     num_files : int | None
@@ -257,6 +258,8 @@ classDiagram
     frame_ax
     frame_img
     frame_slider
+    groundtruth : np.ndarray | None
+    groundtruth_toggle
     point_markers : list[Line2D]
     profile_ax
     profile_lines : list[Line2D]
@@ -268,6 +271,7 @@ classDiagram
     on_close(event)
     on_mouse_move(event)
     toggle_annotation(event)
+    toggle_groundtruth(event)
     update_frame(frame_idx: float)
   }
   style InteractiveAnalyzer fill:#99DDFF
@@ -279,7 +283,7 @@ classDiagram
     download_file(source_path: str, destination_path: str)* None
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
-    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_list() list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -331,6 +335,12 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style PulsePhaseThermography fill:#EEDD88
+  class RandomCompose {
+    p
+    transforms : Sequence[_BaseTransform]
+    forward(container: DataContainer) DataContainer
+  }
+  style RandomCompose fill:#EEDD88
   class RandomFlip {
     p_height : float
     p_width : float
@@ -359,7 +369,7 @@ classDiagram
     download_file(source_path: str, destination_path: str) None
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
-    get_file_list(extensions: tuple[str, ...] | None, num_files: int | None) list[str]
+    get_file_list() list[str]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -439,9 +449,9 @@ classDiagram
   }
   style Unit fill:#99DDFF
   class VisualizationOps {
-    analyse_interactive()
+    analyse_interactive(overlay_color: OverlayColorOption, overlay_alpha: float)
     release_interactive_analyzer(analyzer: 'VisualizationOps.InteractiveAnalyzer') None
-    show_frame(frame_number: int, option: str, cmap: str)
+    show_frame(frame_number: int, option: FrameOption, cmap: str, overlay_color: OverlayColorOption, overlay_alpha: float)
     show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
   }
   style VisualizationOps fill:#99DDFF
@@ -496,6 +506,8 @@ classDiagram
   RandomFlip --|> RandomThermoTransform
   RandomThermoTransform --|> _BaseTransform
   ThermoTransform --|> _BaseTransform
+  Compose --|> ThermoTransform
+  RandomCompose --|> RandomThermoTransform
   ExtractAmplitude --|> ThermoTransform
   ExtractPhase --|> ThermoTransform
   PulsePhaseThermography --|> ThermoTransform
@@ -510,9 +522,9 @@ classDiagram
   SelectFrameRange --|> ThermoTransform
   SelectFrames --|> ThermoTransform
   CallbackTransform --|> _BaseTransform
-  Compose --|> ThermoTransform
   AzureBlobWriter --|> BaseWriter
   LocalWriter --|> BaseWriter
   S3Writer --|> BaseWriter
-  _BaseTransform --o CallbackTransform : callback
   _BaseTransform --o Compose : transforms
+  _BaseTransform --o RandomCompose : transforms
+  _BaseTransform --o CallbackTransform : callback

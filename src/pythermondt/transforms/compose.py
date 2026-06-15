@@ -115,13 +115,17 @@ class RandomCompose(RandomThermoTransform):
                 raise ValueError(f"Length of p ({len(p)}) must match transforms ({len(transforms)}).")
             self.p = [float(pi) for pi in p]
 
+        # Validate range
+        if not all(0 <= prob <= 1 for prob in self.p):
+            raise ValueError(f"All probabilities must be in [0, 1], got {self.p}.")
+
     def __str__(self) -> str:
         """Custom repr for RandomCompose - no type label, cleaner format."""
         if not self.transforms:
             return "RandomCompose([])"
 
         # Show transforms in a clean format with probabilities, indent nested containers
-        transform_strs = [_indent_str(f"{t} (p={p:.2f})") for t, p in zip(self.transforms, self.probs, strict=True)]
+        transform_strs = [_indent_str(f"{t} (p={p:.2f})") for t, p in zip(self.transforms, self.p, strict=True)]
         if len(transform_strs) == 1:
             return f"RandomCompose([{transform_strs[0]}])"
 
@@ -130,7 +134,7 @@ class RandomCompose(RandomThermoTransform):
         return f"RandomCompose([\n    {transforms_str}\n])"
 
     def forward(self, container: DataContainer) -> DataContainer:
-        for transform, prob in zip(self.transforms, self.probs, strict=True):
+        for transform, prob in zip(self.transforms, self.p, strict=True):
             if torch.rand(1).item() < prob:
                 container = transform(container)
         return container

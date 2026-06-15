@@ -1,10 +1,11 @@
 from .augmentation import AdaptiveGaussianNoise, GaussianNoise, RandomFlip
 from .base import RandomThermoTransform, ThermoTransform
+from .compose import Compose, RandomCompose
 from .frequency import ExtractAmplitude, ExtractPhase, PulsePhaseThermography
 from .normalization import MaxNormalize, MinMaxNormalize, ZScoreNormalize
 from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
 from .sampling import NonUniformSampling, SelectFrameRange, SelectFrames
-from .utils import CallbackTransform, Compose
+from .utils import CallbackTransform
 
 __all__ = [  # noqa: RUF022
     # Base classes
@@ -28,6 +29,7 @@ __all__ = [  # noqa: RUF022
     "ExtractPhase",
     "ExtractAmplitude",
     # Stochastic transforms
+    "RandomCompose",
     "GaussianNoise",
     "RandomFlip",
     "AdaptiveGaussianNoise",

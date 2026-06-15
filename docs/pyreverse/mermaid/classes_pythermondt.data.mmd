@@ -98,6 +98,8 @@ classDiagram
     frame_ax
     frame_img
     frame_slider
+    groundtruth : np.ndarray | None
+    groundtruth_toggle
     point_markers : list[Line2D]
     profile_ax
     profile_lines : list[Line2D]
@@ -109,6 +111,7 @@ classDiagram
     on_close(event)
     on_mouse_move(event)
     toggle_annotation(event)
+    toggle_groundtruth(event)
     update_frame(frame_idx: float)
   }
   style InteractiveAnalyzer fill:#77AADD
@@ -141,9 +144,9 @@ classDiagram
   }
   style Unit fill:#77AADD
   class VisualizationOps {
-    analyse_interactive()
+    analyse_interactive(overlay_color: OverlayColorOption, overlay_alpha: float)
     release_interactive_analyzer(analyzer: 'VisualizationOps.InteractiveAnalyzer') None
-    show_frame(frame_number: int, option: str, cmap: str)
+    show_frame(frame_number: int, option: FrameOption, cmap: str, overlay_color: OverlayColorOption, overlay_alpha: float)
     show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
   }
   style VisualizationOps fill:#77AADD

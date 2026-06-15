@@ -134,6 +134,9 @@ classDiagram
   class base {
   }
   style base fill:#EEDD88
+  class compose {
+  }
+  style compose fill:#EEDD88
   class frequency {
   }
   style frequency fill:#EEDD88
@@ -245,17 +248,20 @@ classDiagram
   s3_reader --> base_reader
   transforms --> augmentation
   transforms --> base
+  transforms --> compose
   transforms --> frequency
   transforms --> normalization
   transforms --> preprocessing
   transforms --> sampling
   transforms --> utils
   augmentation --> base
+  compose --> base
   frequency --> base
   normalization --> base
   preprocessing --> base
   sampling --> base
   utils --> base
+  utils --> compose
   writers --> azure_writer
   writers --> base_writer
   writers --> local_writer

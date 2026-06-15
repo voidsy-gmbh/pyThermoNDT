@@ -67,6 +67,12 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style PulsePhaseThermography fill:#77AADD
+  class RandomCompose {
+    p
+    transforms : Sequence[_BaseTransform]
+    forward(container: DataContainer) DataContainer
+  }
+  style RandomCompose fill:#77AADD
   class RandomFlip {
     p_height : float
     p_width : float
@@ -119,6 +125,8 @@ classDiagram
   RandomFlip --|> RandomThermoTransform
   RandomThermoTransform --|> _BaseTransform
   ThermoTransform --|> _BaseTransform
+  Compose --|> ThermoTransform
+  RandomCompose --|> RandomThermoTransform
   ExtractAmplitude --|> ThermoTransform
   ExtractPhase --|> ThermoTransform
   PulsePhaseThermography --|> ThermoTransform
@@ -133,6 +141,6 @@ classDiagram
   SelectFrameRange --|> ThermoTransform
   SelectFrames --|> ThermoTransform
   CallbackTransform --|> _BaseTransform
-  Compose --|> ThermoTransform
-  _BaseTransform --o CallbackTransform : callback
   _BaseTransform --o Compose : transforms
+  _BaseTransform --o RandomCompose : transforms
+  _BaseTransform --o CallbackTransform : callback

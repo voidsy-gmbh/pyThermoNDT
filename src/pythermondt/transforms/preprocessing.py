@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Literal, get_args
 
 import torch
@@ -56,6 +57,63 @@ class ApplyLUT(ThermoTransform):
         # Update the container and return it
         container.update_dataset("/Data/Tdata", tdata)
         container.update_unit("/Data/Tdata", kelvin)
+        return container
+
+
+class CastTo(ThermoTransform):
+    """Cast one or more datasets in the container to a specified torch dtype.
+
+    ``datasets`` may be a single path or a sequence of paths. A single dtype is applied to all datasets;
+    alternatively, a sequence of dtypes (one per dataset) allows casting different datasets to different dtypes.
+    """
+
+    def __init__(self, datasets: str | Sequence[str], dtype: torch.dtype | Sequence[torch.dtype]):
+        """Cast one or more datasets in the container to a specified torch dtype.
+
+        A single dtype is applied to all datasets; alternatively, a sequence of dtypes (one per dataset) allows
+        casting different datasets to different dtypes.
+
+        Args:
+            datasets (str | Sequence[str]): Dataset path or sequence of paths to cast. Must be non-empty.
+            dtype (torch.dtype | Sequence[torch.dtype]): Target torch dtype, either a single dtype applied to
+                all datasets or a sequence with one dtype per dataset.
+
+        Raises:
+            TypeError: If ``dtype`` is not a ``torch.dtype`` or a sequence of ``torch.dtype``.
+            ValueError: If ``datasets`` is empty or the number of dtypes does not match the number of datasets.
+        """
+        super().__init__()
+
+        # Normalize datasets to a list (str is a Sequence, so check it first to avoid splitting the path)
+        datasets = [datasets] if isinstance(datasets, str) else list(datasets)
+        if not datasets:
+            raise ValueError("datasets must be a non-empty sequence of dataset paths.")
+
+        # Normalize dtype to a per-dataset list
+        if isinstance(dtype, torch.dtype):
+            dtypes = [dtype] * len(datasets)
+        elif isinstance(dtype, Sequence):
+            dtypes = list(dtype)
+        else:
+            raise TypeError(f"dtype must be a torch.dtype or a sequence of torch.dtype, got {type(dtype).__name__}.")
+
+        if len(dtypes) != len(datasets):
+            raise ValueError(f"Number of dtypes ({len(dtypes)}) must match number of datasets ({len(datasets)}).")
+        if not all(isinstance(d, torch.dtype) for d in dtypes):
+            raise TypeError("All dtypes must be torch.dtype instances.")
+
+        self.datasets = datasets
+        self.dtype = dtypes
+
+    def forward(self, container: DataContainer) -> DataContainer:
+        # Extract the datasets
+        tensors = container.get_datasets(*self.datasets)
+
+        # Cast each tensor to its target dtype
+        updates = ((p, t.to(dtype)) for p, t, dtype in zip(self.datasets, tensors, self.dtype, strict=True))
+
+        # Update the container and return it
+        container.update_datasets(*updates)
         return container
 
 

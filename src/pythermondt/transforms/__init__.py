@@ -3,7 +3,7 @@ from .base import RandomThermoTransform, ThermoTransform
 from .compose import Compose, RandomCompose
 from .frequency import ExtractAmplitude, ExtractPhase, PulsePhaseThermography
 from .normalization import MaxNormalize, MinMaxNormalize, ZScoreNormalize
-from .preprocessing import ApplyLUT, CropFrames, RemoveFlash, SubtractFrame
+from .preprocessing import ApplyLUT, CastTo, CropFrames, RemoveFlash, SubtractFrame
 from .sampling import NonUniformSampling, SelectFrameRange, SelectFrames
 from .utils import CallbackTransform
 
@@ -19,6 +19,7 @@ __all__ = [  # noqa: RUF022
     "MinMaxNormalize",
     "ZScoreNormalize",
     "ApplyLUT",
+    "CastTo",
     "RemoveFlash",
     "SubtractFrame",
     "NonUniformSampling",

@@ -101,7 +101,7 @@ class ThermoDataset(BaseDataset):
 
             # Else duplicates are not possible ==> Check if the reader has found any files
             else:
-                if len(readers[0].files) == 0:
+                if len(readers_objects[0].files) == 0:
                     warnings.warn(f"No files found for reader of type {reader_type.__qualname__}", stacklevel=2)
 
     def _build_index(self):

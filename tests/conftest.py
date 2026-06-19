@@ -8,6 +8,10 @@ from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
 
 
+class AltReader(LocalReader):
+    """LocalReader subclass used in tests to simulate a different reader type."""
+
+
 @pytest.fixture()
 def fake_aws_creds(monkeypatch):
     """Mocked AWS Credentials for moto."""
@@ -77,6 +81,12 @@ def sample_eye_ndarray():
 def localreader_no_files():
     """Fixture for a reader that has no files."""
     return LocalReader(pattern="MadeUpPattern")
+
+
+@pytest.fixture
+def altreader_no_files():
+    """Fixture for an AltReader that has no files."""
+    return AltReader(pattern="MadeUpPattern")
 
 
 @pytest.fixture

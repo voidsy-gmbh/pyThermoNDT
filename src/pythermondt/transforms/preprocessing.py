@@ -110,7 +110,7 @@ class CastTo(ThermoTransform):
         tensors = container.get_datasets(*self.datasets)
 
         # Cast each tensor to its target dtype
-        updates = ((p, t.to(dtype)) for p, t, dtype in zip(self.datasets, tensors, self.dtype, strict=True))
+        updates = ((p, t.to(dt)) for p, t, dt in zip(self.datasets, tensors, self.dtype, strict=True))
 
         # Update the container and return it
         container.update_datasets(*updates)

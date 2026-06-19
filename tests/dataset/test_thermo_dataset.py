@@ -158,6 +158,28 @@ def test_empty_reader_in_multi_reader_warns(localreader_with_file: LocalReader, 
         ThermoDataset([localreader_no_files, localreader_with_file])
 
 
+def test_empty_reader_different_type_warns(localreader_with_file: LocalReader, altreader_no_files: LocalReader):
+    """Test that an empty reader of a different type is detected regardless of its position.
+
+    Regression test for issue #425: the else branch of _validate_readers incorrectly checked
+    readers[0] instead of readers_objects[0], so empty readers of a different type than the
+    first reader were silently missed.
+    """
+    expected_match = r"No files found for reader of type .*AltReader"
+
+    # Empty reader NOT first — must still warn (this was the swallowed-warning case)
+    with pytest.warns(UserWarning, match=expected_match):
+        ThermoDataset([localreader_with_file, altreader_no_files])
+
+    # Empty reader first — must warn and NOT produce a false positive for the other type
+    with pytest.warns(UserWarning, match=expected_match) as record:
+        ThermoDataset([altreader_no_files, localreader_with_file])
+    messages = [str(w.message) for w in record]
+    assert not any("LocalReader" in m for m in messages), (
+        f"False positive warning for non-empty reader type: {messages}"
+    )
+
+
 def test_download_delegates_to_readers(s3reader_with_file: S3Reader, localreader_with_file: LocalReader):
     """Test that dataset.download() calls download on remote readers."""
     # Expect warning because fixture has download_files=False for the S3 reader

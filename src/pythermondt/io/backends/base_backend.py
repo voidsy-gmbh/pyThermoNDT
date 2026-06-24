@@ -1,9 +1,30 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime
 
 from ..utils import IOPathWrapper
 
 
+@dataclass(frozen=True)
+class FileInfo:
+    """Metadata for a file discovered by a backend.
+
+    Attributes:
+        path: Backend-specific URI (e.g. ``file://...``, ``s3://...``, ``az://...``).
+        last_modified: Timezone-aware UTC timestamp of last modification.
+        size: File size in bytes.
+        file_identity: Backend-specific identity string (e.g. ETag) for change detection.
+    """
+
+    path: str
+    last_modified: datetime
+    size: int
+    file_identity: str | None = None
+
+
 class BaseBackend(ABC):
+    """Base class for all backend implementations."""
+
     @property
     @abstractmethod
     def remote_source(self) -> bool:
@@ -39,6 +60,11 @@ class BaseBackend(ABC):
     @abstractmethod
     def get_file_list(self) -> list[str]:
         """Return all files under the configured pattern or prefix as unsorted URIs."""
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @abstractmethod
+    def get_file_list_with_metadata(self) -> list[FileInfo]:
+        """Return all files under the configured pattern or prefix as an unsorted list of ``FileInfo`` objects."""
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod

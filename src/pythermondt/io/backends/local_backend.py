@@ -33,7 +33,6 @@ class LocalBackend(BaseBackend):
         parsed_input = self._parse_input(pattern)
 
         # Determine the type of the source based on the provided pattern
-        self.__source_type = None
         if os.path.isfile(parsed_input):
             self.__source_type = "file"
         elif os.path.isdir(parsed_input):
@@ -79,7 +78,7 @@ class LocalBackend(BaseBackend):
 
     def _get_raw_file_paths(self) -> list[str]:
         """Return raw (un-normalized) file paths matching the configured source type."""
-        # Handle different pattern types ==> return [] on no match
+        # Handle different pattern types ==> raise an error if the source type is unexpected
         match self.__source_type:
             case "file":
                 return [self.pattern]
@@ -89,7 +88,8 @@ class LocalBackend(BaseBackend):
                 return [f.path for f in os.scandir(self.pattern) if f.is_file()]
             case "glob":
                 return glob(self.pattern, recursive=self.__recursive)
-        return []
+            case _:
+                raise RuntimeError(f"Unexpected source type: {self.__source_type!r}")
 
     def get_file_list(self) -> list[str]:
         # Normalize and convert to URLs

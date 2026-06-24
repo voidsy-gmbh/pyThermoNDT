@@ -9,7 +9,7 @@ from azure.storage.blob import BlobServiceClient
 from tqdm.auto import tqdm
 
 from ..utils import IOPathWrapper
-from .base_backend import BaseBackend
+from .base_backend import BaseBackend, FileInfo
 from .options import AzureBlobClientOptions
 from .progress import TqdmCallback, get_tqdm_default_kwargs
 
@@ -181,6 +181,30 @@ class AzureBlobBackend(BaseBackend):
             blobs.append(self._to_url(self.__container_name, blob.name))
 
         return blobs
+
+    def get_file_list_with_metadata(self) -> list[FileInfo]:
+        """Return all blobs under the configured prefix as ``FileInfo`` entries (unsorted).
+
+        Metadata (``last_modified``, ``size``, ``etag``) is gathered from the
+        ``list_blobs`` response — no extra HEAD requests.
+        """
+        container_client = self.__client.get_container_client(self.__container_name)
+
+        files = []
+        for blob in container_client.list_blobs(name_starts_with=self.prefix):
+            if blob.name.endswith("/"):
+                continue
+
+            files.append(
+                FileInfo(
+                    path=self._to_url(self.__container_name, blob.name),
+                    last_modified=blob.last_modified,
+                    size=blob.size,
+                    file_identity=str(blob.etag) if blob.etag else None,
+                )
+            )
+
+        return files
 
     def get_file_size(self, file_path: str) -> int:
         """Get the size of the file in Azure Blob Storage in bytes.

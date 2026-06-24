@@ -7,7 +7,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from ..utils import IOPathWrapper
-from .base_backend import BaseBackend
+from .base_backend import BaseBackend, FileInfo
 from .options import S3ClientOptions
 from .progress import TqdmCallback
 
@@ -137,6 +137,33 @@ class S3Backend(BaseBackend):
 
                     # Add full S3 path
                     files.append(self._to_url(self.bucket, key))
+
+        return files
+
+    def get_file_list_with_metadata(self) -> list[FileInfo]:
+        """Return all objects under the configured prefix as ``FileInfo`` entries (unsorted).
+
+        Metadata (``LastModified``, ``Size``, ``ETag``) is gathered from the
+        ``list_objects_v2`` response — no extra HEAD requests.
+        """
+        paginator = self.__client.get_paginator("list_objects_v2")
+
+        files = []
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=self.prefix):
+            if "Contents" in page:
+                for obj in page["Contents"]:
+                    key = obj["Key"]
+                    if key.endswith("/"):
+                        continue
+
+                    files.append(
+                        FileInfo(
+                            path=self._to_url(self.bucket, key),
+                            last_modified=obj["LastModified"],
+                            size=obj["Size"],
+                            file_identity=obj.get("ETag"),
+                        )
+                    )
 
         return files
 

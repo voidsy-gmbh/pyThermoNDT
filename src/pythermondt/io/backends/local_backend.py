@@ -94,6 +94,14 @@ class LocalBackend(BaseBackend):
         # Normalize and convert to URLs
         return [self._to_url(os.path.normpath(os.path.abspath(f))) for f in self._get_raw_file_paths()]
 
+
+    def _identity_from_stat(self, stat_result: os.stat_result) -> str:
+        """Build a local-file identity string from a stat result."""
+        device = getattr(stat_result, "st_dev", 0)
+        inode = getattr(stat_result, "st_ino", 0)
+        return f"{device}:{inode}:{stat_result.st_size}:{stat_result.st_mtime_ns}"
+
+
     def get_file_size(self, file_path: str) -> int:
         path = self._parse_input(file_path)
         if not os.path.exists(path):
@@ -115,10 +123,7 @@ class LocalBackend(BaseBackend):
             raise IsADirectoryError(f"Path is a directory, not a file: {path}")
 
         stat_result = os.stat(path)
-        device = getattr(stat_result, "st_dev", 0)
-        inode = getattr(stat_result, "st_ino", 0)
-
-        return f"{device}:{inode}:{stat_result.st_size}:{stat_result.st_mtime_ns}"
+        return self._identity_from_stat(stat_result)
 
     def download_file(self, source_path: str, destination_path: str) -> None:
         raise NotImplementedError("Direct download is not supported for local files.")

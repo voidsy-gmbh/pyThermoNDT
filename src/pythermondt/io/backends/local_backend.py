@@ -1,11 +1,12 @@
 import logging
 import os
+from datetime import datetime, timezone
 from glob import glob
 from urllib.parse import urlparse
 from urllib.request import pathname2url, url2pathname
 
 from ..utils import IOPathWrapper
-from .base_backend import BaseBackend
+from .base_backend import BaseBackend, FileInfo
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,10 @@ class LocalBackend(BaseBackend):
         # Normalize and convert to URLs
         return [self._to_url(os.path.normpath(os.path.abspath(f))) for f in self._get_raw_file_paths()]
 
+    def get_file_list_with_metadata(self) -> list[FileInfo]:
+        """Return all files with metadata (single stat per file, no extra overhead)."""
+        # Build FileInfo object for each file in raw file paths
+        return [self._build_file_info(f) for f in self._get_raw_file_paths()]
 
     def _identity_from_stat(self, stat_result: os.stat_result) -> str:
         """Build a local-file identity string from a stat result."""
@@ -101,6 +106,16 @@ class LocalBackend(BaseBackend):
         inode = getattr(stat_result, "st_ino", 0)
         return f"{device}:{inode}:{stat_result.st_size}:{stat_result.st_mtime_ns}"
 
+    def _build_file_info(self, internal_path: str) -> FileInfo:
+        """Stat a local path and build a ``FileInfo`` entry (normalized, URL-encoded)."""
+        normalised = os.path.normpath(os.path.abspath(internal_path))
+        stat_result = os.stat(normalised)
+        return FileInfo(
+            path=self._to_url(normalised),
+            last_modified=datetime.fromtimestamp(stat_result.st_mtime, tz=timezone.utc),
+            size=stat_result.st_size,
+            file_identity=self._identity_from_stat(stat_result),
+        )
 
     def get_file_size(self, file_path: str) -> int:
         path = self._parse_input(file_path)

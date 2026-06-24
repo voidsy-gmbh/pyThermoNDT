@@ -135,4 +135,4 @@ def _get_optional_dataset(container: DataContainer, path: str) -> tuple[bool, Te
     # TODO: Simplify this check once https://github.com/voidsy-gmbh/pyThermoNDT/issues/420 is resolved
     dataset = None
     has_dataset = container._is_datanode(path) and (dataset := container.get_dataset(path)).numel() > 0
-    return has_dataset, dataset
+    return has_dataset, dataset if has_dataset else None

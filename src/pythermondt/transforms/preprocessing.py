@@ -274,10 +274,10 @@ class CropFrames(ThermoTransform):
         self.width = width
         self.strategy = method
 
-    def forward(self, container: DataContainer) -> DataContainer:
+    def forward(self, container: DataContainer) -> DataContainer:  # pylint: disable=too-many-branches
         # Extract the data (DefectMask is optional)
         tdata = container.get_dataset("/Data/Tdata")
-        has_mask, mask = _get_optional_dataset(container, "/GroundTruth/DefectMask")
+        _, mask = _get_optional_dataset(container, "/GroundTruth/DefectMask")
 
         if self.height > tdata.shape[0]:
             raise ValueError(
@@ -352,8 +352,8 @@ class CropFrames(ThermoTransform):
 
         # Build update tuples (only include mask if present and non-empty)
         updates: list[tuple[str, torch.Tensor]] = [("/Data/Tdata", tdata)]
-        if has_mask:
-            mask = mask[top:bottom, left:right]  # type: ignore[index]
+        if mask:
+            mask = mask[top:bottom, left:right]
             updates.append(("/GroundTruth/DefectMask", mask))
 
         container.update_datasets(*updates)

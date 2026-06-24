@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from azure.core.exceptions import AzureError
 
-from pythermondt.io import AzureBlobBackend, AzureBlobClientOptions, IOPathWrapper
+from pythermondt.io import AzureBlobBackend, AzureBlobClientOptions, FileInfo, IOPathWrapper
 
 
 @pytest.fixture
@@ -175,3 +175,22 @@ def test_to_url(azure_backend):
     """Test URL construction."""
     url = azure_backend._to_url("my-container", "path/to/file.txt")
     assert url == "az://my-container/path/to/file.txt"
+
+
+def test_get_file_list_with_metadata_skips_directories(azure_backend_with_directory):
+    """Test get_file_list_with_metadata skips directory markers and populates metadata."""
+    result = azure_backend_with_directory.get_file_list_with_metadata()
+
+    # Should skip directory marker, include actual file
+    assert all(not f.path.endswith("/") for f in result)
+    paths = [f.path for f in result]
+    assert "az://test-container/test/subdir/" not in paths
+    assert "az://test-container/test/subdir/file.txt" in paths
+
+    # Verify metadata is populated from listing (no extra HEAD requests)
+    for info in result:
+        assert isinstance(info, FileInfo)
+        assert info.last_modified.tzinfo is not None
+        assert info.size >= 0
+        assert isinstance(info.file_identity, str)
+        assert info.file_identity != ""

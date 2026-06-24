@@ -6,6 +6,7 @@ import torch
 from ..data import DataContainer
 from ..data.units import arbitrary, kelvin
 from .base import ThermoTransform
+from .utils import _get_optional_dataset
 
 
 class ApplyLUT(ThermoTransform):
@@ -276,11 +277,7 @@ class CropFrames(ThermoTransform):
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract the data (DefectMask is optional)
         tdata = container.get_dataset("/Data/Tdata")
-        mask = None
-
-        # TODO: Simplify this check once https://github.com/voidsy-gmbh/pyThermoNDT/issues/420 is resolved
-        mask_path = "/GroundTruth/DefectMask"
-        has_mask = container._is_datanode(mask_path) and (mask := container.get_dataset(mask_path)).numel() > 0
+        has_mask, mask = _get_optional_dataset(container, "/GroundTruth/DefectMask")
 
         if self.height > tdata.shape[0]:
             raise ValueError(
@@ -354,10 +351,10 @@ class CropFrames(ThermoTransform):
         tdata = tdata[top:bottom, left:right]
 
         # Build update tuples (only include mask if present and non-empty)
-        updates = [("/Data/Tdata", tdata)]
-        if has_mask and mask:
-            mask = mask[top:bottom, left:right]
-            updates.append((mask_path, mask))
+        updates: list[tuple[str, torch.Tensor]] = [("/Data/Tdata", tdata)]
+        if has_mask:
+            mask = mask[top:bottom, left:right]  # type: ignore[index]
+            updates.append(("/GroundTruth/DefectMask", mask))
 
         container.update_datasets(*updates)
         return container

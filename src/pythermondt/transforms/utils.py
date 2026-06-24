@@ -1,5 +1,7 @@
 from collections.abc import Callable, Sequence
 
+from torch import Tensor
+
 from ..data import DataContainer
 from .base import _BaseTransform
 from .compose import Compose
@@ -113,3 +115,24 @@ def _flatten_transforms(transforms: Sequence[_BaseTransform]) -> Sequence[_BaseT
         else:
             flattened.append(transform)
     return flattened
+
+
+def _get_optional_dataset(container: DataContainer, path: str) -> tuple[bool, Tensor | None]:
+    """Return whether a dataset exists and is non-empty, along with its tensor.
+
+    Handles two cases where the dataset should be treated as absent:
+    - No node at ``path``.
+    - A ``torch.empty(0)`` sentinel (see linked issue).
+
+    Args:
+        container: The DataContainer to probe.
+        path: Full path to the dataset (e.g. ``"/GroundTruth/DefectMask"``).
+
+    Returns:
+        A tuple ``(exists, tensor)``.  ``exists`` is ``True`` only when the
+        dataset is present and non-empty; ``tensor`` is the dataset or ``None``.
+    """
+    # TODO: Simplify this check once https://github.com/voidsy-gmbh/pyThermoNDT/issues/420 is resolved
+    dataset = None
+    has_dataset = container._is_datanode(path) and (dataset := container.get_dataset(path)).numel() > 0
+    return has_dataset, dataset

@@ -274,8 +274,13 @@ class CropFrames(ThermoTransform):
         self.strategy = method
 
     def forward(self, container: DataContainer) -> DataContainer:
-        # Extract the data
-        tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
+        # Extract the data (DefectMask is optional)
+        tdata = container.get_dataset("/Data/Tdata")
+        mask = None
+
+        # TODO: Simplify this check once https://github.com/voidsy-gmbh/pyThermoNDT/issues/420 is resolved
+        mask_path = "/GroundTruth/DefectMask"
+        has_mask = container._is_datanode(mask_path) and (mask := container.get_dataset(mask_path)).numel() > 0
 
         if self.height > tdata.shape[0]:
             raise ValueError(
@@ -347,8 +352,12 @@ class CropFrames(ThermoTransform):
 
         # Crop the data
         tdata = tdata[top:bottom, left:right]
-        mask = mask[top:bottom, left:right]
 
-        # Update the container and return it
-        container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
+        # Build update tuples (only include mask if present and non-empty)
+        updates = [("/Data/Tdata", tdata)]
+        if has_mask and mask:
+            mask = mask[top:bottom, left:right]
+            updates.append((mask_path, mask))
+
+        container.update_datasets(*updates)
         return container

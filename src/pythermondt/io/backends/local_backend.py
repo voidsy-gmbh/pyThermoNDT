@@ -76,24 +76,23 @@ class LocalBackend(BaseBackend):
         # Nothing to close for local files
         pass
 
-    def get_file_list(self) -> list[str]:
-        # Handle different pattern types
-        all_files = []
+    def _get_raw_file_paths(self) -> list[str]:
+        """Return raw (un-normalized) file paths matching the configured source type."""
+        # Handle different pattern types ==> return [] on no match
         match self.__source_type:
             case "file":
-                all_files = [self.pattern]
+                return [self.pattern]
             case "directory":
                 if self.__recursive:
-                    all_files = [os.path.join(root, name) for root, _, names in os.walk(self.pattern) for name in names]
-                else:
-                    all_files = [f.path for f in os.scandir(self.pattern) if f.is_file()]
+                    return [os.path.join(root, name) for root, _, names in os.walk(self.pattern) for name in names]
+                return [f.path for f in os.scandir(self.pattern) if f.is_file()]
             case "glob":
-                all_files = glob(self.pattern, recursive=self.__recursive)
+                return glob(self.pattern, recursive=self.__recursive)
+        return []
 
-        # Convert to absolute paths and normalize before returning
-        all_files = [self._to_url(os.path.normpath(os.path.abspath(f))) for f in all_files]
-
-        return all_files
+    def get_file_list(self) -> list[str]:
+        # Normalize and convert to URLs
+        return [self._to_url(os.path.normpath(os.path.abspath(f))) for f in self._get_raw_file_paths()]
 
     def get_file_size(self, file_path: str) -> int:
         path = self._parse_input(file_path)

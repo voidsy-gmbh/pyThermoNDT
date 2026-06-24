@@ -2,6 +2,7 @@ import torch
 
 from ..data import DataContainer
 from .base import RandomThermoTransform
+from .utils import _get_optional_dataset
 
 
 class RandomFlip(RandomThermoTransform):
@@ -37,21 +38,27 @@ class RandomFlip(RandomThermoTransform):
         self.p_width = p_width
 
     def forward(self, container: DataContainer) -> DataContainer:
-        # Extract the data
-        tdata, mask = container.get_datasets("/Data/Tdata", "/GroundTruth/DefectMask")
+        # Extract the data (DefectMask is optional)
+        tdata = container.get_dataset("/Data/Tdata")
+        has_mask, mask = _get_optional_dataset(container, "/GroundTruth/DefectMask")
 
         # Flip the data along the height if the random number is less than p_height
         if torch.rand(1).item() < self.p_height:
             tdata = torch.flip(tdata, [1])
-            mask = torch.flip(mask, [1])
+            if has_mask:
+                mask = torch.flip(mask, [1])  # type: ignore[arg-type]
 
         # Flip the data along the width if the random number is less than p_width
         if torch.rand(1).item() < self.p_width:
             tdata = torch.flip(tdata, [0])
-            mask = torch.flip(mask, [0])
+            if has_mask:
+                mask = torch.flip(mask, [0])  # type: ignore[arg-type]
 
         # Update the container and return it
-        container.update_datasets(("/Data/Tdata", tdata), ("/GroundTruth/DefectMask", mask))
+        updates: list[tuple[str, torch.Tensor]] = [("/Data/Tdata", tdata)]
+        if has_mask:
+            updates.append(("/GroundTruth/DefectMask", mask))  # type: ignore[arg-type]
+        container.update_datasets(*updates)
         return container
 
 

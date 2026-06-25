@@ -1,11 +1,12 @@
 import logging
+from collections.abc import Generator
 from io import BytesIO
 from typing import IO, cast
 
 from azure.core.credentials import TokenCredential
 from azure.core.exceptions import AzureError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobProperties, BlobServiceClient
 from tqdm.auto import tqdm
 
 from ..utils import IOPathWrapper
@@ -168,18 +169,27 @@ class AzureBlobBackend(BaseBackend):
         """
         self.__client.close()
 
+    def _iter_blobs(self, prefix: str) -> Generator[BlobProperties]:
+        """Yield each non-directory blob under the configured prefix.
+
+        Directory markers (names ending with ``/``) are skipped.
+
+        Args:
+            prefix (str): Prefix to filter blobs
+
+        Yields:
+            BlobProperties: Each blob's properties
+        """
+        container_client = self.__client.get_container_client(self.__container_name)
+        for blob in container_client.list_blobs(name_starts_with=prefix):
+            if not blob.name.endswith("/"):
+                yield blob
+
     def get_file_list(self) -> list[str]:
         """Return all blobs under the configured prefix as unsorted Azure URIs."""
         blobs = []
-        container_client = self.__client.get_container_client(self.__container_name)
-
-        for blob in container_client.list_blobs(name_starts_with=self.prefix):
-            if blob.name.endswith("/"):
-                continue
-
-            # Add full Azure path using _to_url
+        for blob in self._iter_blobs(self.prefix):
             blobs.append(self._to_url(self.__container_name, blob.name))
-
         return blobs
 
     def get_file_list_with_metadata(self) -> list[FileInfo]:
@@ -188,13 +198,8 @@ class AzureBlobBackend(BaseBackend):
         Metadata (``last_modified``, ``size``, ``etag``) is gathered from the
         ``list_blobs`` response — no extra HEAD requests.
         """
-        container_client = self.__client.get_container_client(self.__container_name)
-
         files = []
-        for blob in container_client.list_blobs(name_starts_with=self.prefix):
-            if blob.name.endswith("/"):
-                continue
-
+        for blob in self._iter_blobs(self.prefix):
             files.append(
                 FileInfo(
                     path=self._to_url(self.__container_name, blob.name),
@@ -203,7 +208,6 @@ class AzureBlobBackend(BaseBackend):
                     file_identity=str(blob.etag) if blob.etag else None,
                 )
             )
-
         return files
 
     def get_file_size(self, file_path: str) -> int:

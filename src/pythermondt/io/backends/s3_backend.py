@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Generator
 from io import BytesIO
 from urllib.parse import urlparse
 
@@ -121,23 +122,29 @@ class S3Backend(BaseBackend):
         """
         self.__client.close()
 
-    def get_file_list(self) -> list[str]:
-        """Return all objects under the configured prefix as unsorted S3 URIs."""
-        # List all objects with the given prefix
-        paginator = self.__client.get_paginator("list_objects_v2")
+    def _iter_objects(self, prefix: str) -> Generator[dict]:
+        """Yield each non-directory object dict under the configured prefix.
 
-        files = []
-        for page in paginator.paginate(Bucket=self.bucket, Prefix=self.prefix):
+        Directory markers (keys ending with ``/``) are skipped.
+
+        Args:
+            prefix (str): Prefix to filter objects
+
+        Yields:
+            dict: Each object's metadata from S3
+        """
+        paginator = self.__client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix):
             if "Contents" in page:
                 for obj in page["Contents"]:
-                    key = obj["Key"]
-                    # Skip directories (keys ending with /)
-                    if key.endswith("/"):
-                        continue
+                    if not obj["Key"].endswith("/"):
+                        yield obj
 
-                    # Add full S3 path
-                    files.append(self._to_url(self.bucket, key))
-
+    def get_file_list(self) -> list[str]:
+        """Return all objects under the configured prefix as unsorted S3 URIs."""
+        files = []
+        for obj in self._iter_objects(self.prefix):
+            files.append(self._to_url(self.bucket, obj["Key"]))
         return files
 
     def get_file_list_with_metadata(self) -> list[FileInfo]:
@@ -146,25 +153,16 @@ class S3Backend(BaseBackend):
         Metadata (``LastModified``, ``Size``, ``ETag``) is gathered from the
         ``list_objects_v2`` response — no extra HEAD requests.
         """
-        paginator = self.__client.get_paginator("list_objects_v2")
-
         files = []
-        for page in paginator.paginate(Bucket=self.bucket, Prefix=self.prefix):
-            if "Contents" in page:
-                for obj in page["Contents"]:
-                    key = obj["Key"]
-                    if key.endswith("/"):
-                        continue
-
-                    files.append(
-                        FileInfo(
-                            path=self._to_url(self.bucket, key),
-                            last_modified=obj["LastModified"],
-                            size=obj["Size"],
-                            file_identity=obj.get("ETag"),
-                        )
-                    )
-
+        for obj in self._iter_objects(self.prefix):
+            files.append(
+                FileInfo(
+                    path=self._to_url(self.bucket, obj["Key"]),
+                    last_modified=obj["LastModified"],
+                    size=obj["Size"],
+                    file_identity=obj.get("ETag"),
+                )
+            )
         return files
 
     def get_file_size(self, file_path: str) -> int:

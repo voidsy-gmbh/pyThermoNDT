@@ -78,7 +78,7 @@ class LocalBackend(BaseBackend):
 
     def _get_raw_file_paths(self) -> list[str]:
         """Return raw (un-normalized) file paths matching the configured source type."""
-        # Handle different pattern types ==> raise an error if the source type is unexpected
+        # Handle different pattern types
         match self.__source_type:
             case "file":
                 return [self.pattern]

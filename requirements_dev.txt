@@ -3,7 +3,7 @@ pytest-cov==7.1.0
 pytest-benchmark==5.2.3
 ruff==0.15.16
 pre-commit==4.6.0
-bump-my-version==1.3.0
+bump-my-version==1.4.0
 deepdiff==8.6.2
 licensecheck==2025.1.0
 mypy==2.1.0

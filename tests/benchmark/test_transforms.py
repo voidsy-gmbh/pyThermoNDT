@@ -24,7 +24,7 @@ def get_test_files_as_container():
             yield pytest.param(None, id=msg, marks=pytest.mark.skip(reason=msg))
 
 
-@pytest.mark.parametrize("data_config", get_test_files_as_container())
+@pytest.mark.parametrize("data_config", list(get_test_files_as_container()))
 @pytest.mark.parametrize("benchmark_config", BENCHMARK_SPECS, ids=lambda config: config.name)
 def test_benchmark_transform(
     benchmark: BenchmarkFixture,

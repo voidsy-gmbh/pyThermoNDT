@@ -451,7 +451,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         to both populate and validate the cache.
 
         Args:
-            file_paths (list[str], optional): Files to check. Defaults to all manifest entries.
+            file_paths (list[str], optional): Files to check. Defaults to the union of all manifest entries
+                and the reader's file URIs (so new files are discovered when `num_files` increases).
             num_workers (int, optional): Parallel workers. Defaults to global config.
         """
         # If no remote source, do nothing
@@ -464,8 +465,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             self.download(file_paths=file_paths, num_workers=num_workers)
             return
 
-        # Determine files to check
-        to_check = file_paths or list(manifest.root.keys())
+        # Include reader file URIs so files that are discoverable now but absent from the manifest
+        to_check = file_paths or list(set(manifest.root.keys()) | set(self.file_uris))
 
         def fetch_identity(remote_path: str) -> tuple[str, str | None]:
             try:

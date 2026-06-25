@@ -396,3 +396,13 @@ def test_get_file_size_directory_raises_error(tmp_path):
     # Should raise an error when trying to get size of directory
     with pytest.raises(IsADirectoryError):
         backend.get_file_size(str(subdir))
+
+
+def test_get_raw_file_paths_invalid_source_type(tmp_path):
+    """Test that a corrupted source_type raises RuntimeError."""
+    (tmp_path / "test.txt").write_text("content")
+    backend = LocalBackend(str(tmp_path))
+    backend._LocalBackend__source_type = None  # type: ignore
+
+    with pytest.raises(RuntimeError, match="Unexpected source type"):
+        backend._get_raw_file_paths()

@@ -1,11 +1,12 @@
 import logging
 import os
+from datetime import datetime, timezone
 from glob import glob
 from urllib.parse import urlparse
 from urllib.request import pathname2url, url2pathname
 
 from ..utils import IOPathWrapper
-from .base_backend import BaseBackend
+from .base_backend import BaseBackend, FileInfo
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,6 @@ class LocalBackend(BaseBackend):
         parsed_input = self._parse_input(pattern)
 
         # Determine the type of the source based on the provided pattern
-        self.__source_type = None
         if os.path.isfile(parsed_input):
             self.__source_type = "file"
         elif os.path.isdir(parsed_input):
@@ -76,24 +76,46 @@ class LocalBackend(BaseBackend):
         # Nothing to close for local files
         pass
 
-    def get_file_list(self) -> list[str]:
+    def _get_raw_file_paths(self) -> list[str]:
+        """Return raw (un-normalized) file paths matching the configured source type."""
         # Handle different pattern types
-        all_files = []
         match self.__source_type:
             case "file":
-                all_files = [self.pattern]
+                return [self.pattern]
             case "directory":
                 if self.__recursive:
-                    all_files = [os.path.join(root, name) for root, _, names in os.walk(self.pattern) for name in names]
-                else:
-                    all_files = [f.path for f in os.scandir(self.pattern) if f.is_file()]
+                    return [os.path.join(root, name) for root, _, names in os.walk(self.pattern) for name in names]
+                return [f.path for f in os.scandir(self.pattern) if f.is_file()]
             case "glob":
-                all_files = glob(self.pattern, recursive=self.__recursive)
+                return glob(self.pattern, recursive=self.__recursive)
+            case _:
+                raise RuntimeError(f"Unexpected source type: {self.__source_type!r}")
 
-        # Convert to absolute paths and normalize before returning
-        all_files = [self._to_url(os.path.normpath(os.path.abspath(f))) for f in all_files]
+    def get_file_list(self) -> list[str]:
+        # Normalize and convert to URLs
+        return [self._to_url(os.path.normpath(os.path.abspath(f))) for f in self._get_raw_file_paths()]
 
-        return all_files
+    def get_file_list_with_metadata(self) -> list[FileInfo]:
+        """Return all files with metadata (single stat per file, no extra overhead)."""
+        # Build FileInfo object for each file in raw file paths
+        return [self._build_file_info(f) for f in self._get_raw_file_paths()]
+
+    def _identity_from_stat(self, stat_result: os.stat_result) -> str:
+        """Build a local-file identity string from a stat result."""
+        device = getattr(stat_result, "st_dev", 0)
+        inode = getattr(stat_result, "st_ino", 0)
+        return f"{device}:{inode}:{stat_result.st_size}:{stat_result.st_mtime_ns}"
+
+    def _build_file_info(self, internal_path: str) -> FileInfo:
+        """Stat a local path and build a ``FileInfo`` entry (normalized, URL-encoded)."""
+        normalised = os.path.normpath(os.path.abspath(internal_path))
+        stat_result = os.stat(normalised)
+        return FileInfo(
+            path=self._to_url(normalised),
+            last_modified=datetime.fromtimestamp(stat_result.st_mtime_ns / 1e9, tz=timezone.utc),
+            size=stat_result.st_size,
+            file_identity=self._identity_from_stat(stat_result),
+        )
 
     def get_file_size(self, file_path: str) -> int:
         path = self._parse_input(file_path)
@@ -116,10 +138,7 @@ class LocalBackend(BaseBackend):
             raise IsADirectoryError(f"Path is a directory, not a file: {path}")
 
         stat_result = os.stat(path)
-        device = getattr(stat_result, "st_dev", 0)
-        inode = getattr(stat_result, "st_ino", 0)
-
-        return f"{device}:{inode}:{stat_result.st_size}:{stat_result.st_mtime_ns}"
+        return self._identity_from_stat(stat_result)
 
     def download_file(self, source_path: str, destination_path: str) -> None:
         raise NotImplementedError("Direct download is not supported for local files.")

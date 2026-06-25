@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pythermondt.io import IOPathWrapper
+from pythermondt.io import FileInfo, IOPathWrapper
 
 
 def test_scheme(backend_config):
@@ -181,3 +181,43 @@ def test_download_file(backend_config, tmp_path, test_file):
         with open(dest_path, "rb") as f:
             downloaded_content = f.read()
         assert downloaded_content == expected_content
+
+
+def test_get_file_list_with_metadata_single(backend_config, test_file):
+    """Test get_file_list_with_metadata returns correct FileInfo for a single file."""
+    backend_instance, _ = backend_config
+    file_path, expected_content = test_file
+
+    result = backend_instance.get_file_list_with_metadata()
+    assert len(result) == 1
+
+    info = result[0]
+    assert isinstance(info, FileInfo)
+    assert info.path == file_path
+    assert info.size == len(expected_content)
+    assert info.last_modified.tzinfo is not None  # tz-aware UTC
+    assert isinstance(info.file_identity, str)
+    assert info.file_identity != ""
+
+
+def test_get_file_list_with_metadata_all(backend_config, test_files_scenario):
+    """Test get_file_list_with_metadata with all files."""
+    backend_instance, config = backend_config
+
+    result = backend_instance.get_file_list_with_metadata()
+
+    assert len(result) == len(test_files_scenario)
+    assert all(f.path.startswith(config.scheme + "://") for f in result)
+    assert all(f.last_modified.tzinfo is not None for f in result)
+    assert all(isinstance(f.file_identity, str) and f.file_identity != "" for f in result)
+    assert all(f.size >= 0 for f in result)
+
+
+def test_get_file_list_with_metadata_paths_match_get_file_list(backend_config, test_files_scenario):
+    """Test that paths returned by both listing methods are identical."""
+    backend_instance, _ = backend_config
+
+    paths_fast = set(backend_instance.get_file_list())
+    paths_meta = {info.path for info in backend_instance.get_file_list_with_metadata()}
+
+    assert paths_fast == paths_meta

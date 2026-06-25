@@ -1,6 +1,7 @@
 import hashlib
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -108,6 +109,9 @@ def mocked_azure_blob_storage() -> Iterator[MockAzureBlob]:
             for name in mock_storage.list_blobs(container, name_starts_with):
                 mock_blob = MagicMock()
                 mock_blob.name = name
+                mock_blob.last_modified = datetime(2024, 6, 1, tzinfo=timezone.utc)
+                mock_blob.size = mock_storage.get_blob_size(container, name)
+                mock_blob.etag = mock_storage.get_blob_etag(container, name)
                 mock_blobs.append(mock_blob)
             return mock_blobs
 

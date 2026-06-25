@@ -7,7 +7,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from pythermondt.io import IOPathWrapper, S3Backend, S3ClientOptions
+from pythermondt.io import FileInfo, IOPathWrapper, S3Backend, S3ClientOptions
 
 
 @pytest.fixture
@@ -229,3 +229,22 @@ def test_prefix_property(s3_backend):
 def test_remote_source_property(s3_backend):
     """Test remote_source property."""
     assert s3_backend.remote_source is True
+
+
+def test_get_file_list_with_metadata_skips_directories(s3_backend_with_directory):
+    """Test get_file_list_with_metadata skips directory markers and populates metadata."""
+    result = s3_backend_with_directory.get_file_list_with_metadata()
+
+    # Should skip directory marker, include actual file
+    assert all(not f.path.endswith("/") for f in result)
+    paths = [f.path for f in result]
+    assert "s3://test-bucket/test/subdir/" not in paths
+    assert "s3://test-bucket/test/subdir/file.txt" in paths
+
+    # Verify metadata is populated from listing (no extra HEAD requests)
+    for info in result:
+        assert isinstance(info, FileInfo)
+        assert info.last_modified.tzinfo is not None
+        assert info.size >= 0
+        assert isinstance(info.file_identity, str)
+        assert info.file_identity != ""

@@ -451,7 +451,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         to both populate and validate the cache.
 
         Args:
-            file_paths (list[str], optional): Files to check. Defaults to all manifest entries.
+            file_paths (list[str], optional): Files to check. Defaults to the union of all manifest entries
+                and the reader's file URIs (so new files are discovered when `num_files` increases).
             num_workers (int, optional): Parallel workers. Defaults to global config.
         """
         # If no remote source, do nothing

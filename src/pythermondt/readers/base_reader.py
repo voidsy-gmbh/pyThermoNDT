@@ -464,8 +464,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             self.download(file_paths=file_paths, num_workers=num_workers)
             return
 
-        # Determine files to check
-        to_check = file_paths or list(manifest.root.keys())
+        # Include reader file URIs so files that are discoverable now but absent from the manifest
+        to_check = file_paths or list(set(manifest.root.keys()) | set(self.file_uris))
 
         def fetch_identity(remote_path: str) -> tuple[str, str | None]:
             try:

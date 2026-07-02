@@ -132,6 +132,8 @@ select = [
     "C4", # flake8-comprehensions
     "FURB", # refurb
     "A", # flake8-builtins
+    "PERF", # perflint
+    "T10", # flake8-debugger
 ]
 fixable = ["ALL"]
 pydocstyle.convention = "google"

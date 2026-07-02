@@ -119,11 +119,5 @@ def reshape_pymatreader_parameters(flat_params: list[Any]) -> list[list[Any]]:
     values = flat_params[3 * num_params : 4 * num_params]
     units = flat_params[4 * num_params : 5 * num_params]
 
-    # Create the column headers
-    result = []
-
     # Create a row for each parameter
-    for i in range(num_params):
-        result.append([param_names[i], expressions[i], descriptions[i], values[i], units[i]])
-
-    return result
+    return [[param_names[i], expressions[i], descriptions[i], values[i], units[i]] for i in range(num_params)]

@@ -132,6 +132,8 @@ select = [
     "C4", # flake8-comprehensions
     "FURB", # refurb
     "A", # flake8-builtins
+    "PERF", # perflint
+    "T10", # flake8-debugger
 ]
 fixable = ["ALL"]
 pydocstyle.convention = "google"
@@ -145,6 +147,7 @@ ignore = [
     "D106",   # Missing docstring in public nested class
     "D107",   # Missing docstring in `__init__`
     "RUF005", # Concatenation of collections with + operator is more readable
+    "PERF203", # try-except in a loop is structurally necessary for per-iteration error handling
 ]
 
 [tool.ruff.format]

@@ -142,10 +142,7 @@ class S3Backend(BaseBackend):
 
     def get_file_list(self) -> list[str]:
         """Return all objects under the configured prefix as unsorted S3 URIs."""
-        files = []
-        for obj in self._iter_objects(self.prefix):
-            files.append(self._to_url(self.bucket, obj["Key"]))
-        return files
+        return [self._to_url(self.bucket, obj["Key"]) for obj in self._iter_objects(self.prefix)]
 
     def get_file_list_with_metadata(self) -> list[FileInfo]:
         """Return all objects under the configured prefix as ``FileInfo`` entries (unsorted).
@@ -153,17 +150,15 @@ class S3Backend(BaseBackend):
         Metadata (``LastModified``, ``Size``, ``ETag``) is gathered from the
         ``list_objects_v2`` response — no extra HEAD requests.
         """
-        files = []
-        for obj in self._iter_objects(self.prefix):
-            files.append(
-                FileInfo(
-                    path=self._to_url(self.bucket, obj["Key"]),
-                    last_modified=obj["LastModified"],
-                    size=obj["Size"],
-                    file_identity=obj.get("ETag"),
-                )
+        return [
+            FileInfo(
+                path=self._to_url(self.bucket, obj["Key"]),
+                last_modified=obj["LastModified"],
+                size=obj["Size"],
+                file_identity=obj.get("ETag"),
             )
-        return files
+            for obj in self._iter_objects(self.prefix)
+        ]
 
     def get_file_size(self, file_path: str) -> int:
         """Return the size of the file on s3 bucket in bytes."""

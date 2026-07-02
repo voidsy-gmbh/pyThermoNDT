@@ -45,18 +45,18 @@ class RandomFlip(RandomThermoTransform):
         # Flip the data along the height if the random number is less than p_height
         if torch.rand(1).item() < self.p_height:
             tdata = torch.flip(tdata, [1])
-            if mask:
+            if mask is not None:
                 mask = torch.flip(mask, [1])
 
         # Flip the data along the width if the random number is less than p_width
         if torch.rand(1).item() < self.p_width:
             tdata = torch.flip(tdata, [0])
-            if mask:
+            if mask is not None:
                 mask = torch.flip(mask, [0])
 
         # Update the container and return it
         updates: list[tuple[str, torch.Tensor]] = [("/Data/Tdata", tdata)]
-        if mask:
+        if mask is not None:
             updates.append(("/GroundTruth/DefectMask", mask))
         container.update_datasets(*updates)
         return container

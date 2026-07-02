@@ -352,7 +352,7 @@ class CropFrames(ThermoTransform):
 
         # Build update tuples (only include mask if present and non-empty)
         updates: list[tuple[str, torch.Tensor]] = [("/Data/Tdata", tdata)]
-        if mask:
+        if mask is not None:
             mask = mask[top:bottom, left:right]
             updates.append(("/GroundTruth/DefectMask", mask))
 

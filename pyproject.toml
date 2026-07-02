@@ -147,8 +147,7 @@ ignore = [
     "D106",   # Missing docstring in public nested class
     "D107",   # Missing docstring in `__init__`
     "RUF005", # Concatenation of collections with + operator is more readable
-    "PERF203", # try-except within a loop: structurally necessary in plugin loaders, collation, and error enrichment,
-    # where per-iteration error handling is intentional or moving it outside adds complexity for zero benefit.
+    "PERF203", # try-except in a loop is structurally necessary for per-iteration error handling
 ]
 
 [tool.ruff.format]

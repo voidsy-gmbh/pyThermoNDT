@@ -187,10 +187,7 @@ class AzureBlobBackend(BaseBackend):
 
     def get_file_list(self) -> list[str]:
         """Return all blobs under the configured prefix as unsorted Azure URIs."""
-        blobs = []
-        for blob in self._iter_blobs(self.prefix):
-            blobs.append(self._to_url(self.__container_name, blob.name))
-        return blobs
+        return [self._to_url(self.__container_name, blob.name) for blob in self._iter_blobs(self.prefix)]
 
     def get_file_list_with_metadata(self) -> list[FileInfo]:
         """Return all blobs under the configured prefix as ``FileInfo`` entries (unsorted).
@@ -198,17 +195,15 @@ class AzureBlobBackend(BaseBackend):
         Metadata (``last_modified``, ``size``, ``etag``) is gathered from the
         ``list_blobs`` response — no extra HEAD requests.
         """
-        files = []
-        for blob in self._iter_blobs(self.prefix):
-            files.append(
-                FileInfo(
-                    path=self._to_url(self.__container_name, blob.name),
-                    last_modified=blob.last_modified,
-                    size=blob.size,
-                    file_identity=str(blob.etag) if blob.etag else None,
-                )
+        return [
+            FileInfo(
+                path=self._to_url(self.__container_name, blob.name),
+                last_modified=blob.last_modified,
+                size=blob.size,
+                file_identity=str(blob.etag) if blob.etag else None,
             )
-        return files
+            for blob in self._iter_blobs(self.prefix)
+        ]
 
     def get_file_size(self, file_path: str) -> int:
         """Get the size of the file in Azure Blob Storage in bytes.

@@ -48,7 +48,7 @@ dependencies = [
     # Data loading and visualization
     "h5py>=3.9",
     "pymatreader>=1.0",
-    "numpy>=1.23",
+    "numpy>=2.0,<2.3.0",  # >=2.3.0 requires Python 3.11, incompatible with requires-python
     "matplotlib>=3.7",
 
     # Machine learning

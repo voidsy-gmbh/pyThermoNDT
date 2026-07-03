@@ -1,6 +1,7 @@
 import logging
+from importlib.metadata import version as _version
 
-from .__pkginfo__ import __version__
+__version__ = _version("pythermondt")
 from .config import configure_logging, settings
 from .data import DataContainer, ThermoContainer
 from .dataset import IndexedThermoDataset, ThermoDataset

@@ -155,7 +155,7 @@ The package version is defined statically in `pyproject.toml` (`[project].versio
 
 ### Release Workflow
 
-This project uses an automated release workflow with GitHub Actions and [`uv version`](https://docs.astral.sh/uv/reference/cli/#uv-version). Manually updating the version string should be avoided. If you really need to, use `uv version --bump <component>` (or `uv version <explicit-version>`).
+This project uses an automated release workflow with GitHub Actions and [`uv version`](https://docs.astral.sh/uv/reference/cli/#uv-version). Manually updating the version string should be avoided. If you really need to, use `uv version --bump stable` for release stabilization, or derive an explicit development version with `uv version --bump <component> --dry-run --short` and append `.dev0`.
 
 #### Release Branch Convention
 

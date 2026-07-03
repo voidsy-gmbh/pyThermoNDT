@@ -70,7 +70,6 @@ dev = [
     "pytest-benchmark==5.2.3",
     "ruff==0.15.19",
     "pre-commit==4.6.0",
-    "bump-my-version==1.3.0",
     "deepdiff==8.6.2",
     "licensecheck==2025.1.0",
     "mypy==2.1.0",
@@ -197,30 +196,6 @@ explicit_package_bases = true
 warn_unreachable = true
 warn_redundant_casts = true
 
-
-# Bump Version
-[tool.bumpversion]
-current_version = "0.3.7dev"
-parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?P<release>dev)?"
-serialize = [
-    "{major}.{minor}.{patch}{release}",
-    "{major}.{minor}.{patch}"
-]
-ignore_current_version = true
-tag_name = "{new_version}"
-message = "Bump version: {current_version} → {new_version}"
-
-[tool.bumpversion.parts.release]
-optional_value = ""
-values = [
-    "dev",
-    ""
-]
-
-[[tool.bumpversion.files]]
-filename = "src/pythermondt/__pkginfo__.py"
-search = "__version__ = \"{current_version}\""
-replace = "__version__ = \"{new_version}\""
 
 # uv
 [tool.uv]

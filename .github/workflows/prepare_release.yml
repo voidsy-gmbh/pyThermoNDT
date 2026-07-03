@@ -35,18 +35,21 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
-          # Install bump-my-version
-          uv pip install bump-my-version --overrides ./requirements_dev.txt
-
           # Get the new release version
-          VERSION=$(bump-my-version show --format json --increment release new_version | jq -r .new_version)
+          VERSION=$(uv version --no-sync --bump stable --dry-run --short)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Record previous version for commit message
+          PREV=$(uv version --short)
 
           # Create release branch
           git checkout -b release/$VERSION
 
           # Bump to release version
-          bump-my-version bump release --commit
+          uv version --no-sync --bump stable
+
+          # Commit
+          git commit -am "Bump version: $PREV → $VERSION"
 
           # Push release branch
           git push origin -f release/$VERSION

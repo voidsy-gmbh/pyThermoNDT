@@ -171,6 +171,7 @@ This project uses an automated release workflow with GitHub Actions and [`uv ver
      - Creates a `release/X.Y.Z` branch
      - Bumps the version by removing the `.dev0` suffix (`uv version --bump stable`)
      - Commits the bump and pushes the release branch
+     - Updates architecture diagrams on the release branch
 
 2. **Create and Merge Release PR:**
    - Manually create a pull request from `release/X.Y.Z` to `main`

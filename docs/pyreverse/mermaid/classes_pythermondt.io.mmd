@@ -9,6 +9,7 @@ classDiagram
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
     get_file_list() list[str]
+    get_file_list_with_metadata() list[FileInfo]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -33,6 +34,7 @@ classDiagram
     exists(file_path: str)* bool
     get_file_identity(file_path: str)* str
     get_file_list()* list[str]
+    get_file_list_with_metadata()* list[FileInfo]
     get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str)* None
@@ -52,6 +54,13 @@ classDiagram
     parse(data: IOPathWrapper) DataContainer
   }
   style EdevisParser fill:#77AADD
+  class FileInfo {
+    file_identity : str | None
+    last_modified : datetime
+    path : str
+    size : int
+  }
+  style FileInfo fill:#77AADD
   class HDF5Parser {
     supported_extensions : tuple
     parse(data: IOPathWrapper) DataContainer
@@ -72,6 +81,7 @@ classDiagram
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
     get_file_list() list[str]
+    get_file_list_with_metadata() list[FileInfo]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -87,6 +97,7 @@ classDiagram
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
     get_file_list() list[str]
+    get_file_list_with_metadata() list[FileInfo]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None

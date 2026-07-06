@@ -2,9 +2,6 @@ classDiagram
   class pythermondt {
   }
   style pythermondt fill:#77AADD
-  class __pkginfo__ {
-  }
-  style __pkginfo__ fill:#77AADD
   class config {
   }
   style config fill:#77AADD
@@ -167,7 +164,6 @@ classDiagram
   class s3_writer {
   }
   style s3_writer fill:#EE8866
-  pythermondt --> __pkginfo__
   pythermondt --> config
   pythermondt --> data
   pythermondt --> dataset
@@ -255,10 +251,12 @@ classDiagram
   transforms --> sampling
   transforms --> utils
   augmentation --> base
+  augmentation --> utils
   compose --> base
   frequency --> base
   normalization --> base
   preprocessing --> base
+  preprocessing --> utils
   sampling --> base
   utils --> base
   utils --> compose

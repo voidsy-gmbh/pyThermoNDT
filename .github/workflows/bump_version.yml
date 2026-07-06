@@ -105,7 +105,8 @@ jobs:
             echo "bumped=false" >> $GITHUB_OUTPUT
           else
             echo "bumped=true" >> $GITHUB_OUTPUT
-            git commit -am "Bump version: $PREV → $NEW"
+            git add pyproject.toml
+            git commit -m "Bump version: $PREV → $NEW"
           fi
 
       # Step 5: Check if the version was bumped

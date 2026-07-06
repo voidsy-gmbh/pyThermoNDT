@@ -49,7 +49,8 @@ jobs:
           uv version --no-sync --bump stable
 
           # Commit
-          git commit -am "Bump version: $PREV → $VERSION"
+          git add pyproject.toml
+          git commit -m "Bump version: $PREV → $VERSION"
 
           # Push release branch
           git push origin -f release/$VERSION

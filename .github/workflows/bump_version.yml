@@ -78,35 +78,45 @@ jobs:
           activate-environment: true
           save-cache: false
 
-      # Step 3: Install bump-my-version
-      - name: Install bump-my-version
-        run: |
-          uv pip install bump-my-version --overrides ./requirements_dev.txt
-
-      # Step 4: Setup github user
+      # Step 3: Setup github user
       - name: Setup git user
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      # Step 5: Bump version
+      # Step 4: Bump version
       - name: Bump version
         id: bump
         run: |
-          echo "previous-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
-          bump-my-version bump ${{ inputs.bump-type }} --commit
-          ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
-          echo "current-version=$(bump-my-version show current_version)" >> $GITHUB_OUTPUT
+          PREV=$(uv version --short)
+          echo "previous-version=$PREV" >> $GITHUB_OUTPUT
 
-      # Step 6: Check if the version was bumped
+          if [ "${{ inputs.bump-type }}" = "release" ]; then
+            uv version --no-sync --bump stable
+          else
+            base=$(uv version --no-sync --bump ${{ inputs.bump-type }} --dry-run --short)
+            uv version --no-sync "$base.dev0"
+          fi
+
+          NEW=$(uv version --short)
+          echo "current-version=$NEW" >> $GITHUB_OUTPUT
+
+          if git diff --quiet pyproject.toml; then
+            echo "bumped=false" >> $GITHUB_OUTPUT
+          else
+            echo "bumped=true" >> $GITHUB_OUTPUT
+            git add pyproject.toml
+            git commit -m "Bump version: $PREV → $NEW"
+          fi
+
+      # Step 5: Check if the version was bumped
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
 
-      # Step 7: Push changes
+      # Step 6: Push changes
       - name: Push changes
         if: steps.bump.outputs.bumped == 'true'
         run: |
           git push
-          git push --tags

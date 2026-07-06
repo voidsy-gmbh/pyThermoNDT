@@ -151,11 +151,17 @@ Optionally, you can install the [VSCode extension for Ruff](https://marketplace.
 
 ## Versioning
 
-The package version is defined in [pythermondt/\__pkginfo\__.py](src/pythermondt/__pkginfo__.py). The version number should follow [PEP 440](https://setuptools.pypa.io/en/latest/userguide/distribution.html) guidelines.
+The package version is defined statically in `pyproject.toml` (`[project].version`) following [PEP 440](https://peps.python.org/pep-0440/) using the canonical `.dev0` form for developmental releases. The `__version__` attribute on the `pythermondt` package is populated at runtime via `importlib.metadata.version("pythermondt")`.
 
 ### Release Workflow
 
-This project uses an automated release workflow with GitHub Actions and [bump-my-version](https://github.com/callowayproject/bump-my-version). Manually updating the version string should be avoided. If you really need to, use the [CLI-Interface](https://callowayproject.github.io/bump-my-version/reference/cli/) that bump-my-version provides.
+This project uses an automated release workflow with GitHub Actions and [`uv version`](https://docs.astral.sh/uv/reference/cli/#uv-version). Manually updating the version string should be avoided. If you really need to, use `uv version --bump stable` for release stabilization, or derive an explicit development version with `uv version --bump <component> --dry-run --short` and append `.dev0`.
+
+#### Release Branch Convention
+
+- The `main` branch always carries a `.dev0` suffix (e.g. `0.3.7.dev0`).
+- Release branches carry the stable version (e.g. `0.3.7`).
+- Git tags are created **manually** on the merge commit when publishing a release — the automated workflows never create tags.
 
 #### Steps to Release
 
@@ -163,8 +169,9 @@ This project uses an automated release workflow with GitHub Actions and [bump-my
    - Manually trigger the [Prepare Release workflow](https://github.com/voidsy-gmbh/pyThermoNDT/actions/workflows/prepare_release.yml) on the `main` branch
    - This workflow:
      - Creates a `release/X.Y.Z` branch
-     - Bumps the version by removing the `.dev*` suffix
-     - Updates architecture diagrams
+     - Bumps the version by removing the `.dev0` suffix (`uv version --bump stable`)
+     - Commits the bump and pushes the release branch
+     - Updates architecture diagrams on the release branch
 
 2. **Create and Merge Release PR:**
    - Manually create a pull request from `release/X.Y.Z` to `main`
@@ -174,7 +181,7 @@ This project uses an automated release workflow with GitHub Actions and [bump-my
 3. **Publish Release:**
    - Go to GitHub's [releases page](https://github.com/voidsy-gmbh/pyThermoNDT/releases)
    - Click "Draft a new release"
-   - Select tag: `X.Y.Z` (create new tag from `main`)
+   - Create a new tag: `X.Y.Z` on the merge commit on `main`
    - Set title: `vX.Y.Z`
    - Generate release notes
    - Click "Publish release"
@@ -184,4 +191,4 @@ This project uses an automated release workflow with GitHub Actions and [bump-my
      - Builds the package from the release tag
      - Publishes to PyPI
      - Signs and uploads artifacts to the GitHub release
-     - Bumps `main` to the next patch version with `.dev0` suffix
+     - Bumps `main` to the next patch version with a `.dev0` suffix (e.g. `0.3.8.dev0`)

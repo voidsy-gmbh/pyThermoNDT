@@ -1,6 +1,6 @@
 import logging
+from importlib.metadata import version
 
-from .__pkginfo__ import __version__
 from .config import configure_logging, settings
 from .data import DataContainer, ThermoContainer
 from .dataset import IndexedThermoDataset, ThermoDataset
@@ -12,6 +12,9 @@ from .writers import AzureBlobWriter, LocalWriter, S3Writer
 # Set up logging per Python best practices: https://docs.python.org/3/howto/logging.html
 # Add NullHandler to prevent "No handlers could be found" warnings
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+# Get version from package metadata
+__version__ = version("pythermondt")
 
 __all__ = [
     "AzureBlobReader",

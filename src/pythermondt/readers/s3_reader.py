@@ -1,6 +1,8 @@
+from collections.abc import Callable
+
 import boto3
 
-from ..io import BaseParser, S3Backend, S3ClientOptions
+from ..io import BaseParser, FileInfo, S3Backend, S3ClientOptions
 from .base_reader import BaseReader
 
 
@@ -17,6 +19,7 @@ class S3Reader(BaseReader):
         download_files: bool = False,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
+        file_filter: Callable[[FileInfo], bool] | None = None,
     ):
         """Initialize an instance of the S3Reader class.
 
@@ -40,9 +43,11 @@ class S3Reader(BaseReader):
                 detected files will be reflected at runtime. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
+            file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file discovery.
+                Default is None.
         """
         # Initialize baseclass with parser
-        super().__init__(num_files, download_files, cache_files, parser)
+        super().__init__(num_files, download_files, cache_files, parser, file_filter)
 
         # Maintain state for what is needed to create the backend
         self.__bucket = bucket

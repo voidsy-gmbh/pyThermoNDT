@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
@@ -14,7 +14,7 @@ from tqdm.auto import tqdm
 
 from ..config import settings
 from ..data import DataContainer
-from ..io import BaseBackend, IOPathWrapper
+from ..io import BaseBackend, FileInfo, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         download_files: bool = False,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
+        file_filter: Callable[[FileInfo], bool] | None = None,
     ):
         """Initialize an instance of the BaseReader class.
 
@@ -57,15 +58,19 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 detected files will be reflected at runtime. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
+            file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file discovery.
+                Use picklable callables when readers are used with multiprocessing. Default is None.
         """
         # Assign private attributes
         self.__parser = parser
         self.__num_files = num_files
         self.__cache_files = cache_files
         self.__download_files = download_files
+        self.__file_filter = file_filter
 
         # Internal state
         self.__backend: BaseBackend | None = None
+        self.__file_entries: list[FileInfo] | None = None
         self.__files: list[str] | None = None
         self.__file_uris: list[str] | None = None
         self.__file_names: list[str] | None = None
@@ -116,6 +121,11 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         return self.__parser
 
     @property
+    def file_filter(self) -> Callable[[FileInfo], bool] | None:
+        """The metadata-aware file filter used during file discovery."""
+        return self.__file_filter
+
+    @property
     def num_files(self) -> int | None:
         """The number of files to read."""
         return self.__num_files
@@ -150,6 +160,9 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     @property
     def file_uris(self) -> list[str]:
         """List of URL-encoded URIs for internal use (reading, downloading, caching)."""
+        if self.__file_filter is not None:
+            return [entry.path for entry in self.file_entries]
+
         # If caching is disabled return the file list from the backend
         if not self.__cache_files:
             return self._filter_and_limit(self.backend.get_file_list())
@@ -160,6 +173,21 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         # Return the cached URIs list
         return self.__file_uris
+
+    @property
+    def file_entries(self) -> list[FileInfo]:
+        """List of discovered files with metadata.
+
+        This property always uses the metadata-aware backend listing. ``file_uris`` only derives from it when a
+        ``file_filter`` is configured, preserving the fast listing path for unfiltered readers.
+        """
+        if not self.__cache_files:
+            return self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
+
+        if self.__file_entries is None:
+            self.__file_entries = self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
+
+        return self.__file_entries
 
     @property
     def file_names(self) -> list[str]:
@@ -184,6 +212,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             state["_BaseReader__manifest_lock"] = None
 
         # Clear files cache to force reloading
+        state["_BaseReader__file_entries"] = None
         state["_BaseReader__files"] = None
         state["_BaseReader__file_uris"] = None
         state["_BaseReader__file_names"] = None
@@ -249,6 +278,22 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         if self.num_files is not None:
             files = files[: self.num_files]
         return files
+
+    def _filter_and_limit_entries(self, file_entries: list[FileInfo]) -> list[FileInfo]:
+        """Apply extension filtering, metadata filtering, sort, and num_files limit."""
+        if self.__supported_extensions:
+            file_entries = [
+                entry for entry in file_entries if any(entry.path.endswith(ext) for ext in self.__supported_extensions)
+            ]
+
+        if self.__file_filter is not None:
+            file_entries = [entry for entry in file_entries if self.__file_filter(entry)]
+
+        file_entries.sort(key=lambda entry: entry.path)
+
+        if self.num_files is not None:
+            file_entries = file_entries[: self.num_files]
+        return file_entries
 
     def _load_manifest(self, manifest_path: str) -> CacheManifest:
         """Load manifest from disk with thread safety."""

@@ -17,6 +17,12 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style CallbackTransform fill:#77AADD
+  class CastTo {
+    datasets : str | Sequence[str]
+    dtype : list
+    forward(container: DataContainer) DataContainer
+  }
+  style CastTo fill:#77AADD
   class Compose {
     transforms : Sequence[_BaseTransform]
     forward(container: DataContainer) DataContainer
@@ -134,6 +140,7 @@ classDiagram
   MinMaxNormalize --|> ThermoTransform
   ZScoreNormalize --|> ThermoTransform
   ApplyLUT --|> ThermoTransform
+  CastTo --|> ThermoTransform
   CropFrames --|> ThermoTransform
   RemoveFlash --|> ThermoTransform
   SubtractFrame --|> ThermoTransform

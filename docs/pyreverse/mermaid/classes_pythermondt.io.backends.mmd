@@ -10,6 +10,7 @@ classDiagram
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
     get_file_list() list[str]
+    get_file_list_with_metadata() list[FileInfo]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -36,11 +37,20 @@ classDiagram
     exists(file_path: str)* bool
     get_file_identity(file_path: str)* str
     get_file_list()* list[str]
+    get_file_list_with_metadata()* list[FileInfo]
     get_file_size(file_path: str)* int
     read_file(file_path: str)* IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str)* None
   }
   style BaseBackend fill:#77AADD
+  class FileInfo {
+    file_identity : str | None
+    last_modified : datetime
+    path : str
+    size : int
+    \_\_init\_\_(self, path: str, last_modified: datetime, size: int, file_identity: str | None) None
+  }
+  style FileInfo fill:#77AADD
   class LocalBackend {
     pattern : str
     remote_source : bool
@@ -51,6 +61,7 @@ classDiagram
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
     get_file_list() list[str]
+    get_file_list_with_metadata() list[FileInfo]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None
@@ -67,6 +78,7 @@ classDiagram
     exists(file_path: str) bool
     get_file_identity(file_path: str) str
     get_file_list() list[str]
+    get_file_list_with_metadata() list[FileInfo]
     get_file_size(file_path: str) int
     read_file(file_path: str) IOPathWrapper
     write_file(data: IOPathWrapper, file_path: str) None

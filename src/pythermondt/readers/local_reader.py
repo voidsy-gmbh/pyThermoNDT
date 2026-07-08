@@ -29,8 +29,8 @@ class LocalReader(BaseReader):
                 detected files will be reflected at runtime. Default is True.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
-            file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file discovery.
-                Default is None.
+            file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file
+                discovery. Must be picklable whenever the reader needs to be picklable. Default: None.
         """
         # Initialize baseclass with parser
         super().__init__(num_files, False, cache_files, parser, file_filter)

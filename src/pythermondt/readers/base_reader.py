@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import pickle
 import shutil
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
@@ -59,7 +60,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
             file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file discovery.
-                Use picklable callables when readers are used with multiprocessing. Default is None.
+                Must be picklable whenever the reader needs to be picklable. Default: None.
         """
         # Assign private attributes
         self.__parser = parser
@@ -205,8 +206,28 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         return self.__file_names
 
+    def _validate_file_filter_picklable(self) -> None:
+        """Fail early with a clear message when *file_filter* cannot be pickled.
+
+        Fires only when the reader is serialized (spawn/forkserver workers,
+        ``torch.save``, DDP).  Invisible to ``fork`` (which never pickles) and
+        to all single-process use.
+        """
+        if self.__file_filter is None:
+            return
+        try:
+            pickle.dumps(self.__file_filter)
+        except (pickle.PicklingError, AttributeError, TypeError) as e:
+            raise pickle.PicklingError(
+                f"{type(self).__name__}.file_filter must be picklable whenever the reader is "
+                f"pickled (spawn/forkserver workers, torch.save, DDP), but got "
+                f"{self.__file_filter!r}. Use a module-level function or a picklable class "
+                f"instance instead of a lambda or closure."
+            ) from e
+
     def __getstate__(self):
         """Prepare object for pickling by removing the backend."""
+        self._validate_file_filter_picklable()
         state = self.__dict__.copy()
         # Remove backend reference - will be recreated when needed
         if "_BaseReader__backend" in state:

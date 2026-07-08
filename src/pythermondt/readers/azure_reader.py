@@ -41,8 +41,8 @@ class AzureBlobReader(BaseReader):
                 refreshed on each access. Default: True.
             parser (type[BaseParser] | None): Parser class for reading files. If None, auto-selects
                 based on file extension. Default: None.
-            file_filter (Callable[[FileInfo], bool] | None): Metadata-aware filter applied during file discovery.
-                Default: None.
+            file_filter (Callable[[FileInfo], bool] | None): Metadata-aware filter applied during file
+                discovery. Must be picklable whenever the reader needs to be picklable. Default: None.
         """
         super().__init__(num_files, download_files, cache_files, parser, file_filter)
         self.__container_name = container_name

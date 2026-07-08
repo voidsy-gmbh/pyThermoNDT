@@ -266,15 +266,23 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         """Extract the file name from a file path."""
         return os.path.basename(unquote(urlparse(file_path).path))
 
+    def _has_supported_extension(self, path: str) -> bool:
+        """Return True if *path* matches one of the supported extensions.
+
+        Shared by both ``_filter_and_limit`` and ``_filter_and_limit_entries``
+        so the extension-matching rule stays consistent across listing paths.
+        """
+        if not self.__supported_extensions:
+            return True
+        return any(path.endswith(ext) for ext in self.__supported_extensions)
+
     def _filter_and_limit(self, files: list[str]) -> list[str]:
         """Apply extension filtering, sort, and num_files limit.
 
         Filtering is applied in the reader so backends stay portable and only
         need to return the complete, unfiltered file listing.
         """
-        # Filter by extension if provided
-        if self.__supported_extensions:
-            files = [f for f in files if any(f.endswith(ext) for ext in self.__supported_extensions)]
+        files = [f for f in files if self._has_supported_extension(f)]
 
         # Sort for deterministic behavior
         files.sort()
@@ -286,13 +294,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
     def _filter_and_limit_entries(self, file_entries: list[FileInfo]) -> list[FileInfo]:
         """Apply extension filtering, metadata filtering, sort, and num_files limit."""
-        if self.__supported_extensions:
-            file_entries = [
-                entry for entry in file_entries if any(entry.path.endswith(ext) for ext in self.__supported_extensions)
-            ]
+        file_entries = [e for e in file_entries if self._has_supported_extension(e.path)]
 
         if self.__file_filter is not None:
-            file_entries = [entry for entry in file_entries if self.__file_filter(entry)]
+            file_entries = [e for e in file_entries if self.__file_filter(e)]
 
         file_entries.sort(key=lambda entry: entry.path)
 

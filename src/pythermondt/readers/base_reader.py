@@ -276,6 +276,17 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             return True
         return any(path.endswith(ext) for ext in self.__supported_extensions)
 
+    def _sort_and_limit(self, items: list, *, key=None) -> list:
+        """Sort and apply the num_files limit in-place.
+
+        Shared by both ``_filter_and_limit`` and ``_filter_and_limit_entries``
+        so sort/limit behaviour stays consistent across listing paths.
+        """
+        items.sort(key=key)
+        if self.num_files is not None:
+            items = items[: self.num_files]
+        return items
+
     def _filter_and_limit(self, files: list[str]) -> list[str]:
         """Apply extension filtering, sort, and num_files limit.
 
@@ -283,14 +294,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         need to return the complete, unfiltered file listing.
         """
         files = [f for f in files if self._has_supported_extension(f)]
-
-        # Sort for deterministic behavior
-        files.sort()
-
-        # Limit number of results if specified
-        if self.num_files is not None:
-            files = files[: self.num_files]
-        return files
+        return self._sort_and_limit(files)
 
     def _filter_and_limit_entries(self, file_entries: list[FileInfo]) -> list[FileInfo]:
         """Apply extension filtering, metadata filtering, sort, and num_files limit."""
@@ -299,11 +303,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         if self.__file_filter is not None:
             file_entries = [e for e in file_entries if self.__file_filter(e)]
 
-        file_entries.sort(key=lambda entry: entry.path)
-
-        if self.num_files is not None:
-            file_entries = file_entries[: self.num_files]
-        return file_entries
+        return self._sort_and_limit(file_entries, key=lambda e: e.path)
 
     def _load_manifest(self, manifest_path: str) -> CacheManifest:
         """Load manifest from disk with thread safety."""

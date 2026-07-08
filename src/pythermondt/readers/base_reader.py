@@ -219,10 +219,9 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             pickle.dumps(self.__file_filter)
         except (pickle.PicklingError, AttributeError, TypeError) as e:
             raise pickle.PicklingError(
-                f"{type(self).__name__}.file_filter must be picklable whenever the reader is "
-                f"pickled (spawn/forkserver workers, torch.save, DDP), but got "
-                f"{self.__file_filter!r}. Use a module-level function or a picklable class "
-                f"instance instead of a lambda or closure."
+                f"{type(self).__name__}.file_filter is not picklable: {self.__file_filter!r}. "
+                f"Use a module-level function or a picklable class instance instead of a "
+                f"lambda or closure."
             ) from e
 
     def __getstate__(self):

@@ -160,18 +160,23 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     @property
     def file_uris(self) -> list[str]:
         """List of URL-encoded URIs for internal use (reading, downloading, caching)."""
-        if self.__file_filter is not None:
-            return [entry.path for entry in self.file_entries]
-
-        # If caching is disabled return the file list from the backend
+        # If caching is disabled return the file list from the backend on each access
         if not self.__cache_files:
+            if self.__file_filter is not None:
+                return [entry.path for entry in self.file_entries]
+            # Fast path: if no filter is requested get_file_list() is sufficient because file Metadata is not needed
+            # ==> avoids additional stat() calls on every file for local backends
             return self._filter_and_limit(self.backend.get_file_list())
 
-        # If URIs have never been loaded, load them from the backend
+        # If URIs have never been loaded, derive them from file_entries (filtered) or the fast
+        # listing path (unfiltered), and cache the result.
         if self.__file_uris is None:
-            self.__file_uris = self._filter_and_limit(self.backend.get_file_list())
+            if self.__file_filter is not None:
+                self.__file_uris = [entry.path for entry in self.file_entries]
+            else:
+                # Fast path (see above): no filter => no metadata needed.
+                self.__file_uris = self._filter_and_limit(self.backend.get_file_list())
 
-        # Return the cached URIs list
         return self.__file_uris
 
     @property

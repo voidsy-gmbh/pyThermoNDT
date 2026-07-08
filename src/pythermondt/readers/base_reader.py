@@ -206,27 +206,18 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         return self.__file_names
 
-    def _validate_file_filter_picklable(self) -> None:
-        """Fail early with a clear message when *file_filter* cannot be pickled.
-
-        Fires only when the reader is serialized (spawn/forkserver workers,
-        ``torch.save``, DDP).  Invisible to ``fork`` (which never pickles) and
-        to all single-process use.
-        """
-        if self.__file_filter is None:
-            return
-        try:
-            pickle.dumps(self.__file_filter)
-        except (pickle.PicklingError, AttributeError, TypeError) as e:
-            raise pickle.PicklingError(
-                f"{type(self).__name__}.file_filter is not picklable: {self.__file_filter!r}. "
-                f"Use a module-level function or a picklable class instance instead of a "
-                f"lambda or closure."
-            ) from e
-
     def __getstate__(self):
         """Prepare object for pickling by removing the backend."""
-        self._validate_file_filter_picklable()
+        # Check if file filter is pickleable to fail early with clear error message if not
+        if self.__file_filter is not None:
+            try:
+                pickle.dumps(self.__file_filter)
+            except (pickle.PicklingError, AttributeError, TypeError) as e:
+                raise pickle.PicklingError(
+                    f"{type(self).__name__}.file_filter is not picklable: {self.__file_filter!r}. Use a module-level "
+                    f"function or a picklable class instance instead of a lambda or closure."
+                ) from e
+
         state = self.__dict__.copy()
         # Remove backend reference - will be recreated when needed
         if "_BaseReader__backend" in state:

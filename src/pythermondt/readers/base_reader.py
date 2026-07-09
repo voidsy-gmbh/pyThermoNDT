@@ -169,30 +169,34 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             # ==> avoids additional stat() calls on every file for local backends
             return self._filter_and_limit(self.backend.get_file_list())
 
-        # If URIs have never been loaded, derive them from file_entries (filtered) or the fast
-        # listing path (unfiltered), and cache the result.
-        if self.__file_uris is None:
-            if self.__file_filter is not None:
-                self.__file_uris = [entry.path for entry in self.file_entries]
-            else:
-                # Fast path (see above): no filter => no metadata needed.
-                self.__file_uris = self._filter_and_limit(self.backend.get_file_list())
+        # Return the cached URIs if already populated.
+        cached_uris = self.__file_uris
+        if cached_uris is not None:
+            return cached_uris
 
+        # Populate both caches from a single backend snapshot so URIs and entries stay consistent.
+        self.__file_entries = self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
+        self.__file_uris = [entry.path for entry in self.__file_entries]
         return self.__file_uris
 
     @property
     def file_entries(self) -> list[FileInfo]:
         """List of discovered files with metadata.
 
-        This property always uses the metadata-aware backend listing. ``file_uris`` only derives from it when a
-        ``file_filter`` is configured, preserving the fast listing path for unfiltered readers.
+        Metadata-aware backend listing. When caching is enabled, both ``file_uris`` and ``file_entries`` are
+        derived from the same backend snapshot so the cached lists stay consistent.
         """
         if not self.__cache_files:
             return self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
 
-        if self.__file_entries is None:
-            self.__file_entries = self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
+        # Return the cached entries if already populated.
+        cached_entries = self.__file_entries
+        if cached_entries is not None:
+            return cached_entries
 
+        # Populate both caches from a single backend snapshot so entries and URIs stay consistent.
+        self.__file_entries = self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
+        self.__file_uris = [entry.path for entry in self.__file_entries]
         return self.__file_entries
 
     @property

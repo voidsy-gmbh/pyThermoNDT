@@ -1,10 +1,37 @@
+import pickle
+from collections.abc import Callable
 from re import escape
 
 import pytest
 
 from pythermondt.data import DataContainer
+from pythermondt.io import FileInfo
 from tests.reader.conftest import ReaderTestContext, ReaderTestData
 from tests.support.storage import PlainTextParser
+
+
+def _picklable_filter(info: FileInfo) -> bool:
+    """Module-level filter for pickle test success case."""
+    return "sample1" in info.path
+
+
+class _PicklableCallable:
+    """Callable class filter for pickle test success case."""
+
+    def __init__(self, pattern: str):
+        self.pattern = pattern
+
+    def __call__(self, info: FileInfo) -> bool:
+        return self.pattern in info.path
+
+
+def _make_closure(pattern: str) -> Callable[[FileInfo], bool]:
+    """Return a non-picklable closure for pickle test failure case."""
+
+    def closure(info: FileInfo) -> bool:
+        return pattern in info.path
+
+    return closure
 
 
 def _assert_payload(container: DataContainer) -> str:
@@ -99,3 +126,124 @@ def test_read_file_without_matching_parser_raises(reader_test_data: ReaderTestDa
 
     with pytest.raises(ValueError, match=escape("No parser found for file extension: .test")):
         reader.read_file(reader_test_data.files["sample1.test"])
+
+
+def test_file_entries_contains_metadata(reader_test_data: ReaderTestData):
+    """Each FileInfo entry carries valid path, size, timestamp, and identity."""
+    entries = reader_test_data.reader.file_entries
+
+    assert len(entries) == len(reader_test_data.expected_files)
+    for entry in entries:
+        assert isinstance(entry.path, str)
+        assert entry.size > 0
+        assert entry.last_modified.tzinfo is not None
+        assert isinstance(entry.file_identity, str)
+
+
+def test_file_uris_and_file_entries_are_consistent(reader_test_data: ReaderTestData):
+    """file_uris and file_entries are derived from the same sorted snapshot."""
+    reader = reader_test_data.reader
+
+    uris = reader.file_uris
+    entries = reader.file_entries
+
+    assert len(uris) == len(entries)
+    for uri, entry in zip(uris, entries, strict=True):
+        assert uri == entry.path
+
+
+def test_file_filter_includes_only_matching_files(reader_config: ReaderTestContext):
+    """Filter restricts both file_uris and file_entries to matching files."""
+    a_uri = reader_config.prepare_file("a.test", b"a")
+    b_uri = reader_config.prepare_file("b.test", b"b")
+    reader_config.prepare_file("skip1.test", b"s1")
+    reader_config.prepare_file("skip2.test", b"s2")
+
+    reader = reader_config.make_reader(file_filter=lambda f: f.path in {a_uri, b_uri})
+
+    assert sorted(reader.file_uris) == sorted([a_uri, b_uri])
+    assert len(reader.file_entries) == 2
+    assert {e.path for e in reader.file_entries} == {a_uri, b_uri}
+
+
+def test_file_filter_with_num_files(reader_config: ReaderTestContext):
+    """Filter applies before num_files truncation."""
+    a_uri = reader_config.prepare_file("a.test", b"a")
+    b_uri = reader_config.prepare_file("b.test", b"b")
+    reader_config.prepare_file("skip1.test", b"s1")
+    reader_config.prepare_file("skip2.test", b"s2")
+
+    reader = reader_config.make_reader(file_filter=lambda f: f.path in {a_uri, b_uri}, num_files=1)
+
+    assert len(reader.file_uris) == 1
+    assert len(reader.file_entries) == 1
+
+
+def test_cache_files_false_reflects_changes(reader_config: ReaderTestContext):
+    """Without caching, adding a file is reflected immediately in URIs and entries."""
+    reader_config.prepare_file("a.test", b"a")
+    reader_config.prepare_file("b.test", b"b")
+
+    reader = reader_config.make_reader(cache_files=False)
+
+    uris_before = reader.file_uris
+    entries_before = reader.file_entries
+
+    reader_config.prepare_file("c.test", b"c")
+
+    assert len(reader.file_uris) == len(uris_before) + 1
+    assert len(reader.file_entries) == len(entries_before) + 1
+
+
+def test_cache_files_false_with_filter_excludes_new(reader_config: ReaderTestContext):
+    """Without caching, a new file excluded by the filter is not reflected."""
+    a_uri = reader_config.prepare_file("a.test", b"a")
+
+    reader = reader_config.make_reader(cache_files=False, file_filter=lambda f: f.path == a_uri)
+
+    assert len(reader.file_uris) == 1
+    assert len(reader.file_entries) == 1
+
+    reader_config.prepare_file("b.test", b"b")  # excluded by filter
+
+    assert len(reader.file_uris) == 1
+    assert len(reader.file_entries) == 1
+
+
+@pytest.mark.parametrize(
+    "filter_fn, expect_failure",
+    [
+        (lambda f: True, True),
+        (_make_closure(".test"), True),
+        (_picklable_filter, False),
+        (_PicklableCallable(".test"), False),
+    ],
+    ids=["lambda", "closure", "module_fn", "callable_class"],
+)
+def test_file_filter_pickle(
+    reader_config: ReaderTestContext,
+    filter_fn: Callable[[FileInfo], bool],
+    expect_failure: bool,
+):
+    """Non-picklable filters raise PicklingError; picklable filters survive a roundtrip."""
+    reader_config.prepare_file("sample1.test", b"a")
+    reader_config.prepare_file("sample2.test", b"b")
+
+    reader = reader_config.make_reader(file_filter=filter_fn)
+
+    if expect_failure:
+        with pytest.raises(pickle.PicklingError):
+            pickle.dumps(reader)
+        return
+
+    original_uris = reader.file_uris
+
+    restored = pickle.loads(pickle.dumps(reader))
+
+    assert restored.backend is not None
+    assert restored.file_filter is not None
+    assert restored.file_uris == original_uris
+
+    first_uri = original_uris[0]
+    container = restored.read_file(first_uri)
+    assert _assert_payload(container) is not None

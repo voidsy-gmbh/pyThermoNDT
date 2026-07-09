@@ -51,6 +51,19 @@ def test_parser_class(reader_config: ReaderTestContext):
     assert reader_config.reader.parser == PlainTextParser
 
 
+def test_str_representation(reader_config: ReaderTestContext):
+    """__str__ exposes class name, _get_reader_params output, num_files, download_files, cache_files, and parser."""
+    reader = reader_config.reader
+    s = str(reader)
+
+    assert reader.__class__.__name__ in s
+    assert reader.parser is not None and reader.parser == PlainTextParser
+    assert f"num_files={reader.num_files}" in s
+    assert f"download_remote_files={reader.download_files}" in s
+    assert f"cache_files={reader.cache_files}" in s
+    assert f"parser={reader.parser.__name__}" in s
+
+
 def test_files_use_parser_extensions(reader_test_data: ReaderTestData):
     """Test that reader file discovery respects parser-supported extensions."""
     expected_scheme = reader_test_data.context.config.scheme

@@ -93,7 +93,7 @@ def test_close_removes_temp_file():
 
 
 def test_default_constructor_creates_writable_buffer():
-    """Test that IOPathWrapper() creates an empty, writable buffer."""
+    """Default-constructed wrapper starts as an empty writable buffer."""
     wrapper = IOPathWrapper()
     assert wrapper.getvalue() == b""
 
@@ -102,7 +102,7 @@ def test_default_constructor_creates_writable_buffer():
 
 
 def test_context_manager_calls_close():
-    """Test that __exit__ calls close() and removes temp files."""
+    """Context manager cleans up temp files on normal exit."""
     wrapper = IOPathWrapper(b"content")
     temp_path = wrapper.file_path
     assert os.path.exists(temp_path)
@@ -115,7 +115,7 @@ def test_context_manager_calls_close():
 
 
 def test_write_with_str_encodes_to_bytes():
-    """Test that write() encodes str input to UTF-8 bytes."""
+    """write() accepts str, encodes to UTF-8, and returns byte count."""
     wrapper = IOPathWrapper()
     n = wrapper.write("héllo")
     assert n == 6  # é is 2 bytes in UTF-8
@@ -123,11 +123,19 @@ def test_write_with_str_encodes_to_bytes():
 
 
 def test_write_returns_byte_count_for_bytes_input():
-    """Test that write() returns the number of bytes written."""
+    """write() with bytes input returns the number of bytes written."""
     wrapper = IOPathWrapper()
     n = wrapper.write(b"abc")
     assert n == 3
     assert wrapper.getvalue() == b"abc"
+
+
+def test_sequential_writes_accumulate():
+    """Multiple write calls append without overwriting previous content."""
+    wrapper = IOPathWrapper()
+    wrapper.write(b"hello")
+    wrapper.write(b" world")
+    assert wrapper.getvalue() == b"hello world"
 
 
 @pytest.mark.parametrize(
@@ -140,7 +148,8 @@ def test_write_returns_byte_count_for_bytes_input():
     ids=["bytes", "bytesio", "path"],
 )
 def test_getvalue_on_source_types(source, expected, tmp_path):
-    """Test that getvalue() returns buffer content for each source type."""
+    """getvalue() returns buffer content for path, bytes, and BytesIO sources."""
+    src: str | bytes | BytesIO
     match source:
         case "path":
             p = tmp_path / "test.txt"
@@ -156,7 +165,7 @@ def test_getvalue_on_source_types(source, expected, tmp_path):
 
 
 def test_json_dump_integration():
-    """Test full json.dump → getvalue → upload-like write pattern."""
+    """json.dump writes JSON to the wrapper and getvalue returns valid parseable JSON."""
     results = {"key": "value", "count": 42}
 
     with IOPathWrapper() as f:
@@ -167,7 +176,7 @@ def test_json_dump_integration():
 
 
 def test_context_manager_cleans_up_on_exception():
-    """Test that __exit__ calls close() even when an exception occurs."""
+    """Context manager cleans up temp files even when an exception propagates."""
     wrapper = IOPathWrapper(b"content")
     temp_path = wrapper.file_path
     assert os.path.exists(temp_path)

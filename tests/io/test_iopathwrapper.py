@@ -1,5 +1,6 @@
 """Tests for IOPathWrapper edge cases."""
 
+import json
 import os
 from io import BytesIO
 from re import escape
@@ -10,7 +11,7 @@ from pytest import FixtureRequest, MonkeyPatch
 from pythermondt.io.utils import IOPathWrapper
 
 
-@pytest.fixture(params=[None, 12345, [1, 2, 3], {"key": "value"}, 3.14], ids=lambda x: f"invalid_value={x!r}")
+@pytest.fixture(params=[12345, [1, 2, 3], {"key": "value"}, 3.14], ids=lambda x: f"invalid_value={x!r}")
 def invalid_values(request: FixtureRequest):
     """Fixture that provides invalid values for testing."""
     return request.param
@@ -88,4 +89,128 @@ def test_close_removes_temp_file():
     assert os.path.exists(temp_path)
 
     wrapper.close()
+    assert not os.path.exists(temp_path)
+
+
+def test_default_constructor_creates_writable_buffer():
+    """Default-constructed wrapper starts as an empty writable buffer."""
+    wrapper = IOPathWrapper()
+    assert wrapper.getvalue() == b""
+
+    wrapper.write(b"hello")
+    assert wrapper.getvalue() == b"hello"
+
+
+def test_context_manager_calls_close():
+    """Context manager cleans up temp files on normal exit."""
+    wrapper = IOPathWrapper(b"content")
+    temp_path = wrapper.file_path
+    assert os.path.exists(temp_path)
+
+    with wrapper as f:
+        assert f is wrapper
+        assert f.getvalue() == b"content"
+
+    assert not os.path.exists(temp_path)
+
+
+def test_write_with_str_encodes_to_bytes():
+    """write() accepts str, encodes to UTF-8, and returns byte count."""
+    wrapper = IOPathWrapper()
+    n = wrapper.write("héllo")
+    assert n == 6  # é is 2 bytes in UTF-8
+    assert wrapper.getvalue() == "héllo".encode()
+
+
+def test_write_returns_byte_count_for_bytes_input():
+    """write() with bytes input returns the number of bytes written."""
+    wrapper = IOPathWrapper()
+    n = wrapper.write(b"abc")
+    assert n == 3
+    assert wrapper.getvalue() == b"abc"
+
+
+def test_sequential_writes_accumulate():
+    """Multiple write calls append without overwriting previous content."""
+    wrapper = IOPathWrapper()
+    wrapper.write(b"hello")
+    wrapper.write(b" world")
+    assert wrapper.getvalue() == b"hello world"
+
+
+def test_read_returns_full_content():
+    """read() returns the entire buffer content."""
+    wrapper = IOPathWrapper(b"test binary data")
+    assert wrapper.read() == b"test binary data"
+
+
+def test_read_with_size_returns_requested_bytes():
+    """read(n) returns at most n bytes."""
+    wrapper = IOPathWrapper(b"abcdef")
+    assert wrapper.read(3) == b"abc"
+
+
+def test_read_with_size_advances_position():
+    """Repeated read(n) calls advance through the buffer."""
+    wrapper = IOPathWrapper(b"abcdef")
+    assert wrapper.read(3) == b"abc"
+    assert wrapper.read(3) == b"def"
+    assert wrapper.read(3) == b""
+
+
+def test_json_load_integration():
+    """json.load calls read() so the wrapper works as a drop-in file object."""
+    wrapper = IOPathWrapper(b'{"test": "data"}')
+    assert json.load(wrapper) == {"test": "data"}
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("bytes", b"hello from bytes"),
+        ("bytesio", b"hello from BytesIO"),
+        ("path", b"hello from file"),
+    ],
+    ids=["bytes", "bytesio", "path"],
+)
+def test_getvalue_on_source_types(source, expected, tmp_path):
+    """getvalue() returns buffer content for path, bytes, and BytesIO sources."""
+    src: str | bytes | BytesIO
+    match source:
+        case "path":
+            p = tmp_path / "test.txt"
+            p.write_bytes(expected)
+            src = str(p)
+        case "bytes":
+            src = expected
+        case "bytesio":
+            src = BytesIO(expected)
+
+    wrapper = IOPathWrapper(src)
+    assert wrapper.getvalue() == expected
+
+
+def test_json_dump_integration():
+    """json.dump writes JSON to the wrapper and getvalue returns valid parseable JSON."""
+    results = {"key": "value", "count": 42}
+
+    with IOPathWrapper() as f:
+        json.dump(results, f)
+        content = f.getvalue()
+
+    assert json.loads(content) == results
+
+
+def test_context_manager_cleans_up_on_exception():
+    """Context manager cleans up temp files even when an exception propagates."""
+    wrapper = IOPathWrapper(b"content")
+    temp_path = wrapper.file_path
+    assert os.path.exists(temp_path)
+
+    try:
+        with wrapper:
+            raise RuntimeError("simulated failure")
+    except RuntimeError:
+        pass
+
     assert not os.path.exists(temp_path)

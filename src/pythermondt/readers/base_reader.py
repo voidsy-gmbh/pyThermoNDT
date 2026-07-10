@@ -282,13 +282,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         return os.path.basename(unquote(urlparse(file_path).path))
 
     def _has_supported_extension(self, path: str) -> bool:
-        """Return True if *path* matches one of the supported extensions.
-
-        Shared by both ``_filter_and_limit`` and ``_filter_and_limit_entries``
-        so the extension-matching rule stays consistent across listing paths.
-        """
-        if not self.__supported_extensions:
-            return True
+        """Shared helper that returns True if *path* matches one of the supported extensions."""
         return any(path.endswith(ext) for ext in self.__supported_extensions)
 
     def _sort_and_limit(self, items: list, *, key=None) -> list:

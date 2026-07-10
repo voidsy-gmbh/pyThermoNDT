@@ -24,25 +24,30 @@ class IOPathWrapper:
         self.__file_obj: BytesIO | None = None
         self.__temp_path: str | None = None
 
+    def _init_buffer(self) -> BytesIO:
+        """Lazy-init and return the internal buffer without seeking."""
+        if self.__file_obj is not None:
+            return self.__file_obj
+
+        buffer: BytesIO
+        if isinstance(self.__source, str):
+            with open(self.__source, "rb") as f:
+                buffer = BytesIO(f.read())
+        elif isinstance(self.__source, bytes):
+            buffer = BytesIO(self.__source)
+        elif isinstance(self.__source, BytesIO):
+            buffer = self.__source
+        else:
+            raise ValueError("Unsupported source type. Must be str, bytes, or BytesIO.")
+        self.__file_obj = buffer
+        return buffer
+
     @property
     def file_obj(self) -> BytesIO:
         """Get file-like object, loading from path if needed."""
-        if self.__file_obj is None:
-            if isinstance(self.__source, str):
-                # Path provided - load file when first needed
-                with open(self.__source, "rb") as f:
-                    self.__file_obj = BytesIO(f.read())
-            elif isinstance(self.__source, bytes):
-                self.__file_obj = BytesIO(self.__source)
-            elif isinstance(self.__source, BytesIO):
-                # File-like object provided (from boto3 etc.)
-                self.__file_obj = self.__source
-            else:
-                raise ValueError("Unsupported source type. Must be str, bytes, or BytesIO.")
-
-        # Reset position and return
-        self.__file_obj.seek(0)
-        return self.__file_obj
+        buffer = self._init_buffer()
+        buffer.seek(0)
+        return buffer
 
     @property
     def file_path(self) -> str:
@@ -92,17 +97,11 @@ class IOPathWrapper:
         """
         if isinstance(data, str):
             data = data.encode()
-        if self.__file_obj is None:
-            _ = self.file_obj
-        assert self.__file_obj is not None
-        return self.__file_obj.write(data)
+        return self._init_buffer().write(data)
 
     def getvalue(self) -> bytes:
         """Return the current contents of the internal buffer as bytes."""
-        if self.__file_obj is None:
-            _ = self.file_obj
-        assert self.__file_obj is not None
-        return self.__file_obj.getvalue()
+        return self._init_buffer().getvalue()
 
     def __del__(self):
         """Ensure cleanup on garbage collection."""

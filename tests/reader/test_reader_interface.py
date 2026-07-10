@@ -223,6 +223,42 @@ def test_cache_files_false_with_filter_excludes_new(reader_config: ReaderTestCon
     assert len(reader.file_entries) == 1
 
 
+@pytest.mark.parametrize("num_files", [1, 3, 10, 100, None], ids=["1", "3", "10", "100", "None"])
+@pytest.mark.parametrize("cache_files", [True, False], ids=["cache_files=True", "cache_files=False"])
+@pytest.mark.parametrize("parser", [PlainTextParser, None], ids=["parser", "no_parser"])
+@pytest.mark.parametrize("file_filter", [None, _picklable_filter], ids=["no_filter", "picklable_filter"])
+def test_file_filter_combinations(
+    reader_config: ReaderTestContext,
+    num_files: int | None,
+    cache_files: bool,
+    parser: type[PlainTextParser] | None,
+    file_filter: Callable[[FileInfo], bool] | None,
+):
+    """Test that file_filter, num_files, and cache_files interact correctly."""
+    reader_config.prepare_file("sample1_a.test", b"ma")
+    reader_config.prepare_file("sample1_b.test", b"mb")
+    reader_config.prepare_file("other_1.test", b"o1")
+    reader_config.prepare_file("other_2.test", b"o2")
+
+    # Construct reader with the given parameters
+    reader = reader_config.make_reader(
+        file_filter=file_filter, num_files=num_files, cache_files=cache_files, parser=parser
+    )
+
+    # Construct expected file counts
+    total_available = 0 if parser is None else (2 if file_filter is not None else 4)
+    expected = min(num_files or total_available, total_available)
+
+    assert len(reader.file_uris) == expected
+    assert len(reader.file_entries) == expected
+
+    for uri, entry in zip(reader.file_uris, reader.file_entries, strict=True):
+        assert uri == entry.path
+
+    if file_filter is not None and parser is not None:
+        assert all("sample1" in uri for uri in reader.file_uris)
+
+
 @pytest.mark.parametrize(
     "filter_fn, expect_failure",
     [

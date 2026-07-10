@@ -5,7 +5,7 @@ from typing import Protocol, cast
 
 import pytest
 
-from pythermondt.io import AzureBlobBackend, BaseBackend, LocalBackend, S3Backend
+from pythermondt.io import AzureBlobBackend, BaseBackend, FileInfo, LocalBackend, S3Backend
 from pythermondt.io.parsers import BaseParser
 from pythermondt.readers import AzureBlobReader, BaseReader, LocalReader, S3Reader
 from tests.support import storage
@@ -18,6 +18,8 @@ class ReaderFactory(Protocol):
         self,
         parser: type[BaseParser] | None = ...,
         num_files: int | None = ...,
+        cache_files: bool = ...,
+        file_filter: Callable[[FileInfo], bool] | None = ...,
     ) -> BaseReader: ...
 
 
@@ -67,18 +69,37 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
         backend = LocalBackend(pattern=str(tmp_path))
 
         def make_reader(
-            parser: type[BaseParser] | None = storage.PlainTextParser, num_files: int | None = None
+            parser: type[BaseParser] | None = storage.PlainTextParser,
+            num_files: int | None = None,
+            cache_files: bool = True,
+            file_filter: Callable[[FileInfo], bool] | None = None,
         ) -> BaseReader:
-            return LocalReader(pattern=str(tmp_path), num_files=num_files, parser=parser)
+            return LocalReader(
+                pattern=str(tmp_path),
+                num_files=num_files,
+                parser=parser,
+                cache_files=cache_files,
+                file_filter=file_filter,
+            )
 
     elif config.reader_cls == S3Reader:
         s3_client.create_bucket(Bucket="test-bucket")
         backend = S3Backend(bucket="test-bucket", prefix="")
 
         def make_reader(
-            parser: type[BaseParser] | None = storage.PlainTextParser, num_files: int | None = None
+            parser: type[BaseParser] | None = storage.PlainTextParser,
+            num_files: int | None = None,
+            cache_files: bool = True,
+            file_filter: Callable[[FileInfo], bool] | None = None,
         ) -> BaseReader:
-            return S3Reader(bucket="test-bucket", prefix="", num_files=num_files, parser=parser)
+            return S3Reader(
+                bucket="test-bucket",
+                prefix="",
+                num_files=num_files,
+                parser=parser,
+                cache_files=cache_files,
+                file_filter=file_filter,
+            )
 
     elif config.reader_cls == AzureBlobReader:
         azure_mock.create_container("test-container")
@@ -90,7 +111,10 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
         )
 
         def make_reader(
-            parser: type[BaseParser] | None = storage.PlainTextParser, num_files: int | None = None
+            parser: type[BaseParser] | None = storage.PlainTextParser,
+            num_files: int | None = None,
+            cache_files: bool = True,
+            file_filter: Callable[[FileInfo], bool] | None = None,
         ) -> BaseReader:
             return AzureBlobReader(
                 account_url="https://test.blob.core.windows.net",
@@ -101,6 +125,8 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
                 ),
                 num_files=num_files,
                 parser=parser,
+                cache_files=cache_files,
+                file_filter=file_filter,
             )
 
     else:

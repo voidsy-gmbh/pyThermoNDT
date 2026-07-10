@@ -1,6 +1,8 @@
+from collections.abc import Callable
+
 from azure.core.credentials import TokenCredential
 
-from ..io import AzureBlobBackend, AzureBlobClientOptions, BaseParser
+from ..io import AzureBlobBackend, AzureBlobClientOptions, BaseParser, FileInfo
 from .base_reader import BaseReader
 
 
@@ -18,6 +20,7 @@ class AzureBlobReader(BaseReader):
         download_files: bool = False,
         cache_files: bool = True,
         parser: type[BaseParser] | None = None,
+        file_filter: Callable[[FileInfo], bool] | None = None,
     ):
         """Initialize reader for Azure Blob Storage.
 
@@ -38,8 +41,10 @@ class AzureBlobReader(BaseReader):
                 refreshed on each access. Default: True.
             parser (type[BaseParser] | None): Parser class for reading files. If None, auto-selects
                 based on file extension. Default: None.
+            file_filter (Callable[[FileInfo], bool] | None): Metadata-aware filter applied during file
+                discovery. Must be picklable whenever the reader needs to be picklable. Default: None.
         """
-        super().__init__(num_files, download_files, cache_files, parser)
+        super().__init__(num_files, download_files, cache_files, parser, file_filter)
         self.__container_name = container_name
         self.__prefix = prefix
         self.__connection_string = connection_string

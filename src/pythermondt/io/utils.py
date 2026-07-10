@@ -100,7 +100,7 @@ class IOPathWrapper:
         return self._init_buffer().write(data)
 
     def read(self, size: int = -1) -> bytes:
-        """Read up to size bytes from the beginning of the buffer.
+        """Read up to size bytes from the current buffer position.
 
         Args:
             size: Number of bytes to read (default: -1 reads all).
@@ -108,7 +108,7 @@ class IOPathWrapper:
         Returns:
             Bytes read from the buffer.
         """
-        return self.file_obj.read(size)
+        return self._init_buffer().read(size)
 
     def getvalue(self) -> bytes:
         """Return the current contents of the internal buffer as bytes."""

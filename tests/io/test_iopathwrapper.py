@@ -150,6 +150,14 @@ def test_read_with_size_returns_requested_bytes():
     assert wrapper.read(3) == b"abc"
 
 
+def test_read_with_size_advances_position():
+    """Repeated read(n) calls advance through the buffer."""
+    wrapper = IOPathWrapper(b"abcdef")
+    assert wrapper.read(3) == b"abc"
+    assert wrapper.read(3) == b"def"
+    assert wrapper.read(3) == b""
+
+
 def test_json_load_integration():
     """json.load calls read() so the wrapper works as a drop-in file object."""
     wrapper = IOPathWrapper(b'{"test": "data"}')

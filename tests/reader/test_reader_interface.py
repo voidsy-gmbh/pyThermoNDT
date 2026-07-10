@@ -6,6 +6,7 @@ import pytest
 
 from pythermondt.data import DataContainer
 from pythermondt.io import FileInfo
+from pythermondt.readers import BaseReader
 from tests.reader.conftest import ReaderTestContext, ReaderTestData
 from tests.support.storage import PlainTextParser
 
@@ -275,24 +276,26 @@ def test_file_filter_pickle(
     expect_failure: bool,
 ):
     """Non-picklable filters raise PicklingError; picklable filters survive a roundtrip."""
+    # Setup reader and test files
     reader_config.prepare_file("sample1.test", b"a")
     reader_config.prepare_file("sample2.test", b"b")
-
     reader = reader_config.make_reader(file_filter=filter_fn)
 
+    # Fail for lambda and closure filters
     if expect_failure:
         with pytest.raises(pickle.PicklingError):
             pickle.dumps(reader)
         return
 
+    # Restore
     original_uris = reader.file_uris
+    restored: BaseReader = pickle.loads(pickle.dumps(reader))
 
-    restored = pickle.loads(pickle.dumps(reader))
-
+    # Assert that the restored reader is correctly configured
     assert restored.backend is not None
     assert restored.file_filter is not None
     assert restored.file_uris == original_uris
 
-    first_uri = original_uris[0]
-    container = restored.read_file(first_uri)
-    assert _assert_payload(container) is not None
+    # Assert reader can still read files after being restored
+    container = restored.read_file(original_uris[0])
+    assert _assert_payload(container) == "a"

@@ -236,6 +236,7 @@ def test_file_filter_combinations(
     file_filter: Callable[[FileInfo], bool] | None,
 ):
     """Test that file_filter, num_files, and cache_files interact correctly."""
+    # Prepare test files to read
     reader_config.prepare_file("sample1_a.test", b"ma")
     reader_config.prepare_file("sample1_b.test", b"mb")
     reader_config.prepare_file("other_1.test", b"o1")
@@ -250,12 +251,17 @@ def test_file_filter_combinations(
     total_available = 0 if parser is None else (2 if file_filter is not None else 4)
     expected = min(num_files or total_available, total_available)
 
+    # Assert reader length
     assert len(reader.file_uris) == expected
     assert len(reader.file_entries) == expected
+    assert len(reader.files) == expected
+    assert len(reader.file_names) == expected
 
+    # Assert file entries and URIs are consistent
     for uri, entry in zip(reader.file_uris, reader.file_entries, strict=True):
         assert uri == entry.path
 
+    # Assert file names
     if file_filter is not None and parser is not None:
         assert all("sample1" in uri for uri in reader.file_uris)
 

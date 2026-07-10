@@ -2,22 +2,25 @@ import logging
 import os
 import tempfile
 from io import BytesIO
+from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
+
+IOPathSource: TypeAlias = str | BytesIO | bytes | None
 
 
 class IOPathWrapper:
     """Provides unified access to file content via both path and buffer interfaces."""
 
-    def __init__(self, source: str | BytesIO | bytes):
+    def __init__(self, source: IOPathSource = None):
         """Provides unified access to file content via both path and buffer interfaces.
 
-        Initialize with either a file path or file content.
+        Initialize with a file path, file content, or an empty writable buffer.
 
         Args:
-            source: Either a file path (str), file-like object, or bytes
+            source: A file path (str), file-like object, bytes, or None for an empty writable buffer.
         """
-        self.__source = source
+        self.__source: IOPathSource = BytesIO() if source is None else source
         self.__file_obj: BytesIO | None = None
         self.__temp_path: str | None = None
 
@@ -71,6 +74,35 @@ class IOPathWrapper:
                     exc_info=True,  # Include traceback for debugging
                 )
             self.__temp_path = None
+
+    def __enter__(self) -> "IOPathWrapper":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
+    def write(self, data: str | bytes) -> int:
+        """Write data to the internal buffer.
+
+        Args:
+            data: Data to write. Strings are encoded to UTF-8 bytes.
+
+        Returns:
+            Number of bytes written.
+        """
+        if isinstance(data, str):
+            data = data.encode()
+        if self.__file_obj is None:
+            _ = self.file_obj
+        assert self.__file_obj is not None
+        return self.__file_obj.write(data)
+
+    def getvalue(self) -> bytes:
+        """Return the current contents of the internal buffer as bytes."""
+        if self.__file_obj is None:
+            _ = self.file_obj
+        assert self.__file_obj is not None
+        return self.__file_obj.getvalue()
 
     def __del__(self):
         """Ensure cleanup on garbage collection."""

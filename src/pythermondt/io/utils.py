@@ -99,6 +99,17 @@ class IOPathWrapper:
             data = data.encode()
         return self._init_buffer().write(data)
 
+    def read(self, size: int = -1) -> bytes:
+        """Read up to size bytes from the beginning of the buffer.
+
+        Args:
+            size: Number of bytes to read (default: -1 reads all).
+
+        Returns:
+            Bytes read from the buffer.
+        """
+        return self.file_obj.read(size)
+
     def getvalue(self) -> bytes:
         """Return the current contents of the internal buffer as bytes."""
         return self._init_buffer().getvalue()

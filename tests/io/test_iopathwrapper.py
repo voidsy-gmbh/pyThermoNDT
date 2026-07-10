@@ -138,6 +138,24 @@ def test_sequential_writes_accumulate():
     assert wrapper.getvalue() == b"hello world"
 
 
+def test_read_returns_full_content():
+    """read() returns the entire buffer content."""
+    wrapper = IOPathWrapper(b"test binary data")
+    assert wrapper.read() == b"test binary data"
+
+
+def test_read_with_size_returns_requested_bytes():
+    """read(n) returns at most n bytes."""
+    wrapper = IOPathWrapper(b"abcdef")
+    assert wrapper.read(3) == b"abc"
+
+
+def test_json_load_integration():
+    """json.load calls read() so the wrapper works as a drop-in file object."""
+    wrapper = IOPathWrapper(b'{"test": "data"}')
+    assert json.load(wrapper) == {"test": "data"}
+
+
 @pytest.mark.parametrize(
     ("source", "expected"),
     [

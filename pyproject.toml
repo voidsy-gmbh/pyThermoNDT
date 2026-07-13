@@ -85,7 +85,7 @@ Releases = "https://github.com/voidsy-gmbh/pyThermoNDT/releases"
 
 # Config for the build system
 [build-system]
-requires = ["setuptools>=66.0"]
+requires = ["setuptools>=83.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

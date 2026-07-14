@@ -1,7 +1,7 @@
 """Tests for BaseDataset behavior exercised through ThermoDataset and IndexedThermoDataset."""
 
 import gc
-import multiprocessing as mp
+import sys
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,8 +13,12 @@ from pythermondt.dataset import container_collate
 from pythermondt.dataset.base_dataset import CacheMode
 from pythermondt.transforms import ApplyLUT
 
-# Contexts that pickle the dataset into workers (the path broken by lazy Manager state).
-_MP_CONTEXTS = [ctx for ctx in ("spawn", "forkserver") if ctx in mp.get_all_start_methods()]
+# Start methods that pickle the dataset into workers (the #465 path).
+_MP_CONTEXTS_BY_PLATFORM = {
+    "win32": ["spawn"],
+    "darwin": ["spawn"],
+    "linux": ["spawn", "forkserver"],
+}
 
 
 @pytest.mark.parametrize("idx", [0, 1])
@@ -76,7 +80,7 @@ def test_build_cache_invalid_mode(local_reader_three_files: LocalReader):
 
 
 @pytest.mark.parametrize("mode", ["lazy", "immediate"])
-@pytest.mark.parametrize("mp_context", _MP_CONTEXTS)
+@pytest.mark.parametrize("mp_context", _MP_CONTEXTS_BY_PLATFORM[sys.platform])
 @pytest.mark.parametrize("num_workers", [0, 2])
 def test_build_cache_dataloader_multiprocess(
     local_reader_three_files: LocalReader,

@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a bug in PyThermoNDT.
-labels: [bug fix]
+labels: [bug]
 body:
   - type: textarea
     attributes:

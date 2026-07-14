@@ -1,11 +1,20 @@
 """Tests for BaseDataset behavior exercised through ThermoDataset and IndexedThermoDataset."""
 
 import gc
+import multiprocessing as mp
 from unittest.mock import MagicMock
 
 import pytest
+import torch
+from torch.utils.data import DataLoader
 
 from pythermondt import LocalReader, ThermoDataset
+from pythermondt.dataset import container_collate
+from pythermondt.dataset.base_dataset import CacheMode
+from pythermondt.transforms import ApplyLUT
+
+# Contexts that pickle the dataset into workers (the path broken by lazy Manager state).
+_MP_CONTEXTS = [ctx for ctx in ("spawn", "forkserver") if ctx in mp.get_all_start_methods()]
 
 
 @pytest.mark.parametrize("idx", [0, 1])
@@ -64,6 +73,42 @@ def test_build_cache_invalid_mode(local_reader_three_files: LocalReader):
     dataset = ThermoDataset(local_reader_three_files)
     with pytest.raises(ValueError, match="Invalid cache mode"):
         dataset.build_cache(mode="invalid")  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("mode", ["lazy", "immediate"])
+@pytest.mark.parametrize("mp_context", _MP_CONTEXTS)
+@pytest.mark.parametrize("num_workers", [0, 2])
+def test_build_cache_dataloader_multiprocess(
+    local_reader_three_files: LocalReader,
+    mode: CacheMode,
+    mp_context: str,
+    num_workers: int,
+):
+    """Regression test for #465: build_cache + DataLoader under pickling start methods."""
+    dataset = ThermoDataset(
+        local_reader_three_files,
+        transform=ApplyLUT(target_dtype=torch.float32),
+    )
+    dataset.build_cache(mode=mode)
+
+    loader = DataLoader(
+        dataset,
+        batch_size=2,
+        shuffle=False,
+        num_workers=num_workers,
+        multiprocessing_context=mp_context if num_workers > 0 else None,
+        collate_fn=container_collate("/Data/Tdata"),
+    )
+
+    # Try and finally for cleanup to ensure cache is released even if the test fails.
+    try:
+        batch = next(iter(loader))
+        assert len(batch) == 1
+        assert batch[0].shape[0] == 2
+    finally:
+        # Drain workers before releasing the cache manager.
+        del loader
+        dataset.release_cache()
 
 
 def test_release_cache_manager_shutdown_exception(local_reader_three_files: LocalReader):

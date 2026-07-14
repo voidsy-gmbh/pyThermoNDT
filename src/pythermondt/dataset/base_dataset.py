@@ -53,6 +53,17 @@ class BaseDataset(Dataset, ABC):
         if self.cache_built:
             self.release_cache(gc_collect=False)
 
+    def __getstate__(self):
+        """Exclude the lazy-cache Manager so the dataset can be pickled for DataLoader workers."""
+        state = self.__dict__.copy()
+        # ListProxy is picklable; SyncManager is not (parent keeps ownership / shutdown).
+        state["_BaseDataset__manager"] = None
+        return state
+
+    def __setstate__(self, state: dict):
+        """Restore object from pickled state."""
+        vars(self).update(state)
+
     def __getitem__(self, idx: int) -> DataContainer:
         """Get an item while also applying the proper transform chain.
 
@@ -150,8 +161,12 @@ class BaseDataset(Dataset, ABC):
         - Random transforms + subsequent operations run at runtime
 
         Platform Considerations:
-            **Windows**: Use lazy mode to avoid memory issues due to cache duplication in forked processes
-            **Linux**: Both modes work efficiently - choose based on workflow preference
+            **Windows / spawn**: Prefer lazy mode so workers share one cache via a manager list instead of each
+            holding a full copy after process start.
+            **Linux**: Both modes work efficiently - choose based on workflow preference.
+
+            With lazy mode the parent process owns the manager; DataLoader workers receive only the picklable
+            list proxy. Keep the parent dataset (and its cache) alive for the lifetime of the workers.
 
         Args:
             mode (CacheMode): Cache building strategy

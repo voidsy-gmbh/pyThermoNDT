@@ -127,6 +127,70 @@ def test_reversed(reader_test_data: ReaderTestData):
     assert payloads == [reader_test_data.contents["sample2.test"], reader_test_data.contents["sample1.test"]]
 
 
+def test_items_default(reader_test_data: ReaderTestData):
+    """Test items() with default by='files' yields (decoded_path, container) pairs in reader order."""
+    pairs = list(reader_test_data.reader.items())
+
+    assert len(pairs) == 2
+    for key, _ in pairs:
+        assert isinstance(key, str)
+
+    payloads = [_assert_payload(c) for _, c in pairs]
+    assert payloads == [reader_test_data.contents["sample1.test"], reader_test_data.contents["sample2.test"]]
+
+
+@pytest.mark.parametrize("by", ["file_names", "file_uris", "files"])
+def test_items_by_mode(reader_test_data: ReaderTestData, by: str):
+    """Test items() with each string key mode yields the expected key type and payloads."""
+    pairs = list(reader_test_data.reader.items(by=by))
+
+    assert len(pairs) == 2
+    for key, _ in pairs:
+        assert isinstance(key, str)
+
+    expected_payloads = [
+        reader_test_data.contents["sample1.test"],
+        reader_test_data.contents["sample2.test"],
+    ]
+    for (_key, container), expected in zip(pairs, expected_payloads, strict=True):
+        assert _assert_payload(container) == expected
+
+    # file_names keys are basenames (no path separators).
+    if by == "file_names":
+        for key, _ in pairs:
+            assert "/" not in key
+            assert "\\" not in key
+            assert key.endswith(".test")
+
+
+def test_items_by_file_entries(reader_test_data: ReaderTestData):
+    """Test items(by='file_entries') yields FileInfo objects with correct paths."""
+    pairs = list(reader_test_data.reader.items(by="file_entries"))
+
+    assert len(pairs) == 2
+    for key, _ in pairs:
+        assert isinstance(key, FileInfo)
+        assert isinstance(key.path, str)
+
+    payloads = [_assert_payload(c) for _, c in pairs]
+    assert payloads == [reader_test_data.contents["sample1.test"], reader_test_data.contents["sample2.test"]]
+
+
+def test_items_reverse(reader_test_data: ReaderTestData):
+    """Test items(reverse=True) yields pairs in reverse reader order."""
+    pairs = list(reader_test_data.reader.items(reverse=True))
+
+    assert len(pairs) == 2
+    payloads = [_assert_payload(c) for _, c in pairs]
+    assert payloads == [reader_test_data.contents["sample2.test"], reader_test_data.contents["sample1.test"]]
+
+
+def test_items_invalid_by(reader_test_data: ReaderTestData):
+    """Test items() raises ValueError for an invalid 'by' value."""
+    with pytest.raises(ValueError, match=escape("Invalid 'by' value: 'bogus'")):
+        list(reader_test_data.reader.items(by="bogus"))
+
+
 def test_read_file_uses_explicit_parser(reader_test_data: ReaderTestData):
     """Test that read_file delegates parsing to the configured parser."""
     container = reader_test_data.reader.read_file(reader_test_data.files["sample1.test"])

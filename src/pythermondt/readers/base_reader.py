@@ -8,6 +8,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
+from typing import Literal, overload
 from urllib.parse import unquote, urlparse
 
 from pydantic import BaseModel, ConfigDict, RootModel, ValidationError
@@ -276,6 +277,63 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         for uri in reversed(file_uris):
             yield self.read_file(uri)
+
+    @overload
+    def items(
+        self, by: Literal["files", "file_names", "file_uris"] = "files", reverse: bool = False
+    ) -> Iterator[tuple[str, DataContainer]]: ...
+
+    @overload
+    def items(self, by: Literal["file_entries"], reverse: bool = False) -> Iterator[tuple[FileInfo, DataContainer]]: ...
+
+    def items(self, by: str = "files", reverse: bool = False) -> Iterator[tuple[str | FileInfo, DataContainer]]:
+        """Iterate over ``(key, container)`` pairs.
+
+        Snapshot both the key list and file URIs for consistency, using the
+        existing property caching logic.  This replaces the common pattern::
+
+            for name, container in zip(reader.file_names, reader, strict=True):
+                ...
+
+        with the simpler::
+
+            for name, container in reader.items(by="file_names"):
+                ...
+
+        Args:
+            by: Which identifier to pair with each container.
+                ``"files"`` (default) — decoded full path.
+                ``"file_names"`` — basename only.
+                ``"file_uris"`` — URI-encoded path.
+                ``"file_entries"`` — :class:`FileInfo` metadata object.
+            reverse: When ``True``, iterate in reverse order.
+
+        Yields:
+            ``(key, container)`` tuples.
+        """
+        if by not in ("files", "file_names", "file_uris", "file_entries"):
+            raise ValueError(
+                f"Invalid 'by' value: {by!r}. Must be one of 'files', 'file_names', 'file_uris', 'file_entries'."
+            )
+
+        uris = self.file_uris
+
+        if by == "file_entries":
+            keys: list[str] | list[FileInfo] = self.file_entries
+        elif by == "file_uris":
+            keys = uris
+        elif by == "file_names":
+            keys = self.file_names
+        else:
+            keys = self.files
+
+        file_count = len(uris)
+        if reverse:
+            for i in range(file_count - 1, -1, -1):
+                yield keys[i], self.read_file(uris[i])
+        else:
+            for i in range(file_count):
+                yield keys[i], self.read_file(uris[i])
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""

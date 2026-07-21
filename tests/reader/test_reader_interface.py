@@ -6,7 +6,7 @@ import pytest
 
 from pythermondt.data import DataContainer
 from pythermondt.io import FileInfo
-from pythermondt.readers import BaseReader
+from pythermondt.readers.base_reader import BaseReader, ItemsBy
 from tests.reader.conftest import ReaderTestContext, ReaderTestData
 from tests.support.storage import PlainTextParser
 
@@ -127,68 +127,42 @@ def test_reversed(reader_test_data: ReaderTestData):
     assert payloads == [reader_test_data.contents["sample2.test"], reader_test_data.contents["sample1.test"]]
 
 
-def test_items_default(reader_test_data: ReaderTestData):
-    """Test items() with default by='files' yields (decoded_path, container) pairs in reader order."""
-    pairs = list(reader_test_data.reader.items())
+@pytest.mark.parametrize("by", ["files", "file_names", "file_uris", "file_entries"])
+def test_items_keys_match_properties(reader_test_data: ReaderTestData, by: ItemsBy):
+    """Test items() keys match the corresponding reader property and payloads stay in order."""
+    reader = reader_test_data.reader
+    pairs = list(reader.items(by=by))
+    expected_keys = getattr(reader, by)
 
-    assert len(pairs) == 2
-    for key, _ in pairs:
-        assert isinstance(key, str)
-
-    payloads = [_assert_payload(c) for _, c in pairs]
-    assert payloads == [reader_test_data.contents["sample1.test"], reader_test_data.contents["sample2.test"]]
-
-
-@pytest.mark.parametrize("by", ["file_names", "file_uris", "files"])
-def test_items_by_mode(reader_test_data: ReaderTestData, by: str):
-    """Test items() with each string key mode yields the expected key type and payloads."""
-    pairs = list(reader_test_data.reader.items(by=by))
-
-    assert len(pairs) == 2
-    for key, _ in pairs:
-        assert isinstance(key, str)
-
-    expected_payloads = [
+    assert [key for key, _ in pairs] == list(expected_keys)
+    assert [_assert_payload(container) for _, container in pairs] == [
         reader_test_data.contents["sample1.test"],
         reader_test_data.contents["sample2.test"],
     ]
-    for (_key, container), expected in zip(pairs, expected_payloads, strict=True):
-        assert _assert_payload(container) == expected
-
-    # file_names keys are basenames (no path separators).
-    if by == "file_names":
-        for key, _ in pairs:
-            assert "/" not in key
-            assert "\\" not in key
-            assert key.endswith(".test")
 
 
-def test_items_by_file_entries(reader_test_data: ReaderTestData):
-    """Test items(by='file_entries') yields FileInfo objects with correct paths."""
-    pairs = list(reader_test_data.reader.items(by="file_entries"))
-
-    assert len(pairs) == 2
-    for key, _ in pairs:
-        assert isinstance(key, FileInfo)
-        assert isinstance(key.path, str)
-
-    payloads = [_assert_payload(c) for _, c in pairs]
-    assert payloads == [reader_test_data.contents["sample1.test"], reader_test_data.contents["sample2.test"]]
+def test_items_default_uses_files(reader_test_data: ReaderTestData):
+    """Test items() defaults to by='files'."""
+    reader = reader_test_data.reader
+    assert [key for key, _ in reader.items()] == list(reader.files)
 
 
 def test_items_reverse(reader_test_data: ReaderTestData):
     """Test items(reverse=True) yields pairs in reverse reader order."""
-    pairs = list(reader_test_data.reader.items(reverse=True))
+    reader = reader_test_data.reader
+    pairs = list(reader.items(by="file_names", reverse=True))
 
-    assert len(pairs) == 2
-    payloads = [_assert_payload(c) for _, c in pairs]
-    assert payloads == [reader_test_data.contents["sample2.test"], reader_test_data.contents["sample1.test"]]
+    assert [key for key, _ in pairs] == list(reversed(reader.file_names))
+    assert [_assert_payload(container) for _, container in pairs] == [
+        reader_test_data.contents["sample2.test"],
+        reader_test_data.contents["sample1.test"],
+    ]
 
 
 def test_items_invalid_by(reader_test_data: ReaderTestData):
     """Test items() raises ValueError for an invalid 'by' value."""
     with pytest.raises(ValueError, match=escape("Invalid 'by' value: 'bogus'")):
-        list(reader_test_data.reader.items(by="bogus"))
+        list(reader_test_data.reader.items(by="bogus"))  # type: ignore[arg-type]
 
 
 def test_read_file_uses_explicit_parser(reader_test_data: ReaderTestData):

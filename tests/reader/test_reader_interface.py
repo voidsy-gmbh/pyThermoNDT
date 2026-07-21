@@ -6,7 +6,7 @@ import pytest
 
 from pythermondt.data import DataContainer
 from pythermondt.io import FileInfo
-from pythermondt.readers.base_reader import BaseReader, ItemsBy
+from pythermondt.readers import BaseReader, ItemsBy
 from tests.reader.conftest import ReaderTestContext, ReaderTestData
 from tests.support.storage import PlainTextParser
 
@@ -144,7 +144,14 @@ def test_items_keys_match_properties(reader_test_data: ReaderTestData, by: Items
 def test_items_default_uses_files(reader_test_data: ReaderTestData):
     """Test items() defaults to by='files'."""
     reader = reader_test_data.reader
-    assert [key for key, _ in reader.items()] == list(reader.files)
+    assert list(reader.items()) == list(reader.items(by="files"))
+
+
+def test_items_pairs_key_to_container(reader_test_data: ReaderTestData):
+    """Test each items() key maps to the container for that file."""
+    reader = reader_test_data.reader
+    for name, container in reader.items(by="file_names"):
+        assert _assert_payload(container) == reader_test_data.contents[name]
 
 
 def test_items_reverse(reader_test_data: ReaderTestData):
@@ -153,10 +160,8 @@ def test_items_reverse(reader_test_data: ReaderTestData):
     pairs = list(reader.items(by="file_names", reverse=True))
 
     assert [key for key, _ in pairs] == list(reversed(reader.file_names))
-    assert [_assert_payload(container) for _, container in pairs] == [
-        reader_test_data.contents["sample2.test"],
-        reader_test_data.contents["sample1.test"],
-    ]
+    for name, container in pairs:
+        assert _assert_payload(container) == reader_test_data.contents[name]
 
 
 def test_items_invalid_by(reader_test_data: ReaderTestData):

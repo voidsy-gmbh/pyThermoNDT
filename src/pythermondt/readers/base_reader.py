@@ -322,11 +322,13 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         else:
             keys = self.files
 
-        pairs: list[tuple[str | FileInfo, str]] = list(zip(keys, uris, strict=True))
+        key_uri_pairs: Iterator[tuple[str | FileInfo, str]]
         if reverse:
-            pairs.reverse()
+            key_uri_pairs = zip(reversed(keys), reversed(uris), strict=True)
+        else:
+            key_uri_pairs = zip(keys, uris, strict=True)
 
-        for key, uri in pairs:
+        for key, uri in key_uri_pairs:
             yield key, self.read_file(uri)
 
     def _to_file_name(self, file_path: str) -> str:

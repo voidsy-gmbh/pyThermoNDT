@@ -8,7 +8,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
-from typing import Literal, overload
+from typing import Literal, get_args, overload
 from urllib.parse import unquote, urlparse
 
 from pydantic import BaseModel, ConfigDict, RootModel, ValidationError
@@ -20,6 +20,10 @@ from ..io import BaseBackend, FileInfo, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
 logger = logging.getLogger(__name__)
+
+ItemsByPath = Literal["files", "file_names", "file_uris"]
+ItemsByEntry = Literal["file_entries"]
+ItemsBy = ItemsByPath | ItemsByEntry
 
 
 class ManifestEntry(BaseModel):
@@ -279,45 +283,36 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             yield self.read_file(uri)
 
     @overload
-    def items(
-        self, by: Literal["files", "file_names", "file_uris"] = "files", reverse: bool = False
-    ) -> Iterator[tuple[str, DataContainer]]: ...
+    def items(self, by: ItemsByPath = "files", reverse: bool = False) -> Iterator[tuple[str, DataContainer]]: ...
 
     @overload
-    def items(self, by: Literal["file_entries"], reverse: bool = False) -> Iterator[tuple[FileInfo, DataContainer]]: ...
+    def items(self, by: ItemsByEntry, reverse: bool = False) -> Iterator[tuple[FileInfo, DataContainer]]: ...
 
-    def items(self, by: str = "files", reverse: bool = False) -> Iterator[tuple[str | FileInfo, DataContainer]]:
+    def items(self, by: ItemsBy = "files", reverse: bool = False) -> Iterator[tuple[str | FileInfo, DataContainer]]:
         """Iterate over ``(key, container)`` pairs.
 
-        Snapshot both the key list and file URIs for consistency, using the
-        existing property caching logic.  This replaces the common pattern::
-
-            for name, container in zip(reader.file_names, reader, strict=True):
-                ...
-
-        with the simpler::
-
-            for name, container in reader.items(by="file_names"):
-                ...
+        Snapshots the selected key list and file URIs together for consistency.
 
         Args:
-            by: Which identifier to pair with each container.
-                ``"files"`` (default) — decoded full path.
-                ``"file_names"`` — basename only.
-                ``"file_uris"`` — URI-encoded path.
-                ``"file_entries"`` — :class:`FileInfo` metadata object.
-            reverse: When ``True``, iterate in reverse order.
+            by (ItemsBy, optional): Identifier paired with each container.
+                ``ItemsByPath`` values (``"files"``, ``"file_names"``, ``"file_uris"``) yield ``str`` keys.
+                ``ItemsByEntry`` (``"file_entries"``) yields :class:`FileInfo` keys.
+                Default is ``"files"`` (decoded full path).
+            reverse (bool, optional): Iterate in reverse order. Default is ``False``.
 
         Yields:
-            ``(key, container)`` tuples.
+            ``(key, container)`` tuples. Key type depends on ``by`` (see Args).
+
+        Raises:
+            ValueError: If ``by`` is not a supported :data:`ItemsBy` identifier.
         """
-        if by not in ("files", "file_names", "file_uris", "file_entries"):
+        if by not in get_args(ItemsByPath) + get_args(ItemsByEntry):
             raise ValueError(
-                f"Invalid 'by' value: {by!r}. Must be one of 'files', 'file_names', 'file_uris', 'file_entries'."
+                f"Invalid 'by' value: {by!r}. Must be one of {get_args(ItemsByPath) + get_args(ItemsByEntry)}."
             )
 
+        # Snapshot both lists once so keys and containers stay paired if cache_files is off.
         uris = self.file_uris
-
         if by == "file_entries":
             keys: list[str] | list[FileInfo] = self.file_entries
         elif by == "file_uris":
@@ -327,13 +322,12 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         else:
             keys = self.files
 
-        file_count = len(uris)
+        pairs: list[tuple[str | FileInfo, str]] = list(zip(keys, uris, strict=True))
         if reverse:
-            for i in range(file_count - 1, -1, -1):
-                yield keys[i], self.read_file(uris[i])
-        else:
-            for i in range(file_count):
-                yield keys[i], self.read_file(uris[i])
+            pairs.reverse()
+
+        for key, uri in pairs:
+            yield key, self.read_file(uri)
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""

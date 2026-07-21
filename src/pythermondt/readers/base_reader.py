@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 ItemsByPath = Literal["files", "file_names", "file_uris"]
 ItemsByEntry = Literal["file_entries"]
+_ITEMS_BY_VALUES = get_args(ItemsByPath) + get_args(ItemsByEntry)
 ItemsBy = ItemsByPath | ItemsByEntry
 
 
@@ -306,10 +307,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         Raises:
             ValueError: If ``by`` is not a supported :data:`ItemsBy` identifier.
         """
-        if by not in get_args(ItemsByPath) + get_args(ItemsByEntry):
-            raise ValueError(
-                f"Invalid 'by' value: {by!r}. Must be one of {get_args(ItemsByPath) + get_args(ItemsByEntry)}."
-            )
+        if by not in _ITEMS_BY_VALUES:
+            raise ValueError(f"Invalid 'by' value: {by!r}. Must be one of {_ITEMS_BY_VALUES}.")
 
         # Snapshot both lists once so keys and containers stay paired if cache_files is off.
         uris = self.file_uris
@@ -322,6 +321,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         else:
             keys = self.files
 
+        # Build Iterator based on requested order
         key_uri_pairs: Iterator[tuple[str | FileInfo, str]]
         if reverse:
             key_uri_pairs = zip(reversed(keys), reversed(uris), strict=True)

@@ -292,20 +292,20 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def items(self, by: ItemsBy = "files", reverse: bool = False) -> Iterator[tuple[str | FileInfo, DataContainer]]:
         """Iterate over ``(key, container)`` pairs.
 
-        Snapshots the selected key list and file URIs together for consistency.
+        ``by`` selects the key source (``files``, ``file_names``, ``file_uris``, or
+        ``file_entries``). Keys and file URIs are snapshotted together so pairs stay
+        consistent when ``cache_files`` is off.
 
         Args:
-            by (ItemsBy, optional): Identifier paired with each container.
-                ``ItemsByPath`` values (``"files"``, ``"file_names"``, ``"file_uris"``) yield ``str`` keys.
-                ``ItemsByEntry`` (``"file_entries"``) yields :class:`FileInfo` keys.
-                Default is ``"files"`` (decoded full path).
+            by (ItemsBy, optional): Key source. Default is ``"files"``.
             reverse (bool, optional): Iterate in reverse order. Default is ``False``.
 
         Yields:
-            ``(key, container)`` tuples. Key type depends on ``by`` (see Args).
+            tuple: ``(key, DataContainer)`` where ``key`` is ``str`` or :class:`FileInfo`
+                depending on ``by``.
 
         Raises:
-            ValueError: If ``by`` is not a supported :data:`ItemsBy` identifier.
+            ValueError: If ``by`` is not a supported identifier.
         """
         if by not in _ITEMS_BY_VALUES:
             raise ValueError(f"Invalid 'by' value: {by!r}. Must be one of {_ITEMS_BY_VALUES}.")

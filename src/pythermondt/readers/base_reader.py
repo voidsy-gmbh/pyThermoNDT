@@ -310,16 +310,22 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         if by not in _ITEMS_BY_VALUES:
             raise ValueError(f"Invalid 'by' value: {by!r}. Must be one of {_ITEMS_BY_VALUES}.")
 
-        # Snapshot both lists once so keys and containers stay paired if cache_files is off.
-        uris = self.file_uris
+        # Single snapshot so keys and URIs stay paired when cache_files is off.
         if by == "file_entries":
-            keys: list[str] | list[FileInfo] = self.file_entries
-        elif by == "file_uris":
-            keys = uris
-        elif by == "file_names":
-            keys = self.file_names
+            entries = self.file_entries
+            uris = [entry.path for entry in entries]
+            keys: list[str] | list[FileInfo] = entries
         else:
-            keys = self.files
+            uris = list(self.file_uris)
+            if by == "file_uris":
+                keys = uris
+            elif by == "file_names":
+                keys = [self._to_file_name(uri) for uri in uris]
+            elif self.backend.scheme != "file":
+                # Match files property: only decode file:// URIs.
+                keys = uris
+            else:
+                keys = [unquote(uri) for uri in uris]
 
         # Build Iterator based on requested order
         key_uri_pairs: Iterator[tuple[str | FileInfo, str]]

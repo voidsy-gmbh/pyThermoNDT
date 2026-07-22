@@ -6,7 +6,7 @@ import pytest
 
 from pythermondt.data import DataContainer
 from pythermondt.io import FileInfo
-from pythermondt.readers import BaseReader
+from pythermondt.readers import BaseReader, ItemsBy
 from tests.reader.conftest import ReaderTestContext, ReaderTestData
 from tests.support.storage import PlainTextParser
 
@@ -125,6 +125,63 @@ def test_reversed(reader_test_data: ReaderTestData):
     payloads = [_assert_payload(container) for container in reversed(reader_test_data.reader)]
 
     assert payloads == [reader_test_data.contents["sample2.test"], reader_test_data.contents["sample1.test"]]
+
+
+@pytest.mark.parametrize("by", ["files", "file_names", "file_uris", "file_entries"])
+def test_items_keys_match_properties(reader_test_data: ReaderTestData, by: ItemsBy):
+    """Test items() keys match the corresponding reader property and payloads stay in order."""
+    reader = reader_test_data.reader
+    pairs = list(reader.items(by=by))
+    expected_keys = getattr(reader, by)
+
+    assert [key for key, _ in pairs] == list(expected_keys)
+    assert [_assert_payload(container) for _, container in pairs] == [
+        reader_test_data.contents["sample1.test"],
+        reader_test_data.contents["sample2.test"],
+    ]
+
+
+def test_items_default_uses_files(reader_test_data: ReaderTestData):
+    """Test items() defaults to by='files'."""
+    reader = reader_test_data.reader
+    assert list(reader.items()) == list(reader.items(by="files"))
+
+
+def test_items_pairs_key_to_container(reader_test_data: ReaderTestData):
+    """Test each items() key maps to the container for that file."""
+    reader = reader_test_data.reader
+    for name, container in reader.items(by="file_names"):
+        assert _assert_payload(container) == reader_test_data.contents[name]
+
+
+def test_items_reverse(reader_test_data: ReaderTestData):
+    """Test items(reverse=True) yields pairs in reverse reader order."""
+    reader = reader_test_data.reader
+    pairs = list(reader.items(by="file_names", reverse=True))
+
+    assert [key for key, _ in pairs] == list(reversed(reader.file_names))
+    for name, container in pairs:
+        assert _assert_payload(container) == reader_test_data.contents[name]
+
+
+def test_items_invalid_by(reader_test_data: ReaderTestData):
+    """Test items() raises ValueError for an invalid 'by' value."""
+    with pytest.raises(ValueError, match=escape("Invalid 'by' value: 'bogus'")):
+        list(reader_test_data.reader.items(by="bogus"))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("by", ["files", "file_names", "file_uris", "file_entries"])
+def test_items_with_cache_files_false(reader_config: ReaderTestContext, by: ItemsBy):
+    """items() works with cache_files=False and keeps key/container pairs consistent."""
+    reader_config.prepare_file("sample1.test", b"payload1")
+    reader_config.prepare_file("sample2.test", b"payload2")
+    reader = reader_config.make_reader(cache_files=False)
+
+    pairs = list(reader.items(by=by))
+    expected_keys = getattr(reader, by)
+
+    assert [key for key, _ in pairs] == list(expected_keys)
+    assert [_assert_payload(container) for _, container in pairs] == ["payload1", "payload2"]
 
 
 def test_read_file_uses_explicit_parser(reader_test_data: ReaderTestData):

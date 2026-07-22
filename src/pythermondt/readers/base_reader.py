@@ -8,6 +8,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
+from typing import Literal, get_args, overload
 from urllib.parse import unquote, urlparse
 
 from pydantic import BaseModel, ConfigDict, RootModel, ValidationError
@@ -19,6 +20,11 @@ from ..io import BaseBackend, FileInfo, IOPathWrapper
 from ..io.parsers import BaseParser, find_parser_for_extension, get_all_supported_extensions
 
 logger = logging.getLogger(__name__)
+
+ItemsByPath = Literal["files", "file_names", "file_uris"]
+ItemsByEntry = Literal["file_entries"]
+_ITEMS_BY_VALUES = get_args(ItemsByPath) + get_args(ItemsByEntry)
+ItemsBy = ItemsByPath | ItemsByEntry
 
 
 class ManifestEntry(BaseModel):
@@ -276,6 +282,58 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         for uri in reversed(file_uris):
             yield self.read_file(uri)
+
+    @overload
+    def items(self, by: ItemsByPath = "files", reverse: bool = False) -> Iterator[tuple[str, DataContainer]]: ...
+
+    @overload
+    def items(self, by: ItemsByEntry, reverse: bool = False) -> Iterator[tuple[FileInfo, DataContainer]]: ...
+
+    def items(self, by: ItemsBy = "files", reverse: bool = False) -> Iterator[tuple[str | FileInfo, DataContainer]]:
+        """Iterate over ``(key, container)`` pairs.
+
+        ``by`` selects the key source (``files``, ``file_names``, ``file_uris``, or
+        ``file_entries``). Keys and file URIs are snapshotted together so pairs stay
+        consistent when ``cache_files`` is off.
+
+        Args:
+            by (ItemsBy, optional): Key source. Default is ``"files"``.
+            reverse (bool, optional): Iterate in reverse order. Default is ``False``.
+
+        Yields:
+            tuple: ``(key, DataContainer)`` where ``key`` is ``str`` or :class:`FileInfo`
+                depending on ``by``.
+
+        Raises:
+            ValueError: If ``by`` is not a supported identifier.
+        """
+        # Single snapshot so keys and URIs stay paired when cache_files is off.
+        keys: list[str] | list[FileInfo]
+        match by:
+            case "file_entries":
+                keys = list(self.file_entries)
+                uris = [entry.path for entry in keys]
+            case "file_uris":
+                keys = uris = list(self.file_uris)
+            case "file_names":
+                uris = list(self.file_uris)
+                keys = [self._to_file_name(uri) for uri in uris]
+            case "files":
+                uris = list(self.file_uris)
+                # Match files property: only decode file:// URIs.
+                keys = uris if self.backend.scheme != "file" else [unquote(uri) for uri in uris]
+            case _:
+                raise ValueError(f"Invalid 'by' value: {by!r}. Must be one of {_ITEMS_BY_VALUES}.")
+
+        # Build Iterator based on requested order
+        key_uri_pairs: Iterator[tuple[str | FileInfo, str]]
+        if reverse:
+            key_uri_pairs = zip(reversed(keys), reversed(uris), strict=True)
+        else:
+            key_uri_pairs = zip(keys, uris, strict=True)
+
+        for key, uri in key_uri_pairs:
+            yield key, self.read_file(uri)
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""

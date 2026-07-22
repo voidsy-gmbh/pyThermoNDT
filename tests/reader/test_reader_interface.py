@@ -170,6 +170,20 @@ def test_items_invalid_by(reader_test_data: ReaderTestData):
         list(reader_test_data.reader.items(by="bogus"))  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize("by", ["files", "file_names", "file_uris", "file_entries"])
+def test_items_with_cache_files_false(reader_config: ReaderTestContext, by: ItemsBy):
+    """items() works with cache_files=False and keeps key/container pairs consistent."""
+    reader_config.prepare_file("sample1.test", b"payload1")
+    reader_config.prepare_file("sample2.test", b"payload2")
+    reader = reader_config.make_reader(cache_files=False)
+
+    pairs = list(reader.items(by=by))
+    expected_keys = getattr(reader, by)
+
+    assert [key for key, _ in pairs] == list(expected_keys)
+    assert [_assert_payload(container) for _, container in pairs] == ["payload1", "payload2"]
+
+
 def test_read_file_uses_explicit_parser(reader_test_data: ReaderTestData):
     """Test that read_file delegates parsing to the configured parser."""
     container = reader_test_data.reader.read_file(reader_test_data.files["sample1.test"])

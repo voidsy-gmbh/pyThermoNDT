@@ -307,25 +307,23 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         Raises:
             ValueError: If ``by`` is not a supported identifier.
         """
-        if by not in _ITEMS_BY_VALUES:
-            raise ValueError(f"Invalid 'by' value: {by!r}. Must be one of {_ITEMS_BY_VALUES}.")
-
         # Single snapshot so keys and URIs stay paired when cache_files is off.
-        if by == "file_entries":
-            entries = self.file_entries
-            uris = [entry.path for entry in entries]
-            keys: list[str] | list[FileInfo] = entries
-        else:
-            uris = list(self.file_uris)
-            if by == "file_uris":
-                keys = uris
-            elif by == "file_names":
+        keys: list[str] | list[FileInfo]
+        match by:
+            case "file_entries":
+                keys = list(self.file_entries)
+                uris = [entry.path for entry in keys]
+            case "file_uris":
+                keys = uris = list(self.file_uris)
+            case "file_names":
+                uris = list(self.file_uris)
                 keys = [self._to_file_name(uri) for uri in uris]
-            elif self.backend.scheme != "file":
+            case "files":
+                uris = list(self.file_uris)
                 # Match files property: only decode file:// URIs.
-                keys = uris
-            else:
-                keys = [unquote(uri) for uri in uris]
+                keys = uris if self.backend.scheme != "file" else [unquote(uri) for uri in uris]
+            case _:
+                raise ValueError(f"Invalid 'by' value: {by!r}. Must be one of {_ITEMS_BY_VALUES}.")
 
         # Build Iterator based on requested order
         key_uri_pairs: Iterator[tuple[str | FileInfo, str]]

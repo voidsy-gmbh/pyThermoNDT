@@ -2,9 +2,11 @@ from collections.abc import Sequence
 from typing import Literal
 
 import torch
+from torch import Tensor
 
 from ..data import DataContainer
 from .base import ThermoTransform
+from .utils import _get_optional_dataset
 
 
 class SelectFrames(ThermoTransform):
@@ -21,9 +23,8 @@ class SelectFrames(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
-        tdata, domain_values, excitation_signal = container.get_datasets(
-            "/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal"
-        )
+        tdata, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues")
+        has_signal, excitation_signal = _get_optional_dataset(container, "/MetaData/ExcitationSignal")
 
         # Check if frame_indices are valid
         if any(idx < 0 or idx >= tdata.shape[-1] for idx in self.frame_indices):
@@ -36,18 +37,23 @@ class SelectFrames(ThermoTransform):
         # Select Frames
         tdata = tdata[..., self.frame_indices]
         domain_values = domain_values[..., self.frame_indices]
-        excitation_signal = excitation_signal[..., self.frame_indices]
+        if has_signal:
+            assert excitation_signal is not None
+            excitation_signal = excitation_signal[..., self.frame_indices]
 
         # Fix time shift in domain values by subtracting the first time step
-        domain_values = domain_values - domain_values[0]
+        domain_values = _maybe_zero_base_domain(container, domain_values)
 
         # Update Container and return
         # pylint: disable=duplicate-code
-        container.update_datasets(
+        updates: list[tuple[str, Tensor]] = [
             ("/Data/Tdata", tdata),
             ("/MetaData/DomainValues", domain_values),
-            ("/MetaData/ExcitationSignal", excitation_signal),
-        )
+        ]
+        if has_signal:
+            assert excitation_signal is not None
+            updates.append(("/MetaData/ExcitationSignal", excitation_signal))
+        container.update_datasets(*updates)
         # pylint: enable=duplicate-code
         return container
 
@@ -69,9 +75,8 @@ class SelectFrameRange(ThermoTransform):
 
     def forward(self, container: DataContainer) -> DataContainer:
         # Extract Datasets
-        tdata, domain_values, excitation_signal = container.get_datasets(
-            "/Data/Tdata", "/MetaData/DomainValues", "/MetaData/ExcitationSignal"
-        )
+        tdata, domain_values = container.get_datasets("/Data/Tdata", "/MetaData/DomainValues")
+        has_signal, excitation_signal = _get_optional_dataset(container, "/MetaData/ExcitationSignal")
 
         # Check if frame range is valid
         if self.start is not None and (self.start < 0 or self.start >= tdata.shape[-1]):
@@ -89,18 +94,33 @@ class SelectFrameRange(ThermoTransform):
         end = self.end + 1 if self.end is not None else tdata.shape[-1]
         tdata = tdata[..., start:end]
         domain_values = domain_values[..., start:end]
-        excitation_signal = excitation_signal[..., start:end]
+        if has_signal:
+            assert excitation_signal is not None
+            excitation_signal = excitation_signal[..., start:end]
 
         # Fix time shift in domain values by subtracting the first time step
-        domain_values = domain_values - domain_values[0]
+        domain_values = _maybe_zero_base_domain(container, domain_values)
 
         # Update Container and return
-        container.update_datasets(
+        updates: list[tuple[str, Tensor]] = [
             ("/Data/Tdata", tdata),
             ("/MetaData/DomainValues", domain_values),
-            ("/MetaData/ExcitationSignal", excitation_signal),
-        )
+        ]
+        if has_signal:
+            assert excitation_signal is not None
+            updates.append(("/MetaData/ExcitationSignal", excitation_signal))
+        container.update_datasets(*updates)
         return container
+
+
+def _maybe_zero_base_domain(container: DataContainer, domain_values: Tensor) -> Tensor:
+    """Zero-base domain values for time-domain data only.
+
+    Frequency-domain axes must keep absolute values (e.g. Hz after PPT).
+    """
+    if container.get_unit("/MetaData/DomainValues").quantity == "time":
+        return domain_values - domain_values[0]
+    return domain_values
 
 
 class NonUniformSampling(ThermoTransform):

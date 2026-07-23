@@ -121,6 +121,8 @@ classDiagram
     backend : BaseBackend
     cache_files : bool
     download_files : bool
+    file_entries : list[FileInfo]
+    file_filter : Callable[[FileInfo], bool] | None
     file_names : list[str]
     file_uris : list[str]
     files : list[str]
@@ -130,6 +132,7 @@ classDiagram
     reader_cache_dir : str
     remote_source : bool
     download(file_paths: list[str] | None, num_workers: int | None, force: bool)
+    items(by: ItemsByPath, reverse: bool) Iterator[tuple[str, DataContainer]]
     read_file(file_path: str) DataContainer
     sync(file_paths: list[str] | None, num_workers: int | None) None
   }
@@ -248,6 +251,9 @@ classDiagram
     file_obj : BytesIO
     file_path : str
     close()
+    getvalue() bytes
+    read(size: int) bytes
+    write(data: str | bytes) int
   }
   style IOPathWrapper fill:#BBCC33
   class IndexedThermoDataset {

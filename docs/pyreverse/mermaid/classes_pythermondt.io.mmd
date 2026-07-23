@@ -70,6 +70,9 @@ classDiagram
     file_obj : BytesIO
     file_path : str
     close()
+    getvalue() bytes
+    read(size: int) bytes
+    write(data: str | bytes) int
   }
   style IOPathWrapper fill:#77AADD
   class LocalBackend {

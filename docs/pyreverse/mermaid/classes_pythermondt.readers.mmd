@@ -1,12 +1,14 @@
 classDiagram
   class AzureBlobReader {
-    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, client_options: AzureBlobClientOptions | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
+    \_\_init\_\_(account_url: str, container_name: str, prefix: str, connection_string: str | None, credential: TokenCredential | None, client_options: AzureBlobClientOptions | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None, file_filter: Callable[[FileInfo], bool] | None)
   }
   style AzureBlobReader fill:#77AADD
   class BaseReader {
     backend : BaseBackend
     cache_files : bool
     download_files : bool
+    file_entries : list[FileInfo]
+    file_filter : Callable[[FileInfo], bool] | None
     file_names : list[str]
     file_uris : list[str]
     files : list[str]
@@ -17,13 +19,14 @@ classDiagram
     remote_source : bool
     \_\_getitem\_\_(idx: int) DataContainer
     \_\_getstate\_\_()
-    \_\_init\_\_(num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)*
+    \_\_init\_\_(num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None, file_filter: Callable[[FileInfo], bool] | None)*
     \_\_iter\_\_() Iterator[DataContainer]
     \_\_len\_\_() int
     \_\_reversed\_\_() Iterator[DataContainer]
     \_\_setstate\_\_(state: dict)
     \_\_str\_\_()
     download(file_paths: list[str] | None, num_workers: int | None, force: bool)
+    items(by: ItemsByPath, reverse: bool) Iterator[tuple[str, DataContainer]]
     read_file(file_path: str) DataContainer
     sync(file_paths: list[str] | None, num_workers: int | None) None
   }
@@ -32,7 +35,7 @@ classDiagram
   }
   style CacheManifest fill:#77AADD
   class LocalReader {
-    \_\_init\_\_(pattern: str, recursive: bool, num_files: int | None, cache_files: bool, parser: type[BaseParser] | None)
+    \_\_init\_\_(pattern: str, recursive: bool, num_files: int | None, cache_files: bool, parser: type[BaseParser] | None, file_filter: Callable[[FileInfo], bool] | None)
   }
   style LocalReader fill:#77AADD
   class ManifestEntry {
@@ -42,7 +45,7 @@ classDiagram
   }
   style ManifestEntry fill:#77AADD
   class S3Reader {
-    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, client_options: S3ClientOptions | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None)
+    \_\_init\_\_(bucket: str, prefix: str, region_name: str | None, profile_name: str | None, client_options: S3ClientOptions | None, num_files: int | None, download_files: bool, cache_files: bool, parser: type[BaseParser] | None, file_filter: Callable[[FileInfo], bool] | None)
   }
   style S3Reader fill:#77AADD
   AzureBlobReader --|> BaseReader

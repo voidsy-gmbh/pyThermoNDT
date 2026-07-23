@@ -9,6 +9,11 @@ from .base import ThermoTransform
 from .utils import _get_optional_dataset
 
 
+def _remove_time_shift(domain_values: Tensor) -> Tensor:
+    """Remove the time shift in domain values by subtracting the first time step."""
+    return domain_values - domain_values[0]
+
+
 class SelectFrames(ThermoTransform):
     """Select a subset of frames from the data container specified by a single index or a list of indices."""
 
@@ -40,8 +45,9 @@ class SelectFrames(ThermoTransform):
         if has_excitation_signal and excitation_signal:
             excitation_signal = excitation_signal[..., self.frame_indices]
 
-        # Fix time shift in domain values by subtracting the first time step
-        domain_values = _maybe_zero_base_domain(container, domain_values)
+        # Fix time shift in domain values by subtracting the first time step if we are in time domain
+        if container.get_unit("/MetaData/DomainValues").quantity == "time":
+            domain_values = _remove_time_shift(domain_values)
 
         # Update Container and return
         # pylint: disable=duplicate-code
@@ -95,8 +101,9 @@ class SelectFrameRange(ThermoTransform):
         if has_excitation_signal and excitation_signal:
             excitation_signal = excitation_signal[..., start:end]
 
-        # Fix time shift in domain values by subtracting the first time step
-        domain_values = _maybe_zero_base_domain(container, domain_values)
+        # Fix time shift in domain values by subtracting the first time step if we are in time domain
+        if container.get_unit("/MetaData/DomainValues").quantity == "time":
+            domain_values = _remove_time_shift(domain_values)
 
         # Update Container and return
         updates: list[tuple[str, Tensor]] = [
@@ -107,16 +114,6 @@ class SelectFrameRange(ThermoTransform):
             updates.append(("/MetaData/ExcitationSignal", excitation_signal))
         container.update_datasets(*updates)
         return container
-
-
-def _maybe_zero_base_domain(container: DataContainer, domain_values: Tensor) -> Tensor:
-    """Zero-base domain values for time-domain data only.
-
-    Frequency-domain axes must keep absolute values (e.g. Hz after PPT).
-    """
-    if container.get_unit("/MetaData/DomainValues").quantity == "time":
-        return domain_values - domain_values[0]
-    return domain_values
 
 
 class NonUniformSampling(ThermoTransform):

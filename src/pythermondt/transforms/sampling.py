@@ -42,7 +42,7 @@ class SelectFrames(ThermoTransform):
         # Select Frames
         tdata = tdata[..., self.frame_indices]
         domain_values = domain_values[..., self.frame_indices]
-        if has_excitation_signal and excitation_signal:
+        if has_excitation_signal and excitation_signal is not None:
             excitation_signal = excitation_signal[..., self.frame_indices]
 
         # Fix time shift in domain values by subtracting the first time step if we are in time domain
@@ -55,7 +55,7 @@ class SelectFrames(ThermoTransform):
             ("/Data/Tdata", tdata),
             ("/MetaData/DomainValues", domain_values),
         ]
-        if has_excitation_signal and excitation_signal:
+        if has_excitation_signal and excitation_signal is not None:
             updates.append(("/MetaData/ExcitationSignal", excitation_signal))
         container.update_datasets(*updates)
         # pylint: enable=duplicate-code
@@ -98,7 +98,7 @@ class SelectFrameRange(ThermoTransform):
         end = self.end + 1 if self.end is not None else tdata.shape[-1]
         tdata = tdata[..., start:end]
         domain_values = domain_values[..., start:end]
-        if has_excitation_signal and excitation_signal:
+        if has_excitation_signal and excitation_signal is not None:
             excitation_signal = excitation_signal[..., start:end]
 
         # Fix time shift in domain values by subtracting the first time step if we are in time domain
@@ -110,7 +110,7 @@ class SelectFrameRange(ThermoTransform):
             ("/Data/Tdata", tdata),
             ("/MetaData/DomainValues", domain_values),
         ]
-        if has_excitation_signal and excitation_signal:
+        if has_excitation_signal and excitation_signal is not None:
             updates.append(("/MetaData/ExcitationSignal", excitation_signal))
         container.update_datasets(*updates)
         return container

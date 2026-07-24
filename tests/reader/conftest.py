@@ -1,14 +1,15 @@
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Protocol
 
 import pytest
 
-from pythermondt.io import AzureBlobBackend, BaseBackend, FileInfo, LocalBackend, S3Backend
+from pythermondt.io import FileInfo
 from pythermondt.io.parsers import BaseParser
 from pythermondt.readers import AzureBlobReader, BaseReader, LocalReader, S3Reader
 from tests.support import storage
+from tests.support.storage.config import StorageTestContext
 
 
 class ReaderFactory(Protocol):
@@ -59,14 +60,12 @@ def azure_mock():
         yield mock_storage
 
 
-@pytest.fixture(params=storage.BACKENDS, ids=lambda x: x.reader_cls.__name__)
-def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[ReaderTestContext]:
-    """Create a reader and a storage setup callback from configuration."""
-    config = cast(storage.TestConfig, request.param)
+@pytest.fixture
+def reader_config(storage_backend: StorageTestContext, tmp_path: Path) -> Generator[ReaderTestContext]:
+    """Create a reader from the shared storage backend configuration."""
+    config = storage_backend.config
 
-    backend: BaseBackend
     if config.reader_cls == LocalReader:
-        backend = LocalBackend(pattern=str(tmp_path))
 
         def make_reader(
             parser: type[BaseParser] | None = storage.PlainTextParser,
@@ -83,8 +82,6 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
             )
 
     elif config.reader_cls == S3Reader:
-        s3_client.create_bucket(Bucket="test-bucket")
-        backend = S3Backend(bucket="test-bucket", prefix="")
 
         def make_reader(
             parser: type[BaseParser] | None = storage.PlainTextParser,
@@ -102,13 +99,6 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
             )
 
     elif config.reader_cls == AzureBlobReader:
-        azure_mock.create_container("test-container")
-        backend = AzureBlobBackend(
-            account_url="https://test.blob.core.windows.net",
-            container_name="test-container",
-            prefix="",
-            connection_string="DefaultEndpointsProtocol=https;AccountName=test;AccountKey=fake==;EndpointSuffix=core.windows.net",
-        )
 
         def make_reader(
             parser: type[BaseParser] | None = storage.PlainTextParser,
@@ -132,19 +122,14 @@ def reader_config(request, tmp_path: Path, s3_client, azure_mock) -> Generator[R
     else:
         raise NotImplementedError(f"Reader {config.reader_cls} not implemented")
 
-    def prepare_reader_file(name: str, content: bytes) -> str:
-        """Prepare one file in the reader's storage and return its canonical URI."""
-        return storage.prepare_file(backend, name, content, tmp_path)
-
     reader = make_reader()
     yield ReaderTestContext(
         reader=reader,
         config=config,
         make_reader=make_reader,
-        prepare_file=prepare_reader_file,
+        prepare_file=storage_backend.prepare_file,
     )
 
-    backend.close()
     reader.backend.close()
 
 

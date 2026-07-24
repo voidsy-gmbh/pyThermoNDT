@@ -1,6 +1,6 @@
 [project]
 name = "pythermondt"
-version = "0.3.8"
+version = "0.3.9.dev0"
 description = "A Python package for manipulating thermographic data in Non-Destructive Testing (NDT) applications."
 readme = "README.md"
 keywords = ["Active Thermography", "Data Analysis", "Machine Learning", "NDT", "Python"]

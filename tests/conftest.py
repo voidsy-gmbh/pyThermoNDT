@@ -1,3 +1,7 @@
+from collections.abc import Generator
+from pathlib import Path
+from typing import cast
+
 import boto3
 import numpy as np
 import pytest
@@ -5,7 +9,15 @@ import torch
 from moto import mock_aws
 
 from pythermondt import DataContainer, LocalReader, S3Reader
+from pythermondt.io import AzureBlobBackend, BaseBackend, LocalBackend, S3Backend
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
+from tests.support.storage import (
+    BACKENDS,
+    StorageTestContext,
+    TestConfig,
+    mocked_azure_blob_storage,
+    prepare_file,
+)
 
 
 class AltReader(LocalReader):
@@ -27,6 +39,44 @@ def s3_client(fake_aws_creds):
     """Create mocked S3 client."""
     with mock_aws():
         yield boto3.client("s3")
+
+
+@pytest.fixture(params=BACKENDS, ids=lambda x: x.backend_cls.__name__)
+def storage_backend(request, tmp_path: Path, s3_client) -> Generator[StorageTestContext]:
+    """Create backend + prepare_file helper, parametrized over all storage backends."""
+    config = cast(TestConfig, request.param)
+
+    backend: BaseBackend
+    azure_ctx = None
+    if config.backend_cls == LocalBackend:
+        backend = LocalBackend(pattern=str(tmp_path))
+    elif config.backend_cls == S3Backend:
+        s3_client.create_bucket(Bucket="test-bucket")
+        backend = S3Backend(bucket="test-bucket", prefix="")
+    elif config.backend_cls == AzureBlobBackend:
+        azure_ctx = mocked_azure_blob_storage()
+        azure_storage = azure_ctx.__enter__()
+        azure_storage.create_container("test-container")
+        backend = AzureBlobBackend(
+            account_url="https://test.blob.core.windows.net",
+            container_name="test-container",
+            prefix="",
+            connection_string=(
+                "DefaultEndpointsProtocol=https;AccountName=test;AccountKey=fake==;EndpointSuffix=core.windows.net"
+            ),
+        )
+    else:
+        raise NotImplementedError(f"Backend {config.backend_cls} not implemented")
+
+    def _prepare_file(name: str, content: bytes) -> str:
+        """Prepare one file in the backend's storage and return its canonical URI."""
+        return prepare_file(backend, name, content, tmp_path)
+
+    yield StorageTestContext(backend=backend, config=config, prepare_file=_prepare_file)
+
+    backend.close()
+    if azure_ctx is not None:
+        azure_ctx.__exit__(None, None, None)
 
 
 @pytest.fixture

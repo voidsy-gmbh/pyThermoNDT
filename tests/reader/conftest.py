@@ -53,13 +53,6 @@ class ReaderTestData:
         return [self.files[name] for name in sorted(self.contents) if name.endswith(".test")]
 
 
-@pytest.fixture()
-def azure_mock():
-    """Create mocked Azure Blob Storage."""
-    with storage.mocked_azure_blob_storage() as mock_storage:
-        yield mock_storage
-
-
 @pytest.fixture
 def reader_config(storage_backend: StorageTestContext, tmp_path: Path) -> Generator[ReaderTestContext]:
     """Create a reader from the shared storage backend configuration."""

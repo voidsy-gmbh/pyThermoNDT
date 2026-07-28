@@ -90,3 +90,26 @@ def test_process_parallel_local(keep_file_names: bool, file_name_pattern: str | 
         assert containers_equal(read_back, containers[original_idx]), (
             f"Container at {dest_file.name} (index {original_idx}) does not match original"
         )
+
+
+@pytest.mark.parametrize("num_files", [1, 10, 12], ids=["unit", "tens", "teens"])
+def test_process_parallel_zero_padding(num_files: int, tmp_path: Path):
+    """process_parallel zero-pads indices based on len(str(total_files))."""
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    for i in range(num_files):
+        c = make_container(("/Data", f"t{i}", torch.rand(2, 2)))
+        c.add_attribute("/Data", "index", i)
+        c.save_to_hdf5(str(source_dir / f"file_{i}.hdf5"))
+
+    reader = LocalReader(str(source_dir), parser=HDF5Parser)
+    writer = LocalWriter(str(tmp_path / "dest"))
+    writer.process_parallel(reader, keep_file_names=False, file_name_pattern="data_{index}")
+
+    dest_files = sorted((tmp_path / "dest").glob("*.hdf5"))
+    assert len(dest_files) == num_files
+
+    index_width = len(str(num_files))
+    expected_names = {f"data_{str(i).zfill(index_width)}.hdf5" for i in range(num_files)}
+    actual_names = {f.name for f in dest_files}
+    assert actual_names == expected_names

@@ -8,10 +8,7 @@ from moto import mock_aws
 
 from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
-from tests.support.storage import (
-    BACKENDS,
-    StorageTestContext,
-)
+from tests.support.storage import BACKENDS, StorageTestContext
 
 
 class AltReader(LocalReader):

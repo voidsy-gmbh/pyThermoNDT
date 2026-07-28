@@ -9,8 +9,7 @@ from pythermondt.data import DataContainer
 from pythermondt.writers import AzureBlobWriter, BaseWriter, LocalWriter, S3Writer
 from tests.support import storage
 from tests.support.storage.config import StorageTestContext
-
-from ..utils import make_container
+from tests.utils import make_container
 
 
 @dataclass(frozen=True)

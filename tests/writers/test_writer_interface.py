@@ -1,22 +1,23 @@
+from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
 
 import pytest
-import torch
 
 from pythermondt.data import DataContainer
+from pythermondt.io import LocalBackend
 from pythermondt.io.parsers import HDF5Parser
-from pythermondt.readers import LocalReader
 from pythermondt.writers import LocalWriter
-from tests.utils import containers_equal, make_container
-from tests.writers.conftest import WriterTestContext
+from tests.support.storage import StorageTestContext
+from tests.utils import containers_equal
+from tests.writers.conftest import HDF5TestCorpus
 
 
-def test_write_round_trip(writer_config: WriterTestContext, test_container: DataContainer):
+def test_write_round_trip(storage_context: StorageTestContext, test_container: DataContainer):
     """Write a DataContainer and verify it reads back identically."""
-    writer = writer_config.writer
+    writer = storage_context.make_writer()
     filename = "test_file"
-    read_path = writer_config.read_path(filename)
+    read_path = storage_context.canonical_path(f"{filename}.hdf5", destination=True)
 
     writer.write(test_container, filename)
 
@@ -28,10 +29,12 @@ def test_write_round_trip(writer_config: WriterTestContext, test_container: Data
 
 
 @pytest.mark.parametrize("filename", ["myfile", "myfile.hdf5"], ids=["no_ext", "with_ext"])
-def test_write_extension(writer_config: WriterTestContext, test_container: DataContainer, filename: str):
+def test_write_extension(storage_context: StorageTestContext, test_container: DataContainer, filename: str):
     """Writer appends .hdf5 if missing and does not double-append."""
-    writer = writer_config.writer
-    read_path = writer_config.read_path(filename)
+    writer = storage_context.make_writer()
+    read_path = storage_context.canonical_path(
+        filename if filename.endswith(".hdf5") else f"{filename}.hdf5", destination=True
+    )
 
     writer.write(test_container, filename)
 
@@ -41,22 +44,22 @@ def test_write_extension(writer_config: WriterTestContext, test_container: DataC
 
 @pytest.mark.parametrize("keep_file_names", [False, True], ids=["numbered", "keep_names"])
 @pytest.mark.parametrize("file_name_pattern", [None, "data_{index}"], ids=["default_pattern", "custom_pattern"])
-def test_process_parallel_local(keep_file_names: bool, file_name_pattern: str | None, tmp_path: Path):
+@pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
+def test_process_parallel_local(
+    keep_file_names: bool,
+    file_name_pattern: str | None,
+    tmp_path: Path,
+    storage_context: StorageTestContext,
+    hdf5_test_corpus: Callable[[int], HDF5TestCorpus],
+):
     """process_parallel writes all reader containers to a local destination in parallel."""
     # TODO: extend this test to more remote reader/writer combinations (e.g. local -> remote, remote -> remote, etc.)
-    # 1. Seed source files
-    source_dir = tmp_path / "source"
-    source_dir.mkdir()
     num_files = 3
-    containers = []
-    for i in range(num_files):
-        c = make_container(("/Data", f"t{i}", torch.rand(2, 2)))
-        c.add_attribute("/Data", "index", i)
-        c.save_to_hdf5(str(source_dir / f"file_{i}.hdf5"))
-        containers.append(c)
+    corpus = hdf5_test_corpus(num_files)
+    storage_context.prepare_files(corpus.files)
 
     # 2. Create reader and writer
-    reader = LocalReader(str(source_dir), parser=HDF5Parser)
+    reader = storage_context.make_reader(parser=HDF5Parser)
     writer = LocalWriter(str(tmp_path / "dest"))
 
     # 3. Write in parallel
@@ -87,22 +90,24 @@ def test_process_parallel_local(keep_file_names: bool, file_name_pattern: str | 
         index_attr = read_back.get_attribute("/Data", "index")
         assert isinstance(index_attr, int)
         original_idx = index_attr
-        assert containers_equal(read_back, containers[original_idx]), (
+        expected = DataContainer(BytesIO(corpus.files[f"file_{original_idx}.hdf5"]))
+        assert containers_equal(read_back, expected), (
             f"Container at {dest_file.name} (index {original_idx}) does not match original"
         )
 
 
 @pytest.mark.parametrize("num_files", [1, 10, 12], ids=["unit", "tens", "teens"])
-def test_process_parallel_zero_padding(num_files: int, tmp_path: Path):
+@pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
+def test_process_parallel_zero_padding(
+    num_files: int,
+    tmp_path: Path,
+    storage_context: StorageTestContext,
+    hdf5_test_corpus: Callable[[int], HDF5TestCorpus],
+):
     """process_parallel zero-pads indices based on len(str(total_files))."""
-    source_dir = tmp_path / "source"
-    source_dir.mkdir()
-    for i in range(num_files):
-        c = make_container(("/Data", f"t{i}", torch.rand(2, 2)))
-        c.add_attribute("/Data", "index", i)
-        c.save_to_hdf5(str(source_dir / f"file_{i}.hdf5"))
-
-    reader = LocalReader(str(source_dir), parser=HDF5Parser)
+    corpus = hdf5_test_corpus(num_files)
+    storage_context.prepare_files(corpus.files)
+    reader = storage_context.make_reader(parser=HDF5Parser)
     writer = LocalWriter(str(tmp_path / "dest"))
     writer.process_parallel(reader, keep_file_names=False, file_name_pattern="data_{index}")
 

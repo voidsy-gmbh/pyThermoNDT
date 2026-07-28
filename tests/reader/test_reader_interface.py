@@ -7,8 +7,8 @@ import pytest
 from pythermondt.data import DataContainer
 from pythermondt.io import FileInfo
 from pythermondt.readers import BaseReader, ItemsBy
-from tests.reader.conftest import ReaderTestContext, ReaderTestData
-from tests.support.storage import PlainTextParser
+from tests.reader.conftest import ReaderTestData
+from tests.support.storage import PlainTextParser, StorageTestContext
 
 
 def _picklable_filter(info: FileInfo) -> bool:
@@ -42,19 +42,20 @@ def _assert_payload(container: DataContainer) -> str:
     return payload
 
 
-def test_remote_source(reader_config: ReaderTestContext):
+def test_remote_source(storage_context: StorageTestContext):
     """Test that readers expose the backend remote/local source type."""
-    assert reader_config.reader.remote_source == reader_config.config.is_remote
+    reader = storage_context.make_reader()
+    assert reader.remote_source == storage_context.backend.remote_source
 
 
-def test_parser_class(reader_config: ReaderTestContext):
+def test_parser_class(storage_context: StorageTestContext):
     """Test that readers expose the configured parser class (in this case always PlainTextParser)."""
-    assert reader_config.reader.parser == PlainTextParser
+    assert storage_context.make_reader().parser == PlainTextParser
 
 
-def test_str_representation(reader_config: ReaderTestContext):
+def test_str_representation(storage_context: StorageTestContext):
     """__str__ exposes class name, _get_reader_params output, num_files, download_files, cache_files, and parser."""
-    reader = reader_config.reader
+    reader = storage_context.make_reader()
     s = str(reader)
 
     assert reader.__class__.__name__ in s
@@ -67,7 +68,7 @@ def test_str_representation(reader_config: ReaderTestContext):
 
 def test_files_use_parser_extensions(reader_test_data: ReaderTestData):
     """Test that reader file discovery respects parser-supported extensions."""
-    expected_scheme = reader_test_data.context.config.scheme
+    expected_scheme = reader_test_data.context.backend.scheme
     assert reader_test_data.reader.files == reader_test_data.expected_files
     assert all(path.startswith(f"{expected_scheme}://") for path in reader_test_data.reader.files)
     assert all(path.endswith(".test") for path in reader_test_data.reader.files)
@@ -171,11 +172,11 @@ def test_items_invalid_by(reader_test_data: ReaderTestData):
 
 
 @pytest.mark.parametrize("by", ["files", "file_names", "file_uris", "file_entries"])
-def test_items_with_cache_files_false(reader_config: ReaderTestContext, by: ItemsBy):
+def test_items_with_cache_files_false(storage_context: StorageTestContext, by: ItemsBy):
     """items() works with cache_files=False and keeps key/container pairs consistent."""
-    reader_config.prepare_file("sample1.test", b"payload1")
-    reader_config.prepare_file("sample2.test", b"payload2")
-    reader = reader_config.make_reader(cache_files=False)
+    storage_context.prepare_file("sample1.test", b"payload1")
+    storage_context.prepare_file("sample2.test", b"payload2")
+    reader = storage_context.make_reader(cache_files=False)
 
     pairs = list(reader.items(by=by))
     expected_keys = getattr(reader, by)
@@ -223,59 +224,59 @@ def test_file_uris_and_file_entries_are_consistent(reader_test_data: ReaderTestD
         assert uri == entry.path
 
 
-def test_file_filter_includes_only_matching_files(reader_config: ReaderTestContext):
+def test_file_filter_includes_only_matching_files(storage_context: StorageTestContext):
     """Filter restricts both file_uris and file_entries to matching files."""
-    a_uri = reader_config.prepare_file("a.test", b"a")
-    b_uri = reader_config.prepare_file("b.test", b"b")
-    reader_config.prepare_file("skip1.test", b"s1")
-    reader_config.prepare_file("skip2.test", b"s2")
+    a_uri = storage_context.prepare_file("a.test", b"a")
+    b_uri = storage_context.prepare_file("b.test", b"b")
+    storage_context.prepare_file("skip1.test", b"s1")
+    storage_context.prepare_file("skip2.test", b"s2")
 
-    reader = reader_config.make_reader(file_filter=lambda f: f.path in {a_uri, b_uri})
+    reader = storage_context.make_reader(file_filter=lambda f: f.path in {a_uri, b_uri})
 
     assert sorted(reader.file_uris) == sorted([a_uri, b_uri])
     assert len(reader.file_entries) == 2
     assert {e.path for e in reader.file_entries} == {a_uri, b_uri}
 
 
-def test_file_filter_with_num_files(reader_config: ReaderTestContext):
+def test_file_filter_with_num_files(storage_context: StorageTestContext):
     """Filter applies before num_files truncation."""
-    a_uri = reader_config.prepare_file("a.test", b"a")
-    b_uri = reader_config.prepare_file("b.test", b"b")
-    reader_config.prepare_file("skip1.test", b"s1")
-    reader_config.prepare_file("skip2.test", b"s2")
+    a_uri = storage_context.prepare_file("a.test", b"a")
+    b_uri = storage_context.prepare_file("b.test", b"b")
+    storage_context.prepare_file("skip1.test", b"s1")
+    storage_context.prepare_file("skip2.test", b"s2")
 
-    reader = reader_config.make_reader(file_filter=lambda f: f.path in {a_uri, b_uri}, num_files=1)
+    reader = storage_context.make_reader(file_filter=lambda f: f.path in {a_uri, b_uri}, num_files=1)
 
     assert len(reader.file_uris) == 1
     assert len(reader.file_entries) == 1
 
 
-def test_cache_files_false_reflects_changes(reader_config: ReaderTestContext):
+def test_cache_files_false_reflects_changes(storage_context: StorageTestContext):
     """Without caching, adding a file is reflected immediately in URIs and entries."""
-    reader_config.prepare_file("a.test", b"a")
-    reader_config.prepare_file("b.test", b"b")
+    storage_context.prepare_file("a.test", b"a")
+    storage_context.prepare_file("b.test", b"b")
 
-    reader = reader_config.make_reader(cache_files=False)
+    reader = storage_context.make_reader(cache_files=False)
 
     uris_before = reader.file_uris
     entries_before = reader.file_entries
 
-    reader_config.prepare_file("c.test", b"c")
+    storage_context.prepare_file("c.test", b"c")
 
     assert len(reader.file_uris) == len(uris_before) + 1
     assert len(reader.file_entries) == len(entries_before) + 1
 
 
-def test_cache_files_false_with_filter_excludes_new(reader_config: ReaderTestContext):
+def test_cache_files_false_with_filter_excludes_new(storage_context: StorageTestContext):
     """Without caching, a new file excluded by the filter is not reflected."""
-    a_uri = reader_config.prepare_file("a.test", b"a")
+    a_uri = storage_context.prepare_file("a.test", b"a")
 
-    reader = reader_config.make_reader(cache_files=False, file_filter=lambda f: f.path == a_uri)
+    reader = storage_context.make_reader(cache_files=False, file_filter=lambda f: f.path == a_uri)
 
     assert len(reader.file_uris) == 1
     assert len(reader.file_entries) == 1
 
-    reader_config.prepare_file("b.test", b"b")  # excluded by filter
+    storage_context.prepare_file("b.test", b"b")  # excluded by filter
 
     assert len(reader.file_uris) == 1
     assert len(reader.file_entries) == 1
@@ -286,7 +287,7 @@ def test_cache_files_false_with_filter_excludes_new(reader_config: ReaderTestCon
 @pytest.mark.parametrize("parser", [PlainTextParser, None], ids=["parser", "no_parser"])
 @pytest.mark.parametrize("file_filter", [None, _picklable_filter], ids=["no_filter", "picklable_filter"])
 def test_file_filter_combinations(
-    reader_config: ReaderTestContext,
+    storage_context: StorageTestContext,
     num_files: int | None,
     cache_files: bool,
     parser: type[PlainTextParser] | None,
@@ -294,13 +295,13 @@ def test_file_filter_combinations(
 ):
     """Test that file_filter, num_files, and cache_files interact correctly."""
     # Prepare test files to read
-    reader_config.prepare_file("sample1_a.test", b"ma")
-    reader_config.prepare_file("sample1_b.test", b"mb")
-    reader_config.prepare_file("other_1.test", b"o1")
-    reader_config.prepare_file("other_2.test", b"o2")
+    storage_context.prepare_file("sample1_a.test", b"ma")
+    storage_context.prepare_file("sample1_b.test", b"mb")
+    storage_context.prepare_file("other_1.test", b"o1")
+    storage_context.prepare_file("other_2.test", b"o2")
 
     # Construct reader with the given parameters
-    reader = reader_config.make_reader(
+    reader = storage_context.make_reader(
         file_filter=file_filter, num_files=num_files, cache_files=cache_files, parser=parser
     )
 
@@ -334,15 +335,15 @@ def test_file_filter_combinations(
     ids=["lambda", "closure", "module_fn", "callable_class"],
 )
 def test_file_filter_pickle(
-    reader_config: ReaderTestContext,
+    storage_context: StorageTestContext,
     filter_fn: Callable[[FileInfo], bool],
     expect_failure: bool,
 ):
     """Non-picklable filters raise PicklingError; picklable filters survive a roundtrip."""
     # Setup reader and test files
-    reader_config.prepare_file("sample1.test", b"a")
-    reader_config.prepare_file("sample2.test", b"b")
-    reader = reader_config.make_reader(file_filter=filter_fn)
+    storage_context.prepare_file("sample1.test", b"a")
+    storage_context.prepare_file("sample2.test", b"b")
+    reader = storage_context.make_reader(file_filter=filter_fn)
 
     # Fail for lambda and closure filters
     if expect_failure:

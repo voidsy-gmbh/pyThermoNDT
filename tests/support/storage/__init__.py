@@ -1,6 +1,6 @@
 from .azure import MockAzureBlob, mocked_azure_blob_storage
-from .config import BACKENDS, StorageTestContext, TestConfig
-from .files import FILE_SCENARIOS, TEST_FILES, prepare_file
+from .context import BACKENDS, StorageTestContext
+from .files import FILE_SCENARIOS, TEST_FILES
 from .parsers import PlainTextParser
 
 __all__ = [
@@ -10,7 +10,5 @@ __all__ = [
     "MockAzureBlob",
     "PlainTextParser",
     "StorageTestContext",
-    "TestConfig",
     "mocked_azure_blob_storage",
-    "prepare_file",
 ]

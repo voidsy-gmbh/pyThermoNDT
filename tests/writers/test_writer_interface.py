@@ -65,10 +65,8 @@ def test_process_parallel_local(
     writer = LocalWriter(str(tmp_path / "dest"))
 
     # 3. Write in parallel
-    if file_name_pattern is not None:
-        writer.process_parallel(reader, keep_file_names=keep_file_names, file_name_pattern=file_name_pattern)
-    else:
-        writer.process_parallel(reader, keep_file_names=keep_file_names)
+    p = file_name_pattern or "{index}"
+    writer.process_parallel(reader, keep_file_names=keep_file_names, file_name_pattern=p)
 
     # 4. Verify output
     dest_dir = tmp_path / "dest"

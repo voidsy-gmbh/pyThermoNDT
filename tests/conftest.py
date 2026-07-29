@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import boto3
 import numpy as np
 import pytest
@@ -6,6 +8,7 @@ from moto import mock_aws
 
 from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
+from tests.support.storage import BACKENDS, StorageTestContext
 
 
 class AltReader(LocalReader):
@@ -27,6 +30,20 @@ def s3_client(fake_aws_creds):
     """Create mocked S3 client."""
     with mock_aws():
         yield boto3.client("s3")
+
+
+@pytest.fixture(params=BACKENDS, ids=lambda backend: backend.__name__)
+def storage_context(request: pytest.FixtureRequest, tmp_path: Path, fake_aws_creds):
+    """Create a managed context for each general storage backend.
+
+    Args:
+        request: Pytest request whose ``param`` contains the selected backend class. Tests can override the default
+            ``BACKENDS`` parametrization with indirect fixture parameters when only a specific backend is relevant.
+        tmp_path: Temporary directory used by the local storage backend.
+        fake_aws_creds: Fixture providing dummy AWS credentials for the mocked S3 backend.
+    """
+    with StorageTestContext(request.param, tmp_path) as context:
+        yield context
 
 
 @pytest.fixture

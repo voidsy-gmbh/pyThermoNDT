@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -121,3 +122,16 @@ def test_process_parallel_zero_padding(
     expected_names = {f"data_{str(i).zfill(index_width)}.hdf5" for i in range(num_files)}
     actual_names = {f.name for f in dest_files}
     assert actual_names == expected_names
+
+
+def test_process_parallel_rejects_invalid_file_name(storage_context: StorageTestContext, test_container: DataContainer):
+    """process_parallel rejects source files without a usable base name."""
+    # Mock Reader with invalid file names
+    reader = MagicMock()
+    reader.__len__.return_value = 1
+    reader.__getitem__.return_value = test_container
+    reader.file_names = [""]
+    writer = storage_context.make_writer()
+
+    with pytest.raises(ValueError, match="Invalid file name at index 0:"):
+        writer.process_parallel(reader, keep_file_names=True)

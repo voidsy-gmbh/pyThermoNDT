@@ -66,6 +66,7 @@ class StorageTestContext:
         """Create and immediately register a backend for cleanup."""
         if not self._started:
             raise RuntimeError("StorageTestContext must be entered before use.")
+        backend: BaseBackend
         if self._backend_type is LocalBackend:
             backend = LocalBackend(pattern=str(self._root))
         elif self._backend_type is S3Backend:
@@ -92,6 +93,7 @@ class StorageTestContext:
         file_filter: Callable[[FileInfo], bool] | None = None,
     ) -> BaseReader:
         """Create a reader and immediately register its lazy backend."""
+        reader: BaseReader
         if self._backend_type is LocalBackend:
             reader = LocalReader(
                 pattern=str(self._root),
@@ -129,6 +131,7 @@ class StorageTestContext:
 
     def make_writer(self) -> BaseWriter:
         """Create a writer and immediately register its lazy backend."""
+        writer: BaseWriter
         if self._backend_type is LocalBackend:
             writer = LocalWriter(str(self._destination))
         elif self._backend_type is S3Backend:

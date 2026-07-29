@@ -46,10 +46,12 @@ def test_write_extension(storage_context: StorageTestContext, test_container: Da
 @pytest.mark.parametrize(
     "file_name_pattern", [None, "data_{index}", "data"], ids=["default_pattern", "custom_pattern", "no_index"]
 )
+@pytest.mark.parametrize("num_workers", [0, 2, None], ids=["single_worker", "multiple_workers", "default_workers"])
 @pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
 def test_process_parallel_local(
     keep_file_names: bool,
     file_name_pattern: str | None,
+    num_workers: int | None,
     tmp_path: Path,
     storage_context: StorageTestContext,
     hdf5_test_corpus: Callable[[int], HDF5TestCorpus],
@@ -66,7 +68,7 @@ def test_process_parallel_local(
 
     # 3. Write in parallel
     p = file_name_pattern or "{index}"
-    writer.process_parallel(reader, keep_file_names=keep_file_names, file_name_pattern=p)
+    writer.process_parallel(reader, num_workers=num_workers, keep_file_names=keep_file_names, file_name_pattern=p)
 
     # 4. Verify output
     dest_dir = tmp_path / "dest"

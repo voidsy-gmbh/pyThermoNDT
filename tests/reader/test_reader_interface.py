@@ -5,7 +5,7 @@ from re import escape
 import pytest
 
 from pythermondt.data import DataContainer
-from pythermondt.io import FileInfo
+from pythermondt.io import AzureBlobBackend, FileInfo, LocalBackend, S3Backend
 from pythermondt.readers import BaseReader, ItemsBy
 from tests.reader.conftest import ReaderTestData
 from tests.support.storage import PlainTextParser, StorageTestContext
@@ -42,10 +42,15 @@ def _assert_payload(container: DataContainer) -> str:
     return payload
 
 
-def test_remote_source(storage_context: StorageTestContext):
+@pytest.mark.parametrize(
+    "storage_context, expected_remote_source",
+    [(LocalBackend, False), (S3Backend, True), (AzureBlobBackend, True)],
+    indirect=["storage_context"],
+)
+def test_remote_source(storage_context: StorageTestContext, expected_remote_source: bool):
     """Test that readers expose the backend remote/local source type."""
     reader = storage_context.make_reader()
-    assert reader.remote_source == storage_context.backend.remote_source
+    assert reader.remote_source is expected_remote_source
 
 
 def test_parser_class(storage_context: StorageTestContext):

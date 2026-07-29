@@ -4,18 +4,28 @@ from pathlib import Path
 
 import pytest
 
-from pythermondt.io import FileInfo, IOPathWrapper
+from pythermondt.io import AzureBlobBackend, FileInfo, IOPathWrapper, LocalBackend, S3Backend
 from tests.support.storage import StorageTestContext
 
 
-def test_scheme(storage_context: StorageTestContext):
+@pytest.mark.parametrize(
+    "storage_context, expected_scheme",
+    [(LocalBackend, "file"), (S3Backend, "s3"), (AzureBlobBackend, "az")],
+    indirect=["storage_context"],
+)
+def test_scheme(storage_context: StorageTestContext, expected_scheme: str):
     """Test every backend exposes a canonical scheme."""
-    assert storage_context.backend.scheme in {"file", "s3", "az"}
+    assert storage_context.backend.scheme == expected_scheme
 
 
-def test_remote_source(storage_context: StorageTestContext):
-    """Test remote_source agrees with the backend scheme."""
-    assert storage_context.backend.remote_source == (storage_context.backend.scheme != "file")
+@pytest.mark.parametrize(
+    "storage_context, expected_remote_source",
+    [(LocalBackend, False), (S3Backend, True), (AzureBlobBackend, True)],
+    indirect=["storage_context"],
+)
+def test_remote_source(storage_context: StorageTestContext, expected_remote_source: bool):
+    """Test every backend exposes its expected remote source type."""
+    assert storage_context.backend.remote_source is expected_remote_source
 
 
 def test_read_file(storage_context: StorageTestContext, test_file):

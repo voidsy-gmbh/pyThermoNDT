@@ -43,7 +43,9 @@ def test_write_extension(storage_context: StorageTestContext, test_container: Da
 
 
 @pytest.mark.parametrize("keep_file_names", [False, True], ids=["numbered", "keep_names"])
-@pytest.mark.parametrize("file_name_pattern", [None, "data_{index}"], ids=["default_pattern", "custom_pattern"])
+@pytest.mark.parametrize(
+    "file_name_pattern", [None, "data_{index}", "data"], ids=["default_pattern", "custom_pattern", "no_index"]
+)
 @pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
 def test_process_parallel_local(
     keep_file_names: bool,
@@ -77,7 +79,8 @@ def test_process_parallel_local(
     if keep_file_names:
         expected_names = {f"file_{i}.hdf5" for i in range(num_files)}
     elif file_name_pattern is not None:
-        expected_names = {f"{file_name_pattern.replace('{index}', str(i).zfill(1))}.hdf5" for i in range(num_files)}
+        expected_pattern = file_name_pattern if "{index}" in file_name_pattern else file_name_pattern + "_{index}"
+        expected_names = {f"{expected_pattern.replace('{index}', str(i).zfill(1))}.hdf5" for i in range(num_files)}
     else:
         expected_names = {f"{i}.hdf5" for i in range(num_files)}
     actual_names = {f.name for f in dest_files}

@@ -24,7 +24,7 @@ jobs:
       # Step 2: Setup uv
       - name: Setup uv
         id: setup-uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           version-file: requirements_dev.txt
           python-version: ${{ matrix.python-version }}

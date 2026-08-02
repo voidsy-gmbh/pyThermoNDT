@@ -312,7 +312,7 @@ def test_recursive_glob_pattern(tmp_path):
     assert len(files_recursive) == 2
 
 
-def test_permission_denied_directory(tmp_path, monkeypatch):
+def test_permission_denied_directory(tmp_path):
     """Test handling of permission denied errors."""
 
     # Mock os.path.isdir to return True, but os.scandir to raise PermissionError

@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,15 +22,13 @@ def thermo_container() -> ThermoContainer:
 
 
 @pytest.fixture(autouse=True)
-def _setup_matplotlib(monkeypatch):
+def _setup_matplotlib():
     """Use Agg backend and disable plt.show for all visualization tests."""
     import matplotlib
 
     matplotlib.use("Agg")
-    monkeypatch.setattr("matplotlib.pyplot.show", lambda *args, **kwargs: None)
-    yield
-    import matplotlib.pyplot as plt
-
+    with patch("matplotlib.pyplot.show", lambda *args, **kwargs: None):
+        yield
     plt.close("all")
 
 

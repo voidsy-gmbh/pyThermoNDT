@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -45,7 +46,7 @@ def clear_registry_cache() -> Generator[None]:
     parsers._get_registry.cache_clear()
 
 
-def test_load_parser_plugins(monkeypatch, caplog):
+def test_load_parser_plugins(caplog):
     """Test plugin loading emits warning for failures and debug log for successes."""
 
     def fake_entry_points(*, group: str):
@@ -55,12 +56,11 @@ def test_load_parser_plugins(monkeypatch, caplog):
             _FailingEntryPoint("broken-plugin", "tests.broken_plugin", "plugin import failed"),
         ]
 
-    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
-
-    with caplog.at_level("DEBUG", logger="pythermondt.io.parsers"):
-        msg = "Failed to load parser plugin 'broken-plugin': plugin import failed"
-        with pytest.warns(UserWarning, match=msg) as caught:
-            plugins = parsers._load_parser_plugins()
+    with patch.object(parsers, "entry_points", fake_entry_points):
+        with caplog.at_level("DEBUG", logger="pythermondt.io.parsers"):
+            msg = "Failed to load parser plugin 'broken-plugin': plugin import failed"
+            with pytest.warns(UserWarning, match=msg) as caught:
+                plugins = parsers._load_parser_plugins()
 
     assert plugins == (SuccessfulPluginParser,)
     assert "Loaded parser plugin 'good-plugin' from 'tests.fake_plugin'" in caplog.messages
@@ -69,7 +69,7 @@ def test_load_parser_plugins(monkeypatch, caplog):
     assert caught[0].lineno > 0
 
 
-def test_get_all_parsers(monkeypatch):
+def test_get_all_parsers():
     """Test registry includes built-in parsers plus successfully loaded plugins."""
 
     def fake_entry_points(*, group: str):
@@ -79,10 +79,9 @@ def test_get_all_parsers(monkeypatch):
             _FailingEntryPoint("broken-plugin", "tests.broken_plugin", "plugin import failed"),
         ]
 
-    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
-
-    with pytest.warns(UserWarning, match="Failed to load parser plugin 'broken-plugin': plugin import failed"):
-        all_parsers = parsers.get_all_parsers()
+    with patch.object(parsers, "entry_points", fake_entry_points):
+        with pytest.warns(UserWarning, match="Failed to load parser plugin 'broken-plugin': plugin import failed"):
+            all_parsers = parsers.get_all_parsers()
 
     assert HDF5Parser in all_parsers
     assert SimulationParser in all_parsers
@@ -92,7 +91,7 @@ def test_get_all_parsers(monkeypatch):
     assert parsers.find_parser_for_extension("good") is SuccessfulPluginParser
 
 
-def test_get_all_parsers_builtins(monkeypatch):
+def test_get_all_parsers_builtins():
     """Test built-in parsers remain available even if all plugins fail to load."""
 
     def fake_entry_points(*, group: str):
@@ -102,58 +101,54 @@ def test_get_all_parsers_builtins(monkeypatch):
             _FailingEntryPoint("broken-plugin-b", "tests.broken_plugin_b", "failure b"),
         ]
 
-    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
-
-    with pytest.warns(UserWarning, match="Failed to load parser plugin") as caught:
-        all_parsers = parsers.get_all_parsers()
+    with patch.object(parsers, "entry_points", fake_entry_points):
+        with pytest.warns(UserWarning, match="Failed to load parser plugin") as caught:
+            all_parsers = parsers.get_all_parsers()
 
     assert len(caught) == 2
     assert all_parsers == (HDF5Parser, SimulationParser, EdevisParser)
 
 
-def test_find_parser_for_extension_unknown(monkeypatch):
+def test_find_parser_for_extension_unknown():
     """Test that unknown file extensions return None."""
 
     def fake_entry_points(*, group: str):
         assert group == "pythermondt.parsers"
         return []
 
-    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
+    with patch.object(parsers, "entry_points", fake_entry_points):
+        assert parsers.find_parser_for_extension(".doesnotexist") is None
+        assert parsers.find_parser_for_extension("doesnotexist") is None
 
-    assert parsers.find_parser_for_extension(".doesnotexist") is None
-    assert parsers.find_parser_for_extension("doesnotexist") is None
 
-
-def test_find_parser_for_extension_known(monkeypatch):
+def test_find_parser_for_extension_known():
     """Test that known file extensions return the correct parser."""
 
     def fake_entry_points(*, group: str):
         assert group == "pythermondt.parsers"
         return []
 
-    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
+    with patch.object(parsers, "entry_points", fake_entry_points):
+        # HDF5
+        assert parsers.find_parser_for_extension(".hdf5") is HDF5Parser
+        assert parsers.find_parser_for_extension("hdf5") is HDF5Parser
+        assert parsers.find_parser_for_extension(".h5") is HDF5Parser
+        assert parsers.find_parser_for_extension("h5") is HDF5Parser
 
-    # HDF5
-    assert parsers.find_parser_for_extension(".hdf5") is HDF5Parser
-    assert parsers.find_parser_for_extension("hdf5") is HDF5Parser
-    assert parsers.find_parser_for_extension(".h5") is HDF5Parser
-    assert parsers.find_parser_for_extension("h5") is HDF5Parser
-
-    # Simulation
-    assert parsers.find_parser_for_extension(".mat") is SimulationParser
-    assert parsers.find_parser_for_extension("mat") is SimulationParser
+        # Simulation
+        assert parsers.find_parser_for_extension(".mat") is SimulationParser
+        assert parsers.find_parser_for_extension("mat") is SimulationParser
 
 
-def test_get_all_supported_extensions_includes_plugin_extensions(monkeypatch):
+def test_get_all_supported_extensions_includes_plugin_extensions():
     """Test supported extension aggregation includes built-ins and loaded plugins."""
 
     def fake_entry_points(*, group: str):
         assert group == "pythermondt.parsers"
         return [_FakeEntryPoint("good-plugin", "tests.fake_plugin", SuccessfulPluginParser)]
 
-    monkeypatch.setattr(parsers, "entry_points", fake_entry_points)
-
-    supported_extensions = parsers.get_all_supported_extensions()
+    with patch.object(parsers, "entry_points", fake_entry_points):
+        supported_extensions = parsers.get_all_supported_extensions()
 
     assert ".hdf5" in supported_extensions
     assert ".h5" in supported_extensions

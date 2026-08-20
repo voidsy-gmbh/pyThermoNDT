@@ -6,6 +6,6 @@ pre-commit==4.6.0
 deepdiff==8.6.2
 licensecheck==2025.1.0
 mypy==2.3.0
-uv==0.11.29
+uv==0.12.3
 pylint==4.0.6
 moto==5.2.2

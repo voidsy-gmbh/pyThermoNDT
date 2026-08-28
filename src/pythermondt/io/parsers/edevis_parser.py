@@ -204,15 +204,20 @@ class EdevisParser(BaseParser):
                     # The frame header size is not explicitly given, so we need to calculate it based on the frame size
                     # Get the size of the first frame to be able to dynamically calculate the frame header size
                     first_idx = frames[0].findtext("FrameIndex", default=None)
-                    try:
-                        file_size = tar_file.getmember(f"sequence{seq_id}/f{first_idx}.bin").size
-                    except KeyError as e:
+                    candidate_frame_names = [
+                        f"sequence{seq_id}/f{first_idx}.bin",
+                        f"sequence{seq_id}/f0.bin",  # the file that was used for testing had 0.bin, 1.bin, etc.
+                    ]
+
+                    for frame_name in candidate_frame_names:
                         try:
-                            first_idx = 0 # the file that was used for testing had 0.bin, 1.bin, etc.
-                            file_size = tar_file.getmember(f"sequence{seq_id}/f{first_idx}.bin").size
-                        except KeyError as e:
-                            msg = f"Frames in Sequence {seq_id} seem corrupted! Frame file f{first_idx}.bin not found."
-                            raise ValueError(msg) from e
+                            file_size = tar_file.getmember(frame_name).size
+                            break
+                        except KeyError:
+                            continue
+                    else:
+                        msg = f"Frames in Sequence {seq_id} seem corrupted! No matching first frame file found."
+                        raise ValueError(msg)
 
                     # Calculate bytes per pixel and frame size
                     bytes_per_pixel = bit_depth // 8

@@ -4,7 +4,7 @@ pytest-benchmark==5.2.3
 ruff==0.15.21
 pre-commit==4.6.0
 deepdiff==8.6.2
-licensecheck==2025.1.0
+licensecheck==2026.0.8; python_version >= "3.12"
 mypy==2.3.0
 uv==0.11.29
 pylint==4.0.6

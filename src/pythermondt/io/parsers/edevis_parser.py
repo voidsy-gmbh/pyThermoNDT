@@ -7,7 +7,7 @@ from xml.etree.ElementTree import Element
 import torch
 
 from ...data import DataContainer, ThermoContainer
-from ...data.units import arbitrary, hertz
+from ...data.units import arbitrary, hertz, second
 from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
 
@@ -22,7 +22,7 @@ class DataType(IntEnum):
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = (".di", ".OTvis", ".ITvisPulse")
+    supported_extensions = (".di", ".OTvis", ".ITvisPulse", ".ThermoVis")
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
@@ -207,8 +207,12 @@ class EdevisParser(BaseParser):
                     try:
                         file_size = tar_file.getmember(f"sequence{seq_id}/f{first_idx}.bin").size
                     except KeyError as e:
-                        msg = f"Frames in Sequence {seq_id} seem corrupted! Frame file f{first_idx}.bin not found."
-                        raise ValueError(msg) from e
+                        try:
+                            first_idx = 0 # the file that was used for testing had 0.bin, 1.bin, etc.
+                            file_size = tar_file.getmember(f"sequence{seq_id}/f{first_idx}.bin").size
+                        except KeyError as e:
+                            msg = f"Frames in Sequence {seq_id} seem corrupted! Frame file f{first_idx}.bin not found."
+                            raise ValueError(msg) from e
 
                     # Calculate bytes per pixel and frame size
                     bytes_per_pixel = bit_depth // 8
@@ -233,7 +237,24 @@ class EdevisParser(BaseParser):
                             case DataType.SHEAROGRAPHY_IMAGE:
                                 raise NotImplementedError("Shearography Image data type is not implemented yet.")
                             case DataType.INTENSITY_IMAGE:
-                                raise NotImplementedError("Intensity Image data type is not implemented yet.")
+                                domain_str = frame.findtext("FrameTime", default=None)
+                                domain_unit = second
+                                if domain_str:
+                                    domain_values[i] = float(domain_str.strip().split("s")[0])
+
+                                # TAR header offset = TarFileHeaderDataOffset
+                                # frame record     = TarFileHeaderDataOffset + 512
+                                # pixel data       = TarFileHeaderDataOffset + 512 + 28
+                                # pixel length     = 640 * 512 * 2
+
+                                # Read frame data
+                                data_bytes.seek(offset + TAR_HEADER_SIZE + header_size)
+                                buffer = bytearray(data_bytes.read(frame_size_bytes))
+                                frame_data[:, :, i] = torch.frombuffer(buffer, dtype=frame_dtype[bit_depth]).reshape(
+                                    height, width
+                                )
+                                frame_unit = arbitrary
+
                             case DataType.TEMPERATURE_IMAGE:
                                 raise NotImplementedError("Temperature Image data type is not implemented yet.")
                             case DataType.COMPLEX_IMAGE:

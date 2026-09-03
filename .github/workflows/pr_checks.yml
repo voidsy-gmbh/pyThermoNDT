@@ -32,7 +32,7 @@ jobs:
           pattern: coverage-data-python-*
 
       - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@fd9adbdca9fdfbe2b9bfa44a7340e6a83346ce6c
+        uses: MishaKav/pytest-coverage-comment@ce64cfb4332195faa36733a0364dda8849109f70
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml

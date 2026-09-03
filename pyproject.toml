@@ -75,7 +75,7 @@ dev = [
     "mypy==2.3.0",
     "uv==0.11.29",
     "pylint==4.0.6",
-    "moto==5.2.2"
+    "moto==5.2.3"
 ]
 
 [project.urls]

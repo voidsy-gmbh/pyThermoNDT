@@ -69,7 +69,7 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-benchmark==5.2.3",
     "ruff==0.15.21",
-    "pre-commit==4.6.0",
+    "pre-commit==4.6.2",
     "deepdiff==8.6.2",
     "licensecheck==2026.0.8; python_version >= '3.12'",
     "mypy==2.3.0",

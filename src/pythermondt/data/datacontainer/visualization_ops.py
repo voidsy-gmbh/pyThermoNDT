@@ -552,6 +552,11 @@ class VisualizationOps(GroupOps, DatasetOps, AttributeOps):
 
         Returns:
             The active interactive analyzer. Repeated calls reuse the existing open analyzer.
+
+        Note:
+            The analyzer works on a snapshot of the data taken at its creation. Changes made to the
+            container afterwards are not reflected in an already-open analyzer; close it and call
+            this method again to analyze the updated data.
         """
         _validate_overlay_options(overlay_color, overlay_alpha)
 

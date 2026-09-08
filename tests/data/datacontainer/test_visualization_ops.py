@@ -433,6 +433,21 @@ def test_analyse_interactive_reuses_active_analyzer(thermo_container: ThermoCont
     first.close(close_figure=True)
 
 
+def test_analyse_interactive_rebuilds_after_stale_figure(thermo_container: ThermoContainer, monkeypatch):
+    """A cached analyzer whose figure no longer exists is closed and replaced by a fresh one."""
+    first = thermo_container.analyse_interactive()
+    assert thermo_container._interactive_analyzer is first
+    # Simulate the figure disappearing without the close-event cleanup running
+    monkeypatch.setattr("matplotlib.pyplot.fignum_exists", lambda number: False)
+
+    second = thermo_container.analyse_interactive()
+
+    assert second is not first
+    assert first.closed
+    assert thermo_container._interactive_analyzer is second
+    second.close(close_figure=True)
+
+
 def test_analyse_interactive_updates_existing_overlay_options(thermo_container: ThermoContainer):
     """Overlay options can change without replacing the active analyzer figure."""
     analyzer = thermo_container.analyse_interactive()

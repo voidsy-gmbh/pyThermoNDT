@@ -204,20 +204,21 @@ class EdevisParser(BaseParser):
                     # The frame header size is not explicitly given, so we need to calculate it based on the frame size
                     # Get the size of the first frame to be able to dynamically calculate the frame header size
                     first_idx = frames[0].findtext("FrameIndex", default=None)
-                    candidate_frame_names = [
-                        f"sequence{seq_id}/f{first_idx}.bin",
-                        f"sequence{seq_id}/f0.bin",  # the file that was used for testing had 0.bin, 1.bin, etc.
-                    ]
+                    indexed_frame_name = f"sequence{seq_id}/f{first_idx}.bin"
+                    zero_based_frame_name = f"sequence{seq_id}/f0.bin"
 
-                    for frame_name in candidate_frame_names:
+                    try:
+                        file_size = tar_file.getmember(indexed_frame_name).size
+                    except KeyError:
                         try:
-                            file_size = tar_file.getmember(frame_name).size
-                            break
-                        except KeyError:
-                            continue
-                    else:
-                        msg = f"Frames in Sequence {seq_id} seem corrupted! No matching first frame file found."
-                        raise ValueError(msg)
+                            # ThermoVis can use zero-based file names unrelated to FrameIndex.
+                            file_size = tar_file.getmember(zero_based_frame_name).size
+                        except KeyError as error:
+                            msg = (
+                                f"Frames in sequence {seq_id} seem corrupted. "
+                                f"Neither {indexed_frame_name!r} nor {zero_based_frame_name!r} was found."
+                            )
+                            raise ValueError(msg) from error
 
                     # Calculate bytes per pixel and frame size
                     bytes_per_pixel = bit_depth // 8

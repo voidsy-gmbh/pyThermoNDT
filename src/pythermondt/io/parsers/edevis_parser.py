@@ -7,7 +7,7 @@ from xml.etree.ElementTree import Element
 import torch
 
 from ...data import DataContainer, ThermoContainer
-from ...data.units import arbitrary, hertz
+from ...data.units import arbitrary, hertz, second
 from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
 
@@ -22,7 +22,7 @@ class DataType(IntEnum):
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = (".di", ".OTvis", ".ITvisPulse")
+    supported_extensions = (".di", ".OTvis", ".ITvisPulse", ".ThermoVis")
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
@@ -204,11 +204,21 @@ class EdevisParser(BaseParser):
                     # The frame header size is not explicitly given, so we need to calculate it based on the frame size
                     # Get the size of the first frame to be able to dynamically calculate the frame header size
                     first_idx = frames[0].findtext("FrameIndex", default=None)
+                    indexed_frame_name = f"sequence{seq_id}/f{first_idx}.bin"
+                    zero_based_frame_name = f"sequence{seq_id}/f0.bin"
+
                     try:
-                        file_size = tar_file.getmember(f"sequence{seq_id}/f{first_idx}.bin").size
-                    except KeyError as e:
-                        msg = f"Frames in Sequence {seq_id} seem corrupted! Frame file f{first_idx}.bin not found."
-                        raise ValueError(msg) from e
+                        file_size = tar_file.getmember(indexed_frame_name).size
+                    except KeyError:
+                        try:
+                            # ThermoVis can use zero-based file names unrelated to FrameIndex.
+                            file_size = tar_file.getmember(zero_based_frame_name).size
+                        except KeyError as error:
+                            msg = (
+                                f"Frames in sequence {seq_id} seem corrupted. "
+                                f"Neither {indexed_frame_name!r} nor {zero_based_frame_name!r} was found."
+                            )
+                            raise ValueError(msg) from error
 
                     # Calculate bytes per pixel and frame size
                     bytes_per_pixel = bit_depth // 8
@@ -233,7 +243,24 @@ class EdevisParser(BaseParser):
                             case DataType.SHEAROGRAPHY_IMAGE:
                                 raise NotImplementedError("Shearography Image data type is not implemented yet.")
                             case DataType.INTENSITY_IMAGE:
-                                raise NotImplementedError("Intensity Image data type is not implemented yet.")
+                                domain_str = frame.findtext("FrameTime", default=None)
+                                domain_unit = second
+                                if domain_str:
+                                    domain_values[i] = float(domain_str.strip().split("s")[0])
+
+                                # TAR header offset = TarFileHeaderDataOffset
+                                # frame record     = TarFileHeaderDataOffset + 512
+                                # pixel data       = TarFileHeaderDataOffset + 512 + 28
+                                # pixel length     = 640 * 512 * 2
+
+                                # Read frame data
+                                data_bytes.seek(offset + TAR_HEADER_SIZE + header_size)
+                                buffer = bytearray(data_bytes.read(frame_size_bytes))
+                                frame_data[:, :, i] = torch.frombuffer(buffer, dtype=frame_dtype[bit_depth]).reshape(
+                                    height, width
+                                )
+                                frame_unit = arbitrary
+
                             case DataType.TEMPERATURE_IMAGE:
                                 raise NotImplementedError("Temperature Image data type is not implemented yet.")
                             case DataType.COMPLEX_IMAGE:

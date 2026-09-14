@@ -120,6 +120,9 @@ exclude = [
     "./examples/*", # Exclude the example notebooks from linting
     "./docs/pyreverse/*", # Exclude the pyreverse output from linting
 ]
+extend-exclude = [
+    "*.md", # Disable formatting of Markdown files (default in ruff 0.16)
+]
 
 [tool.ruff.lint]
 select = [

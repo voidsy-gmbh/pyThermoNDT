@@ -48,22 +48,26 @@ jobs:
 
       # Step 4: Run Ruff
       - name: Run Ruff
-        run: ruff check
+        run: ruff check --output-format=github .
 
-      # Step 5: Run Pylint
+      # Step 5: Check formatting
+      - name: Check formatting
+        run: ruff format --check --output-format=github .
+
+      # Step 6: Run Pylint
       - name: Run Pylint
         run: pylint --source-roots src --jobs 0 pythermondt
 
-      # Step 6: Perform licensecheck
+      # Step 7: Perform licensecheck
       - name: Perform licensecheck
         run: |
           licensecheck --requirements-paths ./pyproject.toml -0
 
-      # Step 7: Run mypy
+      # Step 8: Run mypy
       - name: Run mypy
         run: mypy --config-file pyproject.toml
 
-      # Step 8: Set Output Based on Code Quality Checks Success
+      # Step 9: Set Output Based on Code Quality Checks Success
       - id: set_output
         if: success()
         run: echo "success=true" >> $GITHUB_OUTPUT

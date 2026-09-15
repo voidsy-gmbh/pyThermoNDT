@@ -1,16 +1,8 @@
-"""How we measure: load real files once, prep them, hand a fresh copy to the timer.
-
-Two sources: ``small`` (in-repo cube, always available) and ``fraunhofer``
-(S3 cube, larger, skipped without credentials). Sources load lazily inside
-the test, never at collection time.
-"""
+"""Shared benchmark setup."""
 
 import copy
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-
-import pytest
-from botocore.exceptions import ClientError, NoCredentialsError, SSOTokenLoadError, TokenRetrievalError
 
 from pythermondt import LocalReader, S3Reader
 from pythermondt.data import DataContainer
@@ -29,17 +21,6 @@ def make_reader(source: str) -> BaseReader:
     raise ValueError(f"Unknown benchmark source: {source}.")
 
 
-def make_reader_or_skip(source: str) -> BaseReader:
-    """Create and download a reader, skipping when cloud data is unavailable."""
-    try:
-        reader = make_reader(source)
-        reader.download()
-        return reader
-    except (NoCredentialsError, ClientError, SSOTokenLoadError, TokenRetrievalError) as e:
-        pytest.skip(f"Benchmark source {source!r} unavailable: {e}")
-        raise  # Unreachable: pytest.skip raises, this satisfies the type checker.
-
-
 @lru_cache(maxsize=4)
 def load_raw_container(source: str = "small", index: int = PERF_FILE_INDEX) -> DataContainer:
     """Load one raw container (cached per session)."""
@@ -50,17 +31,13 @@ def load_raw_container(source: str = "small", index: int = PERF_FILE_INDEX) -> D
     return reader[index]
 
 
-def prepare_base_or_skip(
+def prepare_base(
     setup: Sequence[Callable[[DataContainer], DataContainer]],
     source: str = "small",
     index: int = PERF_FILE_INDEX,
 ) -> DataContainer:
-    """Prep the base container once (untimed), skipping when cloud data is unavailable."""
-    try:
-        base = copy.deepcopy(load_raw_container(source, index))
-    except (NoCredentialsError, ClientError, SSOTokenLoadError, TokenRetrievalError) as e:
-        pytest.skip(f"Benchmark source {source!r} unavailable: {e}")
-        raise  # Unreachable: pytest.skip raises, this satisfies the type checker.
+    """Prepare a base container before measurement."""
+    base = copy.deepcopy(load_raw_container(source, index))
     for transform in setup:
         base = transform(base)
     return base

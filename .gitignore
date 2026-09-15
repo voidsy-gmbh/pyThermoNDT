@@ -114,6 +114,13 @@ ipython_config.py
 .pdm-python
 .pdm-build/
 
+# uv
+# TODO: track uv.lock again once wheel variants (PEP 825) are stable in uv.
+# uv.lock cannot express CUDA variants of torch yet, so a committed lock file
+# forces one CUDA build on all users. Revisit after PEP 825 support lands.
+# See https://peps.python.org/pep-0825/
+uv.lock
+
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
 

@@ -1,69 +1,62 @@
-from collections.abc import Callable
-from dataclasses import dataclass
+"""What we measure: one list of transforms, one list of pipelines.
+
+How we measure lives in ``conftest.py``. Each spec names an optional prep
+chain (``TO_TIME``, ``TO_FREQ``) that runs once before the timer starts.
+"""
+
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 
 import pytest
+import torch
 
-from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt import transforms as T  # noqa: N812
-from pythermondt.readers import BaseReader
+from pythermondt.data import DataContainer
 
 
 @dataclass
 class BenchmarkSpec:
-    """Configuration for a single transform benchmark."""
+    """Single benchmark: what to run and its untimed prep chain."""
 
     name: str
     transform: Callable[[DataContainer], DataContainer]
-    setup: Callable[[DataContainer], DataContainer] | None = None
+    setup: Sequence[Callable[[DataContainer], DataContainer]] = field(default_factory=tuple)
 
 
-@dataclass
-class BenchmarkData:
-    """Specification for a reader."""
+TO_TIME: tuple[Callable[[DataContainer], DataContainer], ...] = (T.ApplyLUT(),)
+TO_FREQ: tuple[Callable[[DataContainer], DataContainer], ...] = (T.ApplyLUT(), T.PulsePhaseThermography())
 
-    name: str
-    reader: BaseReader
-    marker: pytest.MarkDecorator
-
-
-LOCAL_READER = [
-    BenchmarkData(
-        name="small", reader=LocalReader(pattern="tests/assets/perf/small", recursive=True), marker=pytest.mark.local
-    ),
+SOURCES = [
+    pytest.param("small", marks=pytest.mark.local),
+    pytest.param("fraunhofer", marks=pytest.mark.cloud),
 ]
 
-CLOUD_READER = [
-    BenchmarkData(
-        name="fraunhofer",
-        reader=S3Reader("ffg-bp", "benchmark_datasets/fraunhofer", download_files=True, num_files=3),
-        marker=pytest.mark.cloud,
-    ),
+BENCHMARK_SPECS: list[BenchmarkSpec] = [
+    BenchmarkSpec("ApplyLUT", T.ApplyLUT()),
+    BenchmarkSpec("MinMaxNormalize", T.MinMaxNormalize(), TO_TIME),
+    BenchmarkSpec("MaxNormalize", T.MaxNormalize(), TO_TIME),
+    BenchmarkSpec("ZScoreNormalize", T.ZScoreNormalize(), TO_TIME),
+    BenchmarkSpec("SubtractFrame", T.SubtractFrame(0), TO_TIME),
+    BenchmarkSpec("SelectFrameRange", T.SelectFrameRange(start=0, end=50), TO_TIME),
+    BenchmarkSpec("SelectFrames", T.SelectFrames(list(range(0, 100, 10))), TO_TIME),
+    BenchmarkSpec("CropFrames", T.CropFrames(height=16, width=16), TO_TIME),
+    BenchmarkSpec("CastTo", T.CastTo("/Data/Tdata", torch.float32), TO_TIME),
+    BenchmarkSpec("RemoveFlash", T.RemoveFlash(method="excitation_signal"), TO_TIME),
+    BenchmarkSpec("NonUniformSampling", T.NonUniformSampling(100), TO_TIME),
+    BenchmarkSpec("PulsePhaseThermography", T.PulsePhaseThermography(), TO_TIME),
+    BenchmarkSpec("ExtractAmplitude", T.ExtractAmplitude(), TO_FREQ),
+    BenchmarkSpec("ExtractPhase", T.ExtractPhase(), TO_FREQ),
+    BenchmarkSpec("GaussianNoise", T.GaussianNoise(std=25e-3), TO_TIME),
+    BenchmarkSpec("AdaptiveGaussianNoise", T.AdaptiveGaussianNoise(std_range=(0.0, 25e-3)), TO_TIME),
+    BenchmarkSpec("RandomFlip", T.RandomFlip(), TO_TIME),
 ]
 
-BENCHMARK_DATA = LOCAL_READER + CLOUD_READER
-
-BENCHMARK_SPECS = [
+PIPELINES: list[BenchmarkSpec] = [
+    BenchmarkSpec("ingest", T.Compose([T.ApplyLUT(), T.SubtractFrame(0), T.MinMaxNormalize()])),
     BenchmarkSpec(
-        name="ApplyLUT",
-        transform=T.ApplyLUT(),
+        "preprocess",
+        T.Compose([T.SubtractFrame(0), T.RemoveFlash(method="excitation_signal"), T.MinMaxNormalize()]),
+        TO_TIME,
     ),
-    BenchmarkSpec(
-        name="MinMaxNormalize",
-        setup=T.ApplyLUT(),
-        transform=T.MinMaxNormalize(),
-    ),
-    BenchmarkSpec(
-        name="SelectFrameRange",
-        transform=T.SelectFrameRange(start=0, end=50),
-    ),
-    BenchmarkSpec(
-        name="NonUniformSampling",
-        setup=T.ApplyLUT(),
-        transform=T.NonUniformSampling(200),
-    ),
-    BenchmarkSpec(
-        name="SubtractFrame",
-        setup=T.ApplyLUT(),
-        transform=T.SubtractFrame(0),
-    ),
+    BenchmarkSpec("frequency", T.Compose([T.PulsePhaseThermography(), T.ExtractPhase()]), TO_TIME),
 ]

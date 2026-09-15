@@ -109,6 +109,7 @@ filterwarnings = [
 markers = [
     "local: marks tests that use local files only",
     "cloud: marks tests that require cloud access",
+    "benchmark: marks performance benchmarks (pytest-benchmark / pytest-codspeed)",
 ]
 
 

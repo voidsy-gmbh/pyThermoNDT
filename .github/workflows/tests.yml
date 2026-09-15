@@ -42,6 +42,13 @@ jobs:
           activate-environment: true
           cache-dependency-glob: ${{ vars.CACHE_DEPENDENCY_GLOB }}
           save-cache: false
+          prune-cache: true # Retain source-built wheels (numpy on py3.14); setup-uv v9+ defaults to false
+
+      # Step 2.1: Log cache status
+      - name: Log cache status
+        run: |
+          echo "cache-hit=${{ steps.setup-uv.outputs.cache-hit }}"
+          echo "cache-key=${{ steps.setup-uv.outputs.cache-key }}"
 
       # Step 3 Sync dependencies if cache hit
       - name: Sync dependencies

@@ -3,7 +3,7 @@
 import io
 import os
 from pathlib import Path
-from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
@@ -319,13 +319,12 @@ def test_permission_denied_directory(tmp_path):
     def mock_scandir(path):
         raise PermissionError("Permission denied")
 
-    with mock.patch.object(os, "scandir", side_effect=mock_scandir):
-        with mock.patch.object(os.path, "isdir", return_value=True):
-            backend = LocalBackend(str(tmp_path))
+    with patch.object(os, "scandir", mock_scandir), patch.object(os.path, "isdir", return_value=True):
+        backend = LocalBackend(str(tmp_path))
 
-            # Should handle permission errors gracefully
-            with pytest.raises(PermissionError):
-                backend.get_file_list()
+        # Should handle permission errors gracefully
+        with pytest.raises(PermissionError):
+            backend.get_file_list()
 
 
 def test_pattern_with_special_characters(tmp_path):

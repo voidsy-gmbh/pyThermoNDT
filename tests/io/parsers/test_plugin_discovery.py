@@ -83,12 +83,12 @@ def test_get_all_parsers():
         with pytest.warns(UserWarning, match="Failed to load parser plugin 'broken-plugin': plugin import failed"):
             all_parsers = parsers.get_all_parsers()
 
-    assert HDF5Parser in all_parsers
-    assert SimulationParser in all_parsers
-    assert EdevisParser in all_parsers
-    assert SuccessfulPluginParser in all_parsers
-    assert parsers.find_parser_for_extension(".good") is SuccessfulPluginParser
-    assert parsers.find_parser_for_extension("good") is SuccessfulPluginParser
+        assert HDF5Parser in all_parsers
+        assert SimulationParser in all_parsers
+        assert EdevisParser in all_parsers
+        assert SuccessfulPluginParser in all_parsers
+        assert parsers.find_parser_for_extension(".good") is SuccessfulPluginParser
+        assert parsers.find_parser_for_extension("good") is SuccessfulPluginParser
 
 
 def test_get_all_parsers_builtins():

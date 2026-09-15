@@ -1,49 +1,27 @@
-import copy
+"""Micro-benchmarks for individual transforms on real data."""
 
 import pytest
-from botocore.exceptions import ClientError, NoCredentialsError, SSOTokenLoadError, TokenRetrievalError
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from pythermondt import DataContainer
-
-from .config import BENCHMARK_DATA, BENCHMARK_SPECS, BenchmarkSpec
-
-
-def get_test_files_as_container():
-    """Get all (index, container) combinations for parameterization."""
-    for benchmark_data in BENCHMARK_DATA:
-        try:
-            # Ensure files are downloaded
-            benchmark_data.reader.download()
-
-            for idx, container in enumerate(benchmark_data.reader):
-                combo_id = f"{benchmark_data.name}_{idx}"
-                yield pytest.param((idx, benchmark_data.name, container), id=combo_id, marks=benchmark_data.marker)
-        except (NoCredentialsError, ClientError, SSOTokenLoadError, TokenRetrievalError) as e:
-            msg = f"Skipping {benchmark_data.name} due to AWS credentials error: {e}"
-            yield pytest.param(None, id=msg, marks=pytest.mark.skip(reason=msg))
+from .config import BENCHMARK_SPECS, SOURCES, BenchmarkSpec
+from .conftest import fresh_copy, prepare_base_or_skip
 
 
-@pytest.mark.parametrize("data_config", list(get_test_files_as_container()))
-@pytest.mark.parametrize("benchmark_config", BENCHMARK_SPECS, ids=lambda config: config.name)
-def test_benchmark_transform(
-    benchmark: BenchmarkFixture,
-    benchmark_config: BenchmarkSpec,
-    data_config: tuple[int, str, DataContainer],
-):
-    """Benchmark individual transforms across different readers and files."""
-    idx, name, container = data_config
+@pytest.mark.benchmark
+@pytest.mark.parametrize("source", SOURCES)
+@pytest.mark.parametrize("spec", BENCHMARK_SPECS, ids=lambda spec: spec.name)
+def test_transform(benchmark: BenchmarkFixture, spec: BenchmarkSpec, source: str):
+    """Benchmark one transform on a fresh real-data container per round."""
+    base = prepare_base_or_skip(spec.setup, source)
 
-    # Apply setup transform if specified
-    if benchmark_config.setup:
-        container = benchmark_config.setup(copy.deepcopy(container))
+    benchmark.group = spec.name
+    result = benchmark.pedantic(
+        spec.transform,
+        setup=lambda: fresh_copy(base),
+        rounds=5,
+        warmup_rounds=1,
+        iterations=1,
+    )
 
-    def run_transform():
-        """Run the transform on a fresh copy of the container."""
-        container_copy = copy.deepcopy(container)
-        benchmark_config.transform(container_copy)
-
-    # Set up grouping and naming
-    benchmark.group = benchmark_config.name
-    benchmark.name = f"{benchmark_config.name}_{name}_{idx}"
-    benchmark(run_transform)
+    tdata = result.get_dataset("/Data/Tdata")
+    assert tdata is not None and tdata.numel() > 0

@@ -2,7 +2,7 @@
 
 import gc
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
@@ -132,20 +132,19 @@ def test_release_cache_manager_shutdown_exception(local_reader_three_files: Loca
     mock_manager.shutdown.assert_called_once()
 
 
-def test_release_cache_gc_collect(local_reader_three_files: LocalReader, monkeypatch):
+def test_release_cache_gc_collect(local_reader_three_files: LocalReader):
     """Test that release_cache respects the gc_collect flag."""
     gc_called = []
-    monkeypatch.setattr(gc, "collect", lambda: gc_called.append(True))
+    with patch.object(gc, "collect", lambda: gc_called.append(True)):
+        # Test gc_collect=True (default)
+        dataset1 = ThermoDataset(local_reader_three_files)
+        dataset1.build_cache(mode="immediate")
+        dataset1.release_cache(gc_collect=True)
+        assert len(gc_called) == 1
 
-    # Test gc_collect=True (default)
-    dataset1 = ThermoDataset(local_reader_three_files)
-    dataset1.build_cache(mode="immediate")
-    dataset1.release_cache(gc_collect=True)
-    assert len(gc_called) == 1
-
-    # Test gc_collect=False
-    gc_called.clear()
-    dataset2 = ThermoDataset(local_reader_three_files)
-    dataset2.build_cache(mode="immediate")
-    dataset2.release_cache(gc_collect=False)
-    assert len(gc_called) == 0
+        # Test gc_collect=False
+        gc_called.clear()
+        dataset2 = ThermoDataset(local_reader_three_files)
+        dataset2.build_cache(mode="immediate")
+        dataset2.release_cache(gc_collect=False)
+        assert len(gc_called) == 0

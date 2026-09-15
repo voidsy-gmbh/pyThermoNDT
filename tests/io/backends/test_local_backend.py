@@ -3,6 +3,7 @@
 import io
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -311,21 +312,19 @@ def test_recursive_glob_pattern(tmp_path):
     assert len(files_recursive) == 2
 
 
-def test_permission_denied_directory(tmp_path, monkeypatch):
+def test_permission_denied_directory(tmp_path):
     """Test handling of permission denied errors."""
 
     # Mock os.path.isdir to return True, but os.scandir to raise PermissionError
     def mock_scandir(path):
         raise PermissionError("Permission denied")
 
-    monkeypatch.setattr(os, "scandir", mock_scandir)
-    monkeypatch.setattr(os.path, "isdir", lambda x: True)
+    with patch.object(os, "scandir", mock_scandir), patch.object(os.path, "isdir", return_value=True):
+        backend = LocalBackend(str(tmp_path))
 
-    backend = LocalBackend(str(tmp_path))
-
-    # Should handle permission errors gracefully
-    with pytest.raises(PermissionError):
-        backend.get_file_list()
+        # Should handle permission errors gracefully
+        with pytest.raises(PermissionError):
+            backend.get_file_list()
 
 
 def test_pattern_with_special_characters(tmp_path):

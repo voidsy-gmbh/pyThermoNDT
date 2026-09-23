@@ -61,13 +61,13 @@ def test_multiple_paths_single_container(empty_container, sample_tensor, sample_
     assert result[1].shape == (1, 3, 3)
 
 
-def test_nonexistent_path_raises_keyerror(empty_container, sample_tensor):
-    """Test that accessing a non-existent path raises KeyError."""
+def test_nonexistent_path_raises_runtime_error(empty_container, sample_tensor):
+    """Test that accessing a non-existent path raises RuntimeError."""
     empty_container.add_dataset("/", "data", sample_tensor)
 
     collate_fn = container_collate("/nonexistent")
 
-    with pytest.raises(RuntimeError, match="Error in derive field '/nonexistent'"):
+    with pytest.raises(RuntimeError, match="Error evaluating field '/nonexistent'"):
         collate_fn([empty_container])
 
 
@@ -77,7 +77,7 @@ def test_mixed_valid_invalid_paths(empty_container, sample_tensor):
 
     collate_fn = container_collate("/data", "/nonexistent")
 
-    with pytest.raises(RuntimeError, match="Error in derive field '/nonexistent'"):
+    with pytest.raises(RuntimeError, match="Error evaluating field '/nonexistent'"):
         collate_fn([empty_container])
 
 

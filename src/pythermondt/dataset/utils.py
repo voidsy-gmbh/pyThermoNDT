@@ -135,7 +135,7 @@ def derive(name: str, fn: Callable[[DataContainer], "torch.Tensor | bool | float
 def container_collate(*fields: str | DeriveField) -> Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]:
     """Factory function for creating a collate function for DataContainer objects.
 
-    Returns a function that extracts specified dataset paths and stacks them along batch dimension.
+    Returns a function that evaluates each field per sample and stacks the results along the batch dimension.
 
     Args:
         *fields (str | DeriveField): Dataset paths to extract (e.g. '/Data/Tdata') and/or derived
@@ -147,8 +147,9 @@ def container_collate(*fields: str | DeriveField) -> Callable[[Sequence[DataCont
             number of fields provided.
 
     Raises:
-        RuntimeError: If a derive field callback raises, or if tensors have incompatible shapes for stacking.
-        ValueError: If empty batch is provided
+        ValueError: If no fields are provided.
+        TypeError: If a field is neither str nor DeriveField.
+
 
     Example:
         >>> from torch.utils.data import DataLoader
@@ -181,7 +182,7 @@ def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveF
         tuple[torch.Tensor, ...]: Tensors stacked along the batch dimension for each field.
 
     Raises:
-        RuntimeError: If a derive field callback raises, or if tensors have incompatible shapes for stacking.
+        RuntimeError: If field evaluation or stacking fails.
         ValueError: If empty batch is provided.
     """
     if not batch:
@@ -196,7 +197,7 @@ def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveF
                 # Evaluate this field for this sample
                 values.append(spec.fn(container))
             except Exception as exc:
-                raise RuntimeError(f"Error in derive field '{spec.name}': {exc}") from exc
+                raise RuntimeError(f"Error evaluating field '{spec.name}': {exc}") from exc
         all_values.append(tuple(values))
 
     # Stack values along batch dimension for each field
@@ -204,7 +205,7 @@ def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveF
     for i, spec in enumerate(specs):
         try:
             result.append(torch.stack([torch.as_tensor(values[i]) for values in all_values], dim=0))
-        except RuntimeError as e:
-            raise RuntimeError(f"Cannot stack tensors for field '{spec.name}': {e}") from e
+        except Exception as exc:
+            raise RuntimeError(f"Cannot stack tensors for field '{spec.name}': {exc}") from exc
 
     return tuple(result)

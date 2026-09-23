@@ -163,10 +163,10 @@ def container_collate(*fields: str | DeriveField) -> Callable[[Sequence[DataCont
 
 def _normalize_field(field: str | DeriveField) -> DeriveField:
     """Normalize a field specification to a DeriveField object."""
-    if isinstance(field, str):
-        return DeriveField(name=field, fn=methodcaller("get_dataset", field))
-    elif isinstance(field, DeriveField):
+    if isinstance(field, DeriveField):
         return field
+    elif isinstance(field, str):
+        return DeriveField(name=field, fn=methodcaller("get_dataset", field))
     raise TypeError(f"Invalid field type: {type(field)}. Must be str or DeriveField.")
 
 

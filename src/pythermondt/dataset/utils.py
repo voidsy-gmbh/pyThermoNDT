@@ -4,6 +4,7 @@ import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import partial
+from operator import methodcaller
 
 import torch
 from torch import Generator, default_generator
@@ -157,17 +158,16 @@ def container_collate(*fields: str | DeriveField) -> Callable[[Sequence[DataCont
     if not fields:
         raise ValueError("At least one path must be specified")
 
-    specs = tuple(f if isinstance(f, DeriveField) else DeriveField(name=f, fn=_extract_path(f)) for f in fields)
-    return partial(_container_collate_impl, specs=specs)
+    return partial(_container_collate_impl, specs=tuple(_normalize_field(f) for f in fields))
 
 
-# Module-level function required for pickling with multiprocessing DataLoader workers
-def _extract_path(path: str) -> Callable[[DataContainer], torch.Tensor]:
-    return partial(_get_dataset, path=path)
-
-
-def _get_dataset(container: DataContainer, path: str) -> torch.Tensor:
-    return container.get_dataset(path)
+def _normalize_field(field: str | DeriveField) -> DeriveField:
+    """Normalize a field specification to a DeriveField object."""
+    if isinstance(field, str):
+        return DeriveField(name=field, fn=methodcaller("get_dataset", field))
+    elif isinstance(field, DeriveField):
+        return field
+    raise TypeError(f"Invalid field type: {type(field)}. Must be str or DeriveField.")
 
 
 def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveField, ...]) -> tuple[torch.Tensor, ...]:

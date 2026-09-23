@@ -67,7 +67,7 @@ def test_nonexistent_path_raises_keyerror(empty_container, sample_tensor):
 
     collate_fn = container_collate("/nonexistent")
 
-    with pytest.raises(KeyError, match="One or more dataset paths not found in container"):
+    with pytest.raises(RuntimeError, match="Error in derive field '/nonexistent'"):
         collate_fn([empty_container])
 
 
@@ -77,7 +77,7 @@ def test_mixed_valid_invalid_paths(empty_container, sample_tensor):
 
     collate_fn = container_collate("/data", "/nonexistent")
 
-    with pytest.raises(KeyError, match="One or more dataset paths not found in container"):
+    with pytest.raises(RuntimeError, match="Error in derive field '/nonexistent'"):
         collate_fn([empty_container])
 
 
@@ -91,7 +91,7 @@ def test_incompatible_tensor_shapes(sample_tensor, sample_eye_tensor):
 
     collate_fn = container_collate("/data")
 
-    with pytest.raises(RuntimeError, match="Cannot stack tensors for path '/data'"):
+    with pytest.raises(RuntimeError, match="Cannot stack tensors for field '/data'"):
         collate_fn([container1, container2])
 
 

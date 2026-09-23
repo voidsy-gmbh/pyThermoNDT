@@ -170,10 +170,6 @@ def _get_dataset(container: DataContainer, path: str) -> torch.Tensor:
     return container.get_dataset(path)
 
 
-def _to_tensor(value: "torch.Tensor | bool | float") -> torch.Tensor:
-    return value if isinstance(value, torch.Tensor) else torch.as_tensor(value)
-
-
 def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveField, ...]) -> tuple[torch.Tensor, ...]:
     """Implementation function that processes a batch of DataContainer objects for collation.
 
@@ -207,7 +203,7 @@ def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveF
     result = []
     for i, spec in enumerate(specs):
         try:
-            result.append(torch.stack([_to_tensor(values[i]) for values in all_values], dim=0))
+            result.append(torch.stack([torch.as_tensor(values[i]) for values in all_values], dim=0))
         except RuntimeError as e:
             raise RuntimeError(f"Cannot stack tensors for field '{spec.name}': {e}") from e
 

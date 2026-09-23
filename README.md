@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 
 from pythermondt import LocalReader, S3Reader
 from pythermondt import transforms as T
-from pythermondt.dataset import ThermoDataset, container_collate
+from pythermondt.dataset import ThermoDataset, container_collate, derive
 
 # Load data from different sources
 local_reader = LocalReader("./examples/example_data/**/*.hdf5", recursive=True)
@@ -46,14 +46,19 @@ dataset = ThermoDataset([local_reader, s3_reader], transform=transform)
 dataset.build_cache("immediate")
 
 # 5.) Use with PyTorch DataLoader for model training to be used in your training loop
-collate_fn = container_collate('/Data/Tdata', '/GroundTruth/DefectMask')
+collate_fn = container_collate(
+    '/Data/Tdata',
+    derive('tdata_cnn', lambda c: c.get_dataset('/Data/Tdata').permute(2, 0, 1)),
+    derive('has_defect', lambda c: '/GroundTruth/DefectMask' in c.nodes),
+)
 dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
 
 for epoch in range(50):
     print(f"Epoch {epoch + 1}")
-    for thermal_data, ground_truth in dataloader:
+    for thermal_data, tdata_cnn, has_defect in dataloader:
         print(f"Thermal data shape: {thermal_data.shape}")    # [4, 96, 96, 64]
-        print(f"Ground truth shape: {ground_truth.shape}")    # [4, 96, 96]
+        print(f"CNN input shape: {tdata_cnn.shape}")          # [4, 64, 96, 96]
+        print(f"Has defect: {has_defect}")                    # [True, False, True, False]
 ```
 
 ## From here?
@@ -88,6 +93,6 @@ For detailed usage examples, check out the Jupyter Notebooks in the [examples](e
 Contributions are welcome! Please see the [Contributing Guidelines](CONTRIBUTING.md) for details on [setting up a development environment](CONTRIBUTING.md#setting-up-development-environment), [coding standards](CONTRIBUTING.md#code-quality-and-validation), and the [pull request process](CONTRIBUTING.md#pull-request-process).
 
 ## Funding
-This project was partially funded by 
+This project was partially funded by
 - the Austrian Research Promotion Agency ([FFG](https://www.ffg.at/)) under grant numbers 920062 and 901177 as part of the project 'Thermal tomography'
 - the Austrian Research Promotion Agency ([FFG](https://www.ffg.at/)) under grant numbers 921380 as part of the project 'FLARE'

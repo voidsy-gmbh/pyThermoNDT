@@ -1,10 +1,10 @@
-"""Tests for dataset random_split edge cases and container_collate."""
+"""Tests for dataset random_split, container_collate, and derive."""
 
 import pytest
 import torch
 
 from pythermondt import ThermoDataset
-from pythermondt.dataset.utils import container_collate, random_split
+from pythermondt.dataset.utils import container_collate, derive, random_split
 
 from ..utils import make_container
 
@@ -109,19 +109,110 @@ def test_container_collate_multiple_paths():
 
 
 def test_container_collate_missing_path():
-    """Test that a missing dataset path raises KeyError."""
+    """Test that a missing dataset path raises RuntimeError with field name."""
     batch = [make_container(("/Data", "Tdata", torch.randn(2, 2)))]
     fn = container_collate("/Data/NonExistent")
-    with pytest.raises(KeyError, match="not found in container"):
+    with pytest.raises(RuntimeError, match="Error evaluating field '/Data/NonExistent'"):
         fn(batch)
 
 
 def test_container_collate_incompatible_shapes():
-    """Test that incompatible tensor shapes raise RuntimeError."""
+    """Test that incompatible tensor shapes raise RuntimeError with field name."""
     batch = [
         make_container(("/Data", "Tdata", torch.randn(4, 4))),
         make_container(("/Data", "Tdata", torch.randn(3, 5))),
     ]
     fn = container_collate("/Data/Tdata")
-    with pytest.raises(RuntimeError, match="Cannot stack tensors"):
+    with pytest.raises(RuntimeError, match="Cannot stack tensors for field '/Data/Tdata'"):
+        fn(batch)
+
+
+def test_container_collate_invalid_field_type():
+    """Test that a non-str, non-DeriveField argument raises TypeError."""
+    with pytest.raises(TypeError, match="Must be str or DeriveField"):
+        container_collate(123)
+
+
+def test_derive_tensor_output():
+    """Test that derive with a tensor output is stacked correctly."""
+    t1, t2 = torch.randn(4, 4, 10), torch.randn(4, 4, 10)
+    batch = [
+        make_container(("/Data", "Tdata", t1)),
+        make_container(("/Data", "Tdata", t2)),
+    ]
+    fn = container_collate(derive("permuted", lambda c: c.get_dataset("/Data/Tdata").permute(2, 0, 1)))
+    (result,) = fn(batch)
+    assert result.shape == (2, 10, 4, 4)
+    assert torch.equal(result[0], t1.permute(2, 0, 1))
+    assert torch.equal(result[1], t2.permute(2, 0, 1))
+
+
+def test_derive_bool_output():
+    """Test that derive with a bool output is stacked into a BoolTensor."""
+    t = torch.randn(4, 4, 10)
+    batch = [
+        make_container(("/Data", "Tdata", t), ("/GroundTruth", "DefectMask", torch.ones(4, 4))),
+        make_container(("/Data", "Tdata", t)),
+    ]
+    fn = container_collate(derive("has_mask", lambda c: "/GroundTruth/DefectMask" in c.nodes))
+    (result,) = fn(batch)
+    assert result.dtype == torch.bool
+    assert result.tolist() == [True, False]
+
+
+def test_derive_scalar_output():
+    """Test that derive with a scalar output is stacked correctly."""
+    batch = [
+        make_container(("/Data", "Tdata", torch.randn(4, 4, 8))),
+        make_container(("/Data", "Tdata", torch.randn(4, 4, 12))),
+    ]
+    fn = container_collate(derive("num_frames", lambda c: float(c.get_dataset("/Data/Tdata").shape[-1])))
+    (result,) = fn(batch)
+    assert result.tolist() == [8.0, 12.0]
+
+
+def test_derive_mixed_with_str_paths():
+    """Test that str paths and derive fields are returned in declaration order."""
+    t = torch.randn(4, 4, 10)
+    batch = [make_container(("/Data", "Tdata", t))]
+    fn = container_collate(
+        "/Data/Tdata",
+        derive("tdata_cnn", lambda c: c.get_dataset("/Data/Tdata").permute(2, 0, 1)),
+        derive("num_frames", lambda c: float(c.get_dataset("/Data/Tdata").shape[-1])),
+    )
+    result = fn(batch)
+    assert len(result) == 3
+    assert result[0].shape == (1, 4, 4, 10)
+    assert result[1].shape == (1, 10, 4, 4)
+    assert result[2].tolist() == [10.0]
+
+
+def test_derive_error_contains_field_name():
+    """Test that errors from derive fns are wrapped with field name context."""
+    batch = [make_container(("/Data", "Tdata", torch.randn(4, 4)))]
+
+    def bad_fn(c):
+        raise ValueError("bad input")
+
+    fn = container_collate(derive("bad_field", bad_fn))
+    with pytest.raises(RuntimeError, match="Error evaluating field 'bad_field'"):
+        fn(batch)
+
+
+def test_derive_unsupported_return_type():
+    """Test that a derive fn returning a non-stackable type raises RuntimeError with field name."""
+    batch = [make_container(("/Data", "Tdata", torch.randn(4, 4)))]
+    fn = container_collate(derive("bad_type", lambda c: "not a tensor"))
+    with pytest.raises(RuntimeError, match="Cannot stack tensors for field 'bad_type'"):
+        fn(batch)
+
+
+def test_derive_stack_mismatch_contains_field_name():
+    """Test that stack shape mismatch in a derive field includes the field name."""
+    batch = [
+        make_container(("/Data", "Tdata", torch.randn(4, 4))),
+        make_container(("/Data", "Tdata", torch.randn(3, 5))),
+    ]
+    fn = container_collate(derive("custom_field", lambda c: c.get_dataset("/Data/Tdata")))
+    with pytest.raises(RuntimeError, match="field 'custom_field'"):
         fn(batch)

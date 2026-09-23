@@ -2,6 +2,7 @@ import itertools
 import math
 import warnings
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from functools import partial
 
 import torch
@@ -97,6 +98,37 @@ def random_split(
         IndexedThermoDataset(dataset, indices[offset - length : offset], transform)
         for transform, length, offset in zip(transforms, lengths, itertools.accumulate(lengths), strict=False)
     ]
+
+
+@dataclass(frozen=True)
+class DeriveField:
+    """Specification for a derived collate field.
+
+    The callable is evaluated per sample and its return value is stacked across the batch.
+    """
+
+    name: str
+    fn: Callable[[DataContainer], "torch.Tensor | bool | float"]
+
+
+def derive(name: str, fn: Callable[[DataContainer], "torch.Tensor | bool | float"]) -> DeriveField:
+    """Create a derived field for use with :func:`container_collate`.
+
+    Args:
+        name: Field name used in error messages when stacking fails.
+        fn: Callable evaluated per sample. Must return a stackable value (tensor, bool, or float).
+
+    Returns:
+        A DeriveField specification.
+
+    Example:
+        >>> collate_fn = container_collate(
+        ...     "/Data/Tdata",
+        ...     derive("tdata_cnn", lambda c: c.get_dataset("/Data/Tdata").permute(2, 0, 1)),
+        ...     derive("has_defect", lambda c: "/GroundTruth/DefectMask" in c.nodes),
+        ... )
+    """
+    return DeriveField(name=name, fn=fn)
 
 
 def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]:

@@ -109,10 +109,10 @@ def test_container_collate_multiple_paths():
 
 
 def test_container_collate_missing_path():
-    """Test that a missing dataset path raises RuntimeError with field name."""
+    """Test that a missing dataset path raises KeyError with field name."""
     batch = [make_container(("/Data", "Tdata", torch.randn(2, 2)))]
     fn = container_collate("/Data/NonExistent")
-    with pytest.raises(RuntimeError, match="Error evaluating field '/Data/NonExistent'"):
+    with pytest.raises(KeyError, match="Field '/Data/NonExistent'"):
         fn(batch)
 
 
@@ -188,7 +188,7 @@ def test_derive_mixed_with_str_paths():
 
 
 def test_derive_error_contains_field_name():
-    """Test that errors from derive fns are wrapped with field name context."""
+    """Test that non-KeyError from derive fns is wrapped as RuntimeError with field name."""
     batch = [make_container(("/Data", "Tdata", torch.randn(4, 4)))]
 
     def bad_fn(c):
@@ -196,6 +196,18 @@ def test_derive_error_contains_field_name():
 
     fn = container_collate(derive("bad_field", bad_fn))
     with pytest.raises(RuntimeError, match="Error evaluating field 'bad_field'"):
+        fn(batch)
+
+
+def test_derive_key_error_preserves_type():
+    """Test that KeyError from a derive fn keeps the KeyError type with field name."""
+    batch = [make_container(("/Data", "Tdata", torch.randn(4, 4)))]
+
+    def bad_fn(c):
+        raise KeyError("missing thing")
+
+    fn = container_collate(derive("bad_key", bad_fn))
+    with pytest.raises(KeyError, match="Field 'bad_key'"):
         fn(batch)
 
 

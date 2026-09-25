@@ -147,9 +147,10 @@ def container_collate(*fields: str | DeriveField) -> Callable[[Sequence[DataCont
             number of fields provided.
 
     Raises:
-        ValueError: If no fields are provided.
+        ValueError: If no fields are provided, or if the collate function receives an empty batch.
         TypeError: If a field is neither str nor DeriveField.
-
+        KeyError: If the collate function receives a container without a requested field path.
+        RuntimeError: If field evaluation or stacking fails.
 
     Example:
         >>> from torch.utils.data import DataLoader
@@ -182,6 +183,7 @@ def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveF
         tuple[torch.Tensor, ...]: Tensors stacked along the batch dimension for each field.
 
     Raises:
+        KeyError: If a field path does not exist in a container.
         RuntimeError: If field evaluation or stacking fails.
         ValueError: If empty batch is provided.
     """
@@ -194,8 +196,10 @@ def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveF
         values = []
         for spec in specs:
             try:
-                # Evaluate this field for this sample
                 values.append(spec.fn(container))
+            except KeyError as exc:
+                detail = exc.args[0] if exc.args else exc
+                raise KeyError(f"Field '{spec.name}': {detail}") from exc
             except Exception as exc:
                 raise RuntimeError(f"Error evaluating field '{spec.name}': {exc}") from exc
         all_values.append(tuple(values))

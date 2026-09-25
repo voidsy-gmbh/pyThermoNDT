@@ -58,7 +58,7 @@ for epoch in range(50):
     for thermal_data, tdata_cnn, has_defect in dataloader:
         print(f"Thermal data shape: {thermal_data.shape}")    # [4, 96, 96, 64]
         print(f"CNN input shape: {tdata_cnn.shape}")          # [4, 64, 96, 96]
-        print(f"Has defect: {has_defect}")                    # [True, False, True, False]
+        print(f"Has defect: {has_defect}")                    # tensor([ True, False,  True, False])
 ```
 
 ## From here?

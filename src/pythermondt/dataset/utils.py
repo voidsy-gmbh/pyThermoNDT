@@ -2,7 +2,9 @@ import itertools
 import math
 import warnings
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from functools import partial
+from operator import methodcaller
 
 import torch
 from torch import Generator, default_generator
@@ -99,70 +101,115 @@ def random_split(
     ]
 
 
-def container_collate(*paths: str) -> Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]:
-    """Factory function for creating a collate function for DataContainer objects.
+@dataclass(frozen=True)
+class DeriveField:
+    """Specification for a derived collate field.
 
-    Returns a function that extracts specified dataset paths and stacks them along batch dimension.
+    The callable is evaluated per sample and its return value is stacked across the batch.
+    """
+
+    name: str
+    fn: Callable[[DataContainer], "torch.Tensor | bool | float"]
+
+
+def derive(name: str, fn: Callable[[DataContainer], "torch.Tensor | bool | float"]) -> DeriveField:
+    """Create a derived field for use with :func:`container_collate`.
 
     Args:
-        *paths (str): Variable number of dataset paths to extract (e.g. '/Data/Tdata', '/GroundTruth/DefectMask')
+        name: Field name used in error messages when stacking fails.
+        fn: Callable evaluated per sample. Must return a stackable value (tensor, bool, or float).
+
+    Returns:
+        A DeriveField specification.
+
+    Example:
+        >>> collate_fn = container_collate(
+        ...     "/Data/Tdata",
+        ...     derive("tdata_cnn", lambda c: c.get_dataset("/Data/Tdata").permute(2, 0, 1)),
+        ...     derive("has_defect", lambda c: "/GroundTruth/DefectMask" in c.nodes),
+        ... )
+    """
+    return DeriveField(name=name, fn=fn)
+
+
+def container_collate(*fields: str | DeriveField) -> Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]:
+    """Factory function for creating a collate function for DataContainer objects.
+
+    Returns a function that evaluates each field per sample and stacks the results along the batch dimension.
+
+    Args:
+        *fields (str | DeriveField): Dataset paths to extract (e.g. '/Data/Tdata') and/or derived
+            field specifications created with :func:`derive`.
 
     Returns:
         Callable[[Sequence[DataContainer]], tuple[torch.Tensor, ...]]: A collate function that takes a batch of
             DataContainer objects and returns a tuple of tensors. The number of tensors in the tuple corresponds to the
-            number of dataset paths provided.
+            number of fields provided.
 
     Raises:
-        KeyError: If a specified dataset path doesn't exist in any container
-        RuntimeError: If tensors have incompatible shapes for stacking
-        ValueError: If empty batch is provided
+        ValueError: If no fields are provided, or if the collate function receives an empty batch.
+        TypeError: If a field is neither str nor DeriveField.
+        KeyError: If the collate function receives a container without a requested field path.
+        RuntimeError: If field evaluation or stacking fails.
 
     Example:
         >>> from torch.utils.data import DataLoader
         >>> collate_fn = container_collate("/Data/Tdata", "/GroundTruth/DefectMask")
         >>> dataloader = DataLoader(dataset, batch_size=32, collate_fn=collate_fn)
     """
-    if not paths:
+    if not fields:
         raise ValueError("At least one path must be specified")
 
-    return partial(_container_collate_impl, paths=paths)
+    return partial(_container_collate_impl, specs=tuple(_normalize_field(f) for f in fields))
 
 
-def _container_collate_impl(batch: Sequence[DataContainer], paths: tuple[str, ...]) -> tuple[torch.Tensor, ...]:
+def _normalize_field(field: str | DeriveField) -> DeriveField:
+    """Normalize a field specification to a DeriveField object."""
+    if isinstance(field, DeriveField):
+        return field
+    elif isinstance(field, str):
+        return DeriveField(name=field, fn=methodcaller("get_dataset", field))
+    raise TypeError(f"Invalid field type: {type(field)}. Must be str or DeriveField.")
+
+
+def _container_collate_impl(batch: Sequence[DataContainer], specs: tuple[DeriveField, ...]) -> tuple[torch.Tensor, ...]:
     """Implementation function that processes a batch of DataContainer objects for collation.
 
     Args:
         batch (Sequence[DataContainer]): The batch of DataContainer objects to collate.
-        paths (tuple[str, ...]): The dataset paths to extract and collate from each container.
+        specs (tuple[DeriveField, ...]): Field specifications to extract and collate from each container.
 
     Returns:
-        tuple[torch.Tensor, ...]: A tuple of tensors, each stacked along the batch dimension for the corresponding path.
+        tuple[torch.Tensor, ...]: Tensors stacked along the batch dimension for each field.
 
     Raises:
-        KeyError: If a specified dataset path doesn't exist in any container.
-        RuntimeError: If tensors have incompatible shapes for stacking.
+        KeyError: If a field path does not exist in a container.
+        RuntimeError: If field evaluation or stacking fails.
         ValueError: If empty batch is provided.
     """
     if not batch:
         raise ValueError("Empty batch provided - cannot collate empty sequence")
 
-    # Use get_datasets method to efficiently extract all datasets from each container
-    all_tensors = []
+    # Evaluate each field per sample
+    all_values = []
     for container in batch:
-        try:
-            # Get all datasets from this container in one call
-            tensors = container.get_datasets(*paths)
-            all_tensors.append(tensors)
-        except KeyError as exc:
-            raise KeyError(f"One or more dataset paths not found in container: {exc}") from exc
+        values = []
+        for spec in specs:
+            try:
+                values.append(spec.fn(container))
+            except KeyError as exc:
+                detail = exc.args[0] if exc.args else exc
+                raise KeyError(f"Field '{spec.name}': {detail}") from exc
+            except Exception as exc:
+                raise RuntimeError(f"Error evaluating field '{spec.name}': {exc}") from exc
+        all_values.append(tuple(values))
 
-    # Stack tensors along batch dimension for each path
+    # Stack values along batch dimension for each field
     result = []
-    for i, path in enumerate(paths):
+    for i, spec in enumerate(specs):
         try:
-            # Extract tensors for this path from all containers and stack them
-            result.append(torch.stack([tensors[i] for tensors in all_tensors], dim=0))
-        except RuntimeError as e:
-            raise RuntimeError(f"Cannot stack tensors for path '{path}': {e}") from e
+            result.append(torch.stack([torch.as_tensor(values[i]) for values in all_values], dim=0))
+        except Exception as exc:
+            raise RuntimeError(f"Cannot stack tensors for field '{spec.name}': {exc}") from exc
 
     return tuple(result)

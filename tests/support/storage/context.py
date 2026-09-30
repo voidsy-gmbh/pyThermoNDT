@@ -89,7 +89,7 @@ class StorageTestContext:
         self,
         parser: type[BaseParser] | None = PlainTextParser,
         num_files: int | None = None,
-        cache_files: bool = True,
+        listing_ttl: float | None = None,
         file_filter: Callable[[FileInfo], bool] | None = None,
     ) -> BaseReader:
         """Create a reader and immediately register its lazy backend."""
@@ -99,7 +99,7 @@ class StorageTestContext:
                 pattern=str(self._root),
                 parser=parser,
                 num_files=num_files,
-                cache_files=cache_files,
+                listing_ttl=listing_ttl,
                 file_filter=file_filter,
             )
         elif self._backend_type is S3Backend:
@@ -108,7 +108,7 @@ class StorageTestContext:
                 prefix="",
                 parser=parser,
                 num_files=num_files,
-                cache_files=cache_files,
+                listing_ttl=listing_ttl,
                 file_filter=file_filter,
             )
         elif self._backend_type is AzureBlobBackend:
@@ -119,7 +119,7 @@ class StorageTestContext:
                 connection_string=AZURE_CONNECTION_STRING,
                 parser=parser,
                 num_files=num_files,
-                cache_files=cache_files,
+                listing_ttl=listing_ttl,
                 file_filter=file_filter,
             )
         else:

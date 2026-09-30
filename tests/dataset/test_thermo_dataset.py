@@ -1,4 +1,5 @@
 import time
+import warnings
 from re import escape
 from unittest.mock import patch
 
@@ -139,10 +140,19 @@ def test_build_cache_thermodataset(
     )
 
 
-def test_cache_files_false_warning():
-    """Test that a reader with cache_files=False emits a warning."""
-    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", cache_files=False)
-    with pytest.warns(UserWarning, match="cache_files=False"):
+@pytest.mark.parametrize("listing_ttl", [0, 60])
+def test_finite_listing_ttl_warning(listing_ttl: float):
+    """Test that a reader with a finite listing TTL emits a warning."""
+    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", listing_ttl=listing_ttl)
+    with pytest.warns(UserWarning, match=f"listing_ttl={listing_ttl}"):
+        ThermoDataset(reader)
+
+
+def test_unlimited_listing_ttl_does_not_warn():
+    """A non-expiring file listing does not trigger a dataset warning."""
+    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", listing_ttl=None)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         ThermoDataset(reader)
 
 

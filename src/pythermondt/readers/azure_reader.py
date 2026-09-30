@@ -18,7 +18,7 @@ class AzureBlobReader(BaseReader):
         client_options: AzureBlobClientOptions | None = None,
         num_files: int | None = None,
         download_files: bool = False,
-        cache_files: bool = True,
+        listing_ttl: float | None = None,
         parser: type[BaseParser] | None = None,
         file_filter: Callable[[FileInfo], bool] | None = None,
     ):
@@ -37,14 +37,14 @@ class AzureBlobReader(BaseReader):
             num_files (int | None): Maximum number of files to read. If None, reads all files.
             download_files (bool): If True, downloads and caches files locally during operations.
                 If False, files are accessed on-demand without local caching. Default: False.
-            cache_files (bool): If True, caches the file list in memory. If False, file list is
-                refreshed on each access. Default: True.
+            listing_ttl (float | None): Seconds to cache the file listing. None caches indefinitely;
+                0 refreshes on every access. Default: None.
             parser (type[BaseParser] | None): Parser class for reading files. If None, auto-selects
                 based on file extension. Default: None.
             file_filter (Callable[[FileInfo], bool] | None): Metadata-aware filter applied during file
                 discovery. Must be picklable whenever the reader needs to be picklable. Default: None.
         """
-        super().__init__(num_files, download_files, cache_files, parser, file_filter)
+        super().__init__(num_files, download_files, listing_ttl, parser, file_filter)
         self.__container_name = container_name
         self.__prefix = prefix
         self.__connection_string = connection_string

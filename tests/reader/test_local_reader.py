@@ -85,10 +85,10 @@ def test_file_names_decodes_correctly(tmp_path, filename, expected_basename):
         assert "/" not in name
 
 
-def test_cache_files_false(tmp_path):
+def test_listing_ttl_zero(tmp_path):
     """Files and file_uris work correctly when caching is disabled."""
     (tmp_path / "test.h5").write_text("content")
-    reader = LocalReader(str(tmp_path), cache_files=False)
+    reader = LocalReader(str(tmp_path), listing_ttl=0)
 
     files = reader.files
     uris = reader.file_uris

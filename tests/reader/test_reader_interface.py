@@ -59,7 +59,7 @@ def test_parser_class(storage_context: StorageTestContext):
 
 
 def test_str_representation(storage_context: StorageTestContext):
-    """__str__ exposes class name, _get_reader_params output, num_files, download_files, cache_files, and parser."""
+    """__str__ exposes class name, _get_reader_params output, num_files, download_files, listing_ttl, and parser."""
     reader = storage_context.make_reader()
     s = str(reader)
 
@@ -67,7 +67,7 @@ def test_str_representation(storage_context: StorageTestContext):
     assert reader.parser is not None and reader.parser == PlainTextParser
     assert f"num_files={reader.num_files}" in s
     assert f"download_remote_files={reader.download_files}" in s
-    assert f"cache_files={reader.cache_files}" in s
+    assert f"listing_ttl={reader.listing_ttl}" in s
     assert f"parser={reader.parser.__name__}" in s
 
 
@@ -177,11 +177,11 @@ def test_items_invalid_by(reader_test_data: ReaderTestData):
 
 
 @pytest.mark.parametrize("by", ["files", "file_names", "file_uris", "file_entries"])
-def test_items_with_cache_files_false(storage_context: StorageTestContext, by: ItemsBy):
-    """items() works with cache_files=False and keeps key/container pairs consistent."""
+def test_items_with_listing_ttl_zero(storage_context: StorageTestContext, by: ItemsBy):
+    """items() works with listing_ttl=0 and keeps key/container pairs consistent."""
     storage_context.prepare_file("sample1.test", b"payload1")
     storage_context.prepare_file("sample2.test", b"payload2")
-    reader = storage_context.make_reader(cache_files=False)
+    reader = storage_context.make_reader(listing_ttl=0)
 
     pairs = list(reader.items(by=by))
     expected_keys = getattr(reader, by)
@@ -256,12 +256,12 @@ def test_file_filter_with_num_files(storage_context: StorageTestContext):
     assert len(reader.file_entries) == 1
 
 
-def test_cache_files_false_reflects_changes(storage_context: StorageTestContext):
+def test_listing_ttl_zero_reflects_changes(storage_context: StorageTestContext):
     """Without caching, adding a file is reflected immediately in URIs and entries."""
     storage_context.prepare_file("a.test", b"a")
     storage_context.prepare_file("b.test", b"b")
 
-    reader = storage_context.make_reader(cache_files=False)
+    reader = storage_context.make_reader(listing_ttl=0)
 
     uris_before = reader.file_uris
     entries_before = reader.file_entries
@@ -272,11 +272,11 @@ def test_cache_files_false_reflects_changes(storage_context: StorageTestContext)
     assert len(reader.file_entries) == len(entries_before) + 1
 
 
-def test_cache_files_false_with_filter_excludes_new(storage_context: StorageTestContext):
+def test_listing_ttl_zero_with_filter_excludes_new(storage_context: StorageTestContext):
     """Without caching, a new file excluded by the filter is not reflected."""
     a_uri = storage_context.prepare_file("a.test", b"a")
 
-    reader = storage_context.make_reader(cache_files=False, file_filter=lambda f: f.path == a_uri)
+    reader = storage_context.make_reader(listing_ttl=0, file_filter=lambda f: f.path == a_uri)
 
     assert len(reader.file_uris) == 1
     assert len(reader.file_entries) == 1

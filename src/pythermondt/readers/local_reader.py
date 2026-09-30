@@ -10,7 +10,7 @@ class LocalReader(BaseReader):
         pattern: str,
         recursive: bool = False,
         num_files: int | None = None,
-        cache_files: bool = True,
+        listing_ttl: float | None = None,
         parser: type[BaseParser] | None = None,
         file_filter: Callable[[FileInfo], bool] | None = None,
     ):
@@ -25,15 +25,15 @@ class LocalReader(BaseReader):
                 be effective if the pattern is a directory path or a glob pattern. Defaults to False.
             num_files (int, optional): The number of files to read. If not specified, all files will be read.
                 Default is None.
-            cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
-                detected files will be reflected at runtime. Default is True.
+            listing_ttl (float | None, optional): Seconds to cache the file listing. None caches indefinitely;
+                0 refreshes on every access. Default is None.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
             file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file
                 discovery. Must be picklable whenever the reader needs to be picklable. Default: None.
         """
         # Initialize baseclass with parser
-        super().__init__(num_files, False, cache_files, parser, file_filter)
+        super().__init__(num_files, False, listing_ttl, parser, file_filter)
 
         # Maintain state for what is needed to create the backend
         self.__pattern = pattern

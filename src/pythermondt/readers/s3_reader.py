@@ -17,7 +17,7 @@ class S3Reader(BaseReader):
         client_options: S3ClientOptions | None = None,
         num_files: int | None = None,
         download_files: bool = False,
-        cache_files: bool = True,
+        listing_ttl: float | None = None,
         parser: type[BaseParser] | None = None,
         file_filter: Callable[[FileInfo], bool] | None = None,
     ):
@@ -39,15 +39,15 @@ class S3Reader(BaseReader):
                 Default is None.
             download_files (bool, optional): Whether to automatically cache remote files locally during operations.
                 When False, files are downloaded on-demand but not saved locally. Default is False.
-            cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
-                detected files will be reflected at runtime. Default is True.
+            listing_ttl (float | None, optional): Seconds to cache the file listing. None caches indefinitely;
+                0 refreshes on every access. Default is None.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
             file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file
                 discovery. Must be picklable whenever the reader needs to be picklable. Default: None.
         """
         # Initialize baseclass with parser
-        super().__init__(num_files, download_files, cache_files, parser, file_filter)
+        super().__init__(num_files, download_files, listing_ttl, parser, file_filter)
 
         # Maintain state for what is needed to create the backend
         self.__bucket = bucket

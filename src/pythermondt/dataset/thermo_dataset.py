@@ -51,12 +51,13 @@ class ThermoDataset(BaseDataset):
     def _validate_readers(self, readers: list[BaseReader]):
         """Validate readers and check for duplicates."""
         # Check if the readers have found any files and if there are any duplicates
-        # Check if all readers have enabled file caching
+        # Check if all readers keep a stable file listing
         for reader in readers:
             # Check for stable file list during training
-            if not reader.cache_files:
+            if reader.listing_ttl is not None:
                 warnings.warn(
-                    f"{reader.__class__.__name__} has cache_files=False. File list may change during training.",
+                    f"{reader.__class__.__name__} has listing_ttl={reader.listing_ttl}. "
+                    "File list may change during training.",
                     stacklevel=2,
                 )
 

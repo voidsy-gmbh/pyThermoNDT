@@ -69,6 +69,9 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 the parser will be auto selected based on the file extension. Default is None.
             file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file discovery.
                 Must be picklable whenever the reader needs to be picklable. Default: None.
+
+        Note:
+            With a finite listing_ttl, use a separate reader instance per thread.
         """
         # Assign private attributes
         self.__parser = parser

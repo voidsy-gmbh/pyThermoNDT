@@ -124,23 +124,6 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         """Seconds before the cached file listing expires, or None for no expiry."""
         return self.__listing_ttl
 
-    def clear_file_list_cache(self) -> None:
-        """Clear the file listing so the next access discovers files again."""
-        self.__file_entries = None
-        self.__files = None
-        self.__file_uris = None
-        self.__file_names = None
-        self.__listing_timestamp = None
-
-    def _expire_file_list_cache(self) -> None:
-        """Clear the listing when its TTL has elapsed."""
-        if (
-            self.__listing_timestamp is not None
-            and self.__listing_ttl is not None
-            and monotonic() - self.__listing_timestamp >= self.__listing_ttl
-        ):
-            self.clear_file_list_cache()
-
     @property
     def backend(self) -> BaseBackend:
         """The backend that the reader uses to read the data."""
@@ -369,6 +352,15 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         for key, uri in key_uri_pairs:
             yield key, self.read_file(uri)
+
+    def _expire_file_list_cache(self) -> None:
+        """Clear the listing when its TTL has elapsed."""
+        if (
+            self.__listing_timestamp is not None
+            and self.__listing_ttl is not None
+            and monotonic() - self.__listing_timestamp >= self.__listing_ttl
+        ):
+            self.clear_file_list_cache()
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""
@@ -664,6 +656,14 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         logger.info("%s - Re-downloading %d stale file(s).", self.__class__.__name__, len(to_redownload))
         self.download(file_paths=list(to_redownload), num_workers=num_workers, force=True)
+
+    def clear_file_list_cache(self) -> None:
+        """Clear the file listing so the next access discovers files again."""
+        self.__file_entries = None
+        self.__files = None
+        self.__file_uris = None
+        self.__file_names = None
+        self.__listing_timestamp = None
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

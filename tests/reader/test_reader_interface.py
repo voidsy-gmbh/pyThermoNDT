@@ -1,9 +1,12 @@
+import logging
 import pickle
 from collections.abc import Callable
 from re import escape
+from unittest.mock import patch
 
 import pytest
 
+import pythermondt.readers.base_reader as reader_module
 from pythermondt.data import DataContainer
 from pythermondt.io import AzureBlobBackend, FileInfo, LocalBackend, S3Backend
 from pythermondt.readers import BaseReader, ItemsBy
@@ -287,18 +290,158 @@ def test_listing_ttl_zero_with_filter_excludes_new(storage_context: StorageTestC
     assert len(reader.file_entries) == 1
 
 
+def test_listing_ttl_zero_uses_fast_path(storage_context: StorageTestContext):
+    """URI access without a metadata filter does not fetch file metadata."""
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=0)
+
+    with patch.object(reader.backend, "get_file_list_with_metadata", side_effect=AssertionError("metadata listing")):
+        assert len(reader.file_uris) == 1
+        assert len(reader.files) == 1
+
+
+@pytest.mark.parametrize("listing_ttl", [None, 0, 60])
+def test_listing_ttl_refresh(storage_context: StorageTestContext, listing_ttl: float | None):
+    """New files appear only after the listing expires, unless every access refreshes it."""
+    # Control the reader's clock without waiting for the TTL to pass.
+    clock = [100.0]
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=listing_ttl)
+
+    with (
+        patch.object(reader_module, "monotonic", lambda: clock[0]),
+        patch.object(
+            reader.backend, "get_file_list_with_metadata", wraps=reader.backend.get_file_list_with_metadata
+        ) as listing,
+    ):
+        assert reader.file_names == ["a.test"]
+        storage_context.prepare_file("b.test", b"b")
+        # Check both sides of the 60-second expiry boundary.
+        clock[0] = 159.0
+        assert reader.file_names == (["a.test", "b.test"] if listing_ttl == 0 else ["a.test"])
+        clock[0] = 160.0
+        assert reader.file_names == (["a.test"] if listing_ttl is None else ["a.test", "b.test"])
+        assert listing.call_count == (0 if listing_ttl == 0 else 1 if listing_ttl is None else 2)
+
+    assert len(reader.file_uris) == len(reader.file_entries) == len(reader.files) == len(reader.file_names)
+
+
+@pytest.mark.parametrize("listing_ttl", [None, 60])
+def test_clear_listing_cache(storage_context: StorageTestContext, listing_ttl: float | None):
+    """Explicit invalidation is lazy and clears all derived file lists."""
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=listing_ttl)
+    assert reader.file_names == ["a.test"]
+    storage_context.prepare_file("b.test", b"b")
+
+    with patch.object(
+        reader.backend, "get_file_list_with_metadata", wraps=reader.backend.get_file_list_with_metadata
+    ) as listing:
+        # Clearing only invalidates the listing; the next access calls the backend.
+        reader.clear_listing_cache()
+        assert listing.call_count == 0
+        assert reader.file_names == ["a.test", "b.test"]
+        assert listing.call_count == 1
+        assert [entry.path for entry in reader.file_entries] == reader.file_uris
+        assert listing.call_count == 1
+
+
+@pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
+def test_file_list_cache_debug_logs(storage_context: StorageTestContext, caplog: pytest.LogCaptureFixture):
+    """Manual clearing and expiry log once each, but clearing an empty cache stays quiet."""
+    clock = [100.0]
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=60)
+
+    with (
+        patch.object(reader_module, "monotonic", lambda: clock[0]),
+        caplog.at_level(logging.DEBUG, logger=reader_module.__name__),
+    ):
+        # An empty-cache clear stays quiet; only manual clearing and expiry are logged.
+        reader.clear_listing_cache()
+        assert reader.file_names == ["a.test"]
+        reader.clear_listing_cache()
+        assert reader.file_names == ["a.test"]
+        clock[0] = 160.0
+        assert reader.file_names == ["a.test"]
+
+    messages = [record.message for record in caplog.records if record.name == reader_module.__name__]
+    assert messages == [
+        "LocalReader - File listing cache cleared manually.",
+        "LocalReader - File listing expired after 60 seconds.",
+    ]
+
+
+def test_listing_ttl_refresh_with_filter(storage_context: StorageTestContext):
+    """Timed refresh applies the metadata filter and updates both listing views."""
+    clock = [100.0]
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=60, file_filter=_picklable_filter)
+
+    with patch.object(reader_module, "monotonic", lambda: clock[0]):
+        assert reader.file_entries == []
+        storage_context.prepare_file("sample1.test", b"sample1")
+        clock[0] = 160.0
+
+        assert reader.file_names == ["sample1.test"]
+        assert [entry.path for entry in reader.file_entries] == reader.file_uris
+
+
+def test_listing_failure_retries(storage_context: StorageTestContext):
+    """A failed refresh raises and the next access retries without serving expired data."""
+    clock = [100.0]
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=60)
+
+    with patch.object(reader_module, "monotonic", lambda: clock[0]):
+        assert reader.file_names == ["a.test"]
+        storage_context.prepare_file("b.test", b"b")
+        clock[0] = 160.0
+
+        with patch.object(reader.backend, "get_file_list_with_metadata", side_effect=OSError("listing failed")):
+            with pytest.raises(OSError, match="listing failed"):
+                assert reader.file_names
+
+        # A failed refresh does not make the old listing valid again.
+        assert reader.file_names == ["a.test", "b.test"]
+
+
+@pytest.mark.parametrize("listing_ttl", [-1, float("nan"), float("inf"), float("-inf")])
+def test_invalid_listing_ttl_value(storage_context: StorageTestContext, listing_ttl: float):
+    with pytest.raises(ValueError, match="listing_ttl must be finite and non-negative"):
+        storage_context.make_reader(listing_ttl=listing_ttl)
+
+
+@pytest.mark.parametrize("listing_ttl", ["60", object()])
+def test_invalid_listing_ttl_type(storage_context: StorageTestContext, listing_ttl: object):
+    with pytest.raises(TypeError, match="listing_ttl must be a non-negative number or None"):
+        storage_context.make_reader(listing_ttl=listing_ttl)  # type: ignore[arg-type]
+
+
+def test_pickle_clears_listing_timestamp(storage_context: StorageTestContext):
+    """Unpickling reloads the listing, even if its previous TTL has not elapsed."""
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=60)
+    assert reader.file_names == ["a.test"]
+    restored = pickle.loads(pickle.dumps(reader))
+    storage_context.prepare_file("b.test", b"b")
+
+    assert restored.listing_ttl == 60
+    assert restored.file_names == ["a.test", "b.test"]
+
+
 @pytest.mark.parametrize("num_files", [1, 3, 10, 100, None], ids=["1", "3", "10", "100", "None"])
-@pytest.mark.parametrize("cache_files", [True, False], ids=["cache_files=True", "cache_files=False"])
+@pytest.mark.parametrize("listing_ttl", [None, 0, 60], ids=["forever", "always", "timed"])
 @pytest.mark.parametrize("parser", [PlainTextParser, None], ids=["parser", "no_parser"])
 @pytest.mark.parametrize("file_filter", [None, _picklable_filter], ids=["no_filter", "picklable_filter"])
 def test_file_filter_combinations(
     storage_context: StorageTestContext,
     num_files: int | None,
-    cache_files: bool,
+    listing_ttl: float | None,
     parser: type[PlainTextParser] | None,
     file_filter: Callable[[FileInfo], bool] | None,
 ):
-    """Test that file_filter, num_files, and cache_files interact correctly."""
+    """Test that file_filter, num_files, and listing_ttl interact correctly."""
     # Prepare test files to read
     storage_context.prepare_file("sample1_a.test", b"ma")
     storage_context.prepare_file("sample1_b.test", b"mb")
@@ -307,7 +450,7 @@ def test_file_filter_combinations(
 
     # Construct reader with the given parameters
     reader = storage_context.make_reader(
-        file_filter=file_filter, num_files=num_files, cache_files=cache_files, parser=parser
+        file_filter=file_filter, num_files=num_files, listing_ttl=listing_ttl, parser=parser
     )
 
     # Construct expected file counts

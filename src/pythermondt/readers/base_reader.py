@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import math
 import os
 import pickle
 import shutil
@@ -8,6 +9,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from threading import Lock
+from time import monotonic
 from typing import Literal, get_args, overload
 from urllib.parse import unquote, urlparse
 
@@ -50,7 +52,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         self,
         num_files: int | None = None,
         download_files: bool = False,
-        cache_files: bool = True,
+        listing_ttl: float | None = None,
         parser: type[BaseParser] | None = None,
         file_filter: Callable[[FileInfo], bool] | None = None,
     ):
@@ -61,8 +63,8 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
                 Default is None.
             download_files (bool, optional): Whether to automatically cache remote files locally during operations.
                 When False, files are downloaded on-demand but not saved locally. Default is False.
-            cache_files (bool, optional): Whether to cache the files list in memory. If set to False, changes to the
-                detected files will be reflected at runtime. Default is True.
+            listing_ttl (float | None, optional): Seconds to cache the file listing. None caches indefinitely;
+                0 refreshes on every access. Default is None.
             parser (Type[BaseParser], optional): The parser that the reader uses to parse the data. If not specified,
                 the parser will be auto selected based on the file extension. Default is None.
             file_filter (Callable[[FileInfo], bool], optional): Metadata-aware filter applied during file discovery.
@@ -71,7 +73,13 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Assign private attributes
         self.__parser = parser
         self.__num_files = num_files
-        self.__cache_files = cache_files
+        if listing_ttl is not None:
+            if listing_ttl is not None and not isinstance(listing_ttl, (int, float)):
+                raise TypeError(f"listing_ttl must be a non-negative number or None, got {listing_ttl!r}.")
+            if not math.isfinite(listing_ttl) or listing_ttl < 0:
+                raise ValueError(f"listing_ttl must be finite and non-negative, got {listing_ttl!r}.")
+
+        self.__listing_ttl = listing_ttl
         self.__download_files = download_files
         self.__file_filter = file_filter
 
@@ -81,6 +89,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         self.__files: list[str] | None = None
         self.__file_uris: list[str] | None = None
         self.__file_names: list[str] | None = None
+        self.__listing_timestamp: float | None = None
         self.__supported_extensions = tuple(parser.supported_extensions if parser else get_all_supported_extensions())
         self.__manifest_path: str | None = None
         self.__manifest_lock = Lock()
@@ -111,9 +120,26 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         return self.__download_files
 
     @property
-    def cache_files(self) -> bool:
-        """Return True if the reader caches the files/file-paths, False otherwise."""
-        return self.__cache_files
+    def listing_ttl(self) -> float | None:
+        """Seconds before the cached file listing expires, or None for no expiry."""
+        return self.__listing_ttl
+
+    def clear_file_list_cache(self) -> None:
+        """Clear the file listing so the next access discovers files again."""
+        self.__file_entries = None
+        self.__files = None
+        self.__file_uris = None
+        self.__file_names = None
+        self.__listing_timestamp = None
+
+    def _expire_file_list_cache(self) -> None:
+        """Clear the listing when its TTL has elapsed."""
+        if (
+            self.__listing_timestamp is not None
+            and self.__listing_ttl is not None
+            and monotonic() - self.__listing_timestamp >= self.__listing_ttl
+        ):
+            self.clear_file_list_cache()
 
     @property
     def backend(self) -> BaseBackend:
@@ -158,7 +184,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Only decode file:// URIs — S3/Azure keys may contain literal %XX
         if self.backend.scheme != "file":
             return uris
-        if not self.__cache_files:
+        if self.__listing_ttl == 0:
             return [unquote(u) for u in uris]
         if self.__files is None:
             self.__files = [unquote(u) for u in uris]
@@ -168,12 +194,14 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def file_uris(self) -> list[str]:
         """List of URL-encoded URIs for internal use (reading, downloading, caching)."""
         # If caching is disabled return the file list from the backend on each access
-        if not self.__cache_files:
+        if self.__listing_ttl == 0:
             if self.__file_filter is not None:
                 return [entry.path for entry in self.file_entries]
             # Fast path: if no filter is requested get_file_list() is sufficient because file Metadata is not needed
             # ==> avoids additional stat() calls on every file for local backends
             return self._filter_and_limit(self.backend.get_file_list())
+
+        self._expire_file_list_cache()
 
         # Return the cached URIs if already populated.
         cached_uris = self.__file_uris
@@ -183,6 +211,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Populate both caches from a single backend snapshot so URIs and entries stay consistent.
         self.__file_entries = self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
         self.__file_uris = [entry.path for entry in self.__file_entries]
+        self.__listing_timestamp = monotonic()
         return self.__file_uris
 
     @property
@@ -192,8 +221,10 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         Metadata-aware backend listing. When caching is enabled, both ``file_uris`` and ``file_entries`` are
         derived from the same backend snapshot so the cached lists stay consistent.
         """
-        if not self.__cache_files:
+        if self.__listing_ttl == 0:
             return self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
+
+        self._expire_file_list_cache()
 
         # Return the cached entries if already populated.
         cached_entries = self.__file_entries
@@ -203,16 +234,19 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Populate both caches from a single backend snapshot so entries and URIs stay consistent.
         self.__file_entries = self._filter_and_limit_entries(self.backend.get_file_list_with_metadata())
         self.__file_uris = [entry.path for entry in self.__file_entries]
+        self.__listing_timestamp = monotonic()
         return self.__file_entries
 
     @property
     def file_names(self) -> list[str]:
         """List of file names (without path) that the reader is able to read."""
-        if not self.__cache_files:
-            return [self._to_file_name(file) for file in self.file_uris]
+        # Access file_uris first so an expired listing also clears cached file names.
+        uris = self.file_uris
+        if self.__listing_ttl == 0:
+            return [self._to_file_name(file) for file in uris]
 
         if self.__file_names is None:
-            self.__file_names = [self._to_file_name(file) for file in self.file_uris]
+            self.__file_names = [self._to_file_name(file) for file in uris]
 
         return self.__file_names
 
@@ -242,6 +276,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         state["_BaseReader__files"] = None
         state["_BaseReader__file_uris"] = None
         state["_BaseReader__file_names"] = None
+        state["_BaseReader__listing_timestamp"] = None
         return state
 
     def __setstate__(self, state: dict):
@@ -255,7 +290,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
     def __str__(self):
         return (
             f"{self.__class__.__name__}({self._get_reader_params()}, num_files={self.num_files}, "
-            f"download_remote_files={self.download_files}, cache_files={self.cache_files}, "
+            f"download_remote_files={self.download_files}, listing_ttl={self.listing_ttl}, "
             f"parser={self.parser.__name__ if self.parser else None})"
         )
 
@@ -294,7 +329,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
         ``by`` selects the key source (``files``, ``file_names``, ``file_uris``, or
         ``file_entries``). Keys and file URIs are snapshotted together so pairs stay
-        consistent when ``cache_files`` is off.
+        consistent when the listing is refreshed on every access.
 
         Args:
             by (ItemsBy, optional): Key source. Default is ``"files"``.
@@ -307,7 +342,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         Raises:
             ValueError: If ``by`` is not a supported identifier.
         """
-        # Single snapshot so keys and URIs stay paired when cache_files is off.
+        # Single snapshot so keys and URIs stay paired when the listing is refreshed on every access.
         keys: list[str] | list[FileInfo]
         match by:
             case "file_entries":

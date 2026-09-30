@@ -361,9 +361,9 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             and monotonic() - self.__listing_timestamp >= self.__listing_ttl
         ):
             logger.debug("%s - File listing expired after %s seconds.", self.__class__.__name__, self.__listing_ttl)
-            self._clear_file_list_cache()
+            self._clear_listing_cache()
 
-    def _clear_file_list_cache(self) -> None:
+    def _clear_listing_cache(self) -> None:
         """Discard the cached listing and its timestamp."""
         self.__file_entries = None
         self.__files = None
@@ -666,11 +666,11 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         logger.info("%s - Re-downloading %d stale file(s).", self.__class__.__name__, len(to_redownload))
         self.download(file_paths=list(to_redownload), num_workers=num_workers, force=True)
 
-    def clear_file_list_cache(self) -> None:
+    def clear_listing_cache(self) -> None:
         """Clear the file listing so the next access discovers files again."""
         if self.__listing_timestamp is not None:
             logger.debug("%s - File listing cache cleared manually.", self.__class__.__name__)
-        self._clear_file_list_cache()
+        self._clear_listing_cache()
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

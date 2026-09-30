@@ -360,7 +360,16 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
             and self.__listing_ttl is not None
             and monotonic() - self.__listing_timestamp >= self.__listing_ttl
         ):
-            self.clear_file_list_cache()
+            logger.debug("%s - File listing expired after %s seconds.", self.__class__.__name__, self.__listing_ttl)
+            self._clear_file_list_cache()
+
+    def _clear_file_list_cache(self) -> None:
+        """Discard the cached listing and its timestamp."""
+        self.__file_entries = None
+        self.__files = None
+        self.__file_uris = None
+        self.__file_names = None
+        self.__listing_timestamp = None
 
     def _to_file_name(self, file_path: str) -> str:
         """Extract the file name from a file path."""
@@ -659,11 +668,9 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
 
     def clear_file_list_cache(self) -> None:
         """Clear the file listing so the next access discovers files again."""
-        self.__file_entries = None
-        self.__files = None
-        self.__file_uris = None
-        self.__file_names = None
-        self.__listing_timestamp = None
+        if self.__listing_timestamp is not None:
+            logger.debug("%s - File listing cache cleared manually.", self.__class__.__name__)
+        self._clear_file_list_cache()
 
     def read_file(self, file_path: str) -> DataContainer:
         """Read a file from the specified path and return it as a DataContainer object.

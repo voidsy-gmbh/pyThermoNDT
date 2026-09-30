@@ -406,7 +406,22 @@ def test_listing_failure_retries(storage_context: StorageTestContext):
         assert reader.file_names == ["a.test", "b.test"]
 
 
-@pytest.mark.parametrize("listing_ttl", [-1, float("nan"), float("inf"), float("-inf")])
+def test_large_integer_listing_ttl(storage_context: StorageTestContext):
+    """Integer TTLs beyond the float range retain the cached listing without overflow."""
+    listing_ttl = 10**1000
+    storage_context.prepare_file("a.test", b"a")
+    reader = storage_context.make_reader(listing_ttl=listing_ttl)
+
+    assert reader.listing_ttl == listing_ttl
+    uris = reader.file_uris
+    storage_context.prepare_file("b.test", b"b")
+    assert reader.file_uris == uris
+
+
+@pytest.mark.parametrize(
+    "listing_ttl",
+    [-1, pytest.param(-(10**1000), id="large_negative_integer"), float("nan"), float("inf"), float("-inf")],
+)
 def test_invalid_listing_ttl_value(storage_context: StorageTestContext, listing_ttl: float):
     with pytest.raises(ValueError, match="listing_ttl must be finite and non-negative"):
         storage_context.make_reader(listing_ttl=listing_ttl)

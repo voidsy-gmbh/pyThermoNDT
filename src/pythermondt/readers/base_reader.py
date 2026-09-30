@@ -85,7 +85,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         if listing_ttl is not None:
             if not isinstance(listing_ttl, (int, float)):
                 raise TypeError(f"listing_ttl must be a non-negative number or None, got {listing_ttl!r}.")
-            if not math.isfinite(listing_ttl) or listing_ttl < 0:
+            if listing_ttl < 0 or (isinstance(listing_ttl, float) and not math.isfinite(listing_ttl)):
                 raise ValueError(f"listing_ttl must be finite and non-negative, got {listing_ttl!r}.")
 
         self.__listing_ttl = listing_ttl

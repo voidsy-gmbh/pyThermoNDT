@@ -73,8 +73,14 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         # Assign private attributes
         self.__parser = parser
         self.__num_files = num_files
+        if isinstance(listing_ttl, bool):
+            raise TypeError(
+                f"listing_ttl must be a non-negative number or None, got {listing_ttl!r} (bool). "
+                "cache_files is deprecated; use listing_ttl=None instead of cache_files=True "
+                "or listing_ttl=0 instead of cache_files=False."
+            )
         if listing_ttl is not None:
-            if listing_ttl is not None and not isinstance(listing_ttl, (int, float)):
+            if not isinstance(listing_ttl, (int, float)):
                 raise TypeError(f"listing_ttl must be a non-negative number or None, got {listing_ttl!r}.")
             if not math.isfinite(listing_ttl) or listing_ttl < 0:
                 raise ValueError(f"listing_ttl must be finite and non-negative, got {listing_ttl!r}.")

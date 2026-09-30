@@ -418,6 +418,17 @@ def test_invalid_listing_ttl_type(storage_context: StorageTestContext, listing_t
         storage_context.make_reader(listing_ttl=listing_ttl)  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize("listing_ttl", [True, False])
+def test_boolean_listing_ttl_requires_migration(storage_context: StorageTestContext, listing_ttl: bool):
+    message = (
+        f"listing_ttl must be a non-negative number or None, got {listing_ttl!r} (bool). "
+        "cache_files is deprecated; use listing_ttl=None instead of cache_files=True "
+        "or listing_ttl=0 instead of cache_files=False."
+    )
+    with pytest.raises(TypeError, match=escape(message)):
+        storage_context.make_reader(listing_ttl=listing_ttl)
+
+
 def test_pickle_clears_listing_timestamp(storage_context: StorageTestContext):
     """Unpickling reloads the listing, even if its previous TTL has not elapsed."""
     storage_context.prepare_file("a.test", b"a")

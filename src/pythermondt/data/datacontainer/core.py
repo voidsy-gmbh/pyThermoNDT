@@ -1,5 +1,6 @@
 from io import BytesIO
 
+from ._comparison import _iter_node_differences
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
@@ -46,7 +47,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
     def __eq__(self, other: object) -> bool:
         """Compare two DataContainers for equality.
 
-        Uses ``containers_equal`` with its default options. See its docstring for the comparison rules.
+        Uses the default comparison rules of ``containers_equal``. See its docstring for details.
 
         Args:
             other (object): The other object to compare with.
@@ -57,7 +58,4 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         if not isinstance(other, DataContainer):
             return False
 
-        # Avoid a circular import with the comparison module.
-        from ..comparison import containers_equal  # pylint: disable=import-outside-toplevel
-
-        return containers_equal(self, other)
+        return next(_iter_node_differences(self.nodes, other.nodes), None) is None

@@ -44,16 +44,16 @@ def containers_equal(
     Raises:
         TypeError: Either argument is not a DataContainer.
     """
-    differences = _iter_container_differences(container1, container2, ignore_attribute_nan_inequality)
-    return next(differences, None) is None
+    diffs = container_diff(container1, container2, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality)
+    return next(diffs, None) is None
 
 
-def container_diff(
+def container_diff(  # pylint: disable=too-many-branches
     container1: DataContainer,
     container2: DataContainer,
     *,
     ignore_attribute_nan_inequality: bool = False,
-) -> list[str]:
+) -> Iterator[str]:
     """Return the differences between two DataContainers.
 
     Uses the same comparison rules as ``containers_equal``. Attribute reports include nested keys, indices,
@@ -62,24 +62,20 @@ def container_diff(
     Datasets always use ``torch.equal``. Dataset NaNs remain unequal, even when
     ``ignore_attribute_nan_inequality=True``.
 
+    Returns a lazy, single-pass iterator. Use ``list(...)`` or ``sorted(...)`` to collect the differences.
+
     Args:
         container1 (DataContainer): First container.
         container2 (DataContainer): Second container.
         ignore_attribute_nan_inequality (bool, optional): If True, treat independently created NaNs in attributes
             as equal, including nested values and NumPy arrays. Does not affect dataset tensors. Default is False.
 
-    Returns:
-        list[str]: Sorted differences. An empty list means the containers are equal.
+    Yields:
+        str: Differences in unspecified order. No differences means the containers are equal.
 
     Raises:
-        TypeError: Either argument is not a DataContainer.
+        TypeError: Either argument is not a DataContainer. Raised when iteration begins.
     """
-    return sorted(_iter_container_differences(container1, container2, ignore_attribute_nan_inequality))
-
-
-def _iter_container_differences(  # pylint: disable=too-many-branches
-    container1: DataContainer, container2: DataContainer, ignore_attribute_nan_inequality: bool
-) -> Iterator[str]:
     if not isinstance(container1, DataContainer):
         raise TypeError(f"container1 must be a DataContainer, got {type(container1).__name__}.")
     if not isinstance(container2, DataContainer):

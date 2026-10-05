@@ -8,6 +8,8 @@ from pythermondt import IndexedThermoDataset, LocalReader, ThermoDataset
 from pythermondt.data import container_diff
 from pythermondt.transforms import ThermoTransform
 
+from ..utils import format_container_diff
+
 
 def test_basic_initialization(sample_dataset_single_file: ThermoDataset):
     """Test basic IndexedThermoDataset initialization."""
@@ -98,7 +100,7 @@ def test_transform_chain(local_reader_three_files: LocalReader, sample_transform
     assert isinstance(chain, ThermoTransform)
     for i, container in enumerate(dataset):
         differences = list(container_diff(chain(dataset.load_raw_data(i)), container))
-        assert not differences, "\n".join(differences)
+        assert not differences, format_container_diff(differences)
 
     # Check if transform chain is applied correctly in the child dataset
     chain = indexed.get_transform_chain()
@@ -140,7 +142,7 @@ def test_build_cache_thermodataset(
         no_cache = subset_no_cache[idx]
         # Lazy caching pickles attributes, which gives NaNs new identities.
         differences = list(container_diff(cache, no_cache, ignore_attribute_nan_inequality=mode == "lazy"))
-        assert not differences, f"Cache mismatch at index {idx}:\n" + "\n".join(differences)
+        assert not differences, f"Cache mismatch at index {idx}:\n{format_container_diff(differences)}"
 
     # Check speedup
     torch.manual_seed(42)

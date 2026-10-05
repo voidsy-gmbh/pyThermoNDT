@@ -10,6 +10,7 @@ from pythermondt.io import LocalBackend
 from pythermondt.io.parsers import HDF5Parser
 from pythermondt.writers import LocalWriter
 from tests.support.storage import StorageTestContext
+from tests.utils import format_container_diff
 from tests.writers.conftest import HDF5TestCorpus
 
 
@@ -26,7 +27,7 @@ def test_write_round_trip(storage_context: StorageTestContext, test_container: D
     read_back = DataContainer(data.file_obj)
 
     differences = list(container_diff(read_back, test_container))
-    assert not differences, "Written container does not match original:\n" + "\n".join(differences)
+    assert not differences, f"Written container does not match original:\n{format_container_diff(differences)}"
 
 
 @pytest.mark.parametrize("filename", ["myfile", "myfile.hdf5"], ids=["no_ext", "with_ext"])
@@ -97,7 +98,8 @@ def test_process_parallel_local(
         expected = DataContainer(BytesIO(corpus.files[f"file_{original_idx}.hdf5"]))
         differences = list(container_diff(read_back, expected))
         assert not differences, (
-            f"Container at {dest_file.name} (index {original_idx}) does not match original:\n" + "\n".join(differences)
+            f"Container at {dest_file.name} (index {original_idx}) does not match original:\n"
+            f"{format_container_diff(differences)}"
         )
 
 

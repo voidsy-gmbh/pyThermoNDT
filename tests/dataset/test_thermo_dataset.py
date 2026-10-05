@@ -10,6 +10,8 @@ from pythermondt import LocalReader, S3Reader, ThermoDataset, configure_logging
 from pythermondt.data import container_diff
 from pythermondt.transforms import ThermoTransform
 
+from ..utils import format_container_diff
+
 
 def test_basic_initialization(localreader_with_file: LocalReader):
     """Test root dataset parent is None."""
@@ -116,7 +118,7 @@ def test_build_cache_thermodataset(
         no_cache = dataset_no_cache[idx]
         # Lazy caching pickles attributes, which gives NaNs new identities.
         differences = list(container_diff(cache, no_cache, ignore_attribute_nan_inequality=mode == "lazy"))
-        assert not differences, f"Cache mismatch at index {idx}:\n" + "\n".join(differences)
+        assert not differences, f"Cache mismatch at index {idx}:\n{format_container_diff(differences)}"
 
     # Check speedup
     torch.manual_seed(42)

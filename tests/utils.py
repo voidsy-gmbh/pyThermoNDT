@@ -1,10 +1,16 @@
 import os
+from collections.abc import Iterable
 
 import torch
 
 from pythermondt.data import DataContainer
 from pythermondt.io.parsers import find_parser_for_extension
 from pythermondt.readers import LocalReader
+
+
+def format_container_diff(differences: Iterable[str]) -> str:
+    """Format container differences as an indented list without printing."""
+    return "\n".join(f"  - {difference}" for difference in differences)
 
 
 def update_expected_outputs(source_folder: str, file_extension: str):

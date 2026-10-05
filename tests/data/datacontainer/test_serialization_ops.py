@@ -10,6 +10,8 @@ import torch
 
 from pythermondt.data import DataContainer, container_diff
 
+from ...utils import format_container_diff
+
 
 @pytest.mark.parametrize("compression", ["gzip", "lzf", "none"])
 @pytest.mark.parametrize("compression_opts", [None, 1, 4, 9])
@@ -119,7 +121,7 @@ def test_pickle_serialize_deserialize(container_fixture: str, request: pytest.Fi
 
     # Check if the unpickled container is equal to the original container
     differences = list(container_diff(unpickled_container, original_container))
-    assert not differences, "Unpickled container does not match original:\n" + "\n".join(differences)
+    assert not differences, f"Unpickled container does not match original:\n{format_container_diff(differences)}"
     assert isinstance(unpickled_container, type(original_container)), "Unpickled container type does not match original"
 
 
@@ -147,7 +149,7 @@ def test_pickle_protocols(container_fixture: str, request: pytest.FixtureRequest
 
     # Verify equality
     differences = list(container_diff(unpickled_container, original_container))
-    assert not differences, "Unpickled container does not match original:\n" + "\n".join(differences)
+    assert not differences, f"Unpickled container does not match original:\n{format_container_diff(differences)}"
     assert isinstance(unpickled_container, type(original_container)), "Unpickled container type does not match original"
 
 
@@ -181,7 +183,7 @@ def test_pickle_file_operations(container_fixture: str, request: pytest.FixtureR
 
     # Verify equality
     differences = list(container_diff(loaded_container, original_container))
-    assert not differences, "Unpickled container does not match original:\n" + "\n".join(differences)
+    assert not differences, f"Unpickled container does not match original:\n{format_container_diff(differences)}"
     assert isinstance(loaded_container, type(original_container)), "Unpickled container type does not match original"
 
 

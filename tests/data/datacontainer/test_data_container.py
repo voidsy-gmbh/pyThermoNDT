@@ -7,6 +7,8 @@ from torch import Tensor
 
 from pythermondt.data import DataContainer, container_diff
 
+from ...utils import format_container_diff
+
 
 def test_initialization(empty_container: DataContainer):
     """Test initialization of DataContainer."""
@@ -103,7 +105,7 @@ def test_serialization(empty_container: DataContainer, sample_tensor: Tensor):
 
     # Check if data is the same
     differences = list(container_diff(empty_container, new_container))
-    assert not differences, "\n".join(differences)
+    assert not differences, format_container_diff(differences)
 
 
 def test_error_handling(empty_container: DataContainer):

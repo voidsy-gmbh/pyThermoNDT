@@ -9,6 +9,7 @@ import pytest
 from pythermondt.data import ThermoContainer, container_diff
 from pythermondt.io.parsers import SimulationParser
 from pythermondt.io.utils import IOPathWrapper
+from tests.utils import format_container_diff
 
 
 def test_simulation_parser_empty_bytes():
@@ -55,4 +56,4 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
 
     # Check containers match
     differences = list(container_diff(parsed, expected))
-    assert not differences, "Parsed data does not match expected data:\n" + "\n".join(differences)
+    assert not differences, f"Parsed data does not match expected data:\n{format_container_diff(differences)}"

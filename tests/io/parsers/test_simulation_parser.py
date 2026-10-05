@@ -6,10 +6,9 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from pythermondt.data import ThermoContainer
+from pythermondt.data import ThermoContainer, container_diff
 from pythermondt.io.parsers import SimulationParser
 from pythermondt.io.utils import IOPathWrapper
-from tests.utils import containers_equal
 
 
 def test_simulation_parser_empty_bytes():
@@ -55,4 +54,5 @@ def test_simulation_parser_basic_parsing(mock_loadmat):
     parsed = SimulationParser.parse(IOPathWrapper(io.BytesIO(b"dummy")))
 
     # Check containers match
-    assert containers_equal(parsed, expected), "Parsed data does not match expected data."
+    differences = list(container_diff(parsed, expected))
+    assert not differences, "Parsed data does not match expected data:\n" + "\n".join(differences)

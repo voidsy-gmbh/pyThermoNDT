@@ -5,9 +5,8 @@ import pytest
 import torch
 
 from pythermondt import IndexedThermoDataset, LocalReader, ThermoDataset
+from pythermondt.data import container_diff
 from pythermondt.transforms import ThermoTransform
-
-from ..utils import containers_equal
 
 
 def test_basic_initialization(sample_dataset_single_file: ThermoDataset):
@@ -98,7 +97,8 @@ def test_transform_chain(local_reader_three_files: LocalReader, sample_transform
     chain = dataset.get_transform_chain()
     assert isinstance(chain, ThermoTransform)
     for i, container in enumerate(dataset):
-        assert containers_equal(chain(dataset.load_raw_data(i)), container)
+        differences = list(container_diff(chain(dataset.load_raw_data(i)), container))
+        assert not differences, "\n".join(differences)
 
     # Check if transform chain is applied correctly in the child dataset
     chain = indexed.get_transform_chain()
@@ -138,11 +138,9 @@ def test_build_cache_thermodataset(
         cache = subset_cache[idx]
         torch.manual_seed(42)
         no_cache = subset_no_cache[idx]
-        # If mode is lazy ==> datacontainer gets pickled and NaN values may not be equal: see https://bugs.python.org/issue43078
-        if mode == "lazy":
-            assert containers_equal(cache, no_cache, ignore_nan_inequality=True), f"Cache mismatch at index {idx}"
-        else:
-            assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
+        # Lazy caching pickles attributes, which gives NaNs new identities.
+        differences = list(container_diff(cache, no_cache, ignore_attribute_nan_inequality=mode == "lazy"))
+        assert not differences, f"Cache mismatch at index {idx}:\n" + "\n".join(differences)
 
     # Check speedup
     torch.manual_seed(42)

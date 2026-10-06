@@ -7,9 +7,10 @@ import pytest
 import torch
 
 from pythermondt import LocalReader, S3Reader, ThermoDataset, configure_logging
+from pythermondt.data import container_diff
 from pythermondt.transforms import ThermoTransform
 
-from ..utils import containers_equal
+from ..utils import format_container_diff
 
 
 def test_basic_initialization(localreader_with_file: LocalReader):
@@ -115,11 +116,9 @@ def test_build_cache_thermodataset(
         cache = dataset_cache[idx]
         torch.manual_seed(42)
         no_cache = dataset_no_cache[idx]
-        # If mode is lazy ==> datacontainer gets pickled and NaN values may not be equal: see https://bugs.python.org/issue43078
-        if mode == "lazy":
-            assert containers_equal(cache, no_cache, ignore_nan_inequality=True), f"Cache mismatch at index {idx}"
-        else:
-            assert containers_equal(cache, no_cache), f"Cache mismatch at index {idx}"
+        # Lazy caching pickles attributes, which gives NaNs new identities.
+        differences = list(container_diff(cache, no_cache, ignore_attribute_nan_inequality=mode == "lazy"))
+        assert not differences, f"Cache mismatch at index {idx}:\n{format_container_diff(differences)}"
 
     # Check speedup
     torch.manual_seed(42)

@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 import torch
 
-from pythermondt.data import DataContainer
+from pythermondt.data import DataContainer, container_diff
 
-from ...utils import containers_equal
+from ...utils import format_container_diff
 
 
 @pytest.mark.parametrize("compression", ["gzip", "lzf", "none"])
@@ -120,7 +120,8 @@ def test_pickle_serialize_deserialize(container_fixture: str, request: pytest.Fi
     unpickled_container = pickle.loads(pickled_bytes)
 
     # Check if the unpickled container is equal to the original container
-    assert containers_equal(unpickled_container, original_container), "Unpickled container does not match original"
+    differences = list(container_diff(unpickled_container, original_container))
+    assert not differences, f"Unpickled container does not match original:\n{format_container_diff(differences)}"
     assert isinstance(unpickled_container, type(original_container)), "Unpickled container type does not match original"
 
 
@@ -147,7 +148,8 @@ def test_pickle_protocols(container_fixture: str, request: pytest.FixtureRequest
     unpickled_container = pickle.loads(pickled_bytes)
 
     # Verify equality
-    assert containers_equal(unpickled_container, original_container), "Unpickled container does not match original"
+    differences = list(container_diff(unpickled_container, original_container))
+    assert not differences, f"Unpickled container does not match original:\n{format_container_diff(differences)}"
     assert isinstance(unpickled_container, type(original_container)), "Unpickled container type does not match original"
 
 
@@ -180,7 +182,8 @@ def test_pickle_file_operations(container_fixture: str, request: pytest.FixtureR
         loaded_container = pickle.load(f)
 
     # Verify equality
-    assert containers_equal(loaded_container, original_container), "Unpickled container does not match original"
+    differences = list(container_diff(loaded_container, original_container))
+    assert not differences, f"Unpickled container does not match original:\n{format_container_diff(differences)}"
     assert isinstance(loaded_container, type(original_container)), "Unpickled container type does not match original"
 
 

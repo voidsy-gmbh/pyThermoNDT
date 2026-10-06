@@ -1,13 +1,11 @@
 from io import BytesIO
 
-import torch
-
+from ._comparison import _iter_node_differences
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
 from .node import RootNode
 from .serialization_ops import DeserializationOps, SerializationOps
-from .utils import is_datanode, is_groupnode
 from .visualization_ops import VisualizationOps
 
 
@@ -46,18 +44,10 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
 
         return returnstring
 
-    # Overwrite the __eq__ method to provide a comparison between two DataContainer instances
-    def __eq__(self, other: object) -> bool:  # pylint: disable=too-many-return-statements
+    def __eq__(self, other: object) -> bool:
         """Compare two DataContainers for equality.
 
-        Containers are equal if they have:
-        1. Same node structure
-        2. Equal data in all datasets
-        3. Identical attributes for every group and dataset
-
-        **Note**: This implements strict equality. Even with the same initial data, containers
-        that have undergone stochastic transforms (e.g. GaussianNoise) will not be equal
-        since their data differs.
+        Uses the default comparison rules of ``containers_equal``. See its docstring for details.
 
         Args:
             other (object): The other object to compare with.
@@ -65,36 +55,7 @@ class DataContainer(SerializationOps, DeserializationOps, VisualizationOps, Grou
         Returns:
             bool: True if the two DataContainers are equal, False otherwise.
         """
-        # Check if the other object is an instance of DataContainer
         if not isinstance(other, DataContainer):
             return False
 
-        # Check if node structure is equal
-        if set(self.nodes.keys()) != set(other.nodes.keys()):
-            return False
-
-        # Compare each node
-        for path, node in self.nodes.items():
-            # Retrieve other node
-            other_node = other.nodes[path]
-
-            # Compare node types and names
-            if node.type != other_node.type or node.name != other_node.name:
-                return False
-
-            # Checks for GroupNodes
-            if is_groupnode(node) and is_groupnode(other_node):
-                # Compare attributes
-                if dict(node.attributes) != dict(other_node.attributes):
-                    return False
-
-            # Checks for DataNodes
-            if is_datanode(node) and is_datanode(other_node):
-                # Compare attributes
-                if dict(node.attributes) != dict(other_node.attributes):
-                    return False
-
-                # Compare actual data
-                if not torch.equal(node.data, other_node.data):
-                    return False
-        return True
+        return next(_iter_node_differences(self.nodes, other.nodes), None) is None

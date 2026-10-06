@@ -4,11 +4,11 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
-from pythermondt.data import DataContainer
+from pythermondt.data import DataContainer, container_diff
 from pythermondt.dataset import IndexedThermoDataset, ThermoDataset, random_split
 from pythermondt.readers import LocalReader
 
-from ..utils import containers_equal
+from ..utils import format_container_diff
 from .utils import IntegrationTestCase, discover_test_cases
 
 # Get all test cases
@@ -27,8 +27,10 @@ def test_local_reader_integration(test_case: IntegrationTestCase):
     # Compare all containers in the reader
     for i, (source_container, expected_container) in enumerate(zip(source_reader, expected_reader, strict=True)):
         # Compare containers
-        assert containers_equal(expected_container, source_container), (
-            f"Test case '{test_case.id}': {source_reader.files[i]} and {expected_reader.files[i]} are not equal"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, (
+            f"Test case '{test_case.id}': {source_reader.files[i]} and {expected_reader.files[i]} are not equal:\n"
+            f"{format_container_diff(differences)}"
         )
 
 
@@ -46,8 +48,10 @@ def test_thermodataset_integration(test_case: IntegrationTestCase):
     # Compare all containers in the dataset
     for i, (source_container, expected_container) in enumerate(zip(source_dataset, expected_dataset, strict=True)):
         # Compare containers
-        assert containers_equal(expected_container, source_container), (
-            f"Test case '{test_case.id}': {source_dataset.files[i]} and {expected_dataset.files[i]} are not equal"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, (
+            f"Test case '{test_case.id}': {source_dataset.files[i]} and {expected_dataset.files[i]} are not equal:\n"
+            f"{format_container_diff(differences)}"
         )
 
 
@@ -70,19 +74,26 @@ def test_indexed_thermodataset_integration(test_case: IntegrationTestCase):
     # Compare all containers in the indexed dataset
     for i, (source_container, expected_container) in enumerate(zip(s_indexed_dataset, e_indexed_dataset, strict=True)):
         # Compare containers
-        assert containers_equal(expected_container, source_container), (
-            f"Test case '{test_case.id}': {s_indexed_dataset.files[i]} and {e_indexed_dataset.files[i]} are not equal"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, (
+            f"Test case '{test_case.id}': "
+            f"{s_indexed_dataset.files[i]} and {e_indexed_dataset.files[i]} are not equal:\n"
+            f"{format_container_diff(differences)}"
         )
 
     # Check that the the containers in the indexed dataset match the original dataset
     for i, (source_container, expected_container) in enumerate(zip(s_indexed_dataset, source_dataset, strict=False)):
-        assert containers_equal(expected_container, source_container), (
-            f"Test case '{test_case.id}': Container {i} in indexed dataset not equal to original dataset"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, (
+            f"Test case '{test_case.id}': Container {i} in indexed dataset not equal to original dataset:\n"
+            f"{format_container_diff(differences)}"
         )
 
     for i, (source_container, expected_container) in enumerate(zip(e_indexed_dataset, expected_dataset, strict=False)):
-        assert containers_equal(expected_container, source_container), (
-            f"Test case '{test_case.id}': Container {i} in indexed dataset not equal to original dataset"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, (
+            f"Test case '{test_case.id}': Container {i} in indexed dataset not equal to original dataset:\n"
+            f"{format_container_diff(differences)}"
         )
 
 
@@ -117,13 +128,15 @@ def test_random_split_integration(recwarn, test_case: IntegrationTestCase, split
 
     # Compare the train datasets
     for i, (source_container, expected_container) in enumerate(zip(source_train, expected_train, strict=True)):
-        assert containers_equal(expected_container, source_container), (
-            f"Test case '{test_case.id}': Train {i} not equal"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, (
+            f"Test case '{test_case.id}': Train {i} not equal:\n{format_container_diff(differences)}"
         )
 
     # Compare the test datasets
     for i, (source_container, expected_container) in enumerate(zip(source_test, expected_test, strict=True)):
-        assert containers_equal(expected_container, source_container), f"Test case '{test_case.id}': Test {i} not equal"
+        differences = list(container_diff(expected_container, source_container))
+        assert not differences, f"Test case '{test_case.id}': Test {i} not equal:\n{format_container_diff(differences)}"
 
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)

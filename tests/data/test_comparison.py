@@ -198,6 +198,50 @@ def test_numpy_array_attribute_nans(
     assert left != right
 
 
+@pytest.mark.parametrize("ignore_attribute_nan_inequality", [False, True])
+@pytest.mark.parametrize("as_object_array", [False, True], ids=["scalar", "object-array"])
+@pytest.mark.parametrize("nan_component", ["real", "imaginary"])
+@pytest.mark.parametrize("scalar_type", [complex, np.complex64, np.complex128])
+def test_complex_attribute_nan_inequality(
+    container_pair: tuple[DataContainer, DataContainer],
+    scalar_type: Any,
+    nan_component: str,
+    as_object_array: bool,
+    ignore_attribute_nan_inequality: bool,
+):
+    """Apply the NaN option to complex scalars and their object-array elements."""
+    left, right = container_pair
+    real = float("nan") if nan_component == "real" else 1.0
+    imaginary = float("nan") if nan_component == "imaginary" else 1.0
+    # Construct separate scalars so shared-object identity cannot make the NaNs equal.
+    value1 = scalar_type(complex(real, imaginary))
+    value2 = scalar_type(complex(real, imaginary))
+    if as_object_array:
+        value1, value2 = np.array([value1], dtype=object), np.array([value2], dtype=object)
+    left.add_attribute("/MetaData", "value", value1)
+    right.add_attribute("/MetaData", "value", value2)
+
+    equal = containers_equal(left, right, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality)
+    differences = list(container_diff(left, right, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality))
+
+    assert equal is ignore_attribute_nan_inequality
+    assert (differences == []) is ignore_attribute_nan_inequality
+    assert left != right
+
+
+@pytest.mark.parametrize("value1, value2", [(complex(1, 2), complex(1, 3)), (complex(float("nan"), 1), complex(1, 1))])
+def test_complex_attribute_nan_option_preserves_finite_mismatches(
+    container_pair: tuple[DataContainer, DataContainer], value1: Any, value2: Any
+):
+    """Keep unequal complex attributes unequal unless both values contain NaNs."""
+    left, right = container_pair
+    left.add_attribute("/MetaData", "value", value1)
+    right.add_attribute("/MetaData", "value", value2)
+
+    assert not containers_equal(left, right, ignore_attribute_nan_inequality=True)
+    assert len(list(container_diff(left, right, ignore_attribute_nan_inequality=True))) == 1
+
+
 def test_numpy_attribute_hdf5_round_trip(container_pair: tuple[DataContainer, DataContainer]):
     """Fix container equality for array attributes that already survive HDF5 serialization."""
     left, _ = container_pair
@@ -207,6 +251,17 @@ def test_numpy_attribute_hdf5_round_trip(container_pair: tuple[DataContainer, Da
     assert containers_equal(left, restored)
     assert list(container_diff(left, restored)) == []
     assert left == restored
+
+
+def test_complex_attribute_nan_hdf5_round_trip(container_pair: tuple[DataContainer, DataContainer]):
+    """Ignore complex scalar NaNs that survive HDF5 attribute serialization."""
+    left, _ = container_pair
+    left.add_attribute("/MetaData", "value", complex(float("nan"), 1))  # type: ignore[arg-type]
+    restored = DataContainer(left.serialize_to_hdf5())
+
+    assert left != restored
+    assert containers_equal(left, restored, ignore_attribute_nan_inequality=True)
+    assert list(container_diff(left, restored, ignore_attribute_nan_inequality=True)) == []
 
 
 def test_report_details_and_silent_output(container_pair: tuple[DataContainer, DataContainer], capsys):

@@ -85,7 +85,11 @@ def _iter_attribute_differences(  # pylint: disable=too-many-branches
                 raise
 
     # Ignore independently created attribute NaNs only when requested.
-    if ignore_nan_inequality and isinstance(value1, (float, np.floating)) and isinstance(value2, (float, np.floating)):
+    if (
+        ignore_nan_inequality
+        and isinstance(value1, (float, complex, np.inexact))
+        and isinstance(value2, (float, complex, np.inexact))
+    ):
         if np.isnan(value1) and np.isnan(value2):
             return
 

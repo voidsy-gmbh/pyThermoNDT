@@ -78,9 +78,11 @@ def _iter_attribute_differences(  # pylint: disable=too-many-branches
         if value1 == value2:
             return
     except ValueError:
-        # Dictionaries and sequences can contain arrays that need recursive comparison.
-        if not isinstance(value1, (dict, list, tuple)) or not isinstance(value2, (dict, list, tuple)):
-            raise
+        # Mixed array attributes also need explicit comparison.
+        if not isinstance(value1, np.ndarray) and not isinstance(value2, np.ndarray):
+            # Dictionaries and sequences can contain arrays that need recursive comparison.
+            if not isinstance(value1, (dict, list, tuple)) or not isinstance(value2, (dict, list, tuple)):
+                raise
 
     # Ignore independently created attribute NaNs only when requested.
     if ignore_nan_inequality and isinstance(value1, (float, np.floating)) and isinstance(value2, (float, np.floating)):

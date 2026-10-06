@@ -149,6 +149,37 @@ def test_numpy_array_attributes(
     assert (left == right) is expected
 
 
+@pytest.mark.parametrize("nested", [False, True], ids=["direct", "nested"])
+@pytest.mark.parametrize("reverse", [False, True], ids=["array-first", "array-second"])
+@pytest.mark.parametrize(
+    "value1, value2",
+    [
+        (np.array([1, 2]), [1, 2]),
+        (np.array([1, 2]), (1, 2)),
+        (np.array([1, 2]), 1),
+    ],
+    ids=["list", "tuple", "scalar"],
+)
+def test_mixed_numpy_attribute_types(
+    container_pair: tuple[DataContainer, DataContainer], value1: Any, value2: Any, reverse: bool, nested: bool
+):
+    """Report mixed array attributes as mismatches without ambiguous truth tests."""
+    left, right = container_pair
+    if reverse:
+        value1, value2 = value2, value1
+    if nested:
+        value1, value2 = {"nested": [value1]}, {"nested": [value2]}
+    left.add_attribute("/MetaData", "value", value1)
+    right.add_attribute("/MetaData", "value", value2)
+
+    differences = list(container_diff(left, right))
+    attribute_path = "/MetaData['value']['nested'][0]" if nested else "/MetaData['value']"
+    assert len(differences) == 1
+    assert differences[0].startswith(f"Attribute type/value mismatch at {attribute_path}: ")
+    assert not containers_equal(left, right)
+    assert left != right
+
+
 @pytest.mark.parametrize("ignore_attribute_nan_inequality", [False, True])
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128, object])
 def test_numpy_array_attribute_nans(

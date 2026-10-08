@@ -1,5 +1,11 @@
 # PyThermoNDT Agent Instructions
 
+Favor scientific correctness, predictable PyTorch behavior, and understandable memory use. Prefer the simplest
+implementation that preserves these properties.
+
+Code style rules are defaults. Data and transform invariants are correctness requirements. If a rule conflicts with the
+task, explain the conflict and agree on an exception before proceeding.
+
 ## Code Style
 
 Use these implementations as style references:
@@ -86,6 +92,8 @@ do not use whole-repository fixes as routine validation.
 ## Change Boundaries
 
 - Make the smallest correct change. Preserve existing behavior unless the task requires a change.
+- Preserve required behavior, not unnecessary structure. If a narrow fix would add complexity, explain the simpler
+  alternative before expanding scope.
 - Do not add speculative abstractions or backward-compatibility code without a concrete need.
 - Do not perform unrelated cleanup or mix functional changes with unrelated whitespace changes.
 - Do not commit unless explicitly requested.

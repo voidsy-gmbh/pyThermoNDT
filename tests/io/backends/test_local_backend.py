@@ -3,6 +3,7 @@
 import io
 import os
 from pathlib import Path
+from shutil import SameFileError
 from unittest.mock import patch
 
 import pytest
@@ -80,12 +81,28 @@ def test_close_does_nothing(tmp_path: Path):
     backend.close()  # Should not raise
 
 
-def test_download_file_not_implemented(tmp_path: Path):
-    """Test that download_file raises NotImplementedError."""
+@pytest.mark.parametrize("use_uri", [False, True])
+def test_copy_special_path(tmp_path: Path, use_uri: bool):
+    """Copy local paths and encoded URIs without changing file content."""
+    source = tmp_path / "source %20 ü.txt"
+    source.write_bytes(b"\x00\xfforiginal")
+    destination = tmp_path / "dest.txt"
     backend = LocalBackend(str(tmp_path))
 
-    with pytest.raises(NotImplementedError, match="Direct download is not supported"):
-        backend.download_file("source.txt", "dest.txt")
+    backend.copy(source.as_uri() if use_uri else str(source), str(destination))
+
+    assert destination.read_bytes() == source.read_bytes() == b"\x00\xfforiginal"
+
+
+def test_copy_same_file_preserves_source(tmp_path: Path):
+    """Reject copying onto the same file without truncating it."""
+    source = tmp_path / "source.txt"
+    source.write_bytes(b"original")
+    backend = LocalBackend(str(tmp_path))
+
+    with pytest.raises(SameFileError):
+        backend.copy(source.as_uri(), str(source))
+    assert source.read_bytes() == b"original"
 
 
 def test_get_file_identity_directory_raises(tmp_path: Path):

@@ -251,14 +251,14 @@ class AzureBlobBackend(BaseBackend):
         except ResourceNotFoundError as e:
             raise FileNotFoundError(f"File not found: {file_path}") from e
 
-    def download_file(self, source_path: str, destination_path: str) -> None:
-        """Download a file from Azure Blob Storage to local filesystem.
+    def copy(self, source_uri: str, destination_path: str) -> None:
+        """Copy a file from Azure Blob Storage to the local filesystem in chunks.
 
         Args:
-            source_path (str): Source Azure path
+            source_uri (str): Source Azure URI or blob name
             destination_path (str): Destination local path
         """
-        container, blob_name = self._parse_input(source_path)
+        container, blob_name = self._parse_input(source_uri)
 
         blob_client = self.__client.get_blob_client(container=container, blob=blob_name)
 

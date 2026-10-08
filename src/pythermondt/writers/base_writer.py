@@ -54,6 +54,11 @@ class BaseWriter(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
+    @abstractmethod
+    def _get_destination_path(self, file_name: str) -> str:
+        """Build the destination path without changing the extension; prepare local folders if needed."""
+        raise NotImplementedError("Subclasses must implement this method")
+
     def process_parallel(
         self,
         reader: BaseReader,

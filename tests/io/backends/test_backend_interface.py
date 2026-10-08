@@ -147,7 +147,7 @@ def test_get_file_list_all(storage_context: StorageTestContext, test_files_scena
 
 
 def test_copy(storage_context: StorageTestContext, tmp_path: Path, test_file):
-    """Copy remote files to a local path, preserving the source and overwriting the destination."""
+    """Copy every source backend to a local path, preserving the source and overwriting the destination."""
     backend_instance = storage_context.backend
     file_path, expected_content = test_file
 
@@ -156,13 +156,10 @@ def test_copy(storage_context: StorageTestContext, tmp_path: Path, test_file):
     destination = tmp_path / f"copied_{filename}"
     destination.write_bytes(b"old content")
 
-    if backend_instance.remote_source:
-        backend_instance.copy(source_uri=file_path, destination_path=str(destination))
-        assert destination.read_bytes() == expected_content
-        assert backend_instance.read_file(file_path).file_obj.read() == expected_content
-    else:
-        with pytest.raises(NotImplementedError):
-            backend_instance.copy(source_uri=file_path, destination_path=str(destination))
+    backend_instance.copy(source_uri=file_path, destination_path=str(destination))
+
+    assert destination.read_bytes() == expected_content
+    assert backend_instance.read_file(file_path).file_obj.read() == expected_content
 
 
 def test_get_file_list_with_metadata_single(storage_context: StorageTestContext, test_file):

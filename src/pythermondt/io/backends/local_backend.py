@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 from datetime import datetime, timezone
 from glob import glob
 from urllib.parse import urlparse
@@ -141,7 +142,8 @@ class LocalBackend(BaseBackend):
         return self._identity_from_stat(stat_result)
 
     def copy(self, source_uri: str, destination_path: str) -> None:
-        raise NotImplementedError("Direct copy is not supported for local files.")
+        """Copy a local file to a local filesystem path, overwriting an existing file."""
+        shutil.copyfile(self._parse_input(source_uri), destination_path)
 
     def _parse_input(self, input_path: str) -> str:
         parsed = urlparse(input_path)

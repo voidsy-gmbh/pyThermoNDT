@@ -146,27 +146,23 @@ def test_get_file_list_all(storage_context: StorageTestContext, test_files_scena
     assert set(file_list) == set(test_files_scenario.values())
 
 
-def test_download_file(storage_context: StorageTestContext, tmp_path, test_file):
-    """Test file download/copy."""
+def test_copy(storage_context: StorageTestContext, tmp_path: Path, test_file):
+    """Copy remote files to a local path, preserving the source and overwriting the destination."""
     backend_instance = storage_context.backend
     file_path, expected_content = test_file
 
     # Extract filename for destination
     filename = Path(file_path).name
-    dest_path = str(tmp_path / f"downloaded_{filename}")
+    destination = tmp_path / f"copied_{filename}"
+    destination.write_bytes(b"old content")
 
-    if not backend_instance.remote_source:
-        # Local backends don't support download
-        with pytest.raises(NotImplementedError):
-            backend_instance.download_file(file_path, dest_path)
+    if backend_instance.remote_source:
+        backend_instance.copy(source_uri=file_path, destination_path=str(destination))
+        assert destination.read_bytes() == expected_content
+        assert backend_instance.read_file(file_path).file_obj.read() == expected_content
     else:
-        # Remote backends download to local filesystem
-        backend_instance.download_file(file_path, dest_path)
-
-        # Verify content
-        with open(dest_path, "rb") as f:
-            downloaded_content = f.read()
-        assert downloaded_content == expected_content
+        with pytest.raises(NotImplementedError):
+            backend_instance.copy(source_uri=file_path, destination_path=str(destination))
 
 
 def test_get_file_list_with_metadata_single(storage_context: StorageTestContext, test_file):

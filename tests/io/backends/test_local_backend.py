@@ -80,12 +80,12 @@ def test_close_does_nothing(tmp_path: Path):
     backend.close()  # Should not raise
 
 
-def test_download_file_not_implemented(tmp_path: Path):
-    """Test that download_file raises NotImplementedError."""
+def test_copy_not_implemented(tmp_path: Path):
+    """Test that copy raises NotImplementedError for local files."""
     backend = LocalBackend(str(tmp_path))
 
-    with pytest.raises(NotImplementedError, match="Direct download is not supported"):
-        backend.download_file("source.txt", "dest.txt")
+    with pytest.raises(NotImplementedError, match="Direct copy is not supported"):
+        backend.copy("source.txt", "dest.txt")
 
 
 def test_get_file_identity_directory_raises(tmp_path: Path):

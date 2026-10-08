@@ -140,8 +140,8 @@ class LocalBackend(BaseBackend):
         stat_result = os.stat(path)
         return self._identity_from_stat(stat_result)
 
-    def download_file(self, source_path: str, destination_path: str) -> None:
-        raise NotImplementedError("Direct download is not supported for local files.")
+    def copy(self, source_uri: str, destination_path: str) -> None:
+        raise NotImplementedError("Direct copy is not supported for local files.")
 
     def _parse_input(self, input_path: str) -> str:
         parsed = urlparse(input_path)

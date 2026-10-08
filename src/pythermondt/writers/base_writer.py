@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
+from urllib.parse import unquote, urlparse
 
 from tqdm.auto import tqdm
 
@@ -59,6 +60,15 @@ class BaseWriter(ABC):
         """Build the destination path without changing the extension; prepare local folders if needed."""
         raise NotImplementedError("Subclasses must implement this method")
 
+    def _copy_file(self, source_backend: BaseBackend, source_uri: str, file_name: str) -> None:
+        """Transfer original bytes, using direct copies for local destinations."""
+        destination_path = self._get_destination_path(file_name)
+        if self.backend.remote_source:
+            with source_backend.read_file(source_uri) as file_data:
+                self.backend.write_file(file_data, destination_path)
+        else:
+            source_backend.copy(source_uri, destination_path)
+
     def process_parallel(
         self,
         reader: BaseReader,
@@ -67,7 +77,8 @@ class BaseWriter(ABC):
         compression: CompressionType = "lzf",
         compression_opts: int | None = 4,
         num_workers: int | None = None,
-    ):
+        raw_copy: bool = False,
+    ) -> None:
         """Process multiple DataContainers from a reader in parallel.
 
         Args:
@@ -80,33 +91,51 @@ class BaseWriter(ABC):
             compression: Compression method for HDF5 files
             compression_opts: Compression level for gzip (ignored for other methods)
             num_workers: Number of workers. Defaults to global config setting.
+            raw_copy: Copy original bytes without parsing or HDF5 serialization. Preserves source extensions
+                and ignores compression arguments. Local destinations use direct file copies/downloads;
+                remote destinations buffer each file in memory. Reader discovery filters still apply,
+                but the reader's download cache is bypassed. Default is False.
         """
+        # Snapshot raw-copy sources once so refreshed listings cannot change file/name pairs during transfer.
+        file_uris = list(reader.file_uris) if raw_copy else []
+        file_names = []
+        if raw_copy:
+            file_names = [os.path.basename(urlparse(uri).path) for uri in file_uris]
+            if reader.backend.scheme == "file":
+                file_names = [unquote(name) for name in file_names]
+
         # Determine length to format zero-padded indices
-        n = len(reader)
+        n = len(file_uris) if raw_copy else len(reader)
         index_width = len(str(n))
 
         if "{index}" not in file_name_pattern:
             file_name_pattern += "_{index}"
 
-        if keep_file_names:
-            _ = reader.file_names  # Access file names to ensure they are loaded
+        if keep_file_names and not raw_copy:
+            file_names = reader.file_names  # Load names before starting workers
 
         def write_single(idx: int):
-            container = reader[idx]
             if keep_file_names:
-                file_name = os.path.splitext(reader.file_names[idx])[0]  # Remove original extension
-                if not file_name:
-                    raise ValueError(f"Invalid file name at index {idx}: '{reader.file_names[idx]}'")
+                source_name = file_names[idx] if raw_copy else reader.file_names[idx]
+                file_name = source_name if raw_copy else os.path.splitext(source_name)[0]
+                if not os.path.splitext(source_name)[0]:
+                    raise ValueError(f"Invalid file name at index {idx}: '{source_name}'")
             else:
                 # Replace {index} with zero-padded index
                 file_name = file_name_pattern.replace("{index}", str(idx).zfill(index_width))
-            self.write(container, file_name, compression, compression_opts)
+                if raw_copy:
+                    file_name += os.path.splitext(file_names[idx])[1]
+
+            if raw_copy:
+                self._copy_file(reader.backend, file_uris[idx], file_name)
+            else:
+                self.write(reader[idx], file_name, compression, compression_opts)
 
         # Use ThreadPool for writing in parallel ==> I/O bound task
-        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
-        desc = f"{self.__class__.__name__} - Writing files with {workers} workers"
-        if workers > 1:
-            with ThreadPool(processes=workers) as pool:
+        num_workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        desc = f"{self.__class__.__name__} - Writing files with {num_workers} workers"
+        if num_workers > 1:
+            with ThreadPool(processes=num_workers) as pool:
                 list(tqdm(pool.imap(write_single, range(n)), total=n, desc=desc, unit="files"))
         else:
             list(map(write_single, tqdm(range(n), desc=desc, unit="files")))

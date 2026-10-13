@@ -70,8 +70,6 @@ class _BaseTransform(nn.Module, ABC):
         return super().__call__(container)
 
 
-# Both classes below stay abstract at runtime because they do not implement `forward`. Since pylint 4.1, W0223 fires
-# anyway: a class counts as abstract only with a direct `ABC` opt-in (pylint-dev/pylint#11585, python/cpython#100400).
 class ThermoTransform(_BaseTransform):  # pylint: disable=abstract-method
     """Abstract base class that all deterministic transforms of PyThermoNDT must inherit from.
 

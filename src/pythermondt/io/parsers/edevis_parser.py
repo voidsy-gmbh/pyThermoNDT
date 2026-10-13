@@ -22,7 +22,7 @@ class DataType(IntEnum):
 
 
 class EdevisParser(BaseParser):
-    supported_extensions = (".di", ".OTvis", ".ITvisPulse", ".ThermoVis")
+    supported_extensions = (".di", ".OTvis", ".ITvisPulse", ".ThermoVis", ".PTvis")
 
     @staticmethod
     def parse(data: IOPathWrapper) -> DataContainer:  # pylint: disable=too-many-locals, too-many-statements, too-many-branches

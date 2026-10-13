@@ -70,7 +70,7 @@ class _BaseTransform(nn.Module, ABC):
         return super().__call__(container)
 
 
-class ThermoTransform(_BaseTransform):
+class ThermoTransform(_BaseTransform):  # pylint: disable=abstract-method
     """Abstract base class that all deterministic transforms of PyThermoNDT must inherit from.
 
     Initializes the module and sets up necessary configurations. These transforms are expected to produce deterministic
@@ -82,7 +82,7 @@ class ThermoTransform(_BaseTransform):
         return False
 
 
-class RandomThermoTransform(_BaseTransform):
+class RandomThermoTransform(_BaseTransform):  # pylint: disable=abstract-method
     """Abstract base class that all random/stochastic transforms of PyThermoNDT must inherit from.
 
     Initializes the module and sets up necessary configurations. These transforms are expected to produce random outputs

@@ -88,8 +88,8 @@ class BaseWriter(ABC):
             file_name_pattern: Pattern for naming files. Use {index} for zero-padded index. If {index} is not present,
                 it will be appended to the pattern with an underscore.
                 Example: "data_{index}_name" produces "data_00000_name.hdf5", "data_00001_name.hdf5", etc.
-            compression: Compression method for HDF5 files
-            compression_opts: Compression level for gzip (ignored for other methods)
+            compression: Compression method for HDF5 files. Ignored when raw_copy=True.
+            compression_opts: Compression level for gzip. Ignored for other methods and when raw_copy=True.
             num_workers: Number of workers. Defaults to global config setting.
             raw_copy: Copy original bytes without parsing or HDF5 serialization. Preserves source extensions
                 and ignores compression arguments. Local destinations use direct file copies/downloads;

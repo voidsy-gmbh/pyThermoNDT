@@ -21,10 +21,10 @@ from ..transforms.utils import _flatten_transforms, split_transforms_for_caching
 CacheMode = Literal["immediate", "lazy"]
 
 
-class BaseDataset(Dataset, ABC):
-    """Base class for all ThermoDatasets."""
+class PyThermoNDTDataset(Dataset, ABC):
+    """Abstract base class for all datasets in PyThermoNDT."""
 
-    def __init__(self, parent: "BaseDataset | None" = None, transform: _BaseTransform | None = None):
+    def __init__(self, parent: "PyThermoNDTDataset | None" = None, transform: _BaseTransform | None = None):
         self.__parent = parent
         self.__transform = transform
 
@@ -57,7 +57,7 @@ class BaseDataset(Dataset, ABC):
         """Exclude the lazy-cache Manager so the dataset can be pickled for DataLoader workers."""
         state = self.__dict__.copy()
         # ListProxy is picklable; SyncManager is not (parent keeps ownership / shutdown).
-        state["_BaseDataset__manager"] = None
+        state["_PyThermoNDTDataset__manager"] = None
         return state
 
     def __setstate__(self, state: dict):
@@ -95,7 +95,7 @@ class BaseDataset(Dataset, ABC):
         return data
 
     @property
-    def parent(self) -> "BaseDataset | None":
+    def parent(self) -> "PyThermoNDTDataset | None":
         """Get parent dataset if available."""
         return self.__parent
 
@@ -139,7 +139,7 @@ class BaseDataset(Dataset, ABC):
     def get_transform_chain(self) -> _BaseTransform:
         """Walk up graph to build the complete sequence transforms for this dataset and compose it in a single one."""
         transforms: collections.deque[_BaseTransform] = collections.deque()
-        current: BaseDataset | None = self
+        current: PyThermoNDTDataset | None = self
 
         while current is not None:
             if current.transform:

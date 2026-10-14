@@ -3,7 +3,7 @@ from importlib.metadata import version
 
 from .config import configure_logging, settings
 from .data import DataContainer, ThermoContainer
-from .dataset import IndexedThermoDataset, ThermoDataset
+from .dataset import IndexedThermoDataset, PyThermoNDTDataset, ThermoDataset
 from .io import HDF5Parser, SimulationParser
 from .readers import AzureBlobReader, LocalReader, S3Reader
 from .transforms import augmentation, compose, frequency, normalization, preprocessing, sampling, utils
@@ -24,6 +24,7 @@ __all__ = [
     "IndexedThermoDataset",
     "LocalReader",
     "LocalWriter",
+    "PyThermoNDTDataset",
     "S3Reader",
     "S3Writer",
     "SimulationParser",

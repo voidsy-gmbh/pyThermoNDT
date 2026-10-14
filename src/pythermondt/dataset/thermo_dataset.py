@@ -6,10 +6,10 @@ import torch
 from ..data import DataContainer
 from ..readers.base_reader import BaseReader
 from ..transforms.base import _BaseTransform
-from .base_dataset import BaseDataset
+from .base_dataset import PyThermoNDTDataset
 
 
-class ThermoDataset(BaseDataset):
+class ThermoDataset(PyThermoNDTDataset):
     """PyTorch dataset that combines multiple readers into a single dataset.
 
     Automatically handles file indexing across different data sources (local, S3, etc.)
@@ -137,7 +137,7 @@ class ThermoDataset(BaseDataset):
                 reader.download(num_workers=num_workers)
 
     def load_raw_data(self, idx: int) -> DataContainer:
-        """Load raw data from readers - required by BaseDataset."""
+        """Load raw data from readers - required by PyThermoNDTDataset."""
         # Validate index first
         if idx < 0 or idx >= len(self):
             msg = f"Index {idx} out of range."

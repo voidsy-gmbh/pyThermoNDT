@@ -11,7 +11,7 @@ task, explain the conflict and agree on an exception before proceeding.
 Use these implementations as style references:
 
 - `src/pythermondt/transforms/sampling.py` - `NonUniformSampling`
-- `src/pythermondt/dataset/base_dataset.py` - `BaseDataset`
+- `src/pythermondt/dataset/base_dataset.py` - `PyThermoNDTDataset`
 
 Read the code you will change and a relevant reference before editing. Follow the surrounding style unless it conflicts
 with an explicit rule here. Use the formatter and lint settings in `pyproject.toml`.

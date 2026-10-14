@@ -1,4 +1,4 @@
-"""Tests for BaseDataset behavior exercised through ThermoDataset and IndexedThermoDataset."""
+"""Tests for PyThermoNDTDataset behavior exercised through ThermoDataset and IndexedThermoDataset."""
 
 import gc
 import sys
@@ -124,7 +124,7 @@ def test_release_cache_manager_shutdown_exception(local_reader_three_files: Loca
     mock_manager = MagicMock()
     mock_manager.shutdown.side_effect = OSError("shutdown failed")
     # Access the name-mangled attribute
-    object.__setattr__(dataset, "_BaseDataset__manager", mock_manager)
+    object.__setattr__(dataset, "_PyThermoNDTDataset__manager", mock_manager)
 
     # Should not raise
     dataset.release_cache()

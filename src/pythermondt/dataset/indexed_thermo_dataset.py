@@ -2,10 +2,10 @@ from collections.abc import Iterator, Sequence
 
 from ..data import DataContainer
 from ..transforms.base import _BaseTransform
-from .base_dataset import BaseDataset
+from .base_dataset import PyThermoNDTDataset
 
 
-class IndexedThermoDataset(BaseDataset):
+class IndexedThermoDataset(PyThermoNDTDataset):
     """Extension of ThermoDataset that supports indexing with optional additional transforms.
 
     The IndexedThermoDataset maintains a subset of the parent dataset and allows for an additional transform to be
@@ -14,11 +14,11 @@ class IndexedThermoDataset(BaseDataset):
     IndexedThermoDataset maintains the transform chain of the parent dataset and appends the additional transform to it.
     """
 
-    def __init__(self, dataset: BaseDataset, indices: Sequence[int], transform: _BaseTransform | None = None):
+    def __init__(self, dataset: PyThermoNDTDataset, indices: Sequence[int], transform: _BaseTransform | None = None):
         """Initialize an indexed dataset with optional additional transform.
 
         Args:
-            dataset (ThermoDataset): Parent dataset to index into
+            dataset (PyThermoNDTDataset): Parent dataset to index into
             indices (Sequence[int]): Sequence of indices to select from parent
             transform (_BaseTransform, optional): Optional transform to apply after parent's transform
 
@@ -33,7 +33,7 @@ class IndexedThermoDataset(BaseDataset):
             raise IndexError(f"Provided indices are out of range. Must be within [0, {max(len(dataset) - 1, 0)}]")
 
         # Store parent dataset and indices
-        self.__parent_dataset = dataset  # Parent dataset to avoid type issues with BaseDataset.parent
+        self.__parent_dataset = dataset  # Parent dataset to avoid type issues with PyThermoNDTDataset.parent
         self.__indices = indices  # Indices for subset
 
     def __len__(self) -> int:

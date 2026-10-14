@@ -35,6 +35,8 @@ readability. Do not split a clear sequence into many one-line helpers or add lay
 - Use short Google-style docstrings for public APIs and non-obvious behavior.
 - Document intent, assumptions, constraints, and physical meaning. Add `Args`, `Returns`, and `Raises` when useful.
 - Use comments to explain why an operation is needed or mark a meaningful phase. Do not narrate obvious code.
+- Do not edit or regenerate `docs/pyreverse/` output. The diagram workflow owns these files and refreshes them at
+  release. Stale names there are expected between releases.
 
 ### Tensor Operations and Memory
 

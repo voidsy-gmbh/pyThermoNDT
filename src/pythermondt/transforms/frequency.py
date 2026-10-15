@@ -44,7 +44,7 @@ class PulsePhaseThermography(ThermoTransform):
 
         # Compute FFT along time axis (dim=-1)
         # Use rfft to only get positive frequencies below the Nyquist limit
-        fft_result = torch.fft.rfft(tdata, dim=-1)  # pylint: disable=not-callable
+        fft_result = torch.fft.rfft(tdata, dim=-1)
 
         # Calculate frequency bins
         dt = domain_values[1] - domain_values[0]
@@ -52,7 +52,7 @@ class PulsePhaseThermography(ThermoTransform):
         diffs = torch.diff(domain_values)
         if not torch.allclose(diffs, dt, rtol=1e-5):
             raise ValueError("Domain values must be uniformly spaced for FFT")
-        freqs = torch.fft.rfftfreq(len(domain_values), d=dt.item())  # pylint: disable=not-callable
+        freqs = torch.fft.rfftfreq(len(domain_values), d=dt.item())
 
         # Select specific frequencies if requested
         if self.freq_indices is not None:

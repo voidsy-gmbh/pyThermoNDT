@@ -123,15 +123,15 @@ jobs:
       # Step 7: Generate images from Mermaid files
       - name: Generate images from Mermaid files
         if: env.CHANGED == 'true'
+        env:
+          MERMAID_FILES: ${{ steps.files-check.outputs.files }}
         run: |
-          FILES="${{ steps.files-check.outputs.files }}"
-
-          for file in $FILES; do
+          for file in $MERMAID_FILES; do
             if [ -f "$file" ]; then
               filename=$(basename "$file" .mmd)
               echo "Processing: $file"
               docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/data" "$MERMAID_IMAGE" \
-                -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" \
+                -i "$file" -o "$IMAGES_DIR/${filename}.png" \
                 -b transparent -t neutral -s 5
             fi
           done

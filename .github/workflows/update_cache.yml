@@ -39,9 +39,12 @@ jobs:
 
       # Step 2.1: Log cache status
       - name: Log cache status
+        env:
+          CACHE_HIT: ${{ steps.setup-uv.outputs.cache-hit }}
+          CACHE_KEY: ${{ steps.setup-uv.outputs.cache-key }}
         run: |
-          echo "cache-hit=${{ steps.setup-uv.outputs.cache-hit }}"
-          echo "cache-key=${{ steps.setup-uv.outputs.cache-key }}"
+          echo "cache-hit=$CACHE_HIT"
+          echo "cache-key=$CACHE_KEY"
 
       # Step 3: Sync dependencies and refresh cache
       - name: Sync dependencies

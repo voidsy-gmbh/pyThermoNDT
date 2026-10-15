@@ -22,6 +22,13 @@ class LocalWriter(BaseWriter):
     def _create_backend(self) -> LocalBackend:
         return LocalBackend(pattern=self.__destination_folder)
 
+    def _get_destination_path(self, file_name: str) -> str:
+        # Verify folder
+        if not self.__exists or not os.path.exists(self.__destination_folder):
+            os.makedirs(self.__destination_folder, exist_ok=True)
+
+        return os.path.join(self.__destination_folder, file_name)
+
     def write(
         self,
         container: DataContainer,
@@ -29,16 +36,12 @@ class LocalWriter(BaseWriter):
         compression: CompressionType = "lzf",
         compression_opts: int | None = 4,
     ):
-        # Verify folder
-        if not self.__exists or not os.path.exists(self.__destination_folder):
-            os.makedirs(self.__destination_folder, exist_ok=True)
-
         # Append file extension if not present
         if not file_name.endswith(".hdf5"):
             file_name += ".hdf5"
 
         # Create the path to the file
-        path = os.path.join(self.__destination_folder, file_name)
+        path = self._get_destination_path(file_name)
 
         # Write the DataContainer to the file
         self.backend.write_file(IOPathWrapper(container.serialize_to_hdf5(compression, compression_opts)), path)

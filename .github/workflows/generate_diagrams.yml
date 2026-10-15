@@ -35,6 +35,8 @@ jobs:
       CHANGED: false
       MERMAID_DIR: ./docs/pyreverse/mermaid
       IMAGES_DIR: ./docs/pyreverse/images
+      # mermaid-cli 12.0.1
+      MERMAID_IMAGE: minlag/mermaid-cli@sha256:2c5d27365df71da06c288beebe531ea3637cf9b422b871239a3b016233591d24
 
     steps:
       # Step 1.1: Checkout repository (workflow_call)
@@ -118,37 +120,23 @@ jobs:
           # Write files list to step output
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
-      # Step 7: Setup Node.js for Mermaid CLI
-      - name: Setup Node.js for Mermaid CLI
-        if: env.CHANGED == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
-        with:
-          node-version: '20'
-
-      # Step 8: Install Mermaid CLI
-      - name: Install Mermaid CLI
-        if: env.CHANGED == 'true'
-        run: npm install -g @mermaid-js/mermaid-cli
-
-      # Step 9: Generate images from Mermaid files
+      # Step 7: Generate images from Mermaid files
       - name: Generate images from Mermaid files
         if: env.CHANGED == 'true'
         run: |
-          # Create puppeteer config for no-sandbox
-          echo '{"args":["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]}' > puppeteer-config.json
-
           FILES="${{ steps.files-check.outputs.files }}"
 
           for file in $FILES; do
             if [ -f "$file" ]; then
               filename=$(basename "$file" .mmd)
               echo "Processing: $file"
-              mmdc -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" \
-                -b transparent -t neutral -s 5 --puppeteerConfigFile puppeteer-config.json
+              docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/data" "$MERMAID_IMAGE" \
+                -i "$file" -o "${{ env.IMAGES_DIR }}/${filename}.png" \
+                -b transparent -t neutral -s 5
             fi
           done
 
-      # Step 10: Commit and Push Diagrams back to the repository
+      # Step 8: Commit and Push Diagrams back to the repository
       - name: Commit and Push Diagrams back to the repository
         if: env.CHANGED == 'true'
         run: |

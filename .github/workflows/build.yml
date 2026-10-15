@@ -32,9 +32,11 @@ jobs:
         # Step 3: Build the package
       - name: Build package
         id: build
+        env:
+          BUILD_REF: ${{ inputs.ref }}
         run: |
           uv build --no-sources .
-          echo "Successfully built pythermondt from ref ${{ inputs.ref }}"
+          echo "Successfully built pythermondt from ref $BUILD_REF"
           echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
           echo "TAR_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
 

@@ -87,14 +87,16 @@ jobs:
       # Step 4: Bump version
       - name: Bump version
         id: bump
+        env:
+          BUMP_TYPE: ${{ inputs.bump-type }}
         run: |
           PREV=$(uv version --short)
           echo "previous-version=$PREV" >> $GITHUB_OUTPUT
 
-          if [ "${{ inputs.bump-type }}" = "release" ]; then
+          if [ "$BUMP_TYPE" = "release" ]; then
             uv version --no-sync --bump stable
           else
-            base=$(uv version --no-sync --bump ${{ inputs.bump-type }} --dry-run --short)
+            base=$(uv version --no-sync --bump "$BUMP_TYPE" --dry-run --short)
             uv version --no-sync "$base.dev0"
           fi
 

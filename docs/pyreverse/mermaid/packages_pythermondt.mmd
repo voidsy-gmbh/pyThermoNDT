@@ -8,9 +8,15 @@ classDiagram
   class data {
   }
   style data fill:#99DDFF
+  class comparison {
+  }
+  style comparison fill:#99DDFF
   class datacontainer {
   }
   style datacontainer fill:#99DDFF
+  class _comparison {
+  }
+  style _comparison fill:#99DDFF
   class attribute_ops {
   }
   style attribute_ops fill:#99DDFF
@@ -171,20 +177,25 @@ classDiagram
   pythermondt --> readers
   pythermondt --> transforms
   pythermondt --> writers
+  data --> comparison
   data --> datacontainer
   data --> thermo_container
+  comparison --> datacontainer
+  comparison --> _comparison
   datacontainer --> core
   datacontainer --> node
+  _comparison --> base
+  _comparison --> node
   attribute_ops --> base
   attribute_ops --> node
   base --> node
   base --> utils
+  core --> _comparison
   core --> attribute_ops
   core --> dataset_ops
   core --> group_ops
   core --> node
   core --> serialization_ops
-  core --> utils
   core --> visualization_ops
   dataset_ops --> base
   dataset_ops --> node
@@ -206,6 +217,7 @@ classDiagram
   units --> units
   units --> utils
   utils --> units
+  dataset --> base_dataset
   dataset --> indexed_thermo_dataset
   dataset --> thermo_dataset
   dataset --> utils

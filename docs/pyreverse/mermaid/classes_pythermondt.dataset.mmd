@@ -1,8 +1,18 @@
 classDiagram
-  class BaseDataset {
+  class DeriveField {
+    fn : Callable[[DataContainer], 'torch.Tensor | bool | float']
+    name : str
+  }
+  style DeriveField fill:#77AADD
+  class IndexedThermoDataset {
+    files : list[str]
+    load_raw_data(idx: int) DataContainer
+  }
+  style IndexedThermoDataset fill:#77AADD
+  class PyThermoNDTDataset {
     cache_built : bool
     files : list[str]
-    parent : 'BaseDataset | None'
+    parent : 'PyThermoNDTDataset | None'
     transform : _BaseTransform | None
     build_cache(mode: CacheMode, num_workers: int | None)
     get_transform_chain() _BaseTransform
@@ -11,17 +21,12 @@ classDiagram
     print_memory_usage()
     release_cache(gc_collect: bool)
   }
-  style BaseDataset fill:#77AADD
-  class IndexedThermoDataset {
-    files : list[str]
-    load_raw_data(idx: int) DataContainer
-  }
-  style IndexedThermoDataset fill:#77AADD
+  style PyThermoNDTDataset fill:#77AADD
   class ThermoDataset {
     files : list[str]
     download(num_workers: int | None) None
     load_raw_data(idx: int) DataContainer
   }
   style ThermoDataset fill:#77AADD
-  IndexedThermoDataset --|> BaseDataset
-  ThermoDataset --|> BaseDataset
+  IndexedThermoDataset --|> PyThermoNDTDataset
+  ThermoDataset --|> PyThermoNDTDataset

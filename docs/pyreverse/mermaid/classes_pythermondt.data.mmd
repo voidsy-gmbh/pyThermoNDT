@@ -113,6 +113,7 @@ classDiagram
     toggle_annotation(event)
     toggle_groundtruth(event)
     update_frame(frame_idx: float)
+    update_overlay_options(overlay_color: OverlayColorOption, overlay_alpha: float) None
   }
   style InteractiveAnalyzer fill:#77AADD
   class NodeAccessor {
@@ -144,7 +145,7 @@ classDiagram
   }
   style Unit fill:#77AADD
   class VisualizationOps {
-    analyse_interactive(overlay_color: OverlayColorOption, overlay_alpha: float)
+    analyse_interactive(overlay_color: OverlayColorOption, overlay_alpha: float) 'VisualizationOps.InteractiveAnalyzer'
     release_interactive_analyzer(analyzer: 'VisualizationOps.InteractiveAnalyzer') None
     show_frame(frame_number: int, option: FrameOption, cmap: str, overlay_color: OverlayColorOption, overlay_alpha: float)
     show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)

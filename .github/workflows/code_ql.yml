@@ -23,11 +23,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout repository
         if: github.event.workflow == '.github/workflows/code_ql.yml'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
 
       # Step 2: Setup uv
       - name: Setup uv

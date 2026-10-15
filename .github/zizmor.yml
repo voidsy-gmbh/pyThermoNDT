@@ -1,0 +1,9 @@
+# zizmor configuration
+rules:
+  artipacked:
+    ignore:
+      # These release workflows push after checkout, so they rely on the
+      # credentials checkout installs. TODO: replace them with push-time auth.
+      - bump_version.yml
+      - generate_diagrams.yml
+      - prepare_release.yml

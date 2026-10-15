@@ -46,6 +46,8 @@ on:
 jobs:
   bump:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push version bumps
     outputs:
       bumped: ${{ steps.bump.outputs.bumped }}
       previous-version: ${{ steps.bump.outputs.previous-version }}

@@ -7,6 +7,9 @@ on:
     branches:
       - "main" # Update cache on main branch
 
+permissions:
+  contents: read
+
 jobs:
   build-cache:
     name: Build Cache

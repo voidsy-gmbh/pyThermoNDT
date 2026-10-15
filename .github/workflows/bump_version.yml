@@ -116,8 +116,10 @@ jobs:
       # Step 5: Check if the version was bumped
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
-        run: |
-          echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
+        env:
+          PREVIOUS_VERSION: ${{ steps.bump.outputs.previous-version }}
+          CURRENT_VERSION: ${{ steps.bump.outputs.current-version }}
+        run: echo "Version was bumped from $PREVIOUS_VERSION to $CURRENT_VERSION!"
 
       # Step 6: Push changes
       - name: Push changes

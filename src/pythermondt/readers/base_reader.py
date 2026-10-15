@@ -511,7 +511,7 @@ class BaseReader(ABC):  # pylint: disable=too-many-instance-attributes
         relative_path = f"./raw/{filename}"
         local_path = os.path.join(self.reader_cache_dir, relative_path)
         # TODO: Change backends to download files and return etag in a single request
-        self.backend.download_file(remote_path, local_path)
+        self.backend.copy(remote_path, local_path)
         file_id = self.backend.get_file_identity(remote_path)
         return remote_path, ManifestEntry(relative_path=relative_path, file_identity=file_id)
 

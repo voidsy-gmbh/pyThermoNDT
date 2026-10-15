@@ -156,7 +156,7 @@ The project uses [zizmor](https://docs.zizmor.sh/) to audit the GitHub Actions w
 You can run zizmor directly without installing it:
 
 ```bash
-uvx zizmor . # Audits all workflows in the repository; the "." is required
+uvx zizmor . --persona regular # Audits all workflows in the repository; the "." is required
 ```
 
 ## Versioning

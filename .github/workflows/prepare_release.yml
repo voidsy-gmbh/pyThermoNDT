@@ -3,11 +3,16 @@ name: Prepare Release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # Job 1: Create release branch and bump version to release version
   bump-version:
     name: Bump to Release Version
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push the release branch
     outputs:
       version: ${{ steps.bump.outputs.version }}
     steps:
@@ -60,6 +65,8 @@ jobs:
     name: Update Diagrams
     needs: bump-version
     uses: ./.github/workflows/generate_diagrams.yml
+    permissions:
+      contents: write # Do not cap the reusable workflow's push permission
     with:
       ref: release/${{ needs.bump-version.outputs.version }}
       force_regenerate: false

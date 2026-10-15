@@ -29,6 +29,8 @@ on:
 jobs:
   generate-diagrams:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push regenerated diagrams
     env:
       CHANGED: false
       MERMAID_DIR: ./docs/pyreverse/mermaid

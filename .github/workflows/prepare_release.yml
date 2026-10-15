@@ -64,7 +64,7 @@ jobs:
   update-diagrams:
     name: Update Diagrams
     needs: bump-version
-    uses: ./.github/workflows/generate_diagrams.yml
+    uses: $/.github/workflows/generate_diagrams.yml
     permissions:
       contents: write # Do not cap the reusable workflow's push permission
     with:

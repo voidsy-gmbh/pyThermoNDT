@@ -10,7 +10,7 @@ jobs:
   # Job 1: Build from current branch
   build:
     name: Build Package
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
 
   # Job 2: Publish to TestPyPI
   publish:

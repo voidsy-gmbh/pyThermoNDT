@@ -11,7 +11,7 @@ jobs:
   # Job 1: Build the package
   build-package:
     name: Build Package
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
     with:
       ref: ${{ github.event.release.tag_name }}
 
@@ -63,7 +63,7 @@ jobs:
   bump-version:
     name: Bump Version to Next Patch
     needs: [publish-pypi, gh-release-assets]
-    uses: ./.github/workflows/bump_version.yml
+    uses: $/.github/workflows/bump_version.yml
     permissions:
       contents: write # Do not cap the reusable workflow's push permission
     with:

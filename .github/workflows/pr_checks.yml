@@ -10,13 +10,13 @@ permissions:
 jobs:
   test:
     name: Run Tests
-    uses: ./.github/workflows/tests.yml
+    uses: $/.github/workflows/tests.yml
     with:
       ref: ${{ github.event.pull_request.head.sha }}
 
   quality-checks:
     name: Run Code Quality Checks
-    uses: ./.github/workflows/code_ql.yml
+    uses: $/.github/workflows/code_ql.yml
     with:
       ref: ${{ github.event.pull_request.head.sha }}
 

@@ -21,6 +21,12 @@ repos:
         # Security checks
     -   id: detect-private-key
 
+-   repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.30.1
+    hooks:
+    -   id: zizmor
+        args: [--persona, regular] # Explicitly pin the default persona (see zizmorcore/zizmor#1445)
+
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.12
     hooks:

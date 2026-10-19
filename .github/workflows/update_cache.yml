@@ -7,6 +7,9 @@ on:
     branches:
       - "main" # Update cache on main branch
 
+permissions:
+  contents: read
+
 jobs:
   build-cache:
     name: Build Cache
@@ -20,6 +23,8 @@ jobs:
       # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
 
       # Step 2: Setup uv
       - name: Setup uv
@@ -34,9 +39,12 @@ jobs:
 
       # Step 2.1: Log cache status
       - name: Log cache status
+        env:
+          CACHE_HIT: ${{ steps.setup-uv.outputs.cache-hit }}
+          CACHE_KEY: ${{ steps.setup-uv.outputs.cache-key }}
         run: |
-          echo "cache-hit=${{ steps.setup-uv.outputs.cache-hit }}"
-          echo "cache-key=${{ steps.setup-uv.outputs.cache-key }}"
+          echo "cache-hit=$CACHE_HIT"
+          echo "cache-key=$CACHE_KEY"
 
       # Step 3: Sync dependencies and refresh cache
       - name: Sync dependencies

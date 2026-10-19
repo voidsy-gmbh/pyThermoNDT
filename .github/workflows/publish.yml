@@ -3,11 +3,14 @@ name: Publish to TestPyPI
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # Job 1: Build from current branch
   build:
     name: Build Package
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
 
   # Job 2: Publish to TestPyPI
   publish:
@@ -18,7 +21,8 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/p/pythermondt
     permissions:
-      id-token: write
+      id-token: write # Required for trusted publishing
+      actions: read   # Required to download build artifacts
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333

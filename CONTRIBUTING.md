@@ -86,7 +86,7 @@ Pre-commit configuration is defined in `.pre-commit-config.yaml` and includes:
 - Basic formatting fixes (trailing whitespace, end-of-file fixer)
 - YAML and TOML syntax checking
 - Large file detection
-- Security checks (detect private keys)
+- Security checks (detect private keys, zizmor for GitHub Actions workflow security)
 - Ruff for code linting and formatting
 
 After you have set up the environment and installed the pre-commit hooks, you can start developing.
@@ -148,6 +148,16 @@ ruff check --fix
 ```
 
 Optionally, you can install the [VSCode extension for Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) for real-time feedback.
+
+### Workflow Security Auditing
+
+The project uses [zizmor](https://docs.zizmor.sh/) to audit the GitHub Actions workflows for security issues. CI runs it on pull requests, pushes to `main`, and weekly; findings are surfaced under the Security tab (code scanning). The pre-commit hook runs it on changed workflow files.
+
+You can run zizmor directly without installing it:
+
+```bash
+uvx zizmor . --persona regular # Audits all workflows in the repository; the "." is required
+```
 
 ## Versioning
 

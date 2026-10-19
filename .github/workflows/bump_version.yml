@@ -46,6 +46,8 @@ on:
 jobs:
   bump:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push version bumps
     outputs:
       bumped: ${{ steps.bump.outputs.bumped }}
       previous-version: ${{ steps.bump.outputs.previous-version }}
@@ -87,14 +89,16 @@ jobs:
       # Step 4: Bump version
       - name: Bump version
         id: bump
+        env:
+          BUMP_TYPE: ${{ inputs.bump-type }}
         run: |
           PREV=$(uv version --short)
           echo "previous-version=$PREV" >> $GITHUB_OUTPUT
 
-          if [ "${{ inputs.bump-type }}" = "release" ]; then
+          if [ "$BUMP_TYPE" = "release" ]; then
             uv version --no-sync --bump stable
           else
-            base=$(uv version --no-sync --bump ${{ inputs.bump-type }} --dry-run --short)
+            base=$(uv version --no-sync --bump "$BUMP_TYPE" --dry-run --short)
             uv version --no-sync "$base.dev0"
           fi
 
@@ -112,8 +116,10 @@ jobs:
       # Step 5: Check if the version was bumped
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
-        run: |
-          echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
+        env:
+          PREVIOUS_VERSION: ${{ steps.bump.outputs.previous-version }}
+          CURRENT_VERSION: ${{ steps.bump.outputs.current-version }}
+        run: echo "Version was bumped from $PREVIOUS_VERSION to $CURRENT_VERSION!"
 
       # Step 6: Push changes
       - name: Push changes

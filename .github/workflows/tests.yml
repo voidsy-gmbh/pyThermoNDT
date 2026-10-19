@@ -10,6 +10,9 @@ on:
         type: string
         default: ''
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Run Tests
@@ -26,11 +29,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       # Step 1.2: Checkout repository (workflow_dispatch)
       - name: Checkout repository
         if: github.event.workflow == '.github/workflows/tests.yml'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
 
       # Step 2: Setup uv
       - name: Setup uv
@@ -46,9 +52,12 @@ jobs:
 
       # Step 2.1: Log cache status
       - name: Log cache status
+        env:
+          CACHE_HIT: ${{ steps.setup-uv.outputs.cache-hit }}
+          CACHE_KEY: ${{ steps.setup-uv.outputs.cache-key }}
         run: |
-          echo "cache-hit=${{ steps.setup-uv.outputs.cache-hit }}"
-          echo "cache-key=${{ steps.setup-uv.outputs.cache-key }}"
+          echo "cache-hit=$CACHE_HIT"
+          echo "cache-key=$CACHE_KEY"
 
       # Step 3 Sync dependencies if cache hit
       - name: Sync dependencies

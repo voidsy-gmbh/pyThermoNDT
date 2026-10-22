@@ -34,7 +34,7 @@ jobs:
           path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
 
   # Job 3: Sign and upload release assets
   gh-release-assets:
@@ -52,6 +52,7 @@ jobs:
           name: build-artifacts
           path: dist/
 
+      # TODO: adopt a patched release after sigstore/gh-action-sigstore-python#508.
       - name: Sign artifacts and upload to GitHub Release
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9
         with:

@@ -7,4 +7,4 @@ licensecheck==2026.0.8; python_version >= "3.12"
 mypy==2.4.0
 uv==0.12.23
 pylint==4.1.2
-moto==5.2.3
+moto==5.2.4

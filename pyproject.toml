@@ -72,7 +72,7 @@ dev = [
     "pre-commit==4.6.2",
     "licensecheck==2026.0.8; python_version >= '3.12'",
     "mypy==2.4.0",
-    "uv==0.12.23",
+    "uv==0.13.5",
     "pylint==4.1.2",
     "moto==5.2.3"
 ]
@@ -208,7 +208,14 @@ warn_redundant_casts = true
 
 # uv
 [tool.uv]
+required-version = ">=0.13.4"
 exclude-newer = "7 days"
+
+# Temporary emSign incident exceptions: admit the reviewed fixes, not future uploads.
+# Remove after 2026-10-29 01:33 UTC to restore the rolling seven-day delay for these packages.
+# https://discuss.python.org/t/109576/1
+[tool.uv.exclude-newer-package]
+uv = "2026-10-22T01:32:34Z"
 
 [tool.licensecheck]
 skip_dependencies = [

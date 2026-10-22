@@ -44,6 +44,7 @@ dependencies = [
     "ipywidgets>=8.0",
     "ipykernel>=6.25",
     "pydantic-settings>=2.6",
+    "certifi>=2026.10.19",  # Remove trust in the compromised emSign CA for cloud clients
 
     # Data loading and visualization
     "h5py>=3.9",
@@ -215,6 +216,7 @@ exclude-newer = "7 days"
 # Remove after 2026-10-29 01:33 UTC to restore the rolling seven-day delay for these packages.
 # https://discuss.python.org/t/109576/1
 [tool.uv.exclude-newer-package]
+certifi = "2026-10-20T02:24:17Z"
 uv = "2026-10-22T01:32:34Z"
 
 [tool.licensecheck]

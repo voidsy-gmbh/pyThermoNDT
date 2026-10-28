@@ -37,6 +37,8 @@ jobs:
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
 
   # Job 3: Sign and upload release assets
+  # TODO: Support immutable GitHub releases by signing and uploading assets before publication,
+  # rather than after the release: published event.
   gh-release-assets:
     name: Sign and Upload Release Assets
     needs: build-package
@@ -46,19 +48,32 @@ jobs:
       id-token: write   # Required for Sigstore signing
       actions: read     # Required to download build artifacts
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          version-file: requirements_dev.txt
+          python-version: ${{ vars.DEFAULT_PYTHON_VERSION }}
+          activate-environment: true
+          enable-cache: false
+
+      - name: Install signing dependencies
+        run: uv pip install --group signing
+
       - name: Download build artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: build-artifacts
           path: dist/
 
-      # TODO: adopt a patched release after sigstore/gh-action-sigstore-python#508.
-      - name: Sign artifacts and upload to GitHub Release
-        uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9
-        with:
-          inputs: |
-            ./dist/*.tar.gz
-            ./dist/*.whl
+      - name: Sign and upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/scripts/sign_release.py
 
   # Job 4: Bump the version in the main branch to the next patch version
   bump-version:

@@ -46,6 +46,8 @@ def release_tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ReleaseToo
     response.iter_content.side_effect = lambda **kwargs: iter([b"source ", b"archive"])
 
     def run(command: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
+        # Inspect the trust directory while it is in use, before temporary-file cleanup.
+        assert not list(Path(kwargs["env"]["SSL_CERT_DIR"]).iterdir())
         files = [Path(value) for value in command if value.endswith((".whl", ".tar.gz", ".zip", ".sigstore.json"))]
         if "sigstore" in command:
             tools.signed.update((path.name, path.read_bytes()) for path in files)
@@ -54,8 +56,6 @@ def release_tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ReleaseToo
                     continue
                 Path(f"{path}.sigstore.json").write_bytes(b"bundle")
         else:
-            # Inspect the trust directory before the script removes its temporary files.
-            assert not list(Path(kwargs["env"]["SSL_CERT_DIR"]).iterdir())
             tools.uploaded.update((path.name, path.read_bytes()) for path in files)
         return subprocess.CompletedProcess(command, 0)
 
@@ -90,7 +90,9 @@ def test_release_contents_and_credentials(release_tools: ReleaseTools) -> None:
     assert "GITHUB_TOKEN" not in signing.kwargs["env"]
     assert signing.kwargs["env"]["ACTIONS_ID_TOKEN_REQUEST_TOKEN"] == "oidc-token"
     assert upload.kwargs["env"]["GH_TOKEN"] == "upload-token"
+    assert signing.kwargs["env"]["SSL_CERT_FILE"] == certifi.where()
     assert upload.kwargs["env"]["SSL_CERT_FILE"] == certifi.where()
+    assert signing.kwargs["env"]["SSL_CERT_DIR"] == upload.kwargs["env"]["SSL_CERT_DIR"]
     assert not Path(upload.kwargs["env"]["SSL_CERT_DIR"]).exists()
     assert signing.kwargs["check"] and upload.kwargs["check"]
 

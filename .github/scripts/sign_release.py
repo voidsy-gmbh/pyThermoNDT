@@ -40,6 +40,13 @@ def main() -> None:
 
     with TemporaryDirectory(prefix="release-signing-", dir=os.environ["RUNNER_TEMP"]) as directory:
         release_directory = Path(directory)
+        ca_directory = release_directory / "ca"
+        ca_directory.mkdir()
+        # Constrain OpenSSL and Go clients to patched certifi, excluding system CA directories.
+        ca_environment = {"SSL_CERT_FILE": certifi.where(), "SSL_CERT_DIR": str(ca_directory)}
+        signing_environment.update(ca_environment)
+        github_environment = os.environ | ca_environment
+
         archive_name = tag.replace("/", "-")
         for extension in ("zip", "tar.gz"):
             archive = release_directory / f"{archive_name}.{extension}"
@@ -62,10 +69,6 @@ def main() -> None:
             if not bundle.is_file():
                 raise FileNotFoundError(f"Sigstore did not produce a signature bundle: {bundle}")
         # Upload the signed copies, not GitHub's regenerable source archive links.
-        ca_directory = release_directory / "ca"
-        ca_directory.mkdir()
-        # Go adds system CA directories unless SSL_CERT_DIR points to an empty directory.
-        github_environment = os.environ | {"SSL_CERT_FILE": certifi.where(), "SSL_CERT_DIR": str(ca_directory)}
         subprocess.run(
             [
                 "gh",

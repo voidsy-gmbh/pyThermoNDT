@@ -220,13 +220,6 @@ warn_redundant_casts = true
 required-version = ">=0.13.4"
 exclude-newer = "7 days"
 
-# Temporary emSign incident exceptions: admit the reviewed fixes, not future uploads.
-# Remove after 2026-10-29 01:33 UTC to restore the rolling seven-day delay for these packages.
-# https://discuss.python.org/t/109576/1
-[tool.uv.exclude-newer-package]
-certifi = "2026-10-20T02:24:17Z"
-uv = "2026-10-22T01:32:34Z"
-
 [tool.licensecheck]
 skip_dependencies = [
     "azure-identity", # Buggy with complex license

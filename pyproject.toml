@@ -44,6 +44,7 @@ dependencies = [
     "ipywidgets>=8.0",
     "ipykernel>=6.25",
     "pydantic-settings>=2.6",
+    "certifi>=2026.10.19",  # Remove trust in the compromised emSign CA for cloud clients
 
     # Data loading and visualization
     "h5py>=3.9",
@@ -72,9 +73,14 @@ dev = [
     "pre-commit==4.6.2",
     "licensecheck==2026.0.8; python_version >= '3.12'",
     "mypy==2.4.0",
-    "uv==0.12.23",
+    "uv==0.13.5",
     "pylint==4.1.2",
     "moto==5.2.4"
+]
+signing = [
+    "certifi>=2026.10.19",
+    "requests>=2.32.3",
+    "sigstore==4.5.1",
 ]
 
 [project.urls]
@@ -187,6 +193,9 @@ max-positional-arguments = 12 # Some Reader classes require many positional argu
 
 # typos
 [tool.typos]
+[tool.typos.default.extend-words]
+certifi = "certifi"
+
 [tool.typos.files]
 ignore-hidden = true
 extend-exclude = [
@@ -208,6 +217,7 @@ warn_redundant_casts = true
 
 # uv
 [tool.uv]
+required-version = ">=0.13.4"
 exclude-newer = "7 days"
 
 [tool.licensecheck]

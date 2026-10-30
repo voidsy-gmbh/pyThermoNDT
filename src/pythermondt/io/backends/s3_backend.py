@@ -197,17 +197,17 @@ class S3Backend(BaseBackend):
                 raise FileNotFoundError(f"File not found: {file_path}") from e
             raise
 
-    def download_file(self, source_path: str, destination_path: str) -> None:
-        """Download a file from S3 to local filesystem.
+    def copy(self, source_uri: str, destination_path: str) -> None:
+        """Copy a file from S3 to the local filesystem without buffering the whole file.
 
         Args:
-            source_path (str): Source S3 path
+            source_uri (str): Source S3 URI or key
             destination_path (str): Destination local path
         """
-        bucket, key = self._parse_input(source_path)
+        bucket, key = self._parse_input(source_uri)
 
         # Download the file
-        with TqdmCallback(total=self.get_file_size(source_path), desc=f"Downloading {key}") as progress:
+        with TqdmCallback(total=self.get_file_size(source_uri), desc=f"Downloading {key}") as progress:
             self.__client.download_file(bucket, key, destination_path, Callback=progress.callback)
 
     def _parse_input(self, file_path: str) -> tuple[str, str]:

@@ -69,8 +69,11 @@ class AzureBlobWriter(BaseWriter):
             file_name += ".hdf5"
 
         # Writer constructs full blob name with prefix
-        full_blob_name = f"{self.__prefix}/{file_name}" if self.__prefix else file_name
+        full_blob_name = self._get_destination_path(file_name)
 
         # Backend handles everything - just pass the blob name
         data = container.serialize_to_hdf5(compression, compression_opts)
         self.backend.write_file(IOPathWrapper(data), full_blob_name)
+
+    def _get_destination_path(self, file_name: str) -> str:
+        return f"{self.__prefix}/{file_name}" if self.__prefix else file_name

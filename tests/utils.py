@@ -27,10 +27,10 @@ def update_expected_outputs(source_folder: str, file_extension: str):
     updated_files = []
     for source_path in source_reader.files:
         source_container = source_reader.read_file(source_path)
-        head, tail = os.path.split(source_path)
+        tail = os.path.basename(source_path)
         output_name = tail.replace(file_extension, ".hdf5")
         output_name = output_name.replace("source", "expected")
-        output_path = os.path.join(head, output_name)
+        output_path = os.path.join(source_folder, output_name)
         source_container.save_to_hdf5(output_path)
         updated_files.append(output_path)
 

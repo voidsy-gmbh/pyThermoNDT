@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Generator
 from io import BytesIO
-from typing import IO, cast
+from typing import TYPE_CHECKING, cast
 
 from azure.core.credentials import TokenCredential
 from azure.core.exceptions import AzureError, ResourceNotFoundError
@@ -13,6 +13,9 @@ from ..utils import IOPathWrapper
 from .base_backend import BaseBackend, FileInfo
 from .options import AzureBlobClientOptions
 from .progress import TqdmCallback, get_tqdm_default_kwargs
+
+if TYPE_CHECKING:
+    from typing import IO
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +142,7 @@ class AzureBlobBackend(BaseBackend):
             with tqdm.wrapattr(
                 data.file_obj, "read", desc=f"Uploading {blob_name}", **get_tqdm_default_kwargs(file_size=file_size)
             ) as wrapped_file:
-                blob_client.upload_blob(cast(IO[bytes], wrapped_file), overwrite=True)
+                blob_client.upload_blob(cast("IO[bytes]", wrapped_file), overwrite=True)
 
         except AzureError as e:
             raise RuntimeError(f"Failed to upload blob: {e}") from e

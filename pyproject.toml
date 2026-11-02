@@ -139,6 +139,9 @@ select = [
     "A", # flake8-builtins
     "PERF", # perflint
     "T10", # flake8-debugger
+    "DTZ", # flake8-datetimez
+    "TC", # flake8-type-checking
+    "TID", # flake8-tidy-imports
 ]
 fixable = ["ALL"]
 pydocstyle.convention = "google"
@@ -153,6 +156,7 @@ ignore = [
     "D107",   # Missing docstring in `__init__`
     "RUF005", # Concatenation of collections with + operator is more readable
     "PERF203", # try-except in a loop is structurally necessary for per-iteration error handling
+    "TID252", # Parent-relative imports are the established style within the package
 ]
 
 [tool.ruff.format]

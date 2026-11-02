@@ -8,7 +8,19 @@ from moto import mock_aws
 
 from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
+from tests.support.remote_data import cloud_skip_reason
 from tests.support.storage import BACKENDS, StorageTestContext
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Skip cloud-marked tests when remote tests are disabled or credentials are unavailable."""
+    reason = cloud_skip_reason()
+    if reason is None:
+        return
+    skip_cloud = pytest.mark.skip(reason=reason)
+    for item in items:
+        if "cloud" in item.keywords:
+            item.add_marker(skip_cloud)
 
 
 class AltReader(LocalReader):

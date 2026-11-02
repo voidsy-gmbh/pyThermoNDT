@@ -1,12 +1,9 @@
-from typing import Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
 from matplotlib.colors import to_rgba
-from matplotlib.contour import QuadContourSet
-from matplotlib.image import AxesImage
-from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, TextArea
 from matplotlib.widgets import Button, CheckButtons, Slider
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -15,6 +12,11 @@ from ..units import generate_label
 from .attribute_ops import AttributeOps
 from .dataset_ops import DatasetOps
 from .group_ops import GroupOps
+
+if TYPE_CHECKING:
+    from matplotlib.contour import QuadContourSet
+    from matplotlib.image import AxesImage
+    from matplotlib.lines import Line2D
 
 # Type aliases for visualization options
 FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]

@@ -9,6 +9,10 @@ on:
         description: 'The branch or tag to test. Defaults to the reference of the workflow trigger'
         type: string
         default: ''
+    secrets:
+      AZURE_STORAGE_CONNECTION_STRING:
+        description: 'Connection string of the Azure storage account that holds the test data'
+        required: false
 
 permissions:
   contents: read
@@ -65,14 +69,29 @@ jobs:
           uv pip install -r ./requirements_dev.txt # Install dev dependencies
           uv pip install -e .
 
+      # Step 3.1: Cache the downloaded cloud test data (stale files are revalidated by ETag)
+      - name: Cache cloud test data
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: .pythermondt_cache
+          key: cloud-test-data-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            cloud-test-data-${{ runner.os }}-
+
       # Step 4: Run tests without coverage
       - name: Run Tests
         if: matrix.python-version != vars.DEFAULT_PYTHON_VERSION
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          PYTHERMONDT_TEST_DATA_URI: ${{ vars.PYTHERMONDT_TEST_DATA_URI }}
         run: pytest --benchmark-skip
 
       # Step 4.1: Run tests with coverage on default python version
       - name: Run Tests
         if: matrix.python-version == vars.DEFAULT_PYTHON_VERSION
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          PYTHERMONDT_TEST_DATA_URI: ${{ vars.PYTHERMONDT_TEST_DATA_URI }}
         run: pytest --junitxml=pytest.xml --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml --cov=pythermondt --ignore=tests/benchmark tests/ | tee pytest-coverage.txt
 
       # Step 5: Create artifact for coverage data

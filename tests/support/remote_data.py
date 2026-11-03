@@ -6,9 +6,8 @@ read two environment variables:
 - ``AZURE_STORAGE_CONNECTION_STRING``: connection string of the test data storage account.
 - ``PYTHERMONDT_TEST_DATA_URI``: test data location as ``az://<container>/<prefix>``.
 
-The container mirrors the old asset layout under the prefix, for example
-``test-data/integration/simulation/source1.mat`` next to
-``test-data/integration/simulation/expected1.hdf5``.
+The container holds the test data under ``<prefix>/<type>/<file>``; the file naming is
+defined by the case discovery in ``tests/integration/utils.py``.
 
 Cloud-marked tests run in GitHub Actions and when ``PYTHERMONDT_REMOTE_TESTS=1`` is set.
 Pull requests from forks skip cloud tests because they cannot read the connection string

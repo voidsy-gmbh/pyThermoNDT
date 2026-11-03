@@ -1,28 +1,25 @@
-from pathlib import Path
-
 import pytest
 import torch
 from torch.utils.data import DataLoader
 
 from pythermondt.data import DataContainer, container_diff
 from pythermondt.dataset import IndexedThermoDataset, ThermoDataset, random_split
-from pythermondt.readers import LocalReader
 
 from ..utils import format_container_diff
-from .utils import IntegrationTestCase, discover_test_cases
+from .utils import CaseReaders, IntegrationTestCase, integration_test_cases
 
-# Get all test cases
-INTEGRATION_DIR = Path(__file__).parent / ".." / "assets" / "integration"
-TEST_CASES = discover_test_cases(INTEGRATION_DIR)
+pytestmark = pytest.mark.cloud
+
+# Get all test cases (discovered from the remote test data when cloud tests run)
+TEST_CASES = integration_test_cases()
 TEST_IDS = [case.id for case in TEST_CASES]
 
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
-def test_local_reader_integration(test_case: IntegrationTestCase):
-    """Test LocalReader integration using source files and expected outputs."""
+def test_azure_reader_integration(case_readers: CaseReaders, test_case: IntegrationTestCase):
+    """Test AzureBlobReader integration using source files and expected outputs from the remote test data."""
     # Create readers
-    source_reader = LocalReader(test_case.source_path)
-    expected_reader = LocalReader(test_case.expected_path)
+    source_reader, expected_reader = case_readers(test_case)
 
     # Compare all containers in the reader
     for i, (source_container, expected_container) in enumerate(zip(source_reader, expected_reader, strict=True)):
@@ -35,11 +32,10 @@ def test_local_reader_integration(test_case: IntegrationTestCase):
 
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
-def test_thermodataset_integration(test_case: IntegrationTestCase):
-    """Test ThermoDataset integration using source files and expected outputs."""
+def test_thermodataset_integration(case_readers: CaseReaders, test_case: IntegrationTestCase):
+    """Test ThermoDataset integration using source files and expected outputs from the remote test data."""
     # Create readers
-    source_reader = LocalReader(test_case.source_path)
-    expected_reader = LocalReader(test_case.expected_path)
+    source_reader, expected_reader = case_readers(test_case)
 
     # Create ThermoDataset objects
     source_dataset = ThermoDataset(source_reader)
@@ -56,11 +52,10 @@ def test_thermodataset_integration(test_case: IntegrationTestCase):
 
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
-def test_indexed_thermodataset_integration(test_case: IntegrationTestCase):
-    """Test IndexedThermoDataset integration."""
+def test_indexed_thermodataset_integration(case_readers: CaseReaders, test_case: IntegrationTestCase):
+    """Test IndexedThermoDataset integration with the remote test data."""
     # Create readers
-    source_reader = LocalReader(test_case.source_path)
-    expected_reader = LocalReader(test_case.expected_path)
+    source_reader, expected_reader = case_readers(test_case)
 
     # Create ThermoDataset objects
     source_dataset = ThermoDataset(source_reader)
@@ -99,11 +94,12 @@ def test_indexed_thermodataset_integration(test_case: IntegrationTestCase):
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
 @pytest.mark.parametrize("split_ratio", [[0.5, 0.5], [0.8, 0.2], [0.7, 0.3]])
-def test_random_split_integration(recwarn, test_case: IntegrationTestCase, split_ratio: list[float]):
-    """Test random_split function."""
+def test_random_split_integration(
+    recwarn, case_readers: CaseReaders, test_case: IntegrationTestCase, split_ratio: list[float]
+):
+    """Test random_split function with the remote test data."""
     # Create readers
-    source_reader = LocalReader(test_case.source_path)
-    expected_reader = LocalReader(test_case.expected_path)
+    source_reader, expected_reader = case_readers(test_case)
 
     # Create ThermoDataset objects
     source_dataset = ThermoDataset(source_reader)
@@ -140,8 +136,8 @@ def test_random_split_integration(recwarn, test_case: IntegrationTestCase, split
 
 
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=TEST_IDS)
-def test_pytorch_dataloader_integration(test_case: IntegrationTestCase):
-    """Test PyTorch DataLoader integration."""
+def test_pytorch_dataloader_integration(case_readers: CaseReaders, test_case: IntegrationTestCase):
+    """Test PyTorch DataLoader integration with the remote test data."""
 
     # Custom collate function to stack all datasets in the DataContainer into a single tensor
     def collate_fn(batch: list[DataContainer]):
@@ -152,8 +148,7 @@ def test_pytorch_dataloader_integration(test_case: IntegrationTestCase):
         return [torch.stack([container.get_dataset(path) for container in batch]) for path in paths]
 
     # Create readers
-    source_reader = LocalReader(test_case.source_path)
-    expected_reader = LocalReader(test_case.expected_path)
+    source_reader, expected_reader = case_readers(test_case)
 
     # Create ThermoDataset objects
     source_dataset = ThermoDataset(source_reader)

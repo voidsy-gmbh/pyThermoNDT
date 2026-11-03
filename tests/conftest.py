@@ -121,19 +121,19 @@ def altreader_no_files():
 @pytest.fixture
 def localreader_with_file():
     """Fixture for a reader that has a single file."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/source1.mat")
+    return LocalReader(pattern="./tests/assets/simulation/source1.mat")
 
 
 @pytest.fixture
 def localreader_with_glob():
     """Fixture for a reader that has files."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/*.mat")
+    return LocalReader(pattern="./tests/assets/simulation/*.mat")
 
 
 @pytest.fixture
 def localreader_with_directory():
     """Fixture for a reader that has files."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/")
+    return LocalReader(pattern="./tests/assets/simulation/")
 
 
 @pytest.fixture()
@@ -144,7 +144,7 @@ def s3reader_with_file(s3_client):
 
     # Upload a test file to the bucket
     s3_client.upload_file(
-        Filename="./tests/assets/integration/simulation/source1.mat",
+        Filename="./tests/assets/simulation/source1.mat",
         Bucket="test-bucket",
         Key="source1.mat",
     )

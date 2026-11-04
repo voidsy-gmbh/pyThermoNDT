@@ -1,6 +1,11 @@
+from unittest.mock import PropertyMock, patch
+
 import pytest
 
-from .utils import IntegrationTestCase, discover_test_cases
+from tests.support.remote_data import RemoteTestConfig
+from tests.support.storage.azure import mocked_azure_blob_storage
+
+from .utils import IntegrationTestCase, discover_test_cases, list_integration_files, make_case_readers
 
 
 def test_discover_pairs_sources_and_expected_by_number():
@@ -72,3 +77,70 @@ def test_discover_cases_have_readable_ids(paths: list[str]):
     """Every discovered case exposes a stable id of type and name."""
     for case in discover_test_cases(paths):
         assert case.id == f"{case.type}_{case.name}"
+
+
+def test_discover_ignores_nested_files():
+    """Archive subfolders cannot create duplicate cases or supply expected files."""
+    cases = discover_test_cases(
+        [
+            "simulation/source1.mat",
+            "simulation/expected1.hdf5",
+            "simulation/archive/source1.mat",
+            "simulation/archive/expected1.hdf5",
+            "simulation/source2.mat",
+            "simulation/archive/expected2.hdf5",
+        ]
+    )
+
+    assert [case.id for case in cases] == ["simulation_1", "simulation_glob"]
+    assert cases[1].source_files == ("source1.mat",)
+    assert cases[1].expected_files == ("expected1.hdf5",)
+
+
+@pytest.mark.parametrize("prefix", ["", "test-data"])
+def test_remote_listing_and_readers_respect_folder_boundaries(prefix: str):
+    """Sibling types and nested archives cannot enter a source/expected reader pair."""
+    config = RemoteTestConfig("https://test.blob.core.windows.net", "fake", "test-container", prefix)
+    root = f"{prefix}/" if prefix else ""
+    paths = [
+        "integration/simulation/source1.mat",
+        "integration/simulation/expected1.hdf5",
+        "integration/simulation_large/source1.mat",
+        "integration/simulation_large/expected1.hdf5",
+        "integration/simulation/archive/source1.mat",
+        "integration/simulation/archive/expected1.hdf5",
+        "integration-archive/simulation/source1.mat",
+        "integration-archive/simulation/expected1.hdf5",
+    ]
+    with mocked_azure_blob_storage() as storage:
+        storage.create_container(config.container_name)
+        for path in paths:
+            storage.upload_blob(config.container_name, root + path, b"data")
+
+        listed = list_integration_files(config)
+        assert sorted(listed) == sorted(path.removeprefix("integration/") for path in paths[:6])
+        cases = discover_test_cases(listed)
+        assert [case.id for case in cases] == [
+            "simulation_1",
+            "simulation_glob",
+            "simulation_large_1",
+            "simulation_large_glob",
+        ]
+        for case in cases:
+            source, expected = make_case_readers(config, case)
+            uri_prefix = f"az://test-container/{root}integration/{case.type}/"
+            assert source.files == [uri_prefix + "source1.mat"]
+            assert expected.files == [uri_prefix + "expected1.hdf5"]
+
+
+def test_case_readers_reject_duplicate_listing_entries():
+    """Duplicate file entries must not be hidden by set-based validation."""
+    config = RemoteTestConfig("https://test.blob.core.windows.net", "fake", "test-container", "")
+    case = IntegrationTestCase("simulation", "1", ("source1.mat",), ("expected1.hdf5",))
+    with patch(
+        "pythermondt.readers.AzureBlobReader.files",
+        new_callable=PropertyMock,
+        return_value=["az://test-container/integration/simulation/source1.mat"] * 2,
+    ):
+        with pytest.raises(RuntimeError, match="Test data mismatch"):
+            make_case_readers(config, case)

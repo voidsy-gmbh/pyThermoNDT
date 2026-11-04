@@ -108,14 +108,14 @@ def list_integration_files(config: RemoteTestConfig) -> list[str]:
     Returns:
         File paths relative to the integration prefix (e.g. "simulation/source1.mat").
     """
-    prefix = f"{config.prefix}/{INTEGRATION_PREFIX}" if config.prefix else INTEGRATION_PREFIX
+    prefix = f"{config.prefix}/{INTEGRATION_PREFIX}/" if config.prefix else f"{INTEGRATION_PREFIX}/"
     reader = AzureBlobReader(
         account_url=config.account_url,
         connection_string=config.connection_string,
         container_name=config.container_name,
         prefix=prefix,
     )
-    uri_prefix = f"az://{config.container_name}/{prefix}/"
+    uri_prefix = f"az://{config.container_name}/{prefix}"
     return [info.path.removeprefix(uri_prefix) for info in reader.file_entries]
 
 
@@ -137,23 +137,23 @@ def make_case_readers(
         RuntimeError: If the remote test data does not contain the case files.
     """
     prefix = (
-        f"{config.prefix}/{INTEGRATION_PREFIX}/{test_case.type}"
+        f"{config.prefix}/{INTEGRATION_PREFIX}/{test_case.type}/"
         if config.prefix
-        else f"{INTEGRATION_PREFIX}/{test_case.type}"
+        else f"{INTEGRATION_PREFIX}/{test_case.type}/"
     )
     source_reader = _make_reader(config, prefix, test_case.source_files)
     expected_reader = _make_reader(config, prefix, test_case.expected_files)
     return source_reader, expected_reader
 
 
-class _FileNameFilter:
-    """Picklable file filter that matches blobs by their file name."""
+class _BlobPathFilter:
+    """Picklable filter for exact blob paths, excluding nested folders."""
 
-    def __init__(self, names: tuple[str, ...]) -> None:
-        self.names = names
+    def __init__(self, paths: tuple[str, ...]) -> None:
+        self.paths = paths
 
     def __call__(self, info: FileInfo) -> bool:
-        return _file_name(info.path) in self.names
+        return info.path in self.paths
 
 
 def _make_reader(config: RemoteTestConfig, prefix: str, names: tuple[str, ...]) -> AzureBlobReader:
@@ -163,23 +163,22 @@ def _make_reader(config: RemoteTestConfig, prefix: str, names: tuple[str, ...]) 
         container_name=config.container_name,
         prefix=prefix,
         download_files=True,
-        file_filter=_FileNameFilter(names),
+        file_filter=_BlobPathFilter(tuple(f"az://{config.container_name}/{prefix}{name}" for name in names)),
     )
-    found = {_file_name(file_path) for file_path in reader.files}
-    if found != set(names):
+    found = sorted(_file_name(file_path) for file_path in reader.files)
+    if found != sorted(names):
         raise RuntimeError(
-            f"Test data mismatch under az://{config.container_name}/{prefix}: "
-            f"expected {sorted(names)}, found {sorted(found)}."
+            f"Test data mismatch under az://{config.container_name}/{prefix}: expected {sorted(names)}, found {found}."
         )
     return reader
 
 
 def _group_by_type(relative_paths: Iterable[str]) -> dict[str, list[str]]:
-    """Group file paths by their type subfolder; top-level files are ignored."""
+    """Group direct children of type folders; ignore top-level and nested files."""
     grouped: dict[str, list[str]] = {}
     for path in relative_paths:
         test_type, _, name = path.partition("/")
-        if not name:
+        if not test_type or not name or "/" in name:
             continue
         grouped.setdefault(test_type, []).append(path)
     return grouped

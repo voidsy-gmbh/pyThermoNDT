@@ -12,12 +12,13 @@ from tests.support.remote_data import (
 CONNECTION_STRING = (
     "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=abc==;EndpointSuffix=core.windows.net"
 )
+TEST_DATA_URI = "https://testaccount.blob.core.windows.net/test-container/test-data"
 
 
 def _set_env(
     monkeypatch: pytest.MonkeyPatch,
     connection_string: str | None = CONNECTION_STRING,
-    uri: str | None = "az://test-container/test-data",
+    uri: str | None = TEST_DATA_URI,
 ):
     """Set the remote test environment variables; None deletes a variable."""
     for name, value in ((CONNECTION_STRING_ENV, connection_string), (TEST_DATA_URI_ENV, uri)):
@@ -88,8 +89,8 @@ def test_no_skip_reason_with_enabled_and_credentials(monkeypatch: pytest.MonkeyP
 
 
 def test_load_remote_config_parses_settings(monkeypatch: pytest.MonkeyPatch):
-    """Connection string and test data URI are parsed into the config fields."""
-    _set_env(monkeypatch, uri="az://test-container/test-data")
+    """Test data URI and connection string are parsed into the config fields."""
+    _set_env(monkeypatch)
 
     config = load_remote_config()
 
@@ -99,9 +100,65 @@ def test_load_remote_config_parses_settings(monkeypatch: pytest.MonkeyPatch):
     assert config.prefix == "test-data"
 
 
+def test_load_remote_config_connection_string_is_optional(monkeypatch: pytest.MonkeyPatch):
+    """Without a connection string the config falls back to DefaultAzureCredential."""
+    _set_env(monkeypatch, connection_string=None)
+
+    config = load_remote_config()
+
+    assert config.connection_string is None
+    assert config.container_name == "test-container"
+
+
+def test_load_remote_config_accepts_sas_connection_string(monkeypatch: pytest.MonkeyPatch):
+    """SAS connection strings reach the Azure SDK unchanged and stay out of repr."""
+    from azure.storage.blob import BlobServiceClient
+
+    connection_string = (
+        "BlobEndpoint=https://testaccount.blob.core.windows.net;"
+        "SharedAccessSignature=sv=2024-11-04&sr=c&sp=rl&sig=fake-signature"
+    )
+    _set_env(monkeypatch, connection_string=connection_string)
+
+    config = load_remote_config()
+
+    assert config.connection_string == connection_string
+    assert "fake-signature" not in repr(config)
+    assert "SharedAccessSignature" not in repr(config)
+    with BlobServiceClient.from_connection_string(config.connection_string) as client:
+        assert client.account_name == "testaccount"
+
+
+def test_remote_config_repr_hides_account_key(monkeypatch: pytest.MonkeyPatch):
+    """Config representations must not expose account-key credentials either."""
+    _set_env(monkeypatch)
+
+    assert "AccountKey" not in repr(load_remote_config())
+
+
+@pytest.mark.parametrize(
+    "uri",
+    [
+        TEST_DATA_URI + "?sig=private-token",
+        TEST_DATA_URI + "#private-token",
+        "https://user:private-token@testaccount.blob.core.windows.net/test-container",
+        "https://[private-token/test-container",
+    ],
+)
+def test_remote_config_rejects_credentials_in_uri_without_echoing_them(monkeypatch: pytest.MonkeyPatch, uri: str):
+    """Credentials belong in the secret, never in the public data URL or errors."""
+    _set_env(monkeypatch, uri=uri)
+
+    with pytest.raises(RuntimeError, match=TEST_DATA_URI_ENV) as error:
+        load_remote_config()
+
+    assert "private-token" not in str(error.value)
+    assert error.value.__cause__ is None
+
+
 def test_load_remote_config_prefix_is_optional(monkeypatch: pytest.MonkeyPatch):
     """A container-only URI gives an empty prefix."""
-    _set_env(monkeypatch, uri="az://test-container")
+    _set_env(monkeypatch, uri="https://testaccount.blob.core.windows.net/test-container")
 
     config = load_remote_config()
 
@@ -109,26 +166,20 @@ def test_load_remote_config_prefix_is_optional(monkeypatch: pytest.MonkeyPatch):
     assert config.prefix == ""
 
 
-def test_load_remote_config_missing_connection_string(monkeypatch: pytest.MonkeyPatch):
-    """A missing connection string raises with the variable name."""
-    _set_env(monkeypatch, connection_string=None)
-
-    with pytest.raises(RuntimeError, match=CONNECTION_STRING_ENV):
-        load_remote_config()
-
-
-@pytest.mark.parametrize("uri", ["", "test-data", "https://test-container/test-data", "az://"])
+@pytest.mark.parametrize(
+    "uri",
+    [
+        "",
+        "test-data",
+        "az://test-container/test-data",
+        "https://",
+        "https://testaccount.blob.core.windows.net",
+        "http://testaccount.blob.core.windows.net/test-container",
+    ],
+)
 def test_load_remote_config_invalid_uri(monkeypatch: pytest.MonkeyPatch, uri: str):
     """A missing or malformed test data URI raises with the expected format."""
     _set_env(monkeypatch, uri=uri)
 
     with pytest.raises(RuntimeError, match=TEST_DATA_URI_ENV):
-        load_remote_config()
-
-
-def test_load_remote_config_connection_string_without_account(monkeypatch: pytest.MonkeyPatch):
-    """A connection string without AccountName raises."""
-    _set_env(monkeypatch, connection_string="AccountKey=abc==")
-
-    with pytest.raises(RuntimeError, match="AccountName"):
         load_remote_config()

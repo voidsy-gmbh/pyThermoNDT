@@ -1,27 +1,23 @@
-"""Configuration for tests that read real cloud storage.
+"""Configure access to private Azure test data.
 
-Integration test data lives in Azure Blob Storage instead of the repository. The tests
-read two environment variables:
+Set ``PYTHERMONDT_TEST_DATA_URI`` to the HTTPS container/prefix URL. Authentication
+uses ``AZURE_STORAGE_CONNECTION_STRING`` when set, otherwise ``DefaultAzureCredential``
+(e.g. ``az login``). In CI, store the connection string as a secret; prefer an expiring,
+read/list-only container SAS.
 
-- ``AZURE_STORAGE_CONNECTION_STRING``: connection string of the test data storage account.
-- ``PYTHERMONDT_TEST_DATA_URI``: test data location as ``az://<container>/<prefix>``.
-
-The container holds the test data under ``<prefix>/<type>/<file>``; the file naming is
-defined by the case discovery in ``tests/integration/utils.py``.
-
-Cloud-marked tests run in GitHub Actions and when ``PYTHERMONDT_REMOTE_TESTS=1`` is set.
-Pull requests from forks skip cloud tests because they cannot read the connection string
-secret.
+Cloud tests run in GitHub Actions or with ``PYTHERMONDT_REMOTE_TESTS=1``.
+Pull requests without the connection-string secret skip them.
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 CONNECTION_STRING_ENV = "AZURE_STORAGE_CONNECTION_STRING"
 TEST_DATA_URI_ENV = "PYTHERMONDT_TEST_DATA_URI"
 REMOTE_TESTS_ENV = "PYTHERMONDT_REMOTE_TESTS"
 
-_TEST_DATA_URI_FORMAT = "az://<container>/<prefix>"
+_TEST_DATA_URI_FORMAT = "https://<account>.blob.core.windows.net/<container>/<prefix>"
 
 
 @dataclass(frozen=True)
@@ -30,13 +26,14 @@ class RemoteTestConfig:
 
     Attributes:
         account_url: Storage account URL (https://<account>.blob.core.windows.net).
-        connection_string: Azure connection string used for authentication.
+        connection_string: Azure connection string used for authentication, or None to
+            fall back to DefaultAzureCredential (e.g. ``az login``).
         container_name: Container that holds the test data.
         prefix: Prefix (folder path) of the test data within the container.
     """
 
     account_url: str
-    connection_string: str
+    connection_string: str | None = field(repr=False)
     container_name: str
     prefix: str
 
@@ -71,35 +68,29 @@ def load_remote_config() -> RemoteTestConfig:
         Connection settings for the test data container.
 
     Raises:
-        RuntimeError: If an environment variable is missing or malformed.
+        RuntimeError: If the test data URI is missing or malformed.
     """
-    connection_string = os.environ.get(CONNECTION_STRING_ENV, "")
-    if not connection_string:
-        raise RuntimeError(
-            f"{CONNECTION_STRING_ENV} is not set. Provide a connection string for the test data account."
-        )
-
     uri = os.environ.get(TEST_DATA_URI_ENV, "")
-    if not uri.startswith("az://") or not uri[len("az://") :].partition("/")[0]:
-        raise RuntimeError(f"Invalid {TEST_DATA_URI_ENV}={uri!r}. Expected format: {_TEST_DATA_URI_FORMAT}.")
-    container_name, _, prefix = uri[len("az://") :].partition("/")
+    error = f"Invalid {TEST_DATA_URI_ENV}. Expected a credential-free URL: {_TEST_DATA_URI_FORMAT}."
+    try:
+        parsed = urlparse(uri)
+    except ValueError:
+        raise RuntimeError(error) from None
+    container_name, _, prefix = parsed.path.lstrip("/").partition("/")
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or not container_name
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise RuntimeError(error)
 
     return RemoteTestConfig(
-        account_url=_account_url_from_connection_string(connection_string),
-        connection_string=connection_string,
+        account_url=f"{parsed.scheme}://{parsed.netloc}",
+        connection_string=os.environ.get(CONNECTION_STRING_ENV) or None,
         container_name=container_name,
         prefix=prefix.strip("/"),
     )
-
-
-def _account_url_from_connection_string(connection_string: str) -> str:
-    """Extract the blob account URL from a connection string.
-
-    Raises:
-        RuntimeError: If the connection string has no AccountName entry.
-    """
-    for part in connection_string.split(";"):
-        key, _, value = part.partition("=")
-        if key == "AccountName" and value:
-            return f"https://{value}.blob.core.windows.net"
-    raise RuntimeError(f"Cannot derive the account URL: {CONNECTION_STRING_ENV} has no AccountName entry.")

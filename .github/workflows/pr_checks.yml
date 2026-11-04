@@ -14,7 +14,7 @@ jobs:
     with:
       ref: ${{ github.event.pull_request.head.sha }}
     secrets:
-      AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+      AZURE_STORAGE_CONNECTION_STRING: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
 
   quality-checks:
     name: Run Code Quality Checks

@@ -11,7 +11,7 @@ on:
         default: ''
     secrets:
       AZURE_STORAGE_CONNECTION_STRING:
-        description: 'Connection string of the Azure storage account that holds the test data'
+        description: 'Test data connection string; prefer a read/list-only container SAS with an expiry'
         required: false
 
 permissions:
@@ -69,20 +69,13 @@ jobs:
           uv pip install -r ./requirements_dev.txt # Install dev dependencies
           uv pip install -e .
 
-      # Step 3.1: Cache the downloaded cloud test data (stale files are revalidated by ETag)
-      - name: Cache cloud test data
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: .pythermondt_cache
-          key: cloud-test-data-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            cloud-test-data-${{ runner.os }}-
+      # Do not cache private test data: fork PRs can restore base-branch Actions caches.
 
       # Step 4: Run tests without coverage
       - name: Run Tests
         if: matrix.python-version != vars.DEFAULT_PYTHON_VERSION
         env:
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
           PYTHERMONDT_TEST_DATA_URI: ${{ vars.PYTHERMONDT_TEST_DATA_URI }}
         run: pytest --benchmark-skip
 
@@ -90,7 +83,7 @@ jobs:
       - name: Run Tests
         if: matrix.python-version == vars.DEFAULT_PYTHON_VERSION
         env:
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
           PYTHERMONDT_TEST_DATA_URI: ${{ vars.PYTHERMONDT_TEST_DATA_URI }}
         run: pytest --junitxml=pytest.xml --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml --cov=pythermondt --ignore=tests/benchmark tests/ | tee pytest-coverage.txt
 

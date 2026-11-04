@@ -1,6 +1,8 @@
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
+from azure.core.exceptions import AzureError
+
 from pythermondt.io import FileInfo
 from pythermondt.readers import AzureBlobReader
 from tests.support.remote_data import RemoteTestConfig, cloud_skip_reason, load_remote_config
@@ -21,12 +23,14 @@ class IntegrationTestCase:
         name: Case number ("1", "2", ...) or "glob" for one case over all files of the type.
         source_files: Source file names of the case.
         expected_files: Expected output file names of the case.
+        discovery_error: Safe setup failure message if remote discovery failed.
     """
 
     type: str
     name: str
     source_files: tuple[str, ...] = ()
     expected_files: tuple[str, ...] = ()
+    discovery_error: str | None = None
 
     @property
     def id(self) -> str:
@@ -41,12 +45,28 @@ def integration_test_cases() -> tuple[IntegrationTestCase, ...]:
     returns a single placeholder case so the skipped tests stay visible and collection
     needs no network access.
 
-    Raises:
-        RuntimeError: If the remote test data is not reachable with the configured credentials.
+    Discovery failures become failing placeholder cases, not collection errors, so
+    unrelated offline tests can still run. Exception text is omitted to protect credentials.
     """
     if cloud_skip_reason() is not None:
         return (IntegrationTestCase(type="simulation", name="unavailable"),)
-    return discover_test_cases(list_integration_files(load_remote_config()))
+    try:
+        cases = discover_test_cases(list_integration_files(load_remote_config()))
+    except (AzureError, RuntimeError, ValueError, OSError) as error:
+        message = (
+            f"Remote integration discovery failed ({type(error).__name__}). "
+            "Check test data configuration, Azure access, and network connectivity."
+        )
+        return (IntegrationTestCase(type="remote", name="unavailable", discovery_error=message),)
+    if not cases:
+        return (
+            IntegrationTestCase(
+                type="remote",
+                name="empty",
+                discovery_error="No paired integration test files found in remote test data.",
+            ),
+        )
+    return cases
 
 
 def discover_test_cases(relative_paths: Iterable[str]) -> tuple[IntegrationTestCase, ...]:

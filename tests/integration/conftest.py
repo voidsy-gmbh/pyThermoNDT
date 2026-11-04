@@ -13,10 +13,13 @@ def remote_config() -> RemoteTestConfig:
 
 
 @pytest.fixture
-def case_readers(remote_config: RemoteTestConfig) -> CaseReaders:
+def case_readers(request: pytest.FixtureRequest) -> CaseReaders:
     """Return a factory that creates the cached source and expected readers for one test case."""
 
     def _make(test_case: IntegrationTestCase) -> tuple[AzureBlobReader, AzureBlobReader]:
+        if test_case.discovery_error is not None:
+            pytest.fail(test_case.discovery_error, pytrace=False)
+        remote_config = request.getfixturevalue("remote_config")
         return make_case_readers(remote_config, test_case)
 
     return _make

@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 import torch
 
+import pythermondt.io.backends.azure_backend as azure_backend
 from pythermondt import settings
 from pythermondt.data import DataContainer
 from pythermondt.io import AzureBlobBackend
@@ -18,7 +19,6 @@ def remote_config() -> RemoteTestConfig:
     """Use mocked Azure storage for cache regression tests, even in live runs."""
     return RemoteTestConfig(
         account_url="https://test.blob.core.windows.net",
-        connection_string="fake",
         container_name="test-container",
         prefix="test-data",
     )
@@ -80,3 +80,28 @@ def test_case_readers_sync_only_selected_blobs(tmp_path: Path, remote_config: Re
             "az://test-container/" + prefix + "source1.hdf5",
             "az://test-container/" + prefix + "expected1.hdf5",
         }
+
+
+def test_case_readers_use_default_credentials(
+    tmp_path: Path, remote_config: RemoteTestConfig, monkeypatch: pytest.MonkeyPatch
+):
+    """Test readers use the credential chain, even if an obsolete SAS environment value exists."""
+    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "obsolete-secret")
+    case = IntegrationTestCase("simulation", "1", ("source1.hdf5",), ("expected1.hdf5",))
+    with (
+        patch.object(settings, "download_dir", str(tmp_path)),
+        mocked_azure_blob_storage() as storage,
+        patch.object(azure_backend, "DefaultAzureCredential") as credential,
+        patch.object(azure_backend.BlobServiceClient, "from_connection_string") as from_connection_string,
+    ):
+        storage.create_container(remote_config.container_name)
+        for name in ("source1.hdf5", "expected1.hdf5"):
+            storage.upload_blob(
+                remote_config.container_name, "test-data/integration/simulation/" + name, _measurement(1)
+            )
+
+        for reader in make_case_readers(remote_config, case):
+            assert reader[0].get_dataset("/Data/Tdata").item() == 1
+
+        assert credential.call_count == 2
+        from_connection_string.assert_not_called()

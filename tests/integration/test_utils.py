@@ -101,7 +101,6 @@ def test_remote_listing_and_readers_respect_folder_boundaries(prefix: str):
     """Sibling types and nested archives cannot enter a source/expected reader pair."""
     config = RemoteTestConfig(
         account_url="https://test.blob.core.windows.net",
-        connection_string="fake",
         container_name="test-container",
         prefix=prefix,
     )
@@ -141,7 +140,6 @@ def test_case_readers_reject_duplicate_listing_entries():
     """Duplicate file entries must not be hidden by set-based validation."""
     config = RemoteTestConfig(
         account_url="https://test.blob.core.windows.net",
-        connection_string="fake",
         container_name="test-container",
         prefix="",
     )

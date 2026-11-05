@@ -1,21 +1,21 @@
 """Configure Azure integration tests through TEST_* environment variables.
 
 Set TEST_ACCOUNT_URL to the HTTPS account URL and TEST_CONTAINER_NAME to
-the container; TEST_PREFIX defaults to the container root. Authentication uses the
-AZURE_STORAGE_CONNECTION_STRING secret when set, otherwise DefaultAzureCredential.
-Cloud tests run in CI or with REMOTE_TESTS=1; PRs without the secret skip them.
+the container; TEST_PREFIX defaults to the container root. Authentication uses
+DefaultAzureCredential: az login locally, or Azure OIDC login in GitHub Actions.
+Set REMOTE_TESTS=1 locally; CI enables it only after a successful trusted Azure login.
 """
 
 from typing import Annotated
 
-from pydantic import AnyUrl, Field, SecretStr, UrlConstraints, field_validator
+from pydantic import AnyUrl, Field, UrlConstraints, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 AccountUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=["https"], host_required=True)]
 
 
 class CloudTestSettings(BaseSettings):
-    """Cloud-test gating and credentials, loadable without an Azure location."""
+    """Cloud-test opt-in, loadable without an Azure location or authentication."""
 
     model_config = SettingsConfigDict(
         env_prefix="TEST_",
@@ -27,29 +27,18 @@ class CloudTestSettings(BaseSettings):
     )
 
     remote_tests: bool = Field(default=False, validation_alias="REMOTE_TESTS")
-    github_actions: bool = Field(default=False, validation_alias="GITHUB_ACTIONS")
-    github_event_name: str = Field(default="", validation_alias="GITHUB_EVENT_NAME")
-    connection_string: SecretStr | None = Field(
-        default=None, validation_alias="AZURE_STORAGE_CONNECTION_STRING", repr=False, exclude=True
-    )
 
-    @field_validator("remote_tests", "github_actions", mode="before")
+    @field_validator("remote_tests", mode="before")
     @classmethod
     def strip_flag_whitespace(cls, value: object) -> object:
         """Allow whitespace around flags before Pydantic parses their boolean values."""
         return value.strip() if isinstance(value, str) else value
 
-    @property
-    def enabled(self) -> bool:
-        """Whether CI or an explicit local opt-in enables cloud tests."""
-        return self.github_actions or self.remote_tests
-
 
 class RemoteTestConfig(CloudTestSettings):
     """Azure test-data location, validated only when cloud tests need it.
 
-    Authentication uses the inherited connection string when set, otherwise
-    DefaultAzureCredential (e.g. az login).
+    Authentication uses DefaultAzureCredential (e.g. az login).
     """
 
     account_url: AccountUrl
@@ -78,26 +67,19 @@ class RemoteTestConfig(CloudTestSettings):
 
 
 def remote_tests_enabled() -> bool:
-    """Return True in GitHub Actions or after an explicit local opt-in."""
-    return CloudTestSettings().enabled
+    """Return True after explicit opt-in, set by CI only after Azure login succeeds."""
+    return CloudTestSettings().remote_tests
 
 
 def cloud_skip_reason() -> str | None:
-    """Return why cloud-marked tests must skip, or None when they can run.
-
-    Pull requests without a connection string skip instead of fail: forks cannot read
-    repository secrets, and a missing secret must not break their checks.
-    """
-    settings = CloudTestSettings()
-    if not settings.enabled:
+    """Return why cloud tests must skip; CI owns the decision to authenticate trusted runs."""
+    if not remote_tests_enabled():
         return "cloud tests disabled; set REMOTE_TESTS=1 to run them"
-    if settings.github_event_name == "pull_request" and settings.connection_string is None:
-        return "pull request without AZURE_STORAGE_CONNECTION_STRING; fork pull requests cannot read secrets"
     return None
 
 
 def load_remote_config() -> RemoteTestConfig:
-    """Load the test data location and Azure credentials from the environment.
+    """Load the test data location from the environment.
 
     Returns:
         Connection settings for the test data container.

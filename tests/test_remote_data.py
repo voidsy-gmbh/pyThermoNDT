@@ -10,27 +10,21 @@ from tests.support.remote_data import (
 )
 
 ACCOUNT_URL_ENV = "TEST_ACCOUNT_URL"
-CONNECTION_STRING_ENV = "AZURE_STORAGE_CONNECTION_STRING"
 CONTAINER_ENV = "TEST_CONTAINER_NAME"
 PREFIX_ENV = "TEST_PREFIX"
 REMOTE_TESTS_ENV = "REMOTE_TESTS"
 
-CONNECTION_STRING = (
-    "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=abc==;EndpointSuffix=core.windows.net"
-)
 ACCOUNT_URL = "https://testaccount.blob.core.windows.net"
 
 
 def _set_env(
     monkeypatch: pytest.MonkeyPatch,
-    connection_string: str | None = CONNECTION_STRING,
     account_url: str | None = ACCOUNT_URL,
     container: str | None = "test-container",
     prefix: str | None = "test-data",
 ):
     """Set the remote test environment variables; None deletes a variable."""
     for name, value in (
-        (CONNECTION_STRING_ENV, connection_string),
         (ACCOUNT_URL_ENV, account_url),
         (CONTAINER_ENV, container),
         (PREFIX_ENV, prefix),
@@ -54,13 +48,15 @@ def _set_env(
         (None, "false", False),
         (None, "", False),
         ("false", None, False),
-        ("true", None, True),
+        ("true", None, False),
+        ("true", "0", False),
+        ("true", "1", True),
     ],
 )
 def test_remote_tests_enabled(
     monkeypatch: pytest.MonkeyPatch, github_actions: str | None, remote_tests: str | None, expected: bool
 ):
-    """Cloud tests run in GitHub Actions or after an explicit opt-in."""
+    """Cloud tests require explicit opt-in, including in GitHub Actions."""
     if github_actions is None:
         monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     else:
@@ -76,42 +72,40 @@ def test_remote_tests_enabled(
 @pytest.mark.parametrize("enabled", [False, True])
 def test_cloud_gating_does_not_validate_azure_location(monkeypatch: pytest.MonkeyPatch, enabled: bool):
     """Cloud gating stays usable offline even with missing or invalid Azure settings."""
-    _set_env(monkeypatch, account_url="not-an-account-url", container=None, connection_string=None)
+    _set_env(monkeypatch, account_url="not-an-account-url", container=None)
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
     monkeypatch.setenv("REMOTE_TESTS", "1" if enabled else "0")
 
-    assert CloudTestSettings().enabled is enabled
+    assert CloudTestSettings().remote_tests is enabled
     assert remote_tests_enabled() is enabled
     assert (cloud_skip_reason() is None) is enabled
 
 
-@pytest.mark.parametrize("connection_string", [None, ""])
-def test_pull_request_without_secret_skips_with_location_unset(
-    monkeypatch: pytest.MonkeyPatch, connection_string: str | None
-):
-    """Fork PR gating needs neither location values nor a connection string."""
-    _set_env(monkeypatch, account_url=None, container=None, connection_string=connection_string)
+def test_ci_without_azure_login_skips_with_location_unset(monkeypatch: pytest.MonkeyPatch):
+    """CI runs without a successful login can collect offline tests without Azure settings."""
+    _set_env(monkeypatch, account_url=None, container=None)
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
+    monkeypatch.setenv("REMOTE_TESTS", "false")
 
-    assert "AZURE_STORAGE_CONNECTION_STRING" in cloud_skip_reason()
+    assert "REMOTE_TESTS=1" in cloud_skip_reason()
 
 
-def test_inherited_cloud_credentials_stay_hidden(monkeypatch: pytest.MonkeyPatch):
-    """The gating and location models share one protected credential field."""
-    _set_env(monkeypatch, connection_string="private-token")
+def test_legacy_connection_string_is_not_loaded(monkeypatch: pytest.MonkeyPatch):
+    """An obsolete SAS secret cannot become part of the test configuration."""
+    _set_env(monkeypatch)
+    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "private-token")
 
     for settings in (CloudTestSettings(), load_remote_config()):
-        assert settings.connection_string.get_secret_value() == "private-token"
+        assert not hasattr(settings, "connection_string")
         assert "private-token" not in repr(settings)
         assert "connection_string" not in settings.model_dump()
 
 
-@pytest.mark.parametrize("variable", ["REMOTE_TESTS", "GITHUB_ACTIONS"])
-def test_invalid_cloud_flags_fail_without_echoing_input(monkeypatch: pytest.MonkeyPatch, variable: str):
+def test_invalid_cloud_flags_fail_without_echoing_input(monkeypatch: pytest.MonkeyPatch):
     """Invalid boolean values receive Pydantic validation without exposing their input."""
-    monkeypatch.setenv(variable, "private-token")
+    monkeypatch.setenv("REMOTE_TESTS", "private-token")
 
     with pytest.raises(ValidationError) as error:
         CloudTestSettings()
@@ -129,20 +123,9 @@ def test_skip_reason_when_disabled(monkeypatch: pytest.MonkeyPatch):
     assert reason is not None and REMOTE_TESTS_ENV in reason
 
 
-def test_skip_reason_for_fork_pull_request(monkeypatch: pytest.MonkeyPatch):
-    """Pull requests without credentials skip instead of fail."""
-    monkeypatch.setenv("GITHUB_ACTIONS", "true")
-    monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
-    monkeypatch.delenv(CONNECTION_STRING_ENV, raising=False)
-
-    reason = cloud_skip_reason()
-
-    assert reason is not None and CONNECTION_STRING_ENV in reason
-
-
 @pytest.mark.parametrize("github_event", ["pull_request", "push"])
-def test_no_skip_reason_with_enabled_and_credentials(monkeypatch: pytest.MonkeyPatch, github_event: str):
-    """Enabled cloud tests with credentials do not skip."""
+def test_no_skip_reason_after_explicit_opt_in(monkeypatch: pytest.MonkeyPatch, github_event: str):
+    """Local Azure login works without static credentials, regardless of event context."""
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     monkeypatch.setenv(REMOTE_TESTS_ENV, "1")
     monkeypatch.setenv("GITHUB_EVENT_NAME", github_event)
@@ -152,59 +135,14 @@ def test_no_skip_reason_with_enabled_and_credentials(monkeypatch: pytest.MonkeyP
 
 
 def test_load_remote_config_reads_separate_settings(monkeypatch: pytest.MonkeyPatch):
-    """Account URL, container, prefix, and credentials are loaded independently."""
+    """Account URL, container, and prefix are loaded independently."""
     _set_env(monkeypatch)
 
     config = load_remote_config()
 
     assert str(config.account_url) == "https://testaccount.blob.core.windows.net/"
-    assert config.connection_string.get_secret_value() == CONNECTION_STRING
     assert config.container_name == "test-container"
     assert config.prefix == "test-data"
-
-
-@pytest.mark.parametrize("connection_string", [None, ""])
-def test_load_remote_config_connection_string_is_optional(
-    monkeypatch: pytest.MonkeyPatch, connection_string: str | None
-):
-    """Without a connection string the config falls back to DefaultAzureCredential."""
-    _set_env(monkeypatch, connection_string=connection_string)
-
-    config = load_remote_config()
-
-    assert config.connection_string is None
-    assert config.container_name == "test-container"
-
-
-def test_load_remote_config_accepts_sas_connection_string(monkeypatch: pytest.MonkeyPatch):
-    """SAS connection strings reach the Azure SDK unchanged and stay out of repr."""
-    from azure.storage.blob import BlobServiceClient
-
-    connection_string = (
-        "BlobEndpoint=https://testaccount.blob.core.windows.net;"
-        "SharedAccessSignature=sv=2024-11-04&sr=c&sp=rl&sig=fake-signature"
-    )
-    _set_env(monkeypatch, connection_string=connection_string)
-
-    config = load_remote_config()
-
-    assert config.connection_string.get_secret_value() == connection_string
-    assert "fake-signature" not in repr(config)
-    assert "SharedAccessSignature" not in repr(config)
-    with BlobServiceClient.from_connection_string(config.connection_string.get_secret_value()) as client:
-        assert client.account_name == "testaccount"
-
-
-def test_remote_config_repr_hides_account_key(monkeypatch: pytest.MonkeyPatch):
-    """Config representations must not expose account-key credentials either."""
-    _set_env(monkeypatch)
-
-    config = load_remote_config()
-
-    assert "AccountKey" not in repr(config)
-    assert "AccountKey" not in str(config.connection_string)
-    assert "connection_string" not in config.model_dump()
-    assert "AccountKey" not in config.model_dump_json()
 
 
 def test_remote_config_explicit_values_override_environment(monkeypatch: pytest.MonkeyPatch):
@@ -214,13 +152,11 @@ def test_remote_config_explicit_values_override_environment(monkeypatch: pytest.
     config = RemoteTestConfig(
         account_url="https://other.blob.core.windows.net",
         container_name="other-container",
-        connection_string=None,
         prefix="/other-data/",
     )
 
     assert str(config.account_url) == "https://other.blob.core.windows.net/"
     assert config.container_name == "other-container"
-    assert config.connection_string is None
     assert config.prefix == "other-data"
     assert load_remote_config().container_name == "test-container"
 
@@ -235,22 +171,13 @@ def test_remote_config_is_frozen(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_remote_config_does_not_load_dotenv(monkeypatch: pytest.MonkeyPatch, tmp_path):
-    """Offline test configuration cannot pick up credentials from an implicit .env file."""
-    _set_env(monkeypatch, connection_string=None)
-    (tmp_path / ".env").write_text("AZURE_STORAGE_CONNECTION_STRING=private-token\n", encoding="utf-8")
+    """Test location settings cannot come from an implicit .env file."""
+    _set_env(monkeypatch, account_url=None)
+    (tmp_path / ".env").write_text(f"TEST_ACCOUNT_URL={ACCOUNT_URL}\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
 
-    assert load_remote_config().connection_string is None
-
-
-def test_remote_config_validation_error_hides_rejected_secret(monkeypatch: pytest.MonkeyPatch):
-    """Validation errors must not echo a secret rejected before SecretStr conversion."""
-    _set_env(monkeypatch)
-
-    with pytest.raises(ValidationError) as error:
-        RemoteTestConfig(connection_string={"token": "private-token"})
-
-    assert "private-token" not in str(error.value)
+    with pytest.raises(ValidationError, match="account_url"):
+        load_remote_config()
 
 
 @pytest.mark.parametrize("prefix", [None, "", "/"])
@@ -331,7 +258,7 @@ def test_load_remote_config_requires_account_and_container(
     monkeypatch: pytest.MonkeyPatch, variable: str, field_name: str, value: str | None
 ):
     """Missing required settings fail clearly without echoing other input values."""
-    _set_env(monkeypatch, connection_string="private-token")
+    _set_env(monkeypatch)
     if value is None:
         monkeypatch.delenv(variable)
     else:
@@ -340,12 +267,12 @@ def test_load_remote_config_requires_account_and_container(
     with pytest.raises(ValidationError, match=field_name) as error:
         load_remote_config()
 
-    assert "private-token" not in str(error.value)
+    assert "input_value" not in str(error.value)
 
 
 def test_remote_config_uses_only_test_prefixed_location_settings(monkeypatch: pytest.MonkeyPatch):
     """Library settings and the previous container variable cannot configure cloud tests."""
-    _set_env(monkeypatch, account_url=None, container=None, prefix=None, connection_string=None)
+    _set_env(monkeypatch, account_url=None, container=None, prefix=None)
     monkeypatch.setenv("PYTHERMONDT_ACCOUNT_URL", ACCOUNT_URL)
     monkeypatch.setenv("PYTHERMONDT_CONTAINER_NAME", "library-container")
     monkeypatch.setenv("PYTHERMONDT_PREFIX", "library-prefix")

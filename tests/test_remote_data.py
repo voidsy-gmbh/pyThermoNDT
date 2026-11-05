@@ -105,7 +105,7 @@ def test_load_remote_config_reads_separate_settings(monkeypatch: pytest.MonkeyPa
 
     config = load_remote_config()
 
-    assert config.account_url == "https://testaccount.blob.core.windows.net"
+    assert str(config.account_url) == "https://testaccount.blob.core.windows.net/"
     assert config.connection_string.get_secret_value() == CONNECTION_STRING
     assert config.container_name == "test-container"
     assert config.prefix == "test-data"
@@ -166,7 +166,7 @@ def test_remote_config_explicit_values_override_environment(monkeypatch: pytest.
         prefix="/other-data/",
     )
 
-    assert config.account_url == "https://other.blob.core.windows.net"
+    assert str(config.account_url) == "https://other.blob.core.windows.net/"
     assert config.container_name == "other-container"
     assert config.connection_string is None
     assert config.prefix == "other-data"
@@ -213,13 +213,64 @@ def test_load_remote_config_prefix_is_optional(monkeypatch: pytest.MonkeyPatch, 
 
 
 def test_load_remote_config_preserves_account_and_blob_prefix(monkeypatch: pytest.MonkeyPatch):
-    """The account endpoint is not reconstructed and blob prefix characters stay intact."""
+    """Endpoint ports and blob prefix characters stay intact."""
     _set_env(monkeypatch, account_url=ACCOUNT_URL + ":8443/", prefix="/test data/measurements%20one/")
 
     config = load_remote_config()
 
-    assert config.account_url == ACCOUNT_URL + ":8443/"
+    assert str(config.account_url) == ACCOUNT_URL + ":8443/"
     assert config.prefix == "test data/measurements%20one"
+
+
+@pytest.mark.parametrize("suffix", ["", "/"])
+def test_remote_config_accepts_https_account_endpoint(monkeypatch: pytest.MonkeyPatch, suffix: str):
+    """Account endpoints work with or without a trailing slash."""
+    _set_env(monkeypatch, account_url=ACCOUNT_URL + suffix)
+
+    assert str(load_remote_config().account_url) == ACCOUNT_URL + "/"
+
+
+@pytest.mark.parametrize(
+    "account_url",
+    [
+        "not-a-url",
+        "http://testaccount.blob.core.windows.net",
+        "ftp://testaccount.blob.core.windows.net",
+        "https://",
+        "https://[invalid-host",
+        ACCOUNT_URL + "/container",
+        ACCOUNT_URL + "/container/blob.mat",
+        ACCOUNT_URL + "?",
+        ACCOUNT_URL + "#",
+    ],
+)
+def test_remote_config_rejects_invalid_account_endpoint(monkeypatch: pytest.MonkeyPatch, account_url: str):
+    """Only an HTTPS account endpoint is accepted, not a container URL or other scheme."""
+    _set_env(monkeypatch, account_url=account_url)
+
+    with pytest.raises(ValidationError, match="account_url"):
+        load_remote_config()
+
+
+@pytest.mark.parametrize(
+    "account_url",
+    [
+        ACCOUNT_URL + "?sv=2024-11-04&sig=private-token",
+        ACCOUNT_URL + "#private-token",
+        "https://private-token@testaccount.blob.core.windows.net",
+        "https://user:private-token@testaccount.blob.core.windows.net",
+        "https://[private-token",
+    ],
+)
+def test_remote_config_rejects_url_credentials_without_echoing_them(monkeypatch: pytest.MonkeyPatch, account_url: str):
+    """Neither Pydantic URL errors nor custom validation errors reveal rejected secrets."""
+    _set_env(monkeypatch, account_url=account_url)
+
+    with pytest.raises(ValidationError, match="account_url") as error:
+        load_remote_config()
+
+    assert "private-token" not in str(error.value)
+    assert "private-token" not in repr(error.value)
 
 
 @pytest.mark.parametrize("variable, field_name", [(ACCOUNT_URL_ENV, "account_url"), (CONTAINER_ENV, "container_name")])

@@ -11,8 +11,9 @@ Pull requests without the connection-string secret skip them.
 """
 
 import os
+from typing import Annotated
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AnyUrl, Field, SecretStr, UrlConstraints, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 CONNECTION_STRING_ENV = "AZURE_STORAGE_CONNECTION_STRING"
@@ -20,6 +21,8 @@ ACCOUNT_URL_ENV = "TEST_ACCOUNT_URL"
 CONTAINER_ENV = "TEST_CONTAINER_NAME"
 PREFIX_ENV = "TEST_PREFIX"
 REMOTE_TESTS_ENV = "REMOTE_TESTS"
+
+AccountUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=["https"], host_required=True)]
 
 
 class RemoteTestConfig(BaseSettings):
@@ -42,12 +45,26 @@ class RemoteTestConfig(BaseSettings):
         hide_input_in_errors=True,
     )
 
-    account_url: str = Field(min_length=1, pattern=r"\S")
+    account_url: AccountUrl
     connection_string: SecretStr | None = Field(
         default=None, validation_alias=CONNECTION_STRING_ENV, repr=False, exclude=True
     )
     container_name: str = Field(min_length=1, pattern=r"\S")
     prefix: str = ""
+
+    @field_validator("account_url")
+    @classmethod
+    def validate_account_endpoint(cls, value: AnyUrl) -> AnyUrl:
+        """Keep credentials and container paths out of the account endpoint."""
+        if (
+            value.username is not None
+            or value.password is not None
+            or value.query is not None
+            or value.fragment is not None
+            or value.path not in {None, "", "/"}
+        ):
+            raise ValueError("Use an account URL without credentials, query, fragment, or container path.")
+        return value
 
     @field_validator("prefix")
     @classmethod

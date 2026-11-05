@@ -130,7 +130,7 @@ def list_integration_files(config: RemoteTestConfig) -> list[str]:
     """
     prefix = f"{config.prefix}/{INTEGRATION_PREFIX}/" if config.prefix else f"{INTEGRATION_PREFIX}/"
     reader = AzureBlobReader(
-        account_url=config.account_url,
+        account_url=str(config.account_url),
         connection_string=config.connection_string.get_secret_value() if config.connection_string is not None else None,
         container_name=config.container_name,
         prefix=prefix,
@@ -178,7 +178,7 @@ class _BlobPathFilter:
 
 def _make_reader(config: RemoteTestConfig, prefix: str, names: tuple[str, ...]) -> AzureBlobReader:
     reader = AzureBlobReader(
-        account_url=config.account_url,
+        account_url=str(config.account_url),
         connection_string=config.connection_string.get_secret_value() if config.connection_string is not None else None,
         container_name=config.container_name,
         prefix=prefix,

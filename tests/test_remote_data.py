@@ -1,9 +1,11 @@
 import pytest
 
 from tests.support.remote_data import (
+    ACCOUNT_URL_ENV,
     CONNECTION_STRING_ENV,
+    CONTAINER_ENV,
+    PREFIX_ENV,
     REMOTE_TESTS_ENV,
-    TEST_DATA_URI_ENV,
     cloud_skip_reason,
     load_remote_config,
     remote_tests_enabled,
@@ -12,16 +14,23 @@ from tests.support.remote_data import (
 CONNECTION_STRING = (
     "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=abc==;EndpointSuffix=core.windows.net"
 )
-TEST_DATA_URI = "https://testaccount.blob.core.windows.net/test-container/test-data"
+ACCOUNT_URL = "https://testaccount.blob.core.windows.net"
 
 
 def _set_env(
     monkeypatch: pytest.MonkeyPatch,
     connection_string: str | None = CONNECTION_STRING,
-    uri: str | None = TEST_DATA_URI,
+    account_url: str | None = ACCOUNT_URL,
+    container: str | None = "test-container",
+    prefix: str | None = "test-data",
 ):
     """Set the remote test environment variables; None deletes a variable."""
-    for name, value in ((CONNECTION_STRING_ENV, connection_string), (TEST_DATA_URI_ENV, uri)):
+    for name, value in (
+        (CONNECTION_STRING_ENV, connection_string),
+        (ACCOUNT_URL_ENV, account_url),
+        (CONTAINER_ENV, container),
+        (PREFIX_ENV, prefix),
+    ):
         if value is None:
             monkeypatch.delenv(name, raising=False)
         else:
@@ -88,8 +97,8 @@ def test_no_skip_reason_with_enabled_and_credentials(monkeypatch: pytest.MonkeyP
     assert cloud_skip_reason() is None
 
 
-def test_load_remote_config_parses_settings(monkeypatch: pytest.MonkeyPatch):
-    """Test data URI and connection string are parsed into the config fields."""
+def test_load_remote_config_reads_separate_settings(monkeypatch: pytest.MonkeyPatch):
+    """Account URL, container, prefix, and credentials are loaded independently."""
     _set_env(monkeypatch)
 
     config = load_remote_config()
@@ -136,29 +145,10 @@ def test_remote_config_repr_hides_account_key(monkeypatch: pytest.MonkeyPatch):
     assert "AccountKey" not in repr(load_remote_config())
 
 
-@pytest.mark.parametrize(
-    "uri",
-    [
-        TEST_DATA_URI + "?sig=private-token",
-        TEST_DATA_URI + "#private-token",
-        "https://user:private-token@testaccount.blob.core.windows.net/test-container",
-        "https://[private-token/test-container",
-    ],
-)
-def test_remote_config_rejects_credentials_in_uri_without_echoing_them(monkeypatch: pytest.MonkeyPatch, uri: str):
-    """Credentials belong in the secret, never in the public data URL or errors."""
-    _set_env(monkeypatch, uri=uri)
-
-    with pytest.raises(RuntimeError, match=TEST_DATA_URI_ENV) as error:
-        load_remote_config()
-
-    assert "private-token" not in str(error.value)
-    assert error.value.__cause__ is None
-
-
-def test_load_remote_config_prefix_is_optional(monkeypatch: pytest.MonkeyPatch):
-    """A container-only URI gives an empty prefix."""
-    _set_env(monkeypatch, uri="https://testaccount.blob.core.windows.net/test-container")
+@pytest.mark.parametrize("prefix", [None, "", "/"])
+def test_load_remote_config_prefix_is_optional(monkeypatch: pytest.MonkeyPatch, prefix: str | None):
+    """An unset or empty prefix selects the container root."""
+    _set_env(monkeypatch, prefix=prefix)
 
     config = load_remote_config()
 
@@ -166,20 +156,29 @@ def test_load_remote_config_prefix_is_optional(monkeypatch: pytest.MonkeyPatch):
     assert config.prefix == ""
 
 
-@pytest.mark.parametrize(
-    "uri",
-    [
-        "",
-        "test-data",
-        "az://test-container/test-data",
-        "https://",
-        "https://testaccount.blob.core.windows.net",
-        "http://testaccount.blob.core.windows.net/test-container",
-    ],
-)
-def test_load_remote_config_invalid_uri(monkeypatch: pytest.MonkeyPatch, uri: str):
-    """A missing or malformed test data URI raises with the expected format."""
-    _set_env(monkeypatch, uri=uri)
+def test_load_remote_config_preserves_account_and_blob_prefix(monkeypatch: pytest.MonkeyPatch):
+    """The account endpoint is not reconstructed and blob prefix characters stay intact."""
+    _set_env(monkeypatch, account_url=ACCOUNT_URL + ":8443/", prefix="/test data/measurements%20one/")
 
-    with pytest.raises(RuntimeError, match=TEST_DATA_URI_ENV):
+    config = load_remote_config()
+
+    assert config.account_url == ACCOUNT_URL + ":8443/"
+    assert config.prefix == "test data/measurements%20one"
+
+
+@pytest.mark.parametrize("variable", [ACCOUNT_URL_ENV, CONTAINER_ENV])
+@pytest.mark.parametrize("value", [None, "", " "])
+def test_load_remote_config_requires_account_and_container(
+    monkeypatch: pytest.MonkeyPatch, variable: str, value: str | None
+):
+    """Missing required settings fail clearly without echoing other input values."""
+    _set_env(monkeypatch, connection_string="private-token")
+    if value is None:
+        monkeypatch.delenv(variable)
+    else:
+        monkeypatch.setenv(variable, value)
+
+    with pytest.raises(RuntimeError, match=variable) as error:
         load_remote_config()
+
+    assert "private-token" not in str(error.value)

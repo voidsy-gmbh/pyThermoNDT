@@ -197,7 +197,7 @@ def test_discovery_failure_does_not_block_offline_tests(tmp_path: Path, scenario
     offline_test.write_text("def test_offline_sentinel():\n    assert True\n", encoding="utf-8")
     env = os.environ.copy()
     env.update(
-        PYTHERMONDT_REMOTE_TESTS="1",
+        REMOTE_TESTS="1",
         GITHUB_EVENT_NAME="push",
         PYTHONPATH=os.pathsep.join([str(tmp_path), str(Path.cwd()), env.get("PYTHONPATH", "")]),
     )

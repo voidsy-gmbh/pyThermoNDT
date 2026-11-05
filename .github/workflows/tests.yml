@@ -76,7 +76,9 @@ jobs:
         if: matrix.python-version != vars.DEFAULT_PYTHON_VERSION
         env:
           AZURE_STORAGE_CONNECTION_STRING: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
-          PYTHERMONDT_TEST_DATA_URI: ${{ vars.PYTHERMONDT_TEST_DATA_URI }}
+          TEST_ACCOUNT_URL: ${{ vars.TEST_ACCOUNT_URL }}
+          TEST_CONTAINER: ${{ vars.TEST_CONTAINER }}
+          TEST_PREFIX: ${{ vars.TEST_PREFIX }}
         run: pytest --benchmark-skip
 
       # Step 4.1: Run tests with coverage on default python version
@@ -84,7 +86,9 @@ jobs:
         if: matrix.python-version == vars.DEFAULT_PYTHON_VERSION
         env:
           AZURE_STORAGE_CONNECTION_STRING: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
-          PYTHERMONDT_TEST_DATA_URI: ${{ vars.PYTHERMONDT_TEST_DATA_URI }}
+          TEST_ACCOUNT_URL: ${{ vars.TEST_ACCOUNT_URL }}
+          TEST_CONTAINER: ${{ vars.TEST_CONTAINER }}
+          TEST_PREFIX: ${{ vars.TEST_PREFIX }}
         run: pytest --junitxml=pytest.xml --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml --cov=pythermondt --ignore=tests/benchmark tests/ | tee pytest-coverage.txt
 
       # Step 5: Create artifact for coverage data

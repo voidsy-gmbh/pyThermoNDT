@@ -1,23 +1,23 @@
 """Configure access to private Azure test data.
 
-Set ``PYTHERMONDT_TEST_DATA_URI`` to the HTTPS container/prefix URL. Authentication
-uses ``AZURE_STORAGE_CONNECTION_STRING`` when set, otherwise ``DefaultAzureCredential``
-(e.g. ``az login``). In CI, store the connection string as a secret; prefer an expiring,
-read/list-only container SAS.
+Set ``TEST_ACCOUNT_URL`` and ``TEST_CONTAINER``; optionally set ``TEST_PREFIX``
+(default: container root). These are passed to AzureBlobReader
+without URL splitting. Keep credentials in ``AZURE_STORAGE_CONNECTION_STRING``, not the
+account URL. Without a connection string, authentication uses ``DefaultAzureCredential``
+(e.g. ``az login``). In CI, prefer an expiring, read/list-only container SAS secret.
 
-Cloud tests run in GitHub Actions or with ``PYTHERMONDT_REMOTE_TESTS=1``.
+Cloud tests run in GitHub Actions or with ``REMOTE_TESTS=1``.
 Pull requests without the connection-string secret skip them.
 """
 
 import os
 from dataclasses import dataclass, field
-from urllib.parse import urlparse
 
 CONNECTION_STRING_ENV = "AZURE_STORAGE_CONNECTION_STRING"
-TEST_DATA_URI_ENV = "PYTHERMONDT_TEST_DATA_URI"
-REMOTE_TESTS_ENV = "PYTHERMONDT_REMOTE_TESTS"
-
-_TEST_DATA_URI_FORMAT = "https://<account>.blob.core.windows.net/<container>/<prefix>"
+ACCOUNT_URL_ENV = "TEST_ACCOUNT_URL"
+CONTAINER_ENV = "TEST_CONTAINER"
+PREFIX_ENV = "TEST_PREFIX"
+REMOTE_TESTS_ENV = "REMOTE_TESTS"
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ def remote_tests_enabled() -> bool:
     """Return True when cloud-marked tests should run.
 
     Cloud tests always run in GitHub Actions. Everywhere else they need an explicit
-    opt-in through ``PYTHERMONDT_REMOTE_TESTS=1``.
+    opt-in through ``REMOTE_TESTS=1``.
     """
     opt_in = os.environ.get(REMOTE_TESTS_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
     return opt_in or os.environ.get("GITHUB_ACTIONS") == "true"
@@ -68,29 +68,18 @@ def load_remote_config() -> RemoteTestConfig:
         Connection settings for the test data container.
 
     Raises:
-        RuntimeError: If the test data URI is missing or malformed.
+        RuntimeError: If the account URL or container name is missing.
     """
-    uri = os.environ.get(TEST_DATA_URI_ENV, "")
-    error = f"Invalid {TEST_DATA_URI_ENV}. Expected a credential-free URL: {_TEST_DATA_URI_FORMAT}."
-    try:
-        parsed = urlparse(uri)
-    except ValueError:
-        raise RuntimeError(error) from None
-    container_name, _, prefix = parsed.path.lstrip("/").partition("/")
-    if (
-        parsed.scheme != "https"
-        or not parsed.netloc
-        or not container_name
-        or parsed.username is not None
-        or parsed.password is not None
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise RuntimeError(error)
+    account_url = os.environ.get(ACCOUNT_URL_ENV, "")
+    container_name = os.environ.get(CONTAINER_ENV, "")
+    if not account_url.strip():
+        raise RuntimeError(f"{ACCOUNT_URL_ENV} is required for remote test data.")
+    if not container_name.strip():
+        raise RuntimeError(f"{CONTAINER_ENV} is required for remote test data.")
 
     return RemoteTestConfig(
-        account_url=f"{parsed.scheme}://{parsed.netloc}",
+        account_url=account_url,
         connection_string=os.environ.get(CONNECTION_STRING_ENV) or None,
         container_name=container_name,
-        prefix=prefix.strip("/"),
+        prefix=os.environ.get(PREFIX_ENV, "").strip("/"),
     )

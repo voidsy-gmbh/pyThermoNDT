@@ -2,16 +2,18 @@ import pytest
 from pydantic import ValidationError
 
 from tests.support.remote_data import (
-    ACCOUNT_URL_ENV,
-    CONNECTION_STRING_ENV,
-    CONTAINER_ENV,
-    PREFIX_ENV,
-    REMOTE_TESTS_ENV,
+    CloudTestSettings,
     RemoteTestConfig,
     cloud_skip_reason,
     load_remote_config,
     remote_tests_enabled,
 )
+
+ACCOUNT_URL_ENV = "TEST_ACCOUNT_URL"
+CONNECTION_STRING_ENV = "AZURE_STORAGE_CONNECTION_STRING"
+CONTAINER_ENV = "TEST_CONTAINER_NAME"
+PREFIX_ENV = "TEST_PREFIX"
+REMOTE_TESTS_ENV = "REMOTE_TESTS"
 
 CONNECTION_STRING = (
     "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=abc==;EndpointSuffix=core.windows.net"
@@ -46,8 +48,12 @@ def _set_env(
         (None, "1", True),
         (None, "true", True),
         (None, "on", True),
+        (None, " yes ", True),
+        (None, " TRUE ", True),
         (None, "0", False),
         (None, "false", False),
+        (None, "", False),
+        ("false", None, False),
         ("true", None, True),
     ],
 )
@@ -65,6 +71,52 @@ def test_remote_tests_enabled(
         monkeypatch.setenv(REMOTE_TESTS_ENV, remote_tests)
 
     assert remote_tests_enabled() is expected
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_cloud_gating_does_not_validate_azure_location(monkeypatch: pytest.MonkeyPatch, enabled: bool):
+    """Cloud gating stays usable offline even with missing or invalid Azure settings."""
+    _set_env(monkeypatch, account_url="not-an-account-url", container=None, connection_string=None)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+    monkeypatch.setenv("REMOTE_TESTS", "1" if enabled else "0")
+
+    assert CloudTestSettings().enabled is enabled
+    assert remote_tests_enabled() is enabled
+    assert (cloud_skip_reason() is None) is enabled
+
+
+@pytest.mark.parametrize("connection_string", [None, ""])
+def test_pull_request_without_secret_skips_with_location_unset(
+    monkeypatch: pytest.MonkeyPatch, connection_string: str | None
+):
+    """Fork PR gating needs neither location values nor a connection string."""
+    _set_env(monkeypatch, account_url=None, container=None, connection_string=connection_string)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
+
+    assert "AZURE_STORAGE_CONNECTION_STRING" in cloud_skip_reason()
+
+
+def test_inherited_cloud_credentials_stay_hidden(monkeypatch: pytest.MonkeyPatch):
+    """The gating and location models share one protected credential field."""
+    _set_env(monkeypatch, connection_string="private-token")
+
+    for settings in (CloudTestSettings(), load_remote_config()):
+        assert settings.connection_string.get_secret_value() == "private-token"
+        assert "private-token" not in repr(settings)
+        assert "connection_string" not in settings.model_dump()
+
+
+@pytest.mark.parametrize("variable", ["REMOTE_TESTS", "GITHUB_ACTIONS"])
+def test_invalid_cloud_flags_fail_without_echoing_input(monkeypatch: pytest.MonkeyPatch, variable: str):
+    """Invalid boolean values receive Pydantic validation without exposing their input."""
+    monkeypatch.setenv(variable, "private-token")
+
+    with pytest.raises(ValidationError) as error:
+        CloudTestSettings()
+
+    assert "private-token" not in str(error.value)
 
 
 def test_skip_reason_when_disabled(monkeypatch: pytest.MonkeyPatch):

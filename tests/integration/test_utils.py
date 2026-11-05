@@ -98,7 +98,12 @@ def test_discover_ignores_nested_files():
 @pytest.mark.parametrize("prefix", ["", "test-data"])
 def test_remote_listing_and_readers_respect_folder_boundaries(prefix: str):
     """Sibling types and nested archives cannot enter a source/expected reader pair."""
-    config = RemoteTestConfig("https://test.blob.core.windows.net", "fake", "test-container", prefix)
+    config = RemoteTestConfig(
+        account_url="https://test.blob.core.windows.net",
+        connection_string="fake",
+        container_name="test-container",
+        prefix=prefix,
+    )
     root = f"{prefix}/" if prefix else ""
     paths = [
         "integration/simulation/source1.mat",
@@ -133,7 +138,12 @@ def test_remote_listing_and_readers_respect_folder_boundaries(prefix: str):
 
 def test_case_readers_reject_duplicate_listing_entries():
     """Duplicate file entries must not be hidden by set-based validation."""
-    config = RemoteTestConfig("https://test.blob.core.windows.net", "fake", "test-container", "")
+    config = RemoteTestConfig(
+        account_url="https://test.blob.core.windows.net",
+        connection_string="fake",
+        container_name="test-container",
+        prefix="",
+    )
     case = IntegrationTestCase("simulation", "1", ("source1.mat",), ("expected1.hdf5",))
     with patch(
         "pythermondt.readers.AzureBlobReader.files",

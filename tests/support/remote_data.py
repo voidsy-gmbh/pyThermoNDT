@@ -1,6 +1,6 @@
 """Configure access to private Azure test data.
 
-Set ``TEST_ACCOUNT_URL`` and ``TEST_CONTAINER``; optionally set ``TEST_PREFIX``
+Set ``TEST_ACCOUNT_URL`` and ``TEST_CONTAINER_NAME``; optionally set ``TEST_PREFIX``
 (default: container root). These are passed to AzureBlobReader
 without URL splitting. Keep credentials in ``AZURE_STORAGE_CONNECTION_STRING``, not the
 account URL. Without a connection string, authentication uses ``DefaultAzureCredential``
@@ -11,17 +11,18 @@ Pull requests without the connection-string secret skip them.
 """
 
 import os
-from dataclasses import dataclass, field
+
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 CONNECTION_STRING_ENV = "AZURE_STORAGE_CONNECTION_STRING"
 ACCOUNT_URL_ENV = "TEST_ACCOUNT_URL"
-CONTAINER_ENV = "TEST_CONTAINER"
+CONTAINER_ENV = "TEST_CONTAINER_NAME"
 PREFIX_ENV = "TEST_PREFIX"
 REMOTE_TESTS_ENV = "REMOTE_TESTS"
 
 
-@dataclass(frozen=True)
-class RemoteTestConfig:
+class RemoteTestConfig(BaseSettings):
     """Connection settings for the remote test data container.
 
     Attributes:
@@ -32,10 +33,27 @@ class RemoteTestConfig:
         prefix: Prefix (folder path) of the test data within the container.
     """
 
-    account_url: str
-    connection_string: str | None = field(repr=False)
-    container_name: str
-    prefix: str
+    model_config = SettingsConfigDict(
+        env_prefix="TEST_",
+        frozen=True,
+        populate_by_name=True,
+        case_sensitive=False,
+        env_ignore_empty=True,
+        hide_input_in_errors=True,
+    )
+
+    account_url: str = Field(min_length=1, pattern=r"\S")
+    connection_string: SecretStr | None = Field(
+        default=None, validation_alias=CONNECTION_STRING_ENV, repr=False, exclude=True
+    )
+    container_name: str = Field(min_length=1, pattern=r"\S")
+    prefix: str = ""
+
+    @field_validator("prefix")
+    @classmethod
+    def normalize_prefix(cls, value: str) -> str:
+        """Keep prefixes relative to the container, without changing blob-name characters."""
+        return value.strip("/")
 
 
 def remote_tests_enabled() -> bool:
@@ -68,18 +86,6 @@ def load_remote_config() -> RemoteTestConfig:
         Connection settings for the test data container.
 
     Raises:
-        RuntimeError: If the account URL or container name is missing.
+        pydantic.ValidationError: If required settings are missing or invalid.
     """
-    account_url = os.environ.get(ACCOUNT_URL_ENV, "")
-    container_name = os.environ.get(CONTAINER_ENV, "")
-    if not account_url.strip():
-        raise RuntimeError(f"{ACCOUNT_URL_ENV} is required for remote test data.")
-    if not container_name.strip():
-        raise RuntimeError(f"{CONTAINER_ENV} is required for remote test data.")
-
-    return RemoteTestConfig(
-        account_url=account_url,
-        connection_string=os.environ.get(CONNECTION_STRING_ENV) or None,
-        container_name=container_name,
-        prefix=os.environ.get(PREFIX_ENV, "").strip("/"),
-    )
+    return RemoteTestConfig()

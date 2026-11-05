@@ -77,7 +77,7 @@ jobs:
         env:
           AZURE_STORAGE_CONNECTION_STRING: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
           TEST_ACCOUNT_URL: ${{ vars.TEST_ACCOUNT_URL }}
-          TEST_CONTAINER: ${{ vars.TEST_CONTAINER }}
+          TEST_CONTAINER_NAME: ${{ vars.TEST_CONTAINER_NAME }}
           TEST_PREFIX: ${{ vars.TEST_PREFIX }}
         run: pytest --benchmark-skip
 
@@ -87,7 +87,7 @@ jobs:
         env:
           AZURE_STORAGE_CONNECTION_STRING: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
           TEST_ACCOUNT_URL: ${{ vars.TEST_ACCOUNT_URL }}
-          TEST_CONTAINER: ${{ vars.TEST_CONTAINER }}
+          TEST_CONTAINER_NAME: ${{ vars.TEST_CONTAINER_NAME }}
           TEST_PREFIX: ${{ vars.TEST_PREFIX }}
         run: pytest --junitxml=pytest.xml --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml --cov=pythermondt --ignore=tests/benchmark tests/ | tee pytest-coverage.txt
 

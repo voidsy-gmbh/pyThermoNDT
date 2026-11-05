@@ -144,7 +144,8 @@ def make_case_readers(
 ) -> tuple[AzureBlobReader, AzureBlobReader]:
     """Create the source and expected readers for one integration case.
 
-    Both readers download and cache their blobs locally before parsing.
+    Both readers synchronize the selected blobs with their persistent local cache
+    before parsing, downloading only missing or changed files.
 
     Args:
         config: Connection settings of the remote test data container.
@@ -190,6 +191,7 @@ def _make_reader(config: RemoteTestConfig, prefix: str, names: tuple[str, ...]) 
         raise RuntimeError(
             f"Test data mismatch under az://{config.container_name}/{prefix}: expected {sorted(names)}, found {found}."
         )
+    reader.sync(file_paths=reader.file_uris)
     return reader
 
 

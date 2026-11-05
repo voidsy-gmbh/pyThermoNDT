@@ -7,6 +7,7 @@ from unittest.mock import PropertyMock, patch
 import pytest
 from azure.core.exceptions import ClientAuthenticationError
 
+from pythermondt.readers import AzureBlobReader
 from tests.support.remote_data import RemoteTestConfig
 from tests.support.storage.azure import mocked_azure_blob_storage
 
@@ -115,7 +116,7 @@ def test_remote_listing_and_readers_respect_folder_boundaries(prefix: str):
         "integration-archive/simulation/source1.mat",
         "integration-archive/simulation/expected1.hdf5",
     ]
-    with mocked_azure_blob_storage() as storage:
+    with mocked_azure_blob_storage() as storage, patch.object(AzureBlobReader, "sync"):
         storage.create_container(config.container_name)
         for path in paths:
             storage.upload_blob(config.container_name, root + path, b"data")

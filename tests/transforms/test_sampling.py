@@ -1,10 +1,10 @@
-"""Tests for sampling transforms (SelectFrames, SelectFrameRange, ...)."""
+"""Regression and transform-chain tests for sampling; general invariants use Hypothesis."""
 
 import pytest
 import torch
 
 from pythermondt.data.units import hertz
-from pythermondt.transforms import Compose, ExtractPhase, PulsePhaseThermography, SelectFrameRange, SelectFrames
+from pythermondt.transforms import Compose, ExtractPhase, NonUniformSampling, PulsePhaseThermography, SelectFrameRange
 
 from .utils import ThermoSequenceFactory, has_dataset
 
@@ -13,64 +13,17 @@ TDATA = "/Data/Tdata"
 DOMAIN_VALUES = "/MetaData/DomainValues"
 
 
-@pytest.mark.parametrize(
-    ("transform", "n_frames", "expected_len"),
-    [
-        (SelectFrameRange(start=2, end=10), 20, 9),
-        (SelectFrames([0, 5, 10]), 20, 3),
-    ],
-    ids=["frame_range", "frames"],
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError, reason="NonUniformSampling accepts n_samples=1 but returns NaNs."
 )
-def test_select_without_excitation_signal(
-    thermo_sequence: ThermoSequenceFactory,
-    transform: SelectFrameRange | SelectFrames,
-    n_frames: int,
-    expected_len: int,
-):
-    """Select* must work when ExcitationSignal is absent."""
-    container = thermo_sequence(n_frames=n_frames, excitation_signal=False)
+def test_single_sample_is_finite(thermo_sequence: ThermoSequenceFactory):
+    """A sample count within the advertised bounds must not introduce NaNs."""
+    container = thermo_sequence(n_frames=2)
 
-    result = transform(container)
+    result = NonUniformSampling(1, tau=1.0, interpolate="linear")(container)
 
-    assert result.get_dataset(TDATA).shape[-1] == expected_len
-    assert result.get_dataset(DOMAIN_VALUES).shape[-1] == expected_len
-    assert not has_dataset(result, EXCITATION_SIGNAL)
-
-
-@pytest.mark.parametrize(
-    ("transform", "n_frames", "expected_signal"),
-    [
-        (SelectFrames([0, 5, 10]), 20, torch.tensor([1.0, 0.0, 0.0], dtype=torch.float64)),
-        (SelectFrameRange(start=0, end=4), 20, torch.tensor([1.0, 1.0, 1.0, 0.0, 0.0], dtype=torch.float64)),
-    ],
-    ids=["frames", "frame_range"],
-)
-def test_select_keeps_excitation_signal_in_sync(
-    thermo_sequence: ThermoSequenceFactory,
-    transform: SelectFrameRange | SelectFrames,
-    n_frames: int,
-    expected_signal: torch.Tensor,
-):
-    """When present, ExcitationSignal is sliced together with Tdata."""
-    container = thermo_sequence(n_frames=n_frames, excitation_signal=True)
-
-    result = transform(container)
-
-    signal = result.get_dataset(EXCITATION_SIGNAL)
-    assert signal.shape[-1] == expected_signal.shape[-1]
-    assert result.get_dataset(TDATA).shape[-1] == expected_signal.shape[-1]
-    assert torch.equal(signal, expected_signal)
-
-
-def test_select_frame_range_zero_bases_time_domain(thermo_sequence: ThermoSequenceFactory):
-    """Time-domain DomainValues are zero-based after a crop that does not start at 0."""
-    container = thermo_sequence(n_frames=20, excitation_signal=False, dt=0.01)
-
-    result = SelectFrameRange(start=2, end=10)(container)
-
-    domain = result.get_dataset(DOMAIN_VALUES)
-    assert torch.allclose(domain[0], torch.tensor(0.0, dtype=domain.dtype))
-    assert torch.allclose(domain[1] - domain[0], torch.tensor(0.01, dtype=domain.dtype))
+    for path in (TDATA, DOMAIN_VALUES, EXCITATION_SIGNAL):
+        assert torch.isfinite(result.get_dataset(path)).all()
 
 
 def test_select_frame_range_keeps_absolute_frequency_domain(thermo_sequence: ThermoSequenceFactory):

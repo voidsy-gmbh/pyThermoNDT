@@ -113,6 +113,17 @@ pytest tests/test_file.py::test_name
 pytest -k test_name
 ```
 
+### Property-Based Tests
+
+Use Hypothesis to test general invariants across generated inputs. Keep explicit tests for regressions and transform chains.
+
+```bash
+uv run pytest tests/transforms/test_sampling_properties.py --benchmark-skip
+```
+
+Generate small CPU tensors and create a fresh container for each example. Disable per-example deadlines for PyTorch tests
+to allow for initialization and scheduling delays. Use benchmarks for performance checks.
+
 ### Cloud Tests
 
 Tests marked with `cloud` read test data from a private cloud store. They run in CI and are skipped locally by default. Maintainers with access can enable them as described in [tests/support/remote_data.py](tests/support/remote_data.py).

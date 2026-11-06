@@ -11,8 +11,15 @@ jobs:
   test:
     name: Run Tests
     uses: $/.github/workflows/tests.yml
+    permissions:
+      contents: read
+      id-token: write
     with:
       ref: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      AZURE_CLIENT_ID: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.AZURE_CLIENT_ID || '' }}
+      AZURE_TENANT_ID: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.AZURE_TENANT_ID || '' }}
+      AZURE_SUBSCRIPTION_ID: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.AZURE_SUBSCRIPTION_ID || '' }}
 
   quality-checks:
     name: Run Code Quality Checks

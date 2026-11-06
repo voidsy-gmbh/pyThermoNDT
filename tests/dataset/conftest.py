@@ -7,7 +7,7 @@ from pythermondt.transforms import ThermoTransform
 @pytest.fixture
 def local_reader_three_files():
     """Fixture for a LocalReader with 3 files."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/", num_files=3)
+    return LocalReader(pattern="./tests/assets/simulation/", num_files=3)
 
 
 @pytest.fixture

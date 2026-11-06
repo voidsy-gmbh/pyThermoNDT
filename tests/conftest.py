@@ -8,7 +8,19 @@ from moto import mock_aws
 
 from pythermondt import DataContainer, LocalReader, S3Reader
 from pythermondt.transforms import Compose, RandomThermoTransform, ThermoTransform
+from tests.support.remote_data import cloud_skip_reason
 from tests.support.storage import BACKENDS, StorageTestContext
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Skip cloud-marked tests when remote tests are disabled or credentials are unavailable."""
+    reason = cloud_skip_reason()
+    if reason is None:
+        return
+    skip_cloud = pytest.mark.skip(reason=reason)
+    for item in items:
+        if "cloud" in item.keywords:
+            item.add_marker(skip_cloud)
 
 
 class AltReader(LocalReader):
@@ -109,19 +121,19 @@ def altreader_no_files():
 @pytest.fixture
 def localreader_with_file():
     """Fixture for a reader that has a single file."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/source1.mat")
+    return LocalReader(pattern="./tests/assets/simulation/source1.mat")
 
 
 @pytest.fixture
 def localreader_with_glob():
     """Fixture for a reader that has files."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/*.mat")
+    return LocalReader(pattern="./tests/assets/simulation/*.mat")
 
 
 @pytest.fixture
 def localreader_with_directory():
     """Fixture for a reader that has files."""
-    return LocalReader(pattern="./tests/assets/integration/simulation/")
+    return LocalReader(pattern="./tests/assets/simulation/")
 
 
 @pytest.fixture()
@@ -132,7 +144,7 @@ def s3reader_with_file(s3_client):
 
     # Upload a test file to the bucket
     s3_client.upload_file(
-        Filename="./tests/assets/integration/simulation/source1.mat",
+        Filename="./tests/assets/simulation/source1.mat",
         Bucket="test-bucket",
         Key="source1.mat",
     )

@@ -15,7 +15,7 @@ from pythermondt.readers import LocalReader
 @pytest.fixture(scope="module")
 def thermo_container() -> ThermoContainer:
     """ThermoContainer with simulation data including defect mask for visualization tests."""
-    reader = LocalReader(pattern="./tests/assets/integration/simulation/source2.mat")
+    reader = LocalReader(pattern="./tests/assets/simulation/source2.mat")
     container = next(iter(reader))
     assert isinstance(container, ThermoContainer)
     return container

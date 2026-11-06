@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError, NoCredentialsError, SSOTokenLoadErr
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from pythermondt import DataContainer
+from tests.support.remote_data import cloud_skip_reason
 
 from .config import BENCHMARK_DATA, BENCHMARK_SPECS, BenchmarkSpec
 
@@ -12,6 +13,13 @@ from .config import BENCHMARK_DATA, BENCHMARK_SPECS, BenchmarkSpec
 def get_test_files_as_container():
     """Get all (index, container) combinations for parameterization."""
     for benchmark_data in BENCHMARK_DATA:
+        if benchmark_data.marker.name == "cloud":
+            reason = cloud_skip_reason()
+            if reason is not None:
+                yield pytest.param(
+                    None, id=benchmark_data.name, marks=[benchmark_data.marker, pytest.mark.skip(reason=reason)]
+                )
+                continue
         try:
             # Ensure files are downloaded
             benchmark_data.reader.download()

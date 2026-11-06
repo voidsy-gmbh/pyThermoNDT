@@ -1,16 +1,25 @@
-import os
-
 import pytest
 
+from pythermondt.readers import AzureBlobReader
+from tests.support.remote_data import RemoteTestConfig, load_remote_config
+
+from .utils import CaseReaders, IntegrationTestCase, make_case_readers
+
+
+@pytest.fixture(scope="session")
+def remote_config() -> RemoteTestConfig:
+    """Connection settings for the remote integration test data."""
+    return load_remote_config()
+
 
 @pytest.fixture
-def integration_assets_path():
-    """Path to integration test assets."""
-    return os.path.join("tests", "assets", "integration")
+def case_readers(request: pytest.FixtureRequest) -> CaseReaders:
+    """Return a factory that creates the cached source and expected readers for one test case."""
 
+    def _make(test_case: IntegrationTestCase) -> tuple[AzureBlobReader, AzureBlobReader]:
+        if test_case.discovery_error is not None:
+            pytest.fail(test_case.discovery_error, pytrace=False)
+        remote_config = request.getfixturevalue("remote_config")
+        return make_case_readers(remote_config, test_case)
 
-@pytest.fixture
-def simulation_sources(integration_assets_path):
-    """List of all simulation source files."""
-    pattern = [os.path.join(integration_assets_path, "simulation", f"source{i}.mat") for i in range(1, 4)]
-    return pattern
+    return _make

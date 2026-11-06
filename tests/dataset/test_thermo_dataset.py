@@ -41,22 +41,22 @@ def test_empty_reader(caplog, localreader_no_files):
     "paths",
     [
         # glob -> directory
-        ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/"),
-        ("./tests/assets/integration/simulation/", "./tests/assets/integration/simulation/"),
+        ("./tests/assets/simulation/*.mat", "./tests/assets/simulation/"),
+        ("./tests/assets/simulation/", "./tests/assets/simulation/"),
         # file -> directory (file is contained in directory)
-        ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/"),
+        ("./tests/assets/simulation/source1.mat", "./tests/assets/simulation/"),
         # glob -> glob (same pattern)
-        ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/*.mat"),
+        ("./tests/assets/simulation/*.mat", "./tests/assets/simulation/*.mat"),
         # file -> file (same file)
-        ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source1.mat"),
+        ("./tests/assets/simulation/source1.mat", "./tests/assets/simulation/source1.mat"),
         # glob -> file (file matches glob pattern)
-        ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/source1.mat"),
+        ("./tests/assets/simulation/*.mat", "./tests/assets/simulation/source1.mat"),
         # directory -> file (file is contained in directory)
-        ("./tests/assets/integration/simulation/", "./tests/assets/integration/simulation/source1.mat"),
+        ("./tests/assets/simulation/", "./tests/assets/simulation/source1.mat"),
         # glob -> glob (overlapping patterns)
-        ("./tests/assets/integration/simulation/source*.mat", "./tests/assets/integration/simulation/*.mat"),
+        ("./tests/assets/simulation/source*.mat", "./tests/assets/simulation/*.mat"),
         # file -> glob (file matches different glob)
-        ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source*.mat"),
+        ("./tests/assets/simulation/source1.mat", "./tests/assets/simulation/source*.mat"),
     ],
 )
 def test_duplicate_files(caplog, paths: tuple[str, str]):
@@ -73,11 +73,11 @@ def test_duplicate_files(caplog, paths: tuple[str, str]):
     "paths",
     [
         # Different directories
-        ("./tests/assets/integration/simulation/", "./tests/assets/perf/small/"),
+        ("./tests/assets/simulation/", "./tests/assets/perf/small/"),
         # Different files
-        ("./tests/assets/integration/simulation/source1.mat", "./tests/assets/integration/simulation/source2.mat"),
+        ("./tests/assets/simulation/source1.mat", "./tests/assets/simulation/source2.mat"),
         # Different glob patterns
-        ("./tests/assets/integration/simulation/*.mat", "./tests/assets/integration/simulation/*.hdf5"),
+        ("./tests/assets/simulation/*.mat", "./tests/assets/simulation/*.hdf5"),
     ],
 )
 def test_no_false_positive_duplicates(paths: tuple[str, str]):
@@ -142,14 +142,14 @@ def test_build_cache_thermodataset(
 @pytest.mark.parametrize("listing_ttl", [0, 60])
 def test_finite_listing_ttl_warning(listing_ttl: float):
     """Test that a reader with a finite listing TTL emits a warning."""
-    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", listing_ttl=listing_ttl)
+    reader = LocalReader(pattern="./tests/assets/simulation/source1.mat", listing_ttl=listing_ttl)
     with pytest.warns(UserWarning, match=f"listing_ttl={listing_ttl}"):
         ThermoDataset(reader)
 
 
 def test_unlimited_listing_ttl_does_not_warn():
     """A non-expiring file listing does not trigger a dataset warning."""
-    reader = LocalReader(pattern="./tests/assets/integration/simulation/source1.mat", listing_ttl=None)
+    reader = LocalReader(pattern="./tests/assets/simulation/source1.mat", listing_ttl=None)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         ThermoDataset(reader)

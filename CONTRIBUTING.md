@@ -113,6 +113,10 @@ pytest tests/test_file.py::test_name
 pytest -k test_name
 ```
 
+### Cloud Tests
+
+Tests marked with `cloud` read test data from a private cloud store. They run in CI and are skipped locally by default. Maintainers with access can enable them as described in [tests/support/remote_data.py](tests/support/remote_data.py).
+
 ### Performance Benchmarking
 
 PyThermoNDT includes a benchmarking framework for measuring transform performance using [pytest-benchmark](https://pytest-benchmark.readthedocs.io/).

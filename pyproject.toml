@@ -75,7 +75,7 @@ dev = [
     "mypy==2.4.1",
     "uv==0.13.5",
     "pylint==4.1.3",
-    "moto==5.2.4"
+    "moto==5.2.5"
 ]
 signing = [
     "certifi>=2026.10.19",

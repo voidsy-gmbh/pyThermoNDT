@@ -117,6 +117,29 @@ pytest -k test_name
 
 Tests marked with `cloud` read test data from a private cloud store. They run in CI and are skipped locally by default. Maintainers with access can enable them as described in [tests/support/remote_data.py](tests/support/remote_data.py).
 
+#### Regenerating Expected Outputs
+
+Create a Git-ignored `.env` file in the repository root:
+
+```dotenv
+TEST_ACCOUNT_URL=https://<account>.blob.core.windows.net/
+TEST_CONTAINER_NAME=<container>
+TEST_PREFIX=<prefix> # optional
+```
+
+Authenticate with `az login`, then select a source file or folder relative to `TEST_PREFIX`:
+
+```bash
+uv run scripts/regenerate_expected.py integration/edevis/source3.di --output local-dev/expected-review
+uv run scripts/regenerate_expected.py integration/edevis --output local-dev/expected-review
+```
+
+Use `integration` to select all cases. Sources must have matching `expected<N>.hdf5` files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
+
+The tool prints differences and saves changed outputs under `<output>/<type>/expected<N>.hdf5`, without overwriting existing files. In differences, `container1` is the current expected output and `container2` is the regenerated output.
+
+Inspect outputs before uploading them separately. The tool never writes to Azure. Differences return exit code 0; errors return a nonzero exit code.
+
 ### Performance Benchmarking
 
 PyThermoNDT includes a benchmarking framework for measuring transform performance using [pytest-benchmark](https://pytest-benchmark.readthedocs.io/).

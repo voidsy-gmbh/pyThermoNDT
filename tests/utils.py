@@ -1,40 +1,13 @@
-import os
 from collections.abc import Iterable
 
 import torch
 
 from pythermondt.data import DataContainer
-from pythermondt.io.parsers import find_parser_for_extension
-from pythermondt.readers import LocalReader
 
 
 def format_container_diff(differences: Iterable[str]) -> str:
     """Format container differences as an indented list without printing."""
     return "\n".join(f"  - {difference}" for difference in differences)
-
-
-def update_expected_outputs(source_folder: str, file_extension: str):
-    """Update all expected outputs based on source files.
-
-    Args:
-        source_folder (str): Path to folder containing source files
-        file_extension (str): File extension of the source files (e.g., ".mat", ".hdf5")
-    """
-    source_reader = LocalReader(source_folder, parser=find_parser_for_extension(file_extension))
-
-    print(f"\nUpdating expected outputs for {source_reader.files}")
-
-    updated_files = []
-    for source_path in source_reader.files:
-        source_container = source_reader.read_file(source_path)
-        tail = os.path.basename(source_path)
-        output_name = tail.replace(file_extension, ".hdf5")
-        output_name = output_name.replace("source", "expected")
-        output_path = os.path.join(source_folder, output_name)
-        source_container.save_to_hdf5(output_path)
-        updated_files.append(output_path)
-
-    print(f"\nUpdated expected outputs: {updated_files}")
 
 
 def make_container(*datasets: tuple[str, str, torch.Tensor]) -> DataContainer:

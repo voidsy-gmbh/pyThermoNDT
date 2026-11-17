@@ -123,7 +123,10 @@ class EdevisParser(BaseParser):
                     target_fields = [
                         "CameraManufacturer",
                         "CameraName",
+                        "CameraSerialNumber",
                         "Lens",
+                        "Filter",
+                        "NucTableEntry",
                         "FrameCount",
                         "FrameRate",
                         "Window",
@@ -132,6 +135,7 @@ class EdevisParser(BaseParser):
                         "DataType",
                         "BitDepth",
                         "IntegrationTime",
+                        "IntegrationMode",
                         *excitation_fields,
                     ]
                     metadata.update(extract_metadata_from_xml(sequence_info, target_fields))

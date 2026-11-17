@@ -105,6 +105,7 @@ jobs:
       # Step 4.1: Run tests with coverage on default python version
       - name: Run Tests
         if: matrix.python-version == vars.DEFAULT_PYTHON_VERSION
+        shell: bash  # Enable pipefail so tee cannot hide pytest failures.
         env:
           REMOTE_TESTS: ${{ steps.azure-login.outcome == 'success' }}
           TEST_ACCOUNT_URL: ${{ vars.TEST_ACCOUNT_URL }}

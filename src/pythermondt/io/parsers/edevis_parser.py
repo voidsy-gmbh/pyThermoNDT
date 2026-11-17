@@ -162,7 +162,6 @@ class EdevisParser(BaseParser):
                     bit_depth = int(metadata.get("BitDepth", -1))
 
                     # Extract the LUT if available
-                    # TODO: Test lut extraction
                     tar_offset_lut = None
                     if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
                         tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])

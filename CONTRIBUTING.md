@@ -138,7 +138,9 @@ Use `integration` to select all cases. Sources must have matching `expected<N>.h
 
 The tool prints differences and saves changed outputs under `<output>/<type>/expected<N>.hdf5`, without overwriting existing files. In differences, `container1` is the current expected output and `container2` is the regenerated output.
 
-Inspect outputs before uploading them separately. The tool never writes to Azure. Differences return exit code 0; errors return a nonzero exit code.
+By default, Azure is read-only. Add `--upload` to list changed destinations and ask for confirmation after regeneration. Inspect the local files before answering `y`; the default is no. Uploads overwrite current baselines, so enable Azure versioning for recovery.
+
+Uploads require successful regeneration and confirmation. If an upload fails, earlier uploads are not undone. Local files are always kept.
 
 ### Performance Benchmarking
 

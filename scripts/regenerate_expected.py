@@ -4,6 +4,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
 from pydantic_settings import SettingsConfigDict
 
 # Direct script execution puts scripts/, not the repository root, on the import path.
@@ -53,10 +55,51 @@ def regenerate_case(config: RemoteTestConfig, case: IntegrationTestCase, output:
     return True
 
 
+def upload_changed(config: RemoteTestConfig, changed_outputs: list[tuple[IntegrationTestCase, Path]]) -> int:
+    """Upload reviewed local outputs only after confirmation; report partial updates on failure."""
+    uploads = [
+        (
+            "/".join(part for part in (config.prefix, INTEGRATION_PREFIX, case.type, output.name) if part),
+            output,
+        )
+        for case, output in changed_outputs
+    ]
+    print("\nChanged files to upload:")
+    for blob_name, output in uploads:
+        print(f"  {output} -> az://{config.container_name}/{blob_name}")
+    print("Warning: this overwrites current baselines. Recovery depends on Azure retention/versioning settings.")
+    try:
+        answer = input(f"Upload these {len(uploads)} changed files? [y/N] ")
+    except (EOFError, KeyboardInterrupt):
+        answer = ""
+    if answer.strip().lower() not in {"y", "yes"}:
+        print("\nUpload cancelled. Local outputs kept. Azure was not modified.")
+        return 0
+
+    uploaded = 0
+    try:
+        with (
+            DefaultAzureCredential() as credential,
+            BlobServiceClient(account_url=str(config.account_url), credential=credential) as client,
+        ):
+            for blob_name, output in uploads:
+                with output.open("rb") as file:
+                    client.get_blob_client(config.container_name, blob_name).upload_blob(file, overwrite=True)
+                uploaded += 1
+                print(f"[UPLOADED] az://{config.container_name}/{blob_name}", flush=True)
+    except Exception as error:
+        # Keep potentially sensitive SDK error messages out of terminal output.
+        print(f"[FAILED] Upload ({type(error).__name__}). Stopped after {uploaded} of {len(uploads)} uploads.")
+        print("Successful uploads listed above were not rolled back. Local outputs kept.")
+        return 1
+    print(f"Uploaded {uploaded} changed files. Local outputs kept.")
+    return 0
+
+
 def main() -> int:
     """Run local baseline regeneration using TEST_* settings and Azure login."""
     parser = argparse.ArgumentParser(
-        description="Compare Azure integration baselines and save changed HDF5 files locally. Never uploads.",
+        description="Compare Azure integration baselines and save changed HDF5 files locally for review.",
         epilog="Loads TEST_* settings from the repository .env or environment, and uses Azure login.",
     )
     parser.add_argument(
@@ -65,6 +108,7 @@ def main() -> int:
     parser.add_argument(
         "--output", required=True, type=Path, help="Local review folder. Existing outputs are not replaced."
     )
+    parser.add_argument("--upload", action="store_true", help="Offer to upload changed outputs after confirmation.")
     args = parser.parse_args()
     selected_path = args.path.rstrip("/")
     if (
@@ -100,6 +144,7 @@ def main() -> int:
         flush=True,
     )
     changed = unchanged = failed = 0
+    changed_outputs = []
     current_type = None
     for case, output in zip(cases, outputs, strict=True):
         if case.type != current_type:
@@ -111,6 +156,7 @@ def main() -> int:
         try:
             if regenerate_case(config, case, output):
                 changed += 1
+                changed_outputs.append((case, output))
             else:
                 unchanged += 1
         except Exception as error:
@@ -122,6 +168,10 @@ def main() -> int:
             failed += 1
 
     print(f"Summary: {changed} changed, {unchanged} unchanged, {failed} failed.\nAzure was not modified.")
+    if args.upload and failed:
+        print("Upload skipped because regeneration failed. Fix the errors before updating Azure.")
+    elif args.upload and changed_outputs:
+        return upload_changed(config, changed_outputs)
     return 1 if failed else 0
 
 

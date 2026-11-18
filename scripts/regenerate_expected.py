@@ -14,7 +14,7 @@ sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from pythermondt.data import container_diff  # noqa: E402
 from pythermondt.readers import AzureBlobReader  # noqa: E402
-from tests.support.integration_data import INTEGRATION_PREFIX, FilePair, load_file_pairs  # noqa: E402
+from tests.support.integration_data import FilePair, load_file_pairs  # noqa: E402
 from tests.support.remote_data import RemoteTestConfig  # noqa: E402
 from tests.utils import format_container_diff  # noqa: E402
 
@@ -30,13 +30,10 @@ class _LocalTestConfig(RemoteTestConfig):
 
 
 def _select_pairs(pairs: tuple[FilePair, ...], selected_path: str) -> list[FilePair]:
-    """Select pairs by exact source path or folder boundary."""
-    return [
-        pair
-        for pair in pairs
-        if (source_path := f"{INTEGRATION_PREFIX}/{pair.id}") == selected_path
-        or source_path.startswith(f"{selected_path}/")
-    ]
+    """Select pairs by exact source path or folder boundary; an empty path selects all pairs."""
+    if not selected_path:
+        return list(pairs)
+    return [pair for pair in pairs if pair.id == selected_path or pair.id.startswith(f"{selected_path}/")]
 
 
 def _regenerate_pair(reader: AzureBlobReader, pair: FilePair, output: Path) -> bool:
@@ -105,7 +102,11 @@ def main() -> int:
         epilog="Loads TEST_* settings from the repository .env or environment, and uses Azure login.",
     )
     parser.add_argument(
-        "path", help="Source file or folder relative to TEST_PREFIX, e.g. integration/edevis/source3.di or integration."
+        "path",
+        nargs="?",
+        default="",
+        help="Source file or parser folder relative to the integration root, e.g. edevis/source3.di or edevis. "
+        "Defaults to all files.",
     )
     parser.add_argument(
         "--output",
@@ -116,12 +117,10 @@ def main() -> int:
     parser.add_argument("--upload", action="store_true", help="Offer to upload changed outputs after confirmation.")
     args = parser.parse_args()
     selected_path = args.path.rstrip("/")
-    if (
-        not selected_path
-        or selected_path.startswith("/")
-        or any(part in {".", "..", ""} for part in selected_path.split("/"))
+    if selected_path and (
+        selected_path.startswith("/") or any(part in {".", "..", ""} for part in selected_path.split("/"))
     ):
-        parser.error("Use a relative Azure file or folder path without '.', '..', or empty path components.")
+        parser.error("Use a relative file or folder path without '.', '..', or empty path components.")
 
     try:
         config = _LocalTestConfig()
@@ -132,7 +131,7 @@ def main() -> int:
         print(f"Discovery failed ({type(error).__name__}). Check TEST_* settings and Azure access.", file=sys.stderr)
         return 1
     if not selected_pairs:
-        parser.error(f"No integration source files match {args.path!r} relative to TEST_PREFIX.")
+        parser.error(f"No integration source files match {args.path!r} relative to the integration root.")
 
     pair_outputs = [(pair, args.output / pair.folder / pair.expected_name) for pair in selected_pairs]
     # Remove results of earlier runs, so the folder shows only this run for the selected pairs.

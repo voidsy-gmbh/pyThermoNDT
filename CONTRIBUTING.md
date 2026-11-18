@@ -127,14 +127,14 @@ TEST_CONTAINER_NAME=<container>
 TEST_PREFIX=<prefix> # optional
 ```
 
-Authenticate with `az login`, then select a source file or folder relative to `TEST_PREFIX`:
+Authenticate with `az login`, then select a source file or parser folder relative to the integration root, `<TEST_PREFIX>/integration/`. Test IDs use the same paths, e.g. `test_file_format_matches_expected[edevis/source3.di]`:
 
 ```bash
-uv run scripts/regenerate_expected.py integration/edevis/source3.di
-uv run scripts/regenerate_expected.py integration/edevis --upload
+uv run scripts/regenerate_expected.py edevis/source3.di
+uv run scripts/regenerate_expected.py edevis --upload
 ```
 
-Use `integration` to select all cases. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
+Omit the path to select all files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
 
 The tool prints differences and saves new or changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. In differences, `container1` is the current expected output and `container2` is the regenerated output.
 

@@ -3,7 +3,7 @@
 import pytest
 
 from pythermondt.data import container_diff
-from tests.support.integration_data import INTEGRATION_PREFIX, FilePair, IntegrationData, collect_integration_data
+from tests.support.integration_data import FilePair, IntegrationData, collect_integration_data
 from tests.utils import format_container_diff
 
 pytestmark = pytest.mark.cloud
@@ -18,7 +18,7 @@ def test_file_format_matches_expected(integration_data: IntegrationData, pair: F
     if not pair.has_expected:
         pytest.fail(
             f"{pair.expected_name} is missing for {pair.source_uri}. Create it with: "
-            f"uv run scripts/regenerate_expected.py {INTEGRATION_PREFIX}/{pair.id} --upload",
+            f"uv run scripts/regenerate_expected.py {pair.id} --upload",
             pytrace=False,
         )
     assert integration_data.reader is not None

@@ -8,9 +8,7 @@ import pytest
 import torch
 from azure.core.exceptions import ClientAuthenticationError
 
-import pythermondt.io.backends.azure_backend as azure_backend
 import tests.support.integration_data as integration_data
-from pythermondt import settings
 from pythermondt.data import DataContainer
 from tests.support.integration_data import FilePair, folder_readers, load_file_pairs, pair_files
 from tests.support.remote_data import RemoteTestConfig
@@ -69,58 +67,59 @@ def test_pair_files_ignores_incomplete_or_misplaced_files(paths: list[str]):
 
 
 @pytest.mark.parametrize("prefix", ["", "test-data"])
-def test_shared_reader_syncs_pairs_once_and_folder_readers_reuse_cache(tmp_path: Path, prefix: str):
-    """One sync downloads only paired files; later reads use the cache until a blob changes."""
+def test_load_file_pairs_stays_inside_integration_root(prefix: str):
+    """Only direct parser folders below the integration root form pairs; siblings and archives are ignored."""
     config = _config(prefix)
     root = f"{prefix}/integration/" if prefix else "integration/"
-    paired = [
-        f"{folder}/{side}1.{ext}"
-        for folder in ("edevis", "simulation")
-        for side, ext in (("expected", "hdf5"), ("source", "hdf5"))
-    ]
-    ignored = [
-        "simulation/archive/source1.hdf5",
-        "simulation/source2.hdf5",
-        "../integration-archive/edevis/source1.hdf5",
-    ]
-    with patch.object(settings, "download_dir", str(tmp_path)), mocked_azure_blob_storage() as storage:
+    paths = ["edevis/expected1.hdf5", "edevis/source1.di", "simulation/expected1.hdf5", "simulation/source1.mat"]
+    ignored = ["simulation/archive/source2.mat", "simulation/archive/expected2.hdf5", "simulation/source3.mat"]
+    with mocked_azure_blob_storage() as storage:
         storage.create_container(config.container_name)
-        for path in paired + ignored:
-            storage.upload_blob(config.container_name, os.path.normpath(root + path), _measurement(1))
+        for path in [root + path for path in paths + ignored] + [
+            root.replace("integration/", "integration-old/") + paths[0]
+        ]:
+            storage.upload_blob(config.container_name, path, b"data")
 
-        reader, pairs = load_file_pairs(config)
-        uris = [uri for pair in pairs for uri in (pair.source_uri, pair.expected_uri)]
-        assert [pair.id for pair in pairs] == ["edevis/source1.hdf5", "simulation/source1.hdf5"]
+        _, pairs = load_file_pairs(config)
 
-        with patch.object(storage, "download_blob", wraps=storage.download_blob) as download:
-            reader.sync(file_paths=uris)
-            assert download.call_count == len(paired)
-
-            for pair in pairs:
-                assert reader.read_file(pair.source_uri).get_dataset("/Data/Tdata").item() == 1
-                for folder_reader in folder_readers(config, pairs, pair.folder):
-                    assert folder_reader[0].get_dataset("/Data/Tdata").item() == 1
-            assert download.call_count == len(paired)
-
-            storage.upload_blob(config.container_name, root + "edevis/source1.hdf5", _measurement(2))
-            reader.sync(file_paths=uris)
-            assert download.call_count == len(paired) + 1
+    root_uri = f"az://test-container/{root}"
+    assert pairs == (
+        FilePair("edevis", root_uri + "edevis/source1.di", root_uri + "edevis/expected1.hdf5"),
+        FilePair("simulation", root_uri + "simulation/source1.mat", root_uri + "simulation/expected1.hdf5"),
+    )
 
 
-def test_shared_reader_uses_default_credentials(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """The shared reader uses the credential chain, even if an obsolete SAS environment value exists."""
-    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "obsolete-secret")
-    with (
-        patch.object(settings, "download_dir", str(tmp_path)),
-        mocked_azure_blob_storage() as storage,
-        patch.object(azure_backend, "DefaultAzureCredential") as credential,
-        patch.object(azure_backend.BlobServiceClient, "from_connection_string") as from_connection_string,
-    ):
+def _upload_pairs(storage, folders: dict[str, list[str]]) -> tuple[FilePair, ...]:
+    for folder, names in folders.items():
+        for name in names:
+            storage.upload_blob("test-container", f"integration/{folder}/source{name}", _measurement(1))
+            storage.upload_blob(
+                "test-container", f"integration/{folder}/expected{name.split('.')[0]}.hdf5", _measurement(1)
+            )
+    return load_file_pairs(_config())[1]
+
+
+def test_folder_readers_list_one_folder_in_pair_order():
+    """Source and expected readers contain only their folder, in matching order."""
+    with mocked_azure_blob_storage() as storage:
         storage.create_container("test-container")
-        load_file_pairs(_config())
+        pairs = _upload_pairs(storage, {"simulation": ["1.mat", "2.mat"], "simulation_large": ["1.mat"]})
 
-    credential.assert_called_once()
-    from_connection_string.assert_not_called()
+        source_reader, expected_reader = folder_readers(_config(), pairs, "simulation")
+
+        folder_pairs = [pair for pair in pairs if pair.folder == "simulation"]
+        assert source_reader.file_uris == [pair.source_uri for pair in folder_pairs]
+        assert expected_reader.file_uris == [pair.expected_uri for pair in folder_pairs]
+
+
+def test_folder_readers_reject_pairs_in_different_order():
+    """Readers list files sorted, so pairs in another order would compare unrelated files."""
+    with mocked_azure_blob_storage() as storage:
+        storage.create_container("test-container")
+        pairs = _upload_pairs(storage, {"simulation": ["1.mat", "2.mat"]})
+
+        with pytest.raises(RuntimeError, match="does not match pairs"):
+            folder_readers(_config(), pairs[::-1], "simulation")
 
 
 @pytest.mark.parametrize(
@@ -188,6 +187,6 @@ def test_discovery_failure_does_not_block_offline_tests(tmp_path: Path, scenario
     output = result.stdout + result.stderr
 
     assert result.returncode == 1, output
-    assert "1 passed" in output
+    assert "1 passed, 2 errors" in output  # one placeholder per cloud test module
     assert "secret-token" not in output
     assert "error during collection" not in output

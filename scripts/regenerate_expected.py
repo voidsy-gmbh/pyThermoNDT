@@ -1,4 +1,4 @@
-"""Regenerate changed Azure integration baselines locally for manual review."""
+"""Regenerate changed expected outputs of the Azure integration data locally for manual review."""
 
 import argparse
 import sys
@@ -70,7 +70,7 @@ def _upload_changed(config: RemoteTestConfig, changed_outputs: list[tuple[FilePa
     print("\nChanged files to upload:")
     for blob_name, output in uploads:
         print(f"  {output} -> az://{config.container_name}/{blob_name}")
-    print("Warning: this overwrites current baselines. Recovery depends on Azure retention/versioning settings.")
+    print("Warning: this overwrites expected outputs. Recovery depends on Azure retention/versioning settings.")
     try:
         answer = input(f"Upload these {len(uploads)} changed files? [y/N] ")
     except (EOFError, KeyboardInterrupt):
@@ -102,7 +102,7 @@ def _upload_changed(config: RemoteTestConfig, changed_outputs: list[tuple[FilePa
 def main() -> int:
     """Regenerate locally, optionally confirm uploads, and return a process exit code."""
     parser = argparse.ArgumentParser(
-        description="Compare Azure integration baselines and save changed HDF5 files locally for review.",
+        description="Compare Azure expected outputs and save changed HDF5 files locally for review.",
         epilog="Loads TEST_* settings from the repository .env or environment, and uses Azure login.",
     )
     parser.add_argument(

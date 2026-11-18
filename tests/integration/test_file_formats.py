@@ -18,7 +18,7 @@ def test_file_format_matches_expected(integration_data: IntegrationData, pair: F
     if not pair.has_expected:
         pytest.fail(
             f"{pair.expected_name} is missing for {pair.source_uri}. Create it with: "
-            f"uv run scripts/regenerate_expected.py {pair.id} --upload",
+            f"uv run scripts/regenerate_integration.py {pair.id} --upload",
             pytrace=False,
         )
     assert integration_data.reader is not None

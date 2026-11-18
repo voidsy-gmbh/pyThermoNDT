@@ -130,8 +130,8 @@ TEST_PREFIX=<prefix> # optional
 Authenticate with `az login`, then select a source file or parser folder relative to the integration root, `<TEST_PREFIX>/integration/`. Test IDs use the same paths, e.g. `test_file_format_matches_expected[edevis/source3.di]`:
 
 ```bash
-uv run scripts/regenerate_expected.py edevis/source3.di
-uv run scripts/regenerate_expected.py edevis --upload
+uv run scripts/regenerate_integration.py edevis/source3.di
+uv run scripts/regenerate_integration.py edevis --upload
 ```
 
 Omit the path to select all files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.

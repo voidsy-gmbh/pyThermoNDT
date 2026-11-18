@@ -1,7 +1,7 @@
 # Benchmark outputs from pytest-benchmark
 .benchmarks/
 
-# Local review files from scripts/regenerate_expected.py
+# Local review files from scripts/regenerate_integration.py
 expected-review/
 
 # Byte-compiled / optimized / DLL files

@@ -130,13 +130,13 @@ TEST_PREFIX=<prefix> # optional
 Authenticate with `az login`, then select a source file or folder relative to `TEST_PREFIX`:
 
 ```bash
-uv run scripts/regenerate_expected.py integration/edevis/source3.di --output local-dev/expected-review
-uv run scripts/regenerate_expected.py integration/edevis --output local-dev/expected-review
+uv run scripts/regenerate_expected.py integration/edevis/source3.di
+uv run scripts/regenerate_expected.py integration/edevis --upload
 ```
 
 Use `integration` to select all cases. Sources must have matching `expected<N>.hdf5` files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
 
-The tool prints differences and saves changed outputs under `<output>/<type>/expected<N>.hdf5`, without overwriting existing files. In differences, `container1` is the current expected output and `container2` is the regenerated output.
+The tool prints differences and saves changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. In differences, `container1` is the current expected output and `container2` is the regenerated output.
 
 By default, Azure is read-only. Add `--upload` to list changed destinations and ask for confirmation after regeneration. Inspect the local files before answering `y`; the default is no. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
 

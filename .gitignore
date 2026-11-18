@@ -1,6 +1,9 @@
 # Benchmark outputs from pytest-benchmark
 .benchmarks/
 
+# Local review files from scripts/regenerate_expected.py
+expected-review/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

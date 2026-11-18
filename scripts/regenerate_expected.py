@@ -51,8 +51,7 @@ def _regenerate_pair(reader: AzureBlobReader, pair: FilePair, output: Path) -> b
         return False
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive creation protects against files appearing after the preflight check.
-    with source_container.serialize_to_hdf5() as buffer, output.open("xb") as file:
+    with source_container.serialize_to_hdf5() as buffer, output.open("wb") as file:
         file.write(buffer.getbuffer())
     print(
         f"[CHANGED] {pair.source_name} -> {pair.expected_name}\n"
@@ -109,7 +108,10 @@ def main() -> int:
         "path", help="Source file or folder relative to TEST_PREFIX, e.g. integration/edevis/source3.di or integration."
     )
     parser.add_argument(
-        "--output", required=True, type=Path, help="Local review folder. Existing outputs are not replaced."
+        "--output",
+        type=Path,
+        default=REPOSITORY_ROOT / "expected-review",
+        help="Local review folder (default: expected-review/ in the repository root).",
     )
     parser.add_argument("--upload", action="store_true", help="Offer to upload changed outputs after confirmation.")
     args = parser.parse_args()
@@ -133,9 +135,9 @@ def main() -> int:
         parser.error(f"No paired integration source files match {args.path!r} relative to TEST_PREFIX.")
 
     pair_outputs = [(pair, args.output / pair.folder / pair.expected_name) for pair in selected_pairs]
+    # Remove results of earlier runs, so the folder shows only this run for the selected pairs.
     for _, output in pair_outputs:
-        if output.exists():
-            parser.error(f"Refusing to overwrite {output}. Choose a new output folder.")
+        output.unlink(missing_ok=True)
 
     print(
         f"Azure: {config.account_url}\nComparison: container1 = current expected; container2 = regenerated.\n",

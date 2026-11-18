@@ -143,7 +143,7 @@ def test_lut_is_empty_without_calibration_data(intensity_frames: list[np.ndarray
 def test_frame_file_naming_schemes(
     intensity_frames: list[np.ndarray], frame_indices: list[int], frame_names: list[str]
 ):
-    """Frame files are named after the camera FrameIndex (OTvis) or numbered from zero (ThermoVis)."""
+    """Frame files can be named after the camera FrameIndex or numbered from zero; both schemes occur."""
     archive = _build_edevis_file(
         intensity_frames, ["0s", "0.02s"], frame_indices=frame_indices, frame_names=frame_names
     )

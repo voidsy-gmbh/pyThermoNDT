@@ -1,7 +1,7 @@
 import io
 import tarfile
 import xml.etree.ElementTree as ET
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from re import escape
 
 import numpy as np
@@ -13,8 +13,6 @@ from pythermondt.io.utils import IOPathWrapper
 
 # Edevis stores each frame with a binary header before the pixel data; the parser infers its size.
 FRAME_HEADER_SIZE = 28
-
-EdevisFile = Callable[..., IOPathWrapper]
 
 
 def _build_edevis_file(
@@ -84,20 +82,14 @@ def _build_edevis_file(
 
 
 @pytest.fixture
-def edevis_file() -> EdevisFile:
-    """Return a builder for minimal edevis archives."""
-    return _build_edevis_file
-
-
-@pytest.fixture
 def intensity_frames() -> list[np.ndarray]:
     """Two distinct 2 x 3 uint16 frames."""
     return [np.arange(6, dtype="<u2").reshape(2, 3) + offset for offset in (100, 200)]
 
 
-def test_intensity_frames_and_time_domain(edevis_file: EdevisFile, intensity_frames: list[np.ndarray]):
+def test_intensity_frames_and_time_domain(intensity_frames: list[np.ndarray]):
     """Intensity frames keep raw uint16 values in H x W x T order with frame times in seconds."""
-    parsed = EdevisParser.parse(edevis_file(intensity_frames, ["0s", "0.02s"]))
+    parsed = EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"]))
 
     tdata = parsed.get_dataset("/Data/Tdata")
     assert tdata.dtype == torch.uint16
@@ -107,11 +99,11 @@ def test_intensity_frames_and_time_domain(edevis_file: EdevisFile, intensity_fra
     assert parsed.get_unit("/MetaData/DomainValues").name == "second"
 
 
-def test_complex_frames_and_frequency_domain(edevis_file: EdevisFile):
+def test_complex_frames_and_frequency_domain():
     """Complex results keep complex64 values with Fourier frequencies in hertz."""
     frames = [np.array([[1 + 2j, -3j]], dtype=np.complex64), np.array([[0.5, 4 - 1j]], dtype=np.complex64)]
 
-    parsed = EdevisParser.parse(edevis_file(frames, ["0.1Hz", "0.2Hz"]))
+    parsed = EdevisParser.parse(_build_edevis_file(frames, ["0.1Hz", "0.2Hz"]))
 
     tdata = parsed.get_dataset("/Data/Tdata")
     assert tdata.dtype == torch.complex64
@@ -120,11 +112,11 @@ def test_complex_frames_and_frequency_domain(edevis_file: EdevisFile):
     assert parsed.get_unit("/MetaData/DomainValues").name == "hertz"
 
 
-def test_lut_is_converted_to_kelvin(edevis_file: EdevisFile, intensity_frames: list[np.ndarray]):
+def test_lut_is_converted_to_kelvin(intensity_frames: list[np.ndarray]):
     """Edevis stores the 16-bit lookup table in degrees Celsius; the container stores kelvin."""
     lut_celsius = np.linspace(-20.0, 120.0, 2**16, dtype=np.float32)
 
-    parsed = EdevisParser.parse(edevis_file(intensity_frames, ["0s", "0.02s"], lut_celsius=lut_celsius))
+    parsed = EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"], lut_celsius=lut_celsius))
 
     lut = parsed.get_dataset("/MetaData/LookUpTable")
     assert lut.shape == (2**16,)
@@ -133,20 +125,27 @@ def test_lut_is_converted_to_kelvin(edevis_file: EdevisFile, intensity_frames: l
     assert parsed.get_unit("/MetaData/LookUpTable").name == "kelvin"
 
 
-def test_lut_is_empty_without_calibration_data(edevis_file: EdevisFile, intensity_frames: list[np.ndarray]):
+def test_lut_is_empty_without_calibration_data(intensity_frames: list[np.ndarray]):
     """Files without calibration data keep the empty lookup table."""
-    parsed = EdevisParser.parse(edevis_file(intensity_frames, ["0s", "0.02s"]))
+    parsed = EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"]))
 
     assert parsed.get_dataset("/MetaData/LookUpTable").numel() == 0
 
 
-def test_zero_based_frame_names(edevis_file: EdevisFile, intensity_frames: list[np.ndarray]):
-    """ThermoVis names frame files from zero, independent of the camera FrameIndex."""
-    archive = edevis_file(
-        intensity_frames,
-        ["0s", "0.02s"],
-        frame_indices=[119320, 119321],
-        frame_names=["sequence0/f0.bin", "sequence0/f1.bin"],
+@pytest.mark.parametrize(
+    ("frame_indices", "frame_names"),
+    [
+        ([141603, 141604], ["sequence0/f141603.bin", "sequence0/f141604.bin"]),
+        ([4296304903, 4296304904], ["sequence0/f0.bin", "sequence0/f1.bin"]),
+    ],
+    ids=["indexed", "zero-based"],
+)
+def test_frame_file_naming_schemes(
+    intensity_frames: list[np.ndarray], frame_indices: list[int], frame_names: list[str]
+):
+    """Frame files are named after the camera FrameIndex (OTvis) or numbered from zero (ThermoVis)."""
+    archive = _build_edevis_file(
+        intensity_frames, ["0s", "0.02s"], frame_indices=frame_indices, frame_names=frame_names
     )
 
     parsed = EdevisParser.parse(archive)
@@ -168,11 +167,9 @@ def test_zero_based_frame_names(edevis_file: EdevisFile, intensity_frames: list[
     ],
     ids=["missing", "all-present", "partial"],
 )
-def test_optional_acquisition_metadata(
-    edevis_file: EdevisFile, intensity_frames: list[np.ndarray], metadata: dict[str, str]
-):
+def test_optional_acquisition_metadata(intensity_frames: list[np.ndarray], metadata: dict[str, str]):
     """Optional sequence fields are stored without surrounding whitespace and omitted when absent."""
-    parsed = EdevisParser.parse(edevis_file(intensity_frames, ["0s", "0.02s"], sequence_info=metadata))
+    parsed = EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"], sequence_info=metadata))
 
     attributes = parsed.get_all_attributes("/MetaData")
     for name in ("CameraSerialNumber", "IntegrationMode", "Filter", "NucTableEntry"):
@@ -194,12 +191,10 @@ def test_empty_file_raises():
     ],
     ids=["bit-depth", "data-type", "missing-frame-file"],
 )
-def test_invalid_archive_raises(
-    edevis_file: EdevisFile, intensity_frames: list[np.ndarray], kwargs: dict, message: str
-):
+def test_invalid_archive_raises(intensity_frames: list[np.ndarray], kwargs: dict, message: str):
     """Invalid sequence settings and missing frame files raise descriptive errors."""
     with pytest.raises(ValueError, match=escape(message)):
-        EdevisParser.parse(edevis_file(intensity_frames, ["0s", "0.02s"], **kwargs))
+        EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"], **kwargs))
 
 
 def test_archive_without_content_raises():

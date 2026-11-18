@@ -13,13 +13,8 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from pythermondt.data import container_diff  # noqa: E402
-from tests.integration.utils import (  # noqa: E402
-    INTEGRATION_PREFIX,
-    IntegrationTestCase,
-    discover_test_cases,
-    list_integration_files,
-    make_case_readers,
-)
+from pythermondt.readers import AzureBlobReader  # noqa: E402
+from tests.support.integration_data import INTEGRATION_PREFIX, FilePair, load_file_pairs  # noqa: E402
 from tests.support.remote_data import RemoteTestConfig  # noqa: E402
 from tests.utils import format_container_diff  # noqa: E402
 
@@ -34,30 +29,25 @@ class _LocalTestConfig(RemoteTestConfig):
     )
 
 
-def _case_prefix(config: RemoteTestConfig, case: IntegrationTestCase) -> str:
-    return "/".join(part for part in (config.prefix, INTEGRATION_PREFIX, case.type) if part)
+def _select_pairs(pairs: tuple[FilePair, ...], selected_path: str) -> list[FilePair]:
+    """Select pairs by exact source path or folder boundary."""
+    return [
+        pair
+        for pair in pairs
+        if (source_path := f"{INTEGRATION_PREFIX}/{pair.id}") == selected_path
+        or source_path.startswith(f"{selected_path}/")
+    ]
 
 
-def _select_cases(config: RemoteTestConfig, selected_path: str) -> list[IntegrationTestCase]:
-    """Select pairs without aggregate 'glob' cases, so each baseline is processed once."""
-    cases = []
-    for case in discover_test_cases(list_integration_files(config)):
-        if case.name == "glob":
-            continue
-        source_path = f"{INTEGRATION_PREFIX}/{case.type}/{case.source_files[0]}"
-        if source_path == selected_path or source_path.startswith(f"{selected_path}/"):
-            cases.append(case)
-    return cases
-
-
-def _regenerate_case(config: RemoteTestConfig, case: IntegrationTestCase, output: Path) -> bool:
+def _regenerate_pair(reader: AzureBlobReader, pair: FilePair, output: Path) -> bool:
     """Save changed output locally; return True only after a successful write."""
-    source_reader, expected_reader = make_case_readers(config, case)
-    source_container = source_reader[0]
-    expected_container = expected_reader[0]
+    # Always compare against the current Azure state, unlike the test session cache.
+    reader.sync(file_paths=[pair.source_uri, pair.expected_uri])
+    source_container = reader.read_file(pair.source_uri)
+    expected_container = reader.read_file(pair.expected_uri)
     differences = list(container_diff(expected_container, source_container))
     if not differences:
-        print(f"[UNCHANGED] {case.source_files[0]} -> {case.expected_files[0]}\n", flush=True)
+        print(f"[UNCHANGED] {pair.source_name} -> {pair.expected_name}\n", flush=True)
         return False
 
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -65,7 +55,7 @@ def _regenerate_case(config: RemoteTestConfig, case: IntegrationTestCase, output
     with source_container.serialize_to_hdf5() as buffer, output.open("xb") as file:
         file.write(buffer.getbuffer())
     print(
-        f"[CHANGED] {case.source_files[0]} -> {case.expected_files[0]}\n"
+        f"[CHANGED] {pair.source_name} -> {pair.expected_name}\n"
         f"{format_container_diff(sorted(differences))}\n"
         f"  Saved: {output.name}\n",
         flush=True,
@@ -73,9 +63,10 @@ def _regenerate_case(config: RemoteTestConfig, case: IntegrationTestCase, output
     return True
 
 
-def _upload_changed(config: RemoteTestConfig, changed_outputs: list[tuple[IntegrationTestCase, Path]]) -> int:
+def _upload_changed(config: RemoteTestConfig, changed_outputs: list[tuple[FilePair, Path]]) -> int:
     """Require confirmation before sequential uploads without automatic rollback."""
-    uploads = [(f"{_case_prefix(config, case)}/{output.name}", output) for case, output in changed_outputs]
+    container_uri = f"az://{config.container_name}/"
+    uploads = [(pair.expected_uri.removeprefix(container_uri), output) for pair, output in changed_outputs]
     print("\nChanged files to upload:")
     for blob_name, output in uploads:
         print(f"  {output} -> az://{config.container_name}/{blob_name}")
@@ -132,16 +123,17 @@ def main() -> int:
 
     try:
         config = _LocalTestConfig()
-        cases = _select_cases(config, selected_path)
+        reader, pairs = load_file_pairs(config)
+        selected_pairs = _select_pairs(pairs, selected_path)
     except Exception as error:
         # Azure exception messages can contain credentials or signed URLs.
         print(f"Discovery failed ({type(error).__name__}). Check TEST_* settings and Azure access.", file=sys.stderr)
         return 1
-    if not cases:
+    if not selected_pairs:
         parser.error(f"No paired integration source files match {args.path!r} relative to TEST_PREFIX.")
 
-    case_outputs = [(case, args.output / case.type / case.expected_files[0]) for case in cases]
-    for _, output in case_outputs:
+    pair_outputs = [(pair, args.output / pair.folder / pair.expected_name) for pair in selected_pairs]
+    for _, output in pair_outputs:
         if output.exists():
             parser.error(f"Refusing to overwrite {output}. Choose a new output folder.")
 
@@ -150,21 +142,20 @@ def main() -> int:
         flush=True,
     )
     unchanged = failed = 0
-    changed_outputs: list[tuple[IntegrationTestCase, Path]] = []
-    current_type = None
-    for case, output in case_outputs:
-        if case.type != current_type:
-            remote_folder = f"{config.container_name}/{_case_prefix(config, case)}"
-            print(f"Folder: az://{remote_folder}/\nOutput: {output.parent}/\n", flush=True)
-            current_type = case.type
+    changed_outputs: list[tuple[FilePair, Path]] = []
+    current_folder = None
+    for pair, output in pair_outputs:
+        if pair.folder != current_folder:
+            print(f"Folder: {pair.source_uri.rsplit('/', 1)[0]}/\nOutput: {output.parent}/\n", flush=True)
+            current_folder = pair.folder
         try:
-            if _regenerate_case(config, case, output):
-                changed_outputs.append((case, output))
+            if _regenerate_pair(reader, pair, output):
+                changed_outputs.append((pair, output))
             else:
                 unchanged += 1
         except Exception as error:
             print(
-                f"[FAILED] {case.source_files[0]} -> {case.expected_files[0]}\n"
+                f"[FAILED] {pair.source_name} -> {pair.expected_name}\n"
                 f"  {type(error).__name__}: Check Azure access and input/output files.\n",
                 flush=True,
             )

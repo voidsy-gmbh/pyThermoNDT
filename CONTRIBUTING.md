@@ -134,11 +134,13 @@ uv run scripts/regenerate_expected.py integration/edevis/source3.di
 uv run scripts/regenerate_expected.py integration/edevis --upload
 ```
 
-Use `integration` to select all cases. Sources must have matching `expected<N>.hdf5` files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
+Use `integration` to select all cases. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
 
-The tool prints differences and saves changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. In differences, `container1` is the current expected output and `container2` is the regenerated output.
+The tool prints differences and saves new or changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. In differences, `container1` is the current expected output and `container2` is the regenerated output.
 
 By default, Azure is read-only. Add `--upload` to list changed destinations and ask for confirmation after regeneration. Inspect the local files before answering `y`; the default is no. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
+
+To add a sample, upload it as `source<N>.<ext>` and run the tool: it creates `expected<N>.hdf5` as a new output. Until that file exists, the integration test for the sample fails.
 
 Uploads require successful regeneration and confirmation. If an upload fails, earlier uploads are not undone. Local files are always kept.
 

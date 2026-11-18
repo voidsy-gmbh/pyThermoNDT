@@ -20,11 +20,15 @@ INTEGRATION_PREFIX = "integration"
 
 @dataclass(frozen=True)
 class FilePair:
-    """Source file and its expected HDF5 output in one parser folder."""
+    """Source file and its expected HDF5 output in one parser folder.
+
+    ``has_expected`` is False for a new source whose expected output does not exist yet.
+    """
 
     folder: str
     source_uri: str
     expected_uri: str
+    has_expected: bool = True
 
     @property
     def source_name(self) -> str:
@@ -50,8 +54,13 @@ class IntegrationData:
     error: str | None = None
 
     @property
+    def complete_pairs(self) -> tuple[FilePair, ...]:
+        return tuple(pair for pair in self.pairs if pair.has_expected)
+
+    @property
     def folders(self) -> tuple[str, ...]:
-        return tuple(sorted({pair.folder for pair in self.pairs}))
+        """Return parser folders with at least one complete pair."""
+        return tuple(sorted({pair.folder for pair in self.complete_pairs}))
 
 
 @cache
@@ -92,7 +101,8 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
         root_uri: URI of the integration root, ending with "/".
 
     Returns:
-        Pairs sorted by id. Unpaired sources and files outside direct parser folders are ignored.
+        One pair per source, sorted by id. Sources without expected output have ``has_expected=False``.
+        Files outside direct parser folders and expected outputs without source are ignored.
     """
     pairs = []
     for folder, names in _group_by_folder(relative_paths).items():
@@ -100,21 +110,22 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
             if not name.startswith("source"):
                 continue
             expected_name = f"expected{name.removeprefix('source').rsplit('.', 1)[0]}.hdf5"
-            if expected_name in names:
-                folder_uri = f"{root_uri}{folder}/"
-                pairs.append(FilePair(folder, folder_uri + name, folder_uri + expected_name))
+            folder_uri = f"{root_uri}{folder}/"
+            pairs.append(FilePair(folder, folder_uri + name, folder_uri + expected_name, expected_name in names))
     return tuple(sorted(pairs, key=lambda pair: pair.id))
 
 
 def folder_readers(
     config: RemoteTestConfig, pairs: Iterable[FilePair], folder: str
 ) -> tuple[AzureBlobReader, AzureBlobReader]:
-    """Create source and expected readers for one parser folder, reusing the shared download cache.
+    """Create source and expected readers for the complete pairs of one parser folder.
+
+    The readers reuse the shared download cache.
 
     Raises:
         RuntimeError: If the readers would not list the files in matching pair order.
     """
-    folder_pairs = [pair for pair in pairs if pair.folder == folder]
+    folder_pairs = [pair for pair in pairs if pair.folder == folder and pair.has_expected]
     readers = []
     for uris in ([pair.source_uri for pair in folder_pairs], [pair.expected_uri for pair in folder_pairs]):
         reader = _make_reader(config, file_filter=_UriFilter(tuple(uris)))

@@ -30,8 +30,9 @@ def _measurement(value: int) -> bytes:
     return container.serialize_to_hdf5().getvalue()
 
 
-def _pair(folder: str, name: str) -> FilePair:
-    return FilePair(folder, f"{ROOT}{folder}/source{name}", f"{ROOT}{folder}/expected{name.split('.')[0]}.hdf5")
+def _pair(folder: str, name: str, has_expected: bool = True) -> FilePair:
+    expected_uri = f"{ROOT}{folder}/expected{name.split('.')[0]}.hdf5"
+    return FilePair(folder, f"{ROOT}{folder}/source{name}", expected_uri, has_expected)
 
 
 def test_pair_files_by_case_name():
@@ -50,19 +51,28 @@ def test_pair_files_by_case_name():
     assert [pair.id for pair in pairs] == ["edevis/sourceA.di", "simulation/source1.mat", "simulation/source2.mat"]
 
 
+def test_pair_files_marks_sources_without_expected_output():
+    """New sources stay visible; an expected output in a nested folder does not count."""
+    paths = ["simulation/source1.mat", "simulation/archive/expected1.hdf5", "edevis/source2.di"]
+
+    assert pair_files(paths, ROOT) == (
+        _pair("edevis", "2.di", has_expected=False),
+        _pair("simulation", "1.mat", has_expected=False),
+    )
+
+
 @pytest.mark.parametrize(
     "paths",
     [
         [],
-        ["simulation/source1.mat"],
+        ["simulation/expected1.hdf5"],
         ["readme.txt", "source1.mat", "expected1.hdf5"],
         ["simulation/archive/source1.mat", "simulation/archive/expected1.hdf5"],
-        ["simulation/source1.mat", "simulation/archive/expected1.hdf5"],
     ],
-    ids=["empty", "unpaired", "top-level", "nested", "nested-expected"],
+    ids=["empty", "expected-only", "top-level", "nested"],
 )
-def test_pair_files_ignores_incomplete_or_misplaced_files(paths: list[str]):
-    """Only direct children of parser folders can form pairs."""
+def test_pair_files_ignores_misplaced_files(paths: list[str]):
+    """Only sources that are direct children of parser folders create pairs."""
     assert pair_files(paths, ROOT) == ()
 
 
@@ -72,7 +82,7 @@ def test_load_file_pairs_stays_inside_integration_root(prefix: str):
     config = _config(prefix)
     root = f"{prefix}/integration/" if prefix else "integration/"
     paths = ["edevis/expected1.hdf5", "edevis/source1.di", "simulation/expected1.hdf5", "simulation/source1.mat"]
-    ignored = ["simulation/archive/source2.mat", "simulation/archive/expected2.hdf5", "simulation/source3.mat"]
+    ignored = ["simulation/archive/source2.mat", "simulation/archive/expected2.hdf5"]
     with mocked_azure_blob_storage() as storage:
         storage.create_container(config.container_name)
         for path in [root + path for path in paths + ignored] + [
@@ -100,14 +110,16 @@ def _upload_pairs(storage, folders: dict[str, list[str]]) -> tuple[FilePair, ...
 
 
 def test_folder_readers_list_one_folder_in_pair_order():
-    """Source and expected readers contain only their folder, in matching order."""
+    """Readers contain only complete pairs of their folder, in matching order."""
     with mocked_azure_blob_storage() as storage:
         storage.create_container("test-container")
+        storage.upload_blob("test-container", "integration/simulation/source3.mat", _measurement(1))
         pairs = _upload_pairs(storage, {"simulation": ["1.mat", "2.mat"], "simulation_large": ["1.mat"]})
 
         source_reader, expected_reader = folder_readers(_config(), pairs, "simulation")
 
-        folder_pairs = [pair for pair in pairs if pair.folder == "simulation"]
+        folder_pairs = [pair for pair in pairs if pair.folder == "simulation" and pair.has_expected]
+        assert len(folder_pairs) == 2
         assert source_reader.file_uris == [pair.source_uri for pair in folder_pairs]
         assert expected_reader.file_uris == [pair.expected_uri for pair in folder_pairs]
 

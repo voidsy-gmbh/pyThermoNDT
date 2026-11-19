@@ -26,4 +26,7 @@ def test_file_format_matches_expected(integration_data: IntegrationData, pair: F
     expected = integration_data.reader.read_file(pair.expected_uri)
 
     differences = list(container_diff(expected, source))
-    assert not differences, f"{pair.source_uri} vs {pair.expected_uri}:\n{format_container_diff(differences)}"
+    assert not differences, (
+        f"container1 = {pair.expected_uri} (expected)\ncontainer2 = {pair.source_uri} (parsed)\n"
+        f"{format_container_diff(differences)}"
+    )

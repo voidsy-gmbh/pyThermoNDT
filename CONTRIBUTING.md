@@ -136,7 +136,7 @@ uv run scripts/regenerate_integration.py edevis --upload
 
 Omit the path to select all files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
 
-The tool prints differences and saves new or changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. In differences, `container1` is the current expected output and `container2` is the regenerated output.
+The tool prints differences and saves new or changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. Each report names `container1`, the stored expected output, and `container2`, the parsed source file.
 
 By default, Azure is read-only. Add `--upload` to list changed destinations and ask for confirmation after regeneration. Inspect the local files before answering `y`; the default is no. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
 

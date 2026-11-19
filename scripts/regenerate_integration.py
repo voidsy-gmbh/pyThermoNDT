@@ -46,14 +46,18 @@ def _regenerate_pair(reader: AzureBlobReader, pair: FilePair, output: Path) -> b
         if not differences:
             print(f"[UNCHANGED] {pair.source_name} -> {pair.expected_name}\n", flush=True)
             return False
-        status, details = "CHANGED", format_container_diff(sorted(differences))
+        heading = f"[CHANGED] container1 = {pair.expected_name} (stored), container2 = {pair.source_name} (parsed)"
+        details = format_container_diff(sorted(differences))
+        saved = "container2"
     else:
-        status, details = "NEW", "  No expected output exists yet."
+        heading = f"[NEW] {pair.source_name} -> {pair.expected_name}"
+        details = "  No expected output exists yet."
+        saved = f"parsed {pair.source_name}"
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with source_container.serialize_to_hdf5() as buffer, output.open("wb") as file:
         file.write(buffer.getbuffer())
-    print(f"[{status}] {pair.source_name} -> {pair.expected_name}\n{details}\n  Saved: {output.name}\n", flush=True)
+    print(f"{heading}\n{details}\n  Saved {saved} locally as new {output.name}\n", flush=True)
     return True
 
 
@@ -139,7 +143,7 @@ def main() -> int:
         output.unlink(missing_ok=True)
 
     print(
-        f"Azure: {config.account_url}\nComparison: container1 = current expected; container2 = regenerated.\n",
+        f"Azure: {config.account_url}\n",
         flush=True,
     )
     unchanged = failed = 0

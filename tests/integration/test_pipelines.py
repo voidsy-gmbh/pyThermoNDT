@@ -25,7 +25,8 @@ def _assert_same_containers(
     for i, (source_container, expected_container) in enumerate(zip(source, expected, strict=True)):
         differences = list(container_diff(expected_container, source_container))
         assert not differences, (
-            f"{stage}, item {i}:\n{source.files[i]} vs {expected.files[i]}\n{format_container_diff(differences)}"
+            f"{stage}, item {i}:\ncontainer1 = {expected.files[i]} (expected)\n"
+            f"container2 = {source.files[i]} (parsed)\n{format_container_diff(differences)}"
         )
 
 

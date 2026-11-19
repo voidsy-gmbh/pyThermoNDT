@@ -91,6 +91,7 @@ class StorageTestContext:
         num_files: int | None = None,
         listing_ttl: float | None = None,
         file_filter: Callable[[FileInfo], bool] | None = None,
+        download_files: bool = False,
     ) -> BaseReader:
         """Create a reader and immediately register its lazy backend."""
         reader: BaseReader
@@ -108,6 +109,7 @@ class StorageTestContext:
                 prefix="",
                 parser=parser,
                 num_files=num_files,
+                download_files=download_files,
                 listing_ttl=listing_ttl,
                 file_filter=file_filter,
             )
@@ -119,6 +121,7 @@ class StorageTestContext:
                 connection_string=AZURE_CONNECTION_STRING,
                 parser=parser,
                 num_files=num_files,
+                download_files=download_files,
                 listing_ttl=listing_ttl,
                 file_filter=file_filter,
             )

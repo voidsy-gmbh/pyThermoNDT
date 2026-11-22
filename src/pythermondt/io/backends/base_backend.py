@@ -83,9 +83,11 @@ class BaseBackend(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def download_file(self, source_path: str, destination_path: str) -> None:
-        """Directly download a file from the source to the destination path.
+    def copy(self, source_uri: str, destination_path: str) -> None:
+        """Copy a file to the local filesystem without removing the source.
 
-        This is used for remote sources to download files directly to the local filesystem.
+        Args:
+            source_uri: Source URI or backend-specific path.
+            destination_path: Local filesystem path, not a remote URI. Existing files are overwritten.
         """
         raise NotImplementedError("Subclasses must implement this method")

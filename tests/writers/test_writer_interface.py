@@ -1,15 +1,17 @@
 from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from pythermondt.data import DataContainer, container_diff
-from pythermondt.io import LocalBackend
+from pythermondt.io import AzureBlobBackend, LocalBackend, S3Backend
 from pythermondt.io.parsers import HDF5Parser
-from pythermondt.writers import LocalWriter
+from pythermondt.readers import LocalReader
+from pythermondt.writers import AzureBlobWriter, LocalWriter, S3Writer
 from tests.support.storage import StorageTestContext
+from tests.support.storage.context import AWS_BUCKET, AZURE_ACCOUNT_URL, AZURE_CONNECTION_STRING, AZURE_CONTAINER
 from tests.utils import format_container_diff
 from tests.writers.conftest import HDF5TestCorpus
 
@@ -138,3 +140,86 @@ def test_process_parallel_rejects_invalid_file_name(storage_context: StorageTest
 
     with pytest.raises(ValueError, match="Invalid file name at index 0:"):
         writer.process_parallel(reader, keep_file_names=True)
+
+
+@pytest.mark.parametrize("keep_file_names", [False, True])
+@pytest.mark.parametrize("file_name_pattern", ["{index}", "copy_{index}", "copy"])
+@pytest.mark.parametrize("num_workers", [1, 2])
+def test_process_parallel_raw_copy_to_local(
+    storage_context: StorageTestContext,
+    tmp_path: Path,
+    keep_file_names: bool,
+    file_name_pattern: str,
+    num_workers: int,
+):
+    """Copy unchanged bytes and mixed extensions from every backend without parsing or buffering."""
+    files = {"a space%20.mat": b"\x00\xffnot a MAT file", "b.h5": b"not an HDF5 file"}
+    storage_context.prepare_files(files)
+    reader = storage_context.make_reader(parser=None)
+    writer = LocalWriter(str(tmp_path / "copies"))
+
+    with (
+        patch.object(reader, "read_file", side_effect=AssertionError("Must not parse")),
+        patch.object(reader.backend, "read_file", side_effect=AssertionError("Must not buffer")),
+    ):
+        writer.process_parallel(
+            reader,
+            raw_copy=True,
+            keep_file_names=keep_file_names,
+            file_name_pattern=file_name_pattern,
+            num_workers=num_workers,
+            compression="gzip",
+            compression_opts=9,
+        )
+
+    pattern = file_name_pattern if "{index}" in file_name_pattern else file_name_pattern + "_{index}"
+    expected = {
+        name if keep_file_names else pattern.replace("{index}", str(index)) + Path(name).suffix: content
+        for index, (name, content) in enumerate(files.items())
+    }
+    assert {file.name: file.read_bytes() for file in (tmp_path / "copies").iterdir()} == expected
+
+
+@pytest.mark.parametrize("storage_context", [S3Backend, AzureBlobBackend], indirect=True)
+@pytest.mark.parametrize("local_source", [False, True])
+def test_process_parallel_raw_copy_to_remote(storage_context: StorageTestContext, tmp_path: Path, local_source: bool):
+    """Copy local and remote sources to remote destinations with a prefix and no format conversion."""
+    name, content = "source %20.mat", b"\x00\xffunchanged"
+    if local_source:
+        source = tmp_path / name
+        source.write_bytes(content)
+        reader = LocalReader(str(source))
+    else:
+        storage_context.prepare_file(name, content)
+        reader = storage_context.make_reader(parser=None)
+
+    writer = (
+        S3Writer(AWS_BUCKET, "copies")
+        if isinstance(storage_context.backend, S3Backend)
+        else AzureBlobWriter(AZURE_ACCOUNT_URL, AZURE_CONTAINER, "copies", connection_string=AZURE_CONNECTION_STRING)
+    )
+    try:
+        with patch.object(reader, "read_file", side_effect=AssertionError("Must not parse")):
+            writer.process_parallel(reader, raw_copy=True, keep_file_names=True, num_workers=2)
+        destination = storage_context.canonical_path(f"copies/{name}")
+        assert storage_context.backend.read_file(destination).file_obj.read() == content
+    finally:
+        writer.backend.close()
+        reader.backend.close()
+
+
+@pytest.mark.parametrize("keep_file_names", [False, True])
+@pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
+def test_process_parallel_raw_copy_snapshots_listing(
+    storage_context: StorageTestContext, tmp_path: Path, keep_file_names: bool
+):
+    """Use one discovery snapshot even when the reader refreshes its listing on every access."""
+    source_uri = storage_context.prepare_file("original.mat", b"original")
+    reader = storage_context.make_reader(parser=None, listing_ttl=0)
+    writer = LocalWriter(str(tmp_path / "copies"))
+
+    with patch.object(reader.backend, "get_file_list", side_effect=[[source_uri], []]) as listing:
+        writer.process_parallel(reader, raw_copy=True, keep_file_names=keep_file_names, num_workers=2)
+    listing.assert_called_once()
+    name = "original.mat" if keep_file_names else "0.mat"
+    assert (tmp_path / "copies" / name).read_bytes() == b"original"

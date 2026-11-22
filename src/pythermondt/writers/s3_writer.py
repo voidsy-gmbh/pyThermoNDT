@@ -51,8 +51,11 @@ class S3Writer(BaseWriter):
             file_name += ".hdf5"
 
         # Writer constructs full key with prefix
-        full_key = f"{self.__prefix}/{file_name}" if self.__prefix else file_name
+        full_key = self._get_destination_path(file_name)
 
         # Backend handles everything - just pass the key
         data = container.serialize_to_hdf5(compression, compression_opts)
         self.backend.write_file(IOPathWrapper(data), full_key)
+
+    def _get_destination_path(self, file_name: str) -> str:
+        return f"{self.__prefix}/{file_name}" if self.__prefix else file_name

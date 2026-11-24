@@ -1,7 +1,8 @@
 import io
+import logging
 import tarfile
 import xml.etree.ElementTree as ET
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from re import escape
 
 import numpy as np
@@ -9,6 +10,7 @@ import pytest
 import torch
 
 from pythermondt.io.parsers import EdevisParser
+from pythermondt.io.parsers.edevis_parser import extract_metadata_from_xml
 from pythermondt.io.utils import IOPathWrapper
 
 # Edevis stores each frame with a binary header before the pixel data; the parser infers its size.
@@ -23,6 +25,8 @@ def _build_edevis_file(
     frame_indices: Sequence[int] | None = None,
     frame_names: Sequence[str] | None = None,
     lut_celsius: np.ndarray | None = None,
+    remove: Sequence[str] = (),
+    edit_content: Callable[[ET.Element], object] | None = None,
 ) -> IOPathWrapper:
     """Build a minimal single-sequence edevis TAR archive.
 
@@ -33,6 +37,8 @@ def _build_edevis_file(
         frame_indices: Camera FrameIndex per frame; defaults to 0, 1, ...
         frame_names: TAR member names; defaults to "sequence0/f<FrameIndex>.bin".
         lut_celsius: 65536 float32 temperatures in degrees Celsius, stored as calibration data.
+        remove: XML element paths to delete from content.xml, e.g. "Sequence/FrameInfo".
+        edit_content: Called with the content.xml root before it is written, for other changes.
     """
     height, width = frames[0].shape
     is_complex = np.iscomplexobj(frames[0])
@@ -77,6 +83,13 @@ def _build_edevis_file(
             frame = ET.SubElement(frame_info, "Frame", TarFileHeaderDataOffset=str(offset))
             ET.SubElement(frame, "FrameIndex").text = str(index)
             ET.SubElement(frame, "FourierFrequency" if is_complex else "FrameTime").text = domain_value
+        for path in remove:
+            parent_path, _, tag = path.rpartition("/")
+            parent = root.find(parent_path) if parent_path else root
+            for element in parent.findall(tag):
+                parent.remove(element)
+        if edit_content is not None:
+            edit_content(root)
         add("content.xml", ET.tostring(root))
     return IOPathWrapper(archive)
 
@@ -133,6 +146,46 @@ def test_lut_is_empty_without_calibration_data(intensity_frames: list[np.ndarray
 
 
 @pytest.mark.parametrize(
+    ("frames", "offset"),
+    [
+        ([np.zeros((1, 2), dtype="<f4")] * 2, None),
+        ([np.zeros((1, 2), dtype="<u2")] * 2, 0),
+    ],
+    ids=["float32-data", "zero-offset"],
+)
+def test_unsupported_lut_is_ignored_with_warning(
+    caplog: pytest.LogCaptureFixture, frames: list[np.ndarray], offset: int | None
+):
+    """A LUT only maps 16-bit raw values; other cases keep the empty LUT and log why."""
+
+    def set_offset(root: ET.Element) -> None:
+        if offset is not None:
+            root.find("Sequence/SequenceInfo").set("TarFileHeaderCalibrationOffset", str(offset))
+
+    archive = _build_edevis_file(
+        frames, ["0s", "0.02s"], lut_celsius=np.zeros(2**16, dtype=np.float32), edit_content=set_offset
+    )
+
+    with caplog.at_level(logging.WARNING, logger="pythermondt.io.parsers.edevis_parser"):
+        parsed = EdevisParser.parse(archive)
+
+    assert parsed.get_dataset("/MetaData/LookUpTable").numel() == 0
+    assert "Ignoring LUT of sequence 0" in caplog.text
+
+
+def test_other_sequences_are_logged(caplog: pytest.LogCaptureFixture, intensity_frames: list[np.ndarray]):
+    """Only sequence 0 is parsed; ignored sequences are reported."""
+    archive = _build_edevis_file(
+        intensity_frames, ["0s", "0.02s"], edit_content=lambda root: ET.SubElement(root, "Sequence", id="1")
+    )
+
+    with caplog.at_level(logging.INFO, logger="pythermondt.io.parsers.edevis_parser"):
+        EdevisParser.parse(archive)
+
+    assert "ignoring sequences [1]" in caplog.text
+
+
+@pytest.mark.parametrize(
     ("frame_indices", "frame_names"),
     [
         ([141603, 141604], ["sequence0/f141603.bin", "sequence0/f141604.bin"]),
@@ -176,6 +229,39 @@ def test_optional_acquisition_metadata(intensity_frames: list[np.ndarray], metad
         assert attributes.get(name) == metadata.get(name)
 
 
+@pytest.mark.parametrize(
+    ("frames", "domain_values", "message"),
+    [
+        ([np.zeros((1, 2), dtype="<u2")] * 2, ["0s", " "], "Sequence 0, frame 1 seems corrupted! No FrameTime found"),
+        (
+            [np.zeros((1, 2), dtype=np.complex64)] * 2,
+            ["0.1Hz", ""],
+            "Sequence 0, frame 1 seems corrupted! No FourierFrequency found",
+        ),
+    ],
+    ids=["frame-time", "fourier-frequency"],
+)
+def test_empty_domain_value_raises(frames: list[np.ndarray], domain_values: list[str], message: str):
+    """A frame without its time or frequency would otherwise get the domain value 0."""
+    with pytest.raises(ValueError, match=escape(message)):
+        EdevisParser.parse(_build_edevis_file(frames, domain_values))
+
+
+@pytest.mark.parametrize(
+    ("target_fields", "expected"),
+    [
+        (["Window", "Missing", "Comment"], {"Window": "0,0,2,1"}),
+        (None, {"Window": "0,0,2,1", "Lens": "Unknown"}),
+    ],
+    ids=["selected-fields", "all-fields"],
+)
+def test_extract_metadata_from_xml(target_fields: list[str] | None, expected: dict[str, str]):
+    """Fields are stripped; missing and empty fields are skipped, also when they come first."""
+    info = ET.fromstring("<SequenceInfo><Comment/><Window> 0,0,2,1 </Window><Lens>Unknown</Lens></SequenceInfo>")
+
+    assert extract_metadata_from_xml(info, target_fields) == expected
+
+
 def test_empty_file_raises():
     """An empty buffer is rejected before archive parsing."""
     with pytest.raises(ValueError, match=escape("The given BytesIO object is empty.")):
@@ -187,23 +273,48 @@ def test_empty_file_raises():
     [
         ({"sequence_info": {"BitDepth": "8"}}, "Unsupported BitDepth: 8 for DataType: 2"),
         ({"sequence_info": {"DataType": "7"}}, "Unsupported DataType: 7"),
+        ({"sequence_info": {"DataType": "0"}}, "Shearography Image data type is not implemented yet."),
+        ({"sequence_info": {"DataType": "5"}}, "Temperature Image data type is not implemented yet."),
         ({"frame_names": ["sequence0/other0.bin", "sequence0/other1.bin"]}, "Frames in sequence 0 seem corrupted"),
     ],
-    ids=["bit-depth", "data-type", "missing-frame-file"],
+    ids=["bit-depth", "data-type", "shearography", "temperature", "missing-frame-file"],
 )
 def test_invalid_archive_raises(intensity_frames: list[np.ndarray], kwargs: dict, message: str):
-    """Invalid sequence settings and missing frame files raise descriptive errors."""
+    """Invalid or unsupported sequence settings and missing frame files raise descriptive errors."""
     with pytest.raises(ValueError, match=escape(message)):
         EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"], **kwargs))
 
 
-def test_archive_without_content_raises():
-    """Archives without content.xml are reported as corrupted."""
+@pytest.mark.parametrize(
+    ("remove", "message"),
+    [
+        ("FileInfo", "No FileInfo node found"),
+        ("Sequence", "No Sequence node found"),
+        ("Sequence/SequenceInfo", "Sequence 0 seems corrupted! No SequenceInfo node found"),
+        ("Sequence/SequenceInfo/Window", "Sequence 0 seems corrupted! No Window node found"),
+        ("Sequence/FrameInfo", "Sequence 0 seems corrupted! No FrameInfo node found"),
+        ("Sequence/FrameInfo/Frame", "Sequence 0 seems corrupted! No Frame nodes found"),
+    ],
+    ids=["file-info", "sequence", "sequence-info", "window", "frame-info", "frames"],
+)
+def test_missing_xml_part_raises(intensity_frames: list[np.ndarray], remove: str, message: str):
+    """Each required part of content.xml is checked and named in the error."""
+    with pytest.raises(ValueError, match=escape(message)):
+        EdevisParser.parse(_build_edevis_file(intensity_frames, ["0s", "0.02s"], remove=[remove]))
+
+
+@pytest.mark.parametrize("content_type", [None, tarfile.DIRTYPE], ids=["missing", "directory"])
+def test_archive_without_content_raises(content_type: bytes | None):
+    """Archives without a readable content.xml are reported as corrupted."""
     archive = io.BytesIO()
     with tarfile.open(fileobj=archive, mode="w") as tar:
         member = tarfile.TarInfo("sequence0/f0.bin")
         member.size = 4
         tar.addfile(member, io.BytesIO(bytes(4)))
+        if content_type is not None:
+            content = tarfile.TarInfo("content.xml")
+            content.type = content_type
+            tar.addfile(content)
 
     with pytest.raises(ValueError, match=escape("content.xml not found")):
         EdevisParser.parse(IOPathWrapper(archive))

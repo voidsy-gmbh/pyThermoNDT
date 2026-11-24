@@ -38,8 +38,12 @@ def _select_pairs(pairs: tuple[FilePair, ...], selected_path: str) -> list[FileP
 
 def _regenerate_pair(reader: AzureBlobReader, pair: FilePair, output: Path) -> bool:
     """Save new or changed output locally; return True only after a successful write."""
-    # Always compare against the current Azure state, unlike the test session cache.
-    reader.sync(file_paths=[pair.source_uri, pair.expected_uri] if pair.has_expected else [pair.source_uri])
+    # Always compare against the current Azure state, unlike the test session cache. sync() skips files whose
+    # identity check fails and keeps stale copies, so check first and let failures stop this pair.
+    uris = [pair.source_uri, pair.expected_uri] if pair.has_expected else [pair.source_uri]
+    for uri in uris:
+        reader.backend.get_file_identity(uri)
+    reader.sync(file_paths=uris)
     source_container = reader.read_file(pair.source_uri)
     if pair.has_expected:
         differences = list(container_diff(reader.read_file(pair.expected_uri), source_container))

@@ -61,23 +61,72 @@ def _regenerate_pair(reader: AzureBlobReader, pair: FilePair, output: Path) -> b
     return True
 
 
+def _parse_selection(answer: str, count: int) -> list[int]:
+    """Parse "all", "1,5" or "2-4" into sorted zero-based indices; an empty answer selects nothing.
+
+    Raises:
+        ValueError: If a part is not a number or range within 1..count.
+    """
+    answer = answer.strip().lower()
+    if answer in {"", "none", "n", "q"}:
+        return []
+    if answer in {"all", "a"}:
+        return list(range(count))
+    indices: set[int] = set()
+    for part in answer.split(","):
+        part = part.strip()
+        start, _, end = part.partition("-")
+        try:
+            first, last = int(start), int(end or start)
+        except ValueError:
+            hint = "; separate numbers with commas" if " " in part else ""
+            raise ValueError(f"{part!r} is not a number or range{hint}") from None
+        if first > last:
+            raise ValueError(f"{part!r} is a reversed range")
+        if first < 1 or last > count:
+            raise ValueError(f"{part!r} is outside 1-{count}")
+        indices.update(range(first - 1, last))
+    return sorted(indices)
+
+
+def _ask(prompt: str) -> str:
+    """Return the answer, or an empty string on Ctrl+C or closed input, which cancels."""
+    try:
+        return input(prompt)
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return ""
+
+
 def _upload_changed(config: RemoteTestConfig, changed_outputs: list[tuple[FilePair, Path]]) -> int:
-    """Require confirmation before sequential uploads without automatic rollback."""
+    """Let the user select files, confirm, then upload sequentially without automatic rollback."""
     container_uri = f"az://{config.container_name}/"
-    uploads = [(pair.expected_uri.removeprefix(container_uri), output) for pair, output in changed_outputs]
+    candidates = [(pair.expected_uri.removeprefix(container_uri), output) for pair, output in changed_outputs]
     print("\nFiles to upload:")
-    for (pair, _), (blob_name, output) in zip(changed_outputs, uploads, strict=True):
-        print(f"  {output} -> az://{config.container_name}/{blob_name}{'' if pair.has_expected else ' (new)'}")
+    for number, ((pair, _), (blob_name, output)) in enumerate(zip(changed_outputs, candidates, strict=True), 1):
+        print(f"  [{number}] {output} -> {container_uri}{blob_name}{'' if pair.has_expected else ' (new)'}")
     print(
         "Warning: this overwrites existing expected outputs. Recovery depends on Azure retention/versioning settings."
     )
-    try:
-        answer = input(f"Upload these {len(uploads)} files? [y/N] ")
-    except (EOFError, KeyboardInterrupt):
-        answer = ""
-    if answer.strip().lower() not in {"y", "yes"}:
+    while True:
+        answer = _ask(
+            f"Select files to upload (e.g. 1,3 or 2-4, all), or press Enter to cancel [1-{len(candidates)}]: "
+        )
+        try:
+            selection = _parse_selection(answer, len(candidates))
+            break
+        except ValueError as error:
+            print(f"Invalid selection: {error}.")
+    # A second, explicit confirmation makes typos in the selection visible before Azure changes.
+    if selection:
+        print(
+            "Selected: "
+            + ", ".join(f"[{i + 1}] {candidates[i][1].parent.name}/{candidates[i][1].name}" for i in selection)
+        )
+    if not selection or _ask(f"Upload {len(selection)} file(s)? [y/N] ").strip().lower() not in {"y", "yes"}:
         print("\nUpload cancelled. Local outputs kept. Azure was not modified.")
         return 0
+    uploads = [candidates[i] for i in selection]
 
     uploaded = 0
     try:

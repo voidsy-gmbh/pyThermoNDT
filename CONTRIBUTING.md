@@ -138,7 +138,7 @@ Omit the path to select all files. Shell variables override `.env`; `REMOTE_TEST
 
 The tool prints differences and saves new or changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. Each report names `container1`, the stored expected output, and `container2`, the parsed source file.
 
-By default, Azure is read-only. Add `--upload` to list changed destinations and ask for confirmation after regeneration. Inspect the local files before answering `y`; the default is no. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
+By default, Azure is read-only. Add `--upload` to get a numbered list of new and changed files after regeneration. Select files as `1,3`, `2-4` or `all`, then confirm with `y`; Enter cancels. Inspect the local files first. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
 
 To add a sample, upload it as `source<N>.<ext>` and run the tool: it creates `expected<N>.hdf5` as a new output. Until that file exists, the integration test for the sample fails.
 

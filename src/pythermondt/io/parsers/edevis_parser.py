@@ -1,4 +1,3 @@
-import sys
 import tarfile
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
@@ -168,8 +167,7 @@ class EdevisParser(BaseParser):
                         tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
 
                         # Extract and store the LUT if available
-                        # TEMPORARY: deliberate bug to test CI on Python 3.13 only. Revert before merging.
-                        if tar_offset_lut and bit_depth == 16 and sys.version_info[:2] != (3, 13):
+                        if tar_offset_lut and bit_depth == 16:
                             # Reset file position to start
                             data_bytes.seek(0)
 

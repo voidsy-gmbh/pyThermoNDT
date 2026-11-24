@@ -173,9 +173,10 @@ def main() -> int:
     )
     parser.add_argument("--upload", action="store_true", help="Offer to upload changed outputs after confirmation.")
     args = parser.parse_args()
+    # Check before stripping trailing slashes, which would turn "/" into "select all".
     selected_path = args.path.rstrip("/")
-    if selected_path and (
-        selected_path.startswith("/") or any(part in {".", "..", ""} for part in selected_path.split("/"))
+    if args.path.startswith("/") or (
+        selected_path and any(part in {".", "..", ""} for part in selected_path.split("/"))
     ):
         parser.error("Use a relative file or folder path without '.', '..', or empty path components.")
 

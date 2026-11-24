@@ -10,7 +10,7 @@ from azure.core.exceptions import ClientAuthenticationError
 
 import tests.support.integration_data as integration_data
 from pythermondt.data import DataContainer
-from tests.support.integration_data import FilePair, folder_readers, load_file_pairs, pair_files
+from tests.support.integration_data import FilePair, PairingError, folder_readers, load_file_pairs, pair_files
 from tests.support.remote_data import RemoteTestConfig
 from tests.support.storage.azure import mocked_azure_blob_storage
 
@@ -59,6 +59,14 @@ def test_pair_files_marks_sources_without_expected_output():
         _pair("edevis", "2.di", has_expected=False),
         _pair("simulation", "1.mat", has_expected=False),
     )
+
+
+def test_pair_files_rejects_sources_sharing_a_case_name():
+    """Two sources for one expected output would compare and upload the wrong file; name both."""
+    paths = ["edevis/source1.di", "edevis/source1.OTvis", "edevis/expected1.hdf5"]
+
+    with pytest.raises(PairingError, match=r"edevis: source1\.OTvis, source1\.di share expected1\.hdf5"):
+        pair_files(paths, ROOT)
 
 
 @pytest.mark.parametrize(
@@ -150,6 +158,20 @@ def test_discovery_failure_returns_safe_error(error: Exception):
     assert data.pairs == ()
     assert data.error is not None and type(error).__name__ in data.error
     assert "secret-token" not in data.error
+
+
+def test_pairing_error_is_reported_with_file_names():
+    """Pairing errors contain only blob names, so discovery reports them instead of a generic message."""
+    integration_data.collect_integration_data.cache_clear()
+    with (
+        patch.object(integration_data, "cloud_skip_reason", return_value=None),
+        patch.object(integration_data, "load_remote_config"),
+        patch.object(integration_data, "load_file_pairs", side_effect=PairingError("edevis: a, b share c")),
+    ):
+        data = integration_data.collect_integration_data()
+    integration_data.collect_integration_data.cache_clear()
+
+    assert data.error == "edevis: a, b share c"
 
 
 def test_discovery_without_pairs_returns_error():

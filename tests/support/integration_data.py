@@ -18,6 +18,10 @@ from tests.support.remote_data import RemoteTestConfig, cloud_skip_reason, load_
 INTEGRATION_PREFIX = "integration"
 
 
+class PairingError(ValueError):
+    """Integration file names that cannot be paired unambiguously; the message is safe to show."""
+
+
 @dataclass(frozen=True)
 class FilePair:
     """Source file and its expected HDF5 output in one parser folder.
@@ -76,6 +80,8 @@ def collect_integration_data() -> IntegrationData:
     try:
         config = load_remote_config()
         reader, pairs = load_file_pairs(config)
+    except PairingError as error:
+        return IntegrationData(error=str(error))
     except (AzureError, RuntimeError, ValueError, OSError) as error:
         return IntegrationData(
             error=f"Remote integration discovery failed ({type(error).__name__}). "
@@ -103,15 +109,22 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
     Returns:
         One pair per source, sorted by id. Sources without expected output have ``has_expected=False``.
         Files outside direct parser folders and expected outputs without source are ignored.
+
+    Raises:
+        PairingError: If several sources share a case name, e.g. source1.di and source1.OTvis.
     """
     pairs = []
     for folder, names in _group_by_folder(relative_paths).items():
-        for name in names:
-            if not name.startswith("source"):
-                continue
-            expected_name = f"expected{name.removeprefix('source').rsplit('.', 1)[0]}.hdf5"
+        sources_by_expected: dict[str, list[str]] = {}
+        for name in sorted(names):
+            if name.startswith("source"):
+                expected_name = f"expected{name.removeprefix('source').rsplit('.', 1)[0]}.hdf5"
+                sources_by_expected.setdefault(expected_name, []).append(name)
+        for expected_name, sources in sources_by_expected.items():
+            if len(sources) > 1:
+                raise PairingError(f"{folder}: {', '.join(sources)} share {expected_name}. Rename one case.")
             folder_uri = f"{root_uri}{folder}/"
-            pairs.append(FilePair(folder, folder_uri + name, folder_uri + expected_name, expected_name in names))
+            pairs.append(FilePair(folder, folder_uri + sources[0], folder_uri + expected_name, expected_name in names))
     return tuple(sorted(pairs, key=lambda pair: pair.id))
 
 

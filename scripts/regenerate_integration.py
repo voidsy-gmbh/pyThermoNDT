@@ -14,7 +14,7 @@ sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from pythermondt.data import container_diff  # noqa: E402
 from pythermondt.readers import AzureBlobReader  # noqa: E402
-from tests.support.integration_data import FilePair, load_file_pairs  # noqa: E402
+from tests.support.integration_data import FilePair, PairingError, load_file_pairs  # noqa: E402
 from tests.support.remote_data import RemoteTestConfig  # noqa: E402
 from tests.utils import format_container_diff  # noqa: E402
 
@@ -183,6 +183,9 @@ def main() -> int:
         config = _LocalTestConfig()
         reader, pairs = load_file_pairs(config)
         selected_pairs = _select_pairs(pairs, selected_path)
+    except PairingError as error:
+        print(f"Discovery failed: {error}", file=sys.stderr)
+        return 1
     except Exception as error:
         # Azure exception messages can contain credentials or signed URLs.
         print(f"Discovery failed ({type(error).__name__}). Check TEST_* settings and Azure access.", file=sys.stderr)

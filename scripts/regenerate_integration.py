@@ -194,6 +194,11 @@ def main() -> int:
         parser.error(f"No integration source files match {args.path!r} relative to the integration root.")
 
     pair_outputs = [(pair, args.output / pair.folder / pair.expected_name) for pair in selected_pairs]
+    # Discovery rejects unsafe names; this also catches symlinked subfolders before deleting or writing.
+    output_root = args.output.resolve()
+    for _, output in pair_outputs:
+        if not output.resolve().is_relative_to(output_root):
+            parser.error(f"Refusing to write {output}: it resolves outside {output_root}.")
     # Remove results of earlier runs, so the folder shows only this run for the selected pairs.
     for _, output in pair_outputs:
         output.unlink(missing_ok=True)

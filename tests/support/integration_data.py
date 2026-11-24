@@ -111,7 +111,8 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
         Files outside direct parser folders and expected outputs without source are ignored.
 
     Raises:
-        PairingError: If several sources share a case name, e.g. source1.di and source1.OTvis.
+        PairingError: If several sources share a case name, e.g. source1.di and source1.OTvis, or a path is
+            unsafe as a local path.
     """
     pairs = []
     for folder, names in _group_by_folder(relative_paths).items():
@@ -175,11 +176,18 @@ def _integration_prefix(config: RemoteTestConfig) -> str:
 
 
 def _group_by_folder(relative_paths: Iterable[str]) -> dict[str, set[str]]:
-    """Group file names by direct parser folder; ignore top-level and nested files."""
+    """Group file names by direct parser folder; ignore top-level and nested files.
+
+    Raises:
+        PairingError: If a folder or file name would leave its folder as a local path, e.g. "..".
+    """
     grouped: dict[str, set[str]] = {}
     for path in relative_paths:
         folder, _, name = path.partition("/")
         if folder and name and "/" not in name:
+            # Blob names may contain these, but tools use them as local path components.
+            if {folder, name} & {".", ".."} or "\\" in path:
+                raise PairingError(f"Unsafe integration file path {path!r}. Rename the blob.")
             grouped.setdefault(folder, set()).add(name)
     return grouped
 

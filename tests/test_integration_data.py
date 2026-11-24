@@ -69,6 +69,13 @@ def test_pair_files_rejects_sources_sharing_a_case_name():
         pair_files(paths, ROOT)
 
 
+@pytest.mark.parametrize("path", ["../source1.mat", "./source1.mat", "edevis/..", "edevis/source1\\..\\x.mat"])
+def test_pair_files_rejects_paths_that_escape_their_folder(path: str):
+    """Folder and file names are reused as local paths, so names that leave their folder are rejected."""
+    with pytest.raises(PairingError, match="Unsafe integration file path"):
+        pair_files([path], ROOT)
+
+
 @pytest.mark.parametrize(
     "paths",
     [

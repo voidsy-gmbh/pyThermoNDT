@@ -1,25 +1,29 @@
 """Discover and cache the Azure integration data shared by all end-to-end tests.
 
-Files under ``<TEST_PREFIX>/integration/<parser folder>/`` pair by case name: ``source<N>.<ext>`` with
-``expected<N>.hdf5``. All readers use the integration root as prefix, so they share one download cache.
+Files under ``<TEST_PREFIX>/integration/<parser folder>/`` keep their original names. Each source pairs with
+``<source filename>.expected.hdf5`` in the same folder. All readers share one download cache.
 """
 
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cache
+from os.path import splitext
 
 from azure.core.exceptions import AzureError
 
+from pythermondt.dataset import IndexedThermoDataset, ThermoDataset
 from pythermondt.io import FileInfo
+from pythermondt.io.parsers import get_all_supported_extensions
 from pythermondt.readers import AzureBlobReader
 from tests.support.remote_data import RemoteTestConfig, cloud_skip_reason, load_remote_config
 
 # Subfolder of the test data prefix that holds the integration data.
 INTEGRATION_PREFIX = "integration"
+EXPECTED_SUFFIX = ".expected.hdf5"
 
 
 class PairingError(ValueError):
-    """Integration file names that cannot be paired unambiguously; the message is safe to show."""
+    """Unsafe integration file paths; the message is safe to show."""
 
 
 @dataclass(frozen=True)
@@ -44,7 +48,7 @@ class FilePair:
 
     @property
     def id(self) -> str:
-        """Return the source path relative to the integration root, e.g. 'edevis/source3.di'."""
+        """Return the source path relative to the integration root, e.g. 'edevis/panel_run03.ThermoVis'."""
         return f"{self.folder}/{self.source_name}"
 
 
@@ -100,10 +104,10 @@ def load_file_pairs(config: RemoteTestConfig) -> tuple[AzureBlobReader, tuple[Fi
 
 
 def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, ...]:
-    """Pair source and expected files by case name.
+    """Pair sources with expected outputs named after the full source filename.
 
     Args:
-        relative_paths: File paths relative to the integration root, e.g. "edevis/source3.di".
+        relative_paths: File paths relative to the integration root, e.g. "edevis/panel_run03.ThermoVis".
         root_uri: URI of the integration root, ending with "/".
 
     Returns:
@@ -111,49 +115,48 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
         Files outside direct parser folders and expected outputs without source are ignored.
 
     Raises:
-        PairingError: If several sources share a case name, e.g. source1.di and source1.OTvis, or a path is
-            unsafe as a local path.
+        PairingError: If an integration file path is unsafe as a local path.
     """
+    supported_extensions = get_all_supported_extensions()
     pairs = []
     for folder, names in _group_by_folder(relative_paths).items():
-        sources_by_expected: dict[str, list[str]] = {}
-        for name in sorted(names):
-            if name.startswith("source"):
-                expected_name = f"expected{name.removeprefix('source').rsplit('.', 1)[0]}.hdf5"
-                sources_by_expected.setdefault(expected_name, []).append(name)
-        for expected_name, sources in sources_by_expected.items():
-            if len(sources) > 1:
-                raise PairingError(f"{folder}: {', '.join(sources)} share {expected_name}. Rename one case.")
-            folder_uri = f"{root_uri}{folder}/"
-            pairs.append(FilePair(folder, folder_uri + sources[0], folder_uri + expected_name, expected_name in names))
+        folder_uri = f"{root_uri}{folder}/"
+        for source_name in names:
+            if source_name.endswith(EXPECTED_SUFFIX) or splitext(source_name)[1] not in supported_extensions:
+                continue
+            expected_name = f"{source_name}{EXPECTED_SUFFIX}"
+            pairs.append(FilePair(folder, folder_uri + source_name, folder_uri + expected_name, expected_name in names))
     return tuple(sorted(pairs, key=lambda pair: pair.id))
 
 
-def folder_readers(
+def folder_datasets(
     config: RemoteTestConfig, pairs: Iterable[FilePair], folder: str
-) -> tuple[AzureBlobReader, AzureBlobReader]:
-    """Create source and expected readers for the complete pairs of one parser folder.
-
-    The readers reuse the shared download cache.
+) -> tuple[ThermoDataset, IndexedThermoDataset]:
+    """Create aligned datasets for the complete pairs of one parser folder.
 
     Raises:
-        RuntimeError: If the readers would not list the files in matching pair order.
+        RuntimeError: If a reader no longer lists a file from a complete pair.
     """
-    folder_pairs = [pair for pair in pairs if pair.folder == folder and pair.has_expected]
-    readers = []
-    for uris in ([pair.source_uri for pair in folder_pairs], [pair.expected_uri for pair in folder_pairs]):
-        reader = _make_reader(config, file_filter=_UriFilter(tuple(uris)))
-        # Datasets iterate in listing order, so a different order would compare unrelated files.
-        if reader.file_uris != uris:
-            raise RuntimeError(f"Reader order for {folder!r} does not match pairs: expected {uris}.")
-        readers.append(reader)
-    return readers[0], readers[1]
+    expected_by_source = {
+        pair.source_uri: pair.expected_uri for pair in pairs if pair.folder == folder and pair.has_expected
+    }
+    datasets = []
+    for uris in (frozenset(expected_by_source), frozenset(expected_by_source.values())):
+        reader = _make_reader(config, file_filter=_UriFilter(uris))
+        if missing := uris.difference(reader.file_uris):
+            raise RuntimeError(f"Reader for {folder!r} did not list paired files: {sorted(missing)}.")
+        datasets.append(ThermoDataset(reader))
+
+    source, expected = datasets
+    # Appending a suffix can change listing order when one filename starts with another.
+    expected_indices = {uri: index for index, uri in enumerate(expected.files)}
+    return source, IndexedThermoDataset(expected, [expected_indices[expected_by_source[uri]] for uri in source.files])
 
 
 class _UriFilter:
     """Picklable filter for exact blob URIs."""
 
-    def __init__(self, uris: tuple[str, ...]) -> None:
+    def __init__(self, uris: frozenset[str]) -> None:
         self.uris = uris
 
     def __call__(self, info: FileInfo) -> bool:

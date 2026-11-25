@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from pythermondt.data import container_diff
 from pythermondt.dataset import IndexedThermoDataset, ThermoDataset, container_collate, random_split
-from tests.support.integration_data import IntegrationData, collect_integration_data, folder_readers
+from tests.support.integration_data import IntegrationData, collect_integration_data, folder_datasets
 from tests.utils import format_container_diff
 
 pytestmark = pytest.mark.cloud
@@ -34,16 +34,13 @@ def _assert_same_containers(
 def test_training_pipeline(integration_data: IntegrationData, folder: str):
     """Dataset, random split and DataLoader must yield the same data for sources and expected outputs."""
     assert integration_data.config is not None
-    source_reader, expected_reader = folder_readers(integration_data.config, integration_data.pairs, folder)
-    source_dataset, expected_dataset = ThermoDataset(source_reader), ThermoDataset(expected_reader)
+    source_dataset, expected_dataset = folder_datasets(integration_data.config, integration_data.pairs, folder)
     _assert_same_containers(f"{folder} pipeline, dataset", source_dataset, expected_dataset)
 
-    # Equal seeds select the same indices on both sides, so subsets stay paired.
     source_splits = random_split(source_dataset, SPLIT_FRACTIONS, generator=torch.Generator().manual_seed(SPLIT_SEED))
-    expected_splits = random_split(
-        expected_dataset, SPLIT_FRACTIONS, generator=torch.Generator().manual_seed(SPLIT_SEED)
-    )
-    for split_name, source_split, expected_split in zip(("train", "test"), source_splits, expected_splits, strict=True):
+    source_indices = {uri: index for index, uri in enumerate(source_dataset.files)}
+    for split_name, source_split in zip(("train", "test"), source_splits, strict=True):
+        expected_split = IndexedThermoDataset(expected_dataset, [source_indices[uri] for uri in source_split.files])
         _assert_same_containers(f"{folder} pipeline, split {split_name}", source_split, expected_split)
 
         # Batch size 1: files of one folder may differ in shape and cannot be stacked.

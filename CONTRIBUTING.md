@@ -127,20 +127,22 @@ TEST_CONTAINER_NAME=<container>
 TEST_PREFIX=<prefix> # optional
 ```
 
-Authenticate with `az login`, then select a source file or parser folder relative to the integration root, `<TEST_PREFIX>/integration/`. Test IDs use the same paths, e.g. `test_file_format_matches_expected[edevis/source3.di]`:
+Authenticate with `az login`, then select a source file or parser folder relative to the integration root, `<TEST_PREFIX>/integration/`. Test IDs use the same paths, e.g. `test_file_format_matches_expected[edevis/panel_run03.ThermoVis]`:
 
 ```bash
-uv run scripts/regenerate_integration.py edevis/source3.di
-uv run scripts/regenerate_integration.py edevis --upload
+uv run scripts/regenerate_integration.py edevis/panel_run03.ThermoVis
+uv run scripts/regenerate_integration.py edevis/panel_run03.ThermoVis --upload
 ```
 
 Omit the path to select all files. Shell variables override `.env`; `REMOTE_TESTS=1` is not required.
 
-The tool prints differences and saves new or changed outputs under `expected-review/<type>/expected<N>.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. Each report names `container1`, the stored expected output, and `container2`, the parsed source file.
+The tool prints differences and saves new or changed outputs under `expected-review/<type>/<source filename>.expected.hdf5`; use `--output` for another folder. Each run replaces earlier review files of the selected pairs. Each report names `container1`, the stored expected output, and `container2`, the parsed source file.
 
-By default, Azure is read-only. Add `--upload` to get a numbered list of new and changed files after regeneration. Select files as `1,3`, `2-4` or `all`, then confirm with `y`; Enter cancels. Inspect the local files first. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
+By default, Azure is read-only. Add `--upload` to get a numbered list of new and changed files after regeneration. Select files as `1,3`, `2-4` or `all`, then confirm with `y`; Enter cancels. Uploads overwrite the current expected outputs, so enable Azure versioning for recovery.
 
-To add a sample, upload it as `source<N>.<ext>` and run the tool: it creates `expected<N>.hdf5` as a new output. Until that file exists, the integration test for the sample fails.
+To add a sample, upload it with its original filename. Run the tool without `--upload` and inspect the local output. Then rerun with `--upload` and confirm. The integration test fails until `<source filename>.expected.hdf5` exists next to the source in Azure.
+
+Before regenerating existing outputs, move old `expected<N>.hdf5` files out of the parser folders so the tool does not treat them as sources.
 
 Uploads require successful regeneration and confirmation. If an upload fails, earlier uploads are not undone. Local files are always kept.
 

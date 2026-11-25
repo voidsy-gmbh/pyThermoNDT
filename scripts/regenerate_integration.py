@@ -162,7 +162,8 @@ def main() -> int:
         "path",
         nargs="?",
         default="",
-        help="Source file or parser folder relative to the integration root, e.g. edevis/source3.di or edevis. "
+        help="Source file or parser folder relative to the integration root, "
+        "e.g. edevis/panel_run03.ThermoVis or edevis. "
         "Defaults to all files.",
     )
     parser.add_argument(

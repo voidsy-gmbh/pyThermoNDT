@@ -9,8 +9,9 @@ import torch
 from azure.core.exceptions import ClientAuthenticationError
 
 import tests.support.integration_data as integration_data
+from pythermondt.config import settings
 from pythermondt.data import DataContainer
-from tests.support.integration_data import FilePair, PairingError, folder_readers, load_file_pairs, pair_files
+from tests.support.integration_data import FilePair, PairingError, folder_datasets, load_file_pairs, pair_files
 from tests.support.remote_data import RemoteTestConfig
 from tests.support.storage.azure import mocked_azure_blob_storage
 
@@ -30,43 +31,54 @@ def _measurement(value: int) -> bytes:
     return container.serialize_to_hdf5().getvalue()
 
 
-def _pair(folder: str, name: str, has_expected: bool = True) -> FilePair:
-    expected_uri = f"{ROOT}{folder}/expected{name.split('.')[0]}.hdf5"
-    return FilePair(folder, f"{ROOT}{folder}/source{name}", expected_uri, has_expected)
-
-
-def test_pair_files_by_case_name():
-    """Sources pair with expected outputs by case name, including alphanumeric names."""
+def test_pair_files_by_full_source_filename():
+    """Original names stay visible and same-stem measurements get separate expected outputs."""
     paths = [
-        "simulation/source2.mat",
-        "simulation/expected1.hdf5",
-        "simulation/source1.mat",
-        "simulation/expected2.hdf5",
+        "edevis/Panel A.run03.di.expected.hdf5",
+        "edevis/Panel A.run03.ThermoVis",
+        "edevis/Panel A.run03.di",
+        "edevis/Panel A.run03.ThermoVis.expected.hdf5",
+        "simulation/panel_run02.mat",
+        "simulation/panel_run02.mat.expected.hdf5",
     ]
-    paths += ["edevis/sourceA.di", "edevis/expectedA.hdf5"]
 
     pairs = pair_files(paths, ROOT)
 
-    assert pairs == (_pair("edevis", "A.di"), _pair("simulation", "1.mat"), _pair("simulation", "2.mat"))
-    assert [pair.id for pair in pairs] == ["edevis/sourceA.di", "simulation/source1.mat", "simulation/source2.mat"]
+    assert pairs == (
+        FilePair(
+            "edevis", ROOT + "edevis/Panel A.run03.ThermoVis", ROOT + "edevis/Panel A.run03.ThermoVis.expected.hdf5"
+        ),
+        FilePair("edevis", ROOT + "edevis/Panel A.run03.di", ROOT + "edevis/Panel A.run03.di.expected.hdf5"),
+        FilePair("simulation", ROOT + "simulation/panel_run02.mat", ROOT + "simulation/panel_run02.mat.expected.hdf5"),
+    )
+    assert [pair.id for pair in pairs] == [
+        "edevis/Panel A.run03.ThermoVis",
+        "edevis/Panel A.run03.di",
+        "simulation/panel_run02.mat",
+    ]
+
+
+def test_pair_files_does_not_pair_legacy_output():
+    """Only the new suffix identifies an expected output; other HDF5 files are sources."""
+    paths = ["simulation/source1.mat", "simulation/expected1.hdf5"]
+
+    assert pair_files(paths, ROOT) == (
+        FilePair(
+            "simulation", ROOT + "simulation/expected1.hdf5", ROOT + "simulation/expected1.hdf5.expected.hdf5", False
+        ),
+        FilePair("simulation", ROOT + "simulation/source1.mat", ROOT + "simulation/source1.mat.expected.hdf5", False),
+    )
 
 
 def test_pair_files_marks_sources_without_expected_output():
     """New sources stay visible; an expected output in a nested folder does not count."""
-    paths = ["simulation/source1.mat", "simulation/archive/expected1.hdf5", "edevis/source2.di"]
+    paths = ["simulation/panel_run03.mat", "simulation/archive/panel_run03.mat.expected.hdf5"]
 
     assert pair_files(paths, ROOT) == (
-        _pair("edevis", "2.di", has_expected=False),
-        _pair("simulation", "1.mat", has_expected=False),
+        FilePair(
+            "simulation", ROOT + "simulation/panel_run03.mat", ROOT + "simulation/panel_run03.mat.expected.hdf5", False
+        ),
     )
-
-
-def test_pair_files_rejects_sources_sharing_a_case_name():
-    """Two sources for one expected output would compare and upload the wrong file; name both."""
-    paths = ["edevis/source1.di", "edevis/source1.OTvis", "edevis/expected1.hdf5"]
-
-    with pytest.raises(PairingError, match=r"edevis: source1\.OTvis, source1\.di share expected1\.hdf5"):
-        pair_files(paths, ROOT)
 
 
 @pytest.mark.parametrize("path", ["../source1.mat", "./source1.mat", "edevis/..", "edevis/source1\\..\\x.mat"])
@@ -80,11 +92,12 @@ def test_pair_files_rejects_paths_that_escape_their_folder(path: str):
     "paths",
     [
         [],
-        ["simulation/expected1.hdf5"],
-        ["readme.txt", "source1.mat", "expected1.hdf5"],
-        ["simulation/archive/source1.mat", "simulation/archive/expected1.hdf5"],
+        ["simulation/panel_run03.mat.expected.hdf5"],
+        ["panel_run03.mat", "panel_run03.mat.expected.hdf5"],
+        ["simulation/archive/panel_run03.mat", "simulation/archive/panel_run03.mat.expected.hdf5"],
+        ["simulation/source_notes.txt", "edevis/panel_run03.thermovis"],
     ],
-    ids=["empty", "expected-only", "top-level", "nested"],
+    ids=["empty", "expected-only", "top-level", "nested", "unsupported"],
 )
 def test_pair_files_ignores_misplaced_files(paths: list[str]):
     """Only sources that are direct children of parser folders create pairs."""
@@ -96,12 +109,17 @@ def test_load_file_pairs_stays_inside_integration_root(prefix: str):
     """Only direct parser folders below the integration root form pairs; siblings and archives are ignored."""
     config = _config(prefix)
     root = f"{prefix}/integration/" if prefix else "integration/"
-    paths = ["edevis/expected1.hdf5", "edevis/source1.di", "simulation/expected1.hdf5", "simulation/source1.mat"]
-    ignored = ["simulation/archive/source2.mat", "simulation/archive/expected2.hdf5"]
+    paths = [
+        "edevis/panel_run03.ThermoVis.expected.hdf5",
+        "edevis/panel_run03.ThermoVis",
+        "simulation/panel_run02.mat.expected.hdf5",
+        "simulation/panel_run02.mat",
+    ]
+    ignored = ["simulation/archive/panel_run03.mat", "simulation/archive/panel_run03.mat.expected.hdf5"]
     with mocked_azure_blob_storage() as storage:
         storage.create_container(config.container_name)
         for path in [root + path for path in paths + ignored] + [
-            root.replace("integration/", "integration-old/") + paths[0]
+            root.replace("integration/", "integration-old/") + "edevis/panel_run04.ThermoVis"
         ]:
             storage.upload_blob(config.container_name, path, b"data")
 
@@ -109,44 +127,51 @@ def test_load_file_pairs_stays_inside_integration_root(prefix: str):
 
     root_uri = f"az://test-container/{root}"
     assert pairs == (
-        FilePair("edevis", root_uri + "edevis/source1.di", root_uri + "edevis/expected1.hdf5"),
-        FilePair("simulation", root_uri + "simulation/source1.mat", root_uri + "simulation/expected1.hdf5"),
+        FilePair("edevis", root_uri + paths[1], root_uri + paths[0]),
+        FilePair("simulation", root_uri + paths[3], root_uri + paths[2]),
     )
 
 
-def _upload_pairs(storage, folders: dict[str, list[str]]) -> tuple[FilePair, ...]:
-    for folder, names in folders.items():
-        for name in names:
-            storage.upload_blob("test-container", f"integration/{folder}/source{name}", _measurement(1))
-            storage.upload_blob(
-                "test-container", f"integration/{folder}/expected{name.split('.')[0]}.hdf5", _measurement(1)
-            )
-    return load_file_pairs(_config())[1]
-
-
-def test_folder_readers_list_one_folder_in_pair_order():
-    """Readers contain only complete pairs of their folder, in matching order."""
+def test_folder_datasets_align_complete_pairs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """The suffix reverses listing order for these names, but datasets still yield matching samples."""
+    monkeypatch.setattr(settings, "download_dir", str(tmp_path))
+    paths = {
+        "hdf5/Run 03.h5": 3,
+        "hdf5/Run 03.h5.expected.hdf5": 3,
+        "hdf5/Run 03.h5-backup.h5": 4,
+        "hdf5/Run 03.h5-backup.h5.expected.hdf5": 4,
+        "hdf5/Run 05.h5": 5,
+        "other/Run 06.h5": 6,
+        "other/Run 06.h5.expected.hdf5": 6,
+    }
     with mocked_azure_blob_storage() as storage:
         storage.create_container("test-container")
-        storage.upload_blob("test-container", "integration/simulation/source3.mat", _measurement(1))
-        pairs = _upload_pairs(storage, {"simulation": ["1.mat", "2.mat"], "simulation_large": ["1.mat"]})
+        for path, value in paths.items():
+            storage.upload_blob("test-container", f"integration/{path}", _measurement(value))
+        _, pairs = load_file_pairs(_config())
 
-        source_reader, expected_reader = folder_readers(_config(), pairs, "simulation")
+        source, expected = folder_datasets(_config(), pairs, "hdf5")
 
-        folder_pairs = [pair for pair in pairs if pair.folder == "simulation" and pair.has_expected]
-        assert len(folder_pairs) == 2
-        assert source_reader.file_uris == [pair.source_uri for pair in folder_pairs]
-        assert expected_reader.file_uris == [pair.expected_uri for pair in folder_pairs]
+        assert source.files == [ROOT + "hdf5/Run 03.h5", ROOT + "hdf5/Run 03.h5-backup.h5"]
+        assert expected.files == [
+            ROOT + "hdf5/Run 03.h5.expected.hdf5",
+            ROOT + "hdf5/Run 03.h5-backup.h5.expected.hdf5",
+        ]
+        for dataset in (source, expected):
+            assert [item.get_dataset("/Data/Tdata").item() for item in dataset] == [3, 4]
 
 
-def test_folder_readers_reject_pairs_in_different_order():
-    """Readers list files sorted, so pairs in another order would compare unrelated files."""
+def test_folder_datasets_reject_missing_files():
+    """A baseline that disappears after discovery must not silently drop part of the dataset."""
+    source = "simulation/panel_run03.mat"
+    expected = "simulation/panel_run03.mat.expected.hdf5"
+    pairs = (FilePair("simulation", ROOT + source, ROOT + expected),)
     with mocked_azure_blob_storage() as storage:
         storage.create_container("test-container")
-        pairs = _upload_pairs(storage, {"simulation": ["1.mat", "2.mat"]})
+        storage.upload_blob("test-container", f"integration/{source}", b"data")
 
-        with pytest.raises(RuntimeError, match="does not match pairs"):
-            folder_readers(_config(), pairs[::-1], "simulation")
+        with pytest.raises(RuntimeError, match=r"did not list paired files: .*panel_run03\.mat\.expected\.hdf5"):
+            folder_datasets(_config(), pairs, "simulation")
 
 
 @pytest.mark.parametrize(
@@ -169,16 +194,17 @@ def test_discovery_failure_returns_safe_error(error: Exception):
 
 def test_pairing_error_is_reported_with_file_names():
     """Pairing errors contain only blob names, so discovery reports them instead of a generic message."""
+    message = "Unsafe integration file path '../panel_run03.mat'. Rename the blob."
     integration_data.collect_integration_data.cache_clear()
     with (
         patch.object(integration_data, "cloud_skip_reason", return_value=None),
         patch.object(integration_data, "load_remote_config"),
-        patch.object(integration_data, "load_file_pairs", side_effect=PairingError("edevis: a, b share c")),
+        patch.object(integration_data, "load_file_pairs", side_effect=PairingError(message)),
     ):
         data = integration_data.collect_integration_data()
     integration_data.collect_integration_data.cache_clear()
 
-    assert data.error == "edevis: a, b share c"
+    assert data.error == message
 
 
 def test_discovery_without_pairs_returns_error():

@@ -1,5 +1,7 @@
 """Check that every sample file decodes to its expected HDF5 output."""
 
+import shlex
+
 import pytest
 
 from pythermondt.data import container_diff
@@ -16,9 +18,12 @@ PAIRS = collect_integration_data().pairs or (None,)
 def test_file_format_matches_expected(integration_data: IntegrationData, pair: FilePair):
     """Parse a source file and compare the container with its expected output."""
     if not pair.has_expected:
+        source_path = shlex.quote(pair.id)
         pytest.fail(
-            f"{pair.expected_name} is missing for {pair.source_uri}. Create it with: "
-            f"uv run scripts/regenerate_integration.py {pair.id} --upload",
+            f"{pair.expected_name} is missing for {pair.source_uri}. Generate it locally with:\n"
+            f"uv run scripts/regenerate_integration.py -- {source_path}\n"
+            "Inspect the local output, then rerun with:\n"
+            f"uv run scripts/regenerate_integration.py --upload -- {source_path}",
             pytrace=False,
         )
     assert integration_data.reader is not None

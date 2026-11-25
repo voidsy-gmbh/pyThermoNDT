@@ -66,6 +66,18 @@ def test_duplicate_indices_allowed(sample_dataset_three_files: ThermoDataset):
     assert len(indexed) == 4
 
 
+def test_items_follow_parent_indices(sample_dataset_three_files: ThermoDataset):
+    """Each item is the parent item at the given index, in the order of the indices."""
+    parent = sample_dataset_three_files
+    indexed = IndexedThermoDataset(parent, [2, 0])
+    assert parent[2] != parent[0], "Test needs distinct files to detect wrong indices"
+
+    assert indexed.files == [parent.files[2], parent.files[0]]
+    for i, parent_index in enumerate([2, 0]):
+        differences = list(container_diff(parent[parent_index], indexed[i]))
+        assert not differences, f"Item {i} differs from parent[{parent_index}]:\n{format_container_diff(differences)}"
+
+
 def test_transform_chain(local_reader_three_files: LocalReader, sample_transform: type[ThermoTransform]):
     """Test that additional transform is applied after parent's transform."""
     # Create transforms

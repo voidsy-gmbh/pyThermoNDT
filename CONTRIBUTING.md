@@ -142,8 +142,6 @@ By default, Azure is read-only. Add `--upload` to get a numbered list of new and
 
 To add a sample, upload it with its original filename. Run the tool without `--upload` and inspect the local output. Then rerun with `--upload` and confirm. The integration test fails until `<source filename>.expected.hdf5` exists next to the source in Azure.
 
-Before regenerating existing outputs, move old `expected<N>.hdf5` files out of the parser folders so the tool does not treat them as sources.
-
 Uploads require successful regeneration and confirmation. If an upload fails, earlier uploads are not undone. Local files are always kept.
 
 ### Performance Benchmarking

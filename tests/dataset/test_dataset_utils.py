@@ -42,12 +42,12 @@ def test_random_split_zero_fraction_produces_warning(sample_dataset_three_files:
 
 
 def test_random_split_remainder_distribution(sample_dataset_three_files: ThermoDataset):
-    """Test that remainder items are distributed round-robin when fractions don't divide evenly."""
+    """Distribute the remainder and include each file exactly once."""
     # 3 files with [0.5, 0.5]: floor(1.5)=1, floor(1.5)=1 => remainder=1, distributed to first split
-    splits = random_split(sample_dataset_three_files, [0.5, 0.5])
-    assert len(splits[0]) + len(splits[1]) == 3
-    assert len(splits[0]) == 2  # gets the remainder
-    assert len(splits[1]) == 1
+    first, second = random_split(sample_dataset_three_files, [0.5, 0.5])
+    assert len(first) == 2
+    assert len(second) == 1
+    assert sorted(first.files + second.files) == sorted(sample_dataset_three_files.files)
 
 
 def test_random_split_absolute_lengths_sum_too_small(sample_dataset_three_files: ThermoDataset):
@@ -97,15 +97,20 @@ def test_container_collate_single_path():
 
 
 def test_container_collate_multiple_paths():
-    """Test collating containers with multiple dataset paths."""
-    tdata = torch.randn(4, 4, 10)
-    mask = torch.ones(4, 4)
-    batch = [make_container(("/Data", "Tdata", tdata), ("/GroundTruth", "DefectMask", mask))]
-    fn = container_collate("/Data/Tdata", "/GroundTruth/DefectMask")
-    result = fn(batch)
-    assert len(result) == 2
-    assert result[0].shape == (1, 4, 4, 10)
-    assert result[1].shape == (1, 4, 4)
+    """Keep thermal values and timestamps in sample order."""
+    batch = [
+        make_container(
+            ("/Data", "Tdata", torch.tensor([[[1, 2]]])),
+            ("/MetaData", "DomainValues", torch.tensor([0.0, 0.5])),
+        ),
+        make_container(
+            ("/Data", "Tdata", torch.tensor([[[3, 4]]])),
+            ("/MetaData", "DomainValues", torch.tensor([0.0, 1.0])),
+        ),
+    ]
+    tdata, domain_values = container_collate("/Data/Tdata", "/MetaData/DomainValues")(batch)
+    assert tdata.tolist() == [[[[1, 2]]], [[[3, 4]]]]
+    assert domain_values.tolist() == [[0.0, 0.5], [0.0, 1.0]]
 
 
 def test_container_collate_missing_path():

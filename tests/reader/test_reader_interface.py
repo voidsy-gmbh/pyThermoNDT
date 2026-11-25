@@ -573,6 +573,15 @@ def test_sync_redownloads_only_changed_files(storage_context: StorageTestContext
         reader.sync(file_paths=list(uris.values()))
         storage_context.prepare_file("a.test", b"changed")
 
+        # A selected sync checks only the selected file; it is unchanged, so nothing is downloaded.
+        with (
+            patch.object(reader.backend, "get_file_identity", wraps=reader.backend.get_file_identity) as identity,
+            patch.object(reader.backend, "download_file", wraps=reader.backend.download_file) as download,
+        ):
+            reader.sync(file_paths=[uris["b.test"]])
+            assert [call.args[0] for call in identity.call_args_list] == [uris["b.test"]]
+            download.assert_not_called()
+
         with patch.object(reader.backend, "download_file", wraps=reader.backend.download_file) as download:
             reader.sync(file_paths=list(uris.values()))
             assert [call.args[0] for call in download.call_args_list] == [uris["a.test"]]

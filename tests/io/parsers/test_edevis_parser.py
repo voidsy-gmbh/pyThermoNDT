@@ -252,8 +252,9 @@ def test_empty_domain_value_raises(frames: list[np.ndarray], domain_values: list
     [
         (["Window", "Missing", "Comment"], {"Window": "0,0,2,1"}),
         (None, {"Window": "0,0,2,1", "Lens": "Unknown"}),
+        ([], {}),
     ],
-    ids=["selected-fields", "all-fields"],
+    ids=["selected-fields", "all-fields", "no-fields"],
 )
 def test_extract_metadata_from_xml(target_fields: list[str] | None, expected: dict[str, str]):
     """Fields are stripped; missing and empty fields are skipped, also when they come first."""

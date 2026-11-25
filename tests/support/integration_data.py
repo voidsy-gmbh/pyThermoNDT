@@ -11,8 +11,6 @@ from os.path import splitext
 
 from azure.core.exceptions import AzureError
 
-from pythermondt.dataset import IndexedThermoDataset, ThermoDataset
-from pythermondt.io import FileInfo
 from pythermondt.io.parsers import get_all_supported_extensions
 from pythermondt.readers import AzureBlobReader
 from tests.support.remote_data import RemoteTestConfig, cloud_skip_reason, load_remote_config
@@ -57,18 +55,12 @@ class IntegrationData:
     """Discovered file pairs with the shared reader, or a safe error message if discovery failed."""
 
     pairs: tuple[FilePair, ...] = ()
-    config: RemoteTestConfig | None = None
     reader: AzureBlobReader | None = None
     error: str | None = None
 
     @property
     def complete_pairs(self) -> tuple[FilePair, ...]:
         return tuple(pair for pair in self.pairs if pair.has_expected)
-
-    @property
-    def folders(self) -> tuple[str, ...]:
-        """Return parser folders with at least one complete pair."""
-        return tuple(sorted({pair.folder for pair in self.complete_pairs}))
 
 
 @cache
@@ -93,13 +85,19 @@ def collect_integration_data() -> IntegrationData:
         )
     if not pairs:
         return IntegrationData(error="No paired integration test files found in remote test data.")
-    return IntegrationData(pairs=pairs, config=config, reader=reader)
+    return IntegrationData(pairs=pairs, reader=reader)
 
 
 def load_file_pairs(config: RemoteTestConfig) -> tuple[AzureBlobReader, tuple[FilePair, ...]]:
     """List the integration root once and return the shared reader with all paired files."""
-    reader = _make_reader(config)
-    root_uri = f"az://{config.container_name}/{_integration_prefix(config)}"
+    prefix = f"{config.prefix}/{INTEGRATION_PREFIX}/" if config.prefix else f"{INTEGRATION_PREFIX}/"
+    reader = AzureBlobReader(
+        account_url=str(config.account_url),
+        container_name=config.container_name,
+        prefix=prefix,
+        download_files=True,
+    )
+    root_uri = f"az://{config.container_name}/{prefix}"
     return reader, pair_files((uri.removeprefix(root_uri) for uri in reader.file_uris), root_uri)
 
 
@@ -127,55 +125,6 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
             expected_name = f"{source_name}{EXPECTED_SUFFIX}"
             pairs.append(FilePair(folder, folder_uri + source_name, folder_uri + expected_name, expected_name in names))
     return tuple(sorted(pairs, key=lambda pair: pair.id))
-
-
-def folder_datasets(
-    config: RemoteTestConfig, pairs: Iterable[FilePair], folder: str
-) -> tuple[ThermoDataset, IndexedThermoDataset]:
-    """Create aligned datasets for the complete pairs of one parser folder.
-
-    Raises:
-        RuntimeError: If a reader no longer lists a file from a complete pair.
-    """
-    expected_by_source = {
-        pair.source_uri: pair.expected_uri for pair in pairs if pair.folder == folder and pair.has_expected
-    }
-    datasets = []
-    for uris in (frozenset(expected_by_source), frozenset(expected_by_source.values())):
-        reader = _make_reader(config, file_filter=_UriFilter(uris))
-        if missing := uris.difference(reader.file_uris):
-            raise RuntimeError(f"Reader for {folder!r} did not list paired files: {sorted(missing)}.")
-        datasets.append(ThermoDataset(reader))
-
-    source, expected = datasets
-    # Appending a suffix can change listing order when one filename starts with another.
-    expected_indices = {uri: index for index, uri in enumerate(expected.files)}
-    return source, IndexedThermoDataset(expected, [expected_indices[expected_by_source[uri]] for uri in source.files])
-
-
-class _UriFilter:
-    """Picklable filter for exact blob URIs."""
-
-    def __init__(self, uris: frozenset[str]) -> None:
-        self.uris = uris
-
-    def __call__(self, info: FileInfo) -> bool:
-        return info.path in self.uris
-
-
-def _make_reader(config: RemoteTestConfig, file_filter: _UriFilter | None = None) -> AzureBlobReader:
-    # The cache key includes the prefix, so every reader uses the integration root.
-    return AzureBlobReader(
-        account_url=str(config.account_url),
-        container_name=config.container_name,
-        prefix=_integration_prefix(config),
-        download_files=True,
-        file_filter=file_filter,
-    )
-
-
-def _integration_prefix(config: RemoteTestConfig) -> str:
-    return f"{config.prefix}/{INTEGRATION_PREFIX}/" if config.prefix else f"{INTEGRATION_PREFIX}/"
 
 
 def _group_by_folder(relative_paths: Iterable[str]) -> dict[str, set[str]]:

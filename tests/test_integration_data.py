@@ -5,13 +5,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import torch
 from azure.core.exceptions import ClientAuthenticationError
 
 import tests.support.integration_data as integration_data
-from pythermondt.config import settings
-from pythermondt.data import DataContainer
-from tests.support.integration_data import FilePair, PairingError, folder_datasets, load_file_pairs, pair_files
+from tests.support.integration_data import FilePair, PairingError, load_file_pairs, pair_files
 from tests.support.remote_data import RemoteTestConfig
 from tests.support.storage.azure import mocked_azure_blob_storage
 
@@ -22,13 +19,6 @@ def _config(prefix: str = "") -> RemoteTestConfig:
     return RemoteTestConfig(
         account_url="https://test.blob.core.windows.net", container_name="test-container", prefix=prefix
     )
-
-
-def _measurement(value: int) -> bytes:
-    container = DataContainer()
-    container.add_group("/", "Data")
-    container.add_dataset("/Data", "Tdata", torch.tensor([value]))
-    return container.serialize_to_hdf5().getvalue()
 
 
 def test_pair_files_by_full_source_filename():
@@ -132,48 +122,6 @@ def test_load_file_pairs_stays_inside_integration_root(prefix: str):
     )
 
 
-def test_folder_datasets_align_complete_pairs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """The suffix reverses listing order for these names, but datasets still yield matching samples."""
-    monkeypatch.setattr(settings, "download_dir", str(tmp_path))
-    paths = {
-        "hdf5/Run 03.h5": 3,
-        "hdf5/Run 03.h5.expected.hdf5": 3,
-        "hdf5/Run 03.h5-backup.h5": 4,
-        "hdf5/Run 03.h5-backup.h5.expected.hdf5": 4,
-        "hdf5/Run 05.h5": 5,
-        "other/Run 06.h5": 6,
-        "other/Run 06.h5.expected.hdf5": 6,
-    }
-    with mocked_azure_blob_storage() as storage:
-        storage.create_container("test-container")
-        for path, value in paths.items():
-            storage.upload_blob("test-container", f"integration/{path}", _measurement(value))
-        _, pairs = load_file_pairs(_config())
-
-        source, expected = folder_datasets(_config(), pairs, "hdf5")
-
-        assert source.files == [ROOT + "hdf5/Run 03.h5", ROOT + "hdf5/Run 03.h5-backup.h5"]
-        assert expected.files == [
-            ROOT + "hdf5/Run 03.h5.expected.hdf5",
-            ROOT + "hdf5/Run 03.h5-backup.h5.expected.hdf5",
-        ]
-        for dataset in (source, expected):
-            assert [item.get_dataset("/Data/Tdata").item() for item in dataset] == [3, 4]
-
-
-def test_folder_datasets_reject_missing_files():
-    """A baseline that disappears after discovery must not silently drop part of the dataset."""
-    source = "simulation/panel_run03.mat"
-    expected = "simulation/panel_run03.mat.expected.hdf5"
-    pairs = (FilePair("simulation", ROOT + source, ROOT + expected),)
-    with mocked_azure_blob_storage() as storage:
-        storage.create_container("test-container")
-        storage.upload_blob("test-container", f"integration/{source}", b"data")
-
-        with pytest.raises(RuntimeError, match=r"did not list paired files: .*panel_run03\.mat\.expected\.hdf5"):
-            folder_datasets(_config(), pairs, "simulation")
-
-
 @pytest.mark.parametrize(
     "error", [ClientAuthenticationError("secret-token"), RuntimeError("secret-token"), OSError("secret-token")]
 )
@@ -254,6 +202,6 @@ def test_discovery_failure_does_not_block_offline_tests(tmp_path: Path, scenario
     output = result.stdout + result.stderr
 
     assert result.returncode == 1, output
-    assert "1 passed, 2 errors" in output  # one placeholder per cloud test module
+    assert "1 passed, 1 error" in output
     assert "secret-token" not in output
     assert "error during collection" not in output

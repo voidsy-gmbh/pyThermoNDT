@@ -1,25 +1,16 @@
 import pytest
 
-from pythermondt.readers import AzureBlobReader
-from tests.support.remote_data import RemoteTestConfig, load_remote_config
-
-from .utils import CaseReaders, IntegrationTestCase, make_case_readers
+from tests.support.integration_data import IntegrationData, collect_integration_data
 
 
 @pytest.fixture(scope="session")
-def remote_config() -> RemoteTestConfig:
-    """Connection settings for the remote integration test data."""
-    return load_remote_config()
-
-
-@pytest.fixture
-def case_readers(request: pytest.FixtureRequest) -> CaseReaders:
-    """Return a factory that creates the cached source and expected readers for one test case."""
-
-    def _make(test_case: IntegrationTestCase) -> tuple[AzureBlobReader, AzureBlobReader]:
-        if test_case.discovery_error is not None:
-            pytest.fail(test_case.discovery_error, pytrace=False)
-        remote_config = request.getfixturevalue("remote_config")
-        return make_case_readers(remote_config, test_case)
-
-    return _make
+def integration_data() -> IntegrationData:
+    """Sync all paired files once in parallel; tests then read from the shared cache without freshness checks."""
+    data = collect_integration_data()
+    if data.error is not None or data.reader is None:
+        pytest.fail(data.error or "Integration data is unavailable.", pytrace=False)
+    uris = [uri for pair in data.complete_pairs for uri in (pair.source_uri, pair.expected_uri)]
+    # sync() treats an empty list as "all listed files", which would also download unpaired and nested blobs.
+    if uris:
+        data.reader.sync(file_paths=uris)
+    return data

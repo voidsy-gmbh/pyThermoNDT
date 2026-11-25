@@ -1,12 +1,14 @@
 import logging
 import pickle
 from collections.abc import Callable
+from pathlib import Path
 from re import escape
 from unittest.mock import patch
 
 import pytest
 
 import pythermondt.readers.base_reader as reader_module
+from pythermondt import settings
 from pythermondt.data import DataContainer
 from pythermondt.io import AzureBlobBackend, FileInfo, LocalBackend, S3Backend
 from pythermondt.readers import BaseReader, ItemsBy
@@ -537,3 +539,52 @@ def test_file_filter_pickle(
     # Assert reader can still read files after being restored
     container = restored.read_file(original_uris[0])
     assert _assert_payload(container) == "a"
+
+
+REMOTE_BACKENDS = [S3Backend, AzureBlobBackend]
+
+
+@pytest.mark.parametrize("storage_context", REMOTE_BACKENDS, indirect=True)
+def test_sync_downloads_requested_files_once(storage_context: StorageTestContext, tmp_path: Path):
+    """Sync downloads only the requested files; later reads use the cache, also from other reader instances."""
+    uris = storage_context.prepare_files({"a.test": b"a", "b.test": b"b", "skip.test": b"s"})
+    with patch.object(settings, "download_dir", str(tmp_path)):
+        reader = storage_context.make_reader(download_files=True)
+        with patch.object(reader.backend, "download_file", wraps=reader.backend.download_file) as download:
+            reader.sync(file_paths=[uris["a.test"], uris["b.test"]])
+            assert sorted(call.args[0] for call in download.call_args_list) == [uris["a.test"], uris["b.test"]]
+
+            assert _assert_payload(reader.read_file(uris["a.test"])) == "a"
+            assert download.call_count == 2
+
+        # The cache is keyed by reader configuration, so a filtered reader reuses it.
+        filtered = storage_context.make_reader(download_files=True, file_filter=lambda info: "b.test" in info.path)
+        with patch.object(filtered.backend, "download_file", wraps=filtered.backend.download_file) as download:
+            assert _assert_payload(filtered[0]) == "b"
+            download.assert_not_called()
+
+
+@pytest.mark.parametrize("storage_context", REMOTE_BACKENDS, indirect=True)
+def test_sync_redownloads_only_changed_files(storage_context: StorageTestContext, tmp_path: Path):
+    """Sync compares remote identities and refreshes only files that changed since the last download."""
+    uris = storage_context.prepare_files({"a.test": b"a", "b.test": b"b"})
+    with patch.object(settings, "download_dir", str(tmp_path)):
+        reader = storage_context.make_reader(download_files=True)
+        reader.sync(file_paths=list(uris.values()))
+        storage_context.prepare_file("a.test", b"changed")
+
+        # A selected sync checks only the selected file; it is unchanged, so nothing is downloaded.
+        with (
+            patch.object(reader.backend, "get_file_identity", wraps=reader.backend.get_file_identity) as identity,
+            patch.object(reader.backend, "download_file", wraps=reader.backend.download_file) as download,
+        ):
+            reader.sync(file_paths=[uris["b.test"]])
+            assert [call.args[0] for call in identity.call_args_list] == [uris["b.test"]]
+            download.assert_not_called()
+
+        with patch.object(reader.backend, "download_file", wraps=reader.backend.download_file) as download:
+            reader.sync(file_paths=list(uris.values()))
+            assert [call.args[0] for call in download.call_args_list] == [uris["a.test"]]
+
+        assert _assert_payload(reader.read_file(uris["a.test"])) == "changed"
+        assert _assert_payload(reader.read_file(uris["b.test"])) == "b"

@@ -1,3 +1,4 @@
+import logging
 import tarfile
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
@@ -10,6 +11,8 @@ from ...data import DataContainer, ThermoContainer
 from ...data.units import arbitrary, hertz, second
 from ...io.utils import IOPathWrapper
 from .base_parser import BaseParser
+
+logger = logging.getLogger(__name__)
 
 TAR_HEADER_SIZE = 512  # Size of the TAR header in bytes ==> needs to be skipped when reading the data
 
@@ -106,6 +109,8 @@ class EdevisParser(BaseParser):
                 sequences = {int(seq.attrib.get("id", -1)): seq for seq in content.findall("Sequence")}
 
                 # TODO: For now only the first sequence is processed ==> Extend to support multiple sequences in future
+                if ignored_ids := sorted(seq_id for seq_id in sequences if seq_id != 0):
+                    logger.info("Parsing sequence 0 only; ignoring sequences %s.", ignored_ids)
                 sequences = {seq_id: seq for seq_id, seq in sequences.items() if seq_id == 0}
 
                 if len(sequences) == 0:
@@ -123,7 +128,10 @@ class EdevisParser(BaseParser):
                     target_fields = [
                         "CameraManufacturer",
                         "CameraName",
+                        "CameraSerialNumber",
                         "Lens",
+                        "Filter",
+                        "NucTableEntry",
                         "FrameCount",
                         "FrameRate",
                         "Window",
@@ -132,6 +140,7 @@ class EdevisParser(BaseParser):
                         "DataType",
                         "BitDepth",
                         "IntegrationTime",
+                        "IntegrationMode",
                         *excitation_fields,
                     ]
                     metadata.update(extract_metadata_from_xml(sequence_info, target_fields))
@@ -158,7 +167,6 @@ class EdevisParser(BaseParser):
                     bit_depth = int(metadata.get("BitDepth", -1))
 
                     # Extract the LUT if available
-                    # TODO: Test lut extraction
                     tar_offset_lut = None
                     if "TarFileHeaderCalibrationOffset" in sequence_info.attrib:
                         tar_offset_lut = int(sequence_info.attrib["TarFileHeaderCalibrationOffset"])
@@ -178,6 +186,14 @@ class EdevisParser(BaseParser):
 
                             # Convert LUT data to Kelvin because ThermoContainer stores LUT in Kelvin
                             container.update_dataset("/MetaData/LookUpTable", lut_data + 273.15)
+                        else:
+                            logger.warning(
+                                "Ignoring LUT of sequence %s: offset %s with BitDepth %s; "
+                                "only 16-bit data with a nonzero offset is supported.",
+                                seq_id,
+                                tar_offset_lut,
+                                bit_depth,
+                            )
 
                     # Define supported bit depths for each data type
                     supported_bit_depths = {
@@ -243,10 +259,8 @@ class EdevisParser(BaseParser):
                             case DataType.SHEAROGRAPHY_IMAGE:
                                 raise NotImplementedError("Shearography Image data type is not implemented yet.")
                             case DataType.INTENSITY_IMAGE:
-                                domain_str = frame.findtext("FrameTime", default=None)
+                                domain_values[i] = _domain_value(frame, "FrameTime", "s", seq_id, i)
                                 domain_unit = second
-                                if domain_str:
-                                    domain_values[i] = float(domain_str.strip().split("s")[0])
 
                                 # TAR header offset = TarFileHeaderDataOffset
                                 # frame record     = TarFileHeaderDataOffset + 512
@@ -265,10 +279,8 @@ class EdevisParser(BaseParser):
                                 raise NotImplementedError("Temperature Image data type is not implemented yet.")
                             case DataType.COMPLEX_IMAGE:
                                 # Read domain values from the data
-                                domain_str = frame.findtext("FourierFrequency", default=None)
+                                domain_values[i] = _domain_value(frame, "FourierFrequency", "Hz", seq_id, i)
                                 domain_unit = hertz
-                                if domain_str:
-                                    domain_values[i] = float(domain_str.strip().split("Hz")[0])
 
                                 # Read frame data
                                 data_bytes.seek(offset + TAR_HEADER_SIZE + header_size)
@@ -289,6 +301,16 @@ class EdevisParser(BaseParser):
                     if frame_unit:
                         container.update_dataset("/Data/Tdata", frame_data)
                         container.update_unit("/Data/Tdata", frame_unit)
+                    logger.debug(
+                        "Parsed sequence %s: DataType %s, BitDepth %s, %s frames of %s x %s pixels, LUT %s.",
+                        seq_id,
+                        data_type,
+                        bit_depth,
+                        num_frames,
+                        height,
+                        width,
+                        "found" if container.get_dataset("/MetaData/LookUpTable").numel() else "absent",
+                    )
 
                 # # Create a simple excitation signal based on pulse length and domain values
                 # # TODO: This is a simplified approach - actual signal might need more processing
@@ -310,38 +332,33 @@ class EdevisParser(BaseParser):
             raise ValueError(f"Error parsing Edevis file: {e}") from e
 
 
-def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | None) -> dict:
-    """Extracts the target fields from the XML root element.
+def _domain_value(frame: Element, field: str, unit_suffix: str, seq_id: int, index: int) -> float:
+    """Read a frame's domain value, e.g. "0.02s"; a missing value would silently become 0."""
+    text = (frame.findtext(field) or "").strip()
+    if not text:
+        raise ValueError(f"Sequence {seq_id}, frame {index} seems corrupted! No {field} found.")
+    return float(text.split(unit_suffix)[0])
 
-    Will iterate through all the children of the XML root element and extract the text
-    for the specified target fields. Fields that are not found will be skipped without error.
+
+def extract_metadata_from_xml(xml_root: Element, target_fields: Sequence[str] | None) -> dict:
+    """Extract the stripped text of child elements of the XML root element.
 
     Args:
-        xml_root (Element): The root element of the XML document.
-        target_fields (Sequence[str] | None): A sequence of target field names to extract.
-            If None, all fields will be extracted.
+        xml_root (Element): The XML element whose direct children hold the metadata.
+        target_fields (Sequence[str] | None): Child tags to extract; missing or empty fields are skipped.
+            If None, all children with text are extracted.
 
     Returns:
-        dict[str, str]: A dictionary containing the extracted field names and their corresponding text values.
+        dict[str, str]: Extracted field names and their text values.
     """
-    target = set(target_fields) if target_fields else set()  # Convert to set for faster lookup
+    # Check for None explicitly: an empty list means "extract nothing", not "extract all"
+    if target_fields is None:
+        return {child.tag: child.text.strip() for child in xml_root if child.text}
+
+    # find() per field is faster than looping over all children for few fields, and keeps their order
     metadata = {}
-
-    # If target is not that long, directly calling find is more efficient
-    if 0 < len(target) < 10:
-        for field_name in target:
-            element = xml_root.find(field_name)
-            if element is not None and element.text:
-                metadata[field_name] = element.text.strip()
-
-    # For longer target lists, or when target is empty, iterate through all children
-    else:
-        for child_element in xml_root:
-            if (child_element.tag in target or len(target) == 0) and child_element.text:
-                metadata[child_element.tag] = child_element.text.strip()
-
-            # Stop iteration if all target fields are found
-            if len(metadata) == len(target):
-                break
-
+    for field_name in target_fields:
+        element = xml_root.find(field_name)
+        if element is not None and element.text:
+            metadata[field_name] = element.text.strip()
     return metadata

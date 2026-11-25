@@ -294,8 +294,9 @@ def test_invalid_archive_raises(intensity_frames: list[np.ndarray], kwargs: dict
         ("Sequence/SequenceInfo/Window", "Sequence 0 seems corrupted! No Window node found"),
         ("Sequence/FrameInfo", "Sequence 0 seems corrupted! No FrameInfo node found"),
         ("Sequence/FrameInfo/Frame", "Sequence 0 seems corrupted! No Frame nodes found"),
+        ("Sequence/FrameInfo/Frame/FrameTime", "Sequence 0, frame 0 seems corrupted! No FrameTime found"),
     ],
-    ids=["file-info", "sequence", "sequence-info", "window", "frame-info", "frames"],
+    ids=["file-info", "sequence", "sequence-info", "window", "frame-info", "frames", "frame-time"],
 )
 def test_missing_xml_part_raises(intensity_frames: list[np.ndarray], remove: str, message: str):
     """Each required part of content.xml is checked and named in the error."""

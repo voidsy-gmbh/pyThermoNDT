@@ -85,9 +85,8 @@ def test_pair_files_rejects_paths_that_escape_their_folder(path: str):
         ["simulation/panel_run03.mat.expected.hdf5"],
         ["panel_run03.mat", "panel_run03.mat.expected.hdf5"],
         ["simulation/archive/panel_run03.mat", "simulation/archive/panel_run03.mat.expected.hdf5"],
-        ["simulation/source_notes.txt", "edevis/panel_run03.thermovis"],
     ],
-    ids=["empty", "expected-only", "top-level", "nested", "unsupported"],
+    ids=["empty", "expected-only", "top-level", "nested"],
 )
 def test_pair_files_ignores_misplaced_files(paths: list[str]):
     """Only sources that are direct children of parser folders create pairs."""
@@ -96,7 +95,7 @@ def test_pair_files_ignores_misplaced_files(paths: list[str]):
 
 @pytest.mark.parametrize("prefix", ["", "test-data"])
 def test_load_file_pairs_stays_inside_integration_root(prefix: str):
-    """Only direct parser folders below the integration root form pairs; siblings and archives are ignored."""
+    """Only supported files in direct parser folders below the integration root form pairs."""
     config = _config(prefix)
     root = f"{prefix}/integration/" if prefix else "integration/"
     paths = [
@@ -105,7 +104,12 @@ def test_load_file_pairs_stays_inside_integration_root(prefix: str):
         "simulation/panel_run02.mat.expected.hdf5",
         "simulation/panel_run02.mat",
     ]
-    ignored = ["simulation/archive/panel_run03.mat", "simulation/archive/panel_run03.mat.expected.hdf5"]
+    ignored = [
+        "simulation/archive/panel_run03.mat",
+        "simulation/archive/panel_run03.mat.expected.hdf5",
+        "simulation/source_notes.txt",
+        "edevis/panel_run03.thermovis",
+    ]
     with mocked_azure_blob_storage() as storage:
         storage.create_container(config.container_name)
         for path in [root + path for path in paths + ignored] + [

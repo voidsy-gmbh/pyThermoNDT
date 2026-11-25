@@ -7,11 +7,9 @@ Files under ``<TEST_PREFIX>/integration/<parser folder>/`` keep their original n
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cache
-from os.path import splitext
 
 from azure.core.exceptions import AzureError
 
-from pythermondt.io.parsers import get_all_supported_extensions
 from pythermondt.readers import AzureBlobReader
 from tests.support.remote_data import RemoteTestConfig, cloud_skip_reason, load_remote_config
 
@@ -105,7 +103,8 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
     """Pair sources with expected outputs named after the full source filename.
 
     Args:
-        relative_paths: File paths relative to the integration root, e.g. "edevis/panel_run03.ThermoVis".
+        relative_paths: File paths relative to the integration root, already filtered by the reader for
+            supported extensions, e.g. "edevis/panel_run03.ThermoVis".
         root_uri: URI of the integration root, ending with "/".
 
     Returns:
@@ -115,12 +114,11 @@ def pair_files(relative_paths: Iterable[str], root_uri: str) -> tuple[FilePair, 
     Raises:
         PairingError: If an integration file path is unsafe as a local path.
     """
-    supported_extensions = get_all_supported_extensions()
     pairs = []
     for folder, names in _group_by_folder(relative_paths).items():
         folder_uri = f"{root_uri}{folder}/"
         for source_name in names:
-            if source_name.endswith(EXPECTED_SUFFIX) or splitext(source_name)[1] not in supported_extensions:
+            if source_name.endswith(EXPECTED_SUFFIX):
                 continue
             expected_name = f"{source_name}{EXPECTED_SUFFIX}"
             pairs.append(FilePair(folder, folder_uri + source_name, folder_uri + expected_name, expected_name in names))

@@ -248,6 +248,24 @@ def test_empty_domain_value_raises(frames: list[np.ndarray], domain_values: list
 
 
 @pytest.mark.parametrize(
+    ("frame_times", "invalid_index"),
+    [
+        (["0.02s", "0s"], 1),
+        (["0s", "0s"], 1),
+        (["nans", "0.02s"], 0),
+        (["0s", "infs"], 1),
+    ],
+    ids=["decreasing", "duplicate", "nan", "infinite"],
+)
+def test_invalid_frame_times_raise(intensity_frames: list[np.ndarray], frame_times: list[str], invalid_index: int):
+    """Invalid timestamps fail even when the recording does not need a flash marker."""
+    archive = _build_edevis_file(intensity_frames, frame_times)
+
+    with pytest.raises(ValueError, match=rf"Sequence 0, frame {invalid_index}: invalid FrameTime"):
+        EdevisParser.parse(archive)
+
+
+@pytest.mark.parametrize(
     ("target_fields", "expected"),
     [
         (["Window", "Missing", "Comment"], {"Window": "0,0,2,1"}),

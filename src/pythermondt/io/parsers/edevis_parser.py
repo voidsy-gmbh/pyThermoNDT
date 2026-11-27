@@ -294,6 +294,18 @@ class EdevisParser(BaseParser):
                                 types = ", ".join(f"{t.value} ({t.name})" for t in DataType)
                                 raise ValueError(f"Unsupported DataType: {data_type}. Supported values are {types}.")
 
+                    # Check the complete time axis before storing it.
+                    if domain_unit == second:
+                        invalid_times = ~torch.isfinite(domain_values)
+                        invalid_times[1:] |= domain_values[1:] <= domain_values[:-1]
+                        if invalid_times.any():
+                            frame_index = int(invalid_times.nonzero()[0, 0].item())
+                            raise ValueError(
+                                f"Sequence {seq_id}, frame {frame_index}: invalid FrameTime "
+                                f"{domain_values[frame_index].item():g} s. Frame timestamps must be finite "
+                                "and strictly increasing."
+                            )
+
                     # Update container
                     if domain_unit:
                         container.update_dataset("/MetaData/DomainValues", domain_values)

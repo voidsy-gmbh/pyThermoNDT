@@ -15,12 +15,14 @@ from pythermondt.io.utils import IOPathWrapper
 
 # Edevis stores each frame with a binary header before the pixel data; the parser infers its size.
 FRAME_HEADER_SIZE = 28
+HENSEL_FLASH = {"MeasurementMode": "Pulse", "ExcitationDeviceSelection": "Hensel Flash"}
 
 
 def _build_edevis_file(
     frames: Sequence[np.ndarray],
     domain_values: Sequence[str],
     *,
+    file_info: dict[str, str] | None = None,
     sequence_info: dict[str, str] | None = None,
     frame_indices: Sequence[int] | None = None,
     frame_names: Sequence[str] | None = None,
@@ -33,6 +35,7 @@ def _build_edevis_file(
     Args:
         frames: Frames of shape (H, W); uint16 creates intensity data, complex64 creates complex data.
         domain_values: FrameTime (intensity) or FourierFrequency (complex) text per frame, e.g. "0.02s".
+        file_info: Extra FileInfo fields.
         sequence_info: Extra or overriding SequenceInfo fields.
         frame_indices: Camera FrameIndex per frame; defaults to 0, 1, ...
         frame_names: TAR member names; defaults to "sequence0/f<FrameIndex>.bin".
@@ -64,7 +67,9 @@ def _build_edevis_file(
         )
 
         root = ET.Element("Content")
-        ET.SubElement(root, "FileInfo")
+        file_info_node = ET.SubElement(root, "FileInfo")
+        for name, value in (file_info or {}).items():
+            ET.SubElement(file_info_node, name).text = value
         sequence = ET.SubElement(root, "Sequence", id="0")
         info = ET.SubElement(sequence, "SequenceInfo")
         if lut_offset is not None:
@@ -107,22 +112,114 @@ def test_intensity_frames_and_time_domain(intensity_frames: list[np.ndarray]):
     tdata = parsed.get_dataset("/Data/Tdata")
     assert tdata.dtype == torch.uint16
     assert torch.equal(tdata, torch.from_numpy(np.stack(intensity_frames, axis=-1)))
-    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.0, 0.02]))
+    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.0, 0.02], dtype=torch.float64))
     assert parsed.get_unit("/Data/Tdata").quantity == "arbitrary"
     assert parsed.get_unit("/MetaData/DomainValues").name == "second"
 
 
+def test_frame_times_keep_precision_at_nonzero_origin(intensity_frames: list[np.ndarray]):
+    """Keep timestamps 1 ms apart even when float32 would round them to the same value."""
+    parsed = EdevisParser.parse(_build_edevis_file(intensity_frames, ["65536s", "65536.001s"]))
+
+    assert parsed.get_dataset("/MetaData/DomainValues").tolist() == [65536.0, 65536.001]
+
+
+@pytest.mark.parametrize(
+    ("pulse_length", "expected_signal"),
+    [
+        pytest.param("0.01s", [0, 0, 1, 0], id="timestamp-rounding-at-pulse-end"),
+        pytest.param("0.005s", [0, 1, 0, 0], id="pulse-between-frames"),
+    ],
+)
+def test_hensel_flash_marker(intensity_frames: list[np.ndarray], pulse_length: str, expected_signal: list[int]):
+    """The sequence settings produce one marker, even if no frame samples the pulse."""
+    archive = _build_edevis_file(
+        intensity_frames * 2,
+        ["0s", "0.02s", "0.040001s", "0.06s"],
+        file_info={**HENSEL_FLASH, "ExcitationDelay": "0.01s"},
+        sequence_info={"ExcitationDelay": "0.03s", "ExcitationPulseLength": pulse_length},
+    )
+
+    parsed = EdevisParser.parse(archive)
+
+    signal = parsed.get_dataset("/MetaData/ExcitationSignal")
+    torch.testing.assert_close(signal, torch.tensor(expected_signal, dtype=signal.dtype))
+    assert parsed.get_unit("/MetaData/ExcitationSignal").quantity == "dimensionless"
+
+
+@pytest.mark.parametrize(
+    ("device", "sequence_info", "warning"),
+    [
+        pytest.param(
+            "Halogen lamps",
+            {"ExcitationDelay": "0.005s", "ExcitationPulseLength": "0.01s"},
+            None,
+            id="different-device",
+        ),
+        pytest.param("Hensel Flash", {"ExcitationPulseLength": "0.01s"}, "missing or invalid", id="missing-delay"),
+        pytest.param(
+            "Hensel Flash",
+            {"ExcitationDelay": "0.005s", "ExcitationPulseLength": "10ms"},
+            "missing or invalid",
+            id="unsupported-units",
+        ),
+        pytest.param(
+            "Hensel Flash",
+            {"ExcitationDelay": "0.005s", "ExcitationPulseLength": "0s"},
+            "expected delay >= 0 and pulse length > 0, but got delay 0.005 s and pulse length 0.0 s",
+            id="zero-pulse-length",
+        ),
+        pytest.param(
+            "Hensel Flash",
+            {"ExcitationDelay": "0.01s", "ExcitationPulseLength": "0.01s"},
+            "need a frame at or before the estimated flash end",
+            id="no-frame-after-pulse",
+        ),
+    ],
+)
+def test_excitation_signal_stays_empty_without_usable_flash_timing(
+    intensity_frames: list[np.ndarray],
+    caplog: pytest.LogCaptureFixture,
+    device: str,
+    sequence_info: dict[str, str],
+    warning: str | None,
+):
+    """Skip the marker for other devices or unusable flash timing; warn only for Hensel Flash."""
+    archive = _build_edevis_file(
+        intensity_frames,
+        ["0s", "0.02s"],
+        file_info={**HENSEL_FLASH, "ExcitationDeviceSelection": device, "ExcitationDelay": "0.005s"},
+        sequence_info=sequence_info,
+    )
+
+    parsed = EdevisParser.parse(archive)
+
+    assert parsed.get_dataset("/MetaData/ExcitationSignal").numel() == 0
+    if warning is None:
+        assert "Skipping Hensel Flash marker" not in caplog.text
+    else:
+        assert warning in caplog.text
+
+
 def test_complex_frames_and_frequency_domain():
-    """Complex results keep complex64 values with Fourier frequencies in hertz."""
+    """Complex results keep their frequency axis and never get a flash marker."""
     frames = [np.array([[1 + 2j, -3j]], dtype=np.complex64), np.array([[0.5, 4 - 1j]], dtype=np.complex64)]
 
-    parsed = EdevisParser.parse(_build_edevis_file(frames, ["0.1Hz", "0.2Hz"]))
+    parsed = EdevisParser.parse(
+        _build_edevis_file(
+            frames,
+            ["0.1Hz", "0.2Hz"],
+            file_info=HENSEL_FLASH,
+            sequence_info={"ExcitationDelay": "0.12s", "ExcitationPulseLength": "0.01s"},
+        )
+    )
 
     tdata = parsed.get_dataset("/Data/Tdata")
     assert tdata.dtype == torch.complex64
     assert torch.equal(tdata, torch.from_numpy(np.stack(frames, axis=-1)))
-    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.1, 0.2]))
+    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.1, 0.2], dtype=torch.float64))
     assert parsed.get_unit("/MetaData/DomainValues").name == "hertz"
+    assert parsed.get_dataset("/MetaData/ExcitationSignal").numel() == 0
 
 
 def test_lut_is_converted_to_kelvin(intensity_frames: list[np.ndarray]):
@@ -245,6 +342,24 @@ def test_empty_domain_value_raises(frames: list[np.ndarray], domain_values: list
     """A frame without its time or frequency would otherwise get the domain value 0."""
     with pytest.raises(ValueError, match=escape(message)):
         EdevisParser.parse(_build_edevis_file(frames, domain_values))
+
+
+@pytest.mark.parametrize(
+    ("frame_times", "invalid_index"),
+    [
+        (["0.02s", "0s"], 1),
+        (["0s", "0s"], 1),
+        (["nans", "0.02s"], 0),
+        (["0s", "infs"], 1),
+    ],
+    ids=["decreasing", "duplicate", "nan", "infinite"],
+)
+def test_invalid_frame_times_raise(intensity_frames: list[np.ndarray], frame_times: list[str], invalid_index: int):
+    """Invalid timestamps fail even when the recording does not need a flash marker."""
+    archive = _build_edevis_file(intensity_frames, frame_times)
+
+    with pytest.raises(ValueError, match=rf"Sequence 0, frame {invalid_index}: invalid FrameTime"):
+        EdevisParser.parse(archive)
 
 
 @pytest.mark.parametrize(

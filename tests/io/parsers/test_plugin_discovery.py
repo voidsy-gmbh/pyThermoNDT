@@ -139,6 +139,10 @@ def test_find_parser_for_extension_known():
         assert parsers.find_parser_for_extension(".mat") is SimulationParser
         assert parsers.find_parser_for_extension("mat") is SimulationParser
 
+        # Edevis
+        for extension in (".di", ".OTvis", ".ITvisPulse", ".ThermoVis", ".PTvis"):
+            assert parsers.find_parser_for_extension(extension) is EdevisParser
+
 
 def test_get_all_supported_extensions_includes_plugin_extensions():
     """Test supported extension aggregation includes built-ins and loaded plugins."""

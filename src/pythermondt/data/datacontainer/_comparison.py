@@ -46,9 +46,9 @@ def _iter_node_differences(
 
         # Compare attributes if the node is of type AttributeNode
         if isinstance(node1, AttributeNode) and isinstance(node2, AttributeNode):
-            attrs1 = dict(node1.attributes)
-            attrs2 = dict(node2.attributes)
-            yield from _iter_attribute_differences(attrs1, attrs2, path, ignore_attribute_nan_inequality)
+            yield from _iter_attribute_differences(
+                dict(node1.attributes), dict(node2.attributes), path, ignore_attribute_nan_inequality
+            )
 
         # Compare the data if the node is of type DataNode
         if isinstance(node1, DataNode) and isinstance(node2, DataNode):

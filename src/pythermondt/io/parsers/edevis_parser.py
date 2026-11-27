@@ -363,8 +363,8 @@ def _build_excitation_signal(
 
     if not (delay >= 0 and pulse_length > 0):
         logger.warning(
-            "Skipping Hensel Flash marker for sequence %s: expected a nonnegative delay and positive "
-            "pulse length; got %s s and %s s.",
+            "Skipping Hensel Flash marker for sequence %s: expected delay >= 0 and pulse length > 0, "
+            "but got delay %s s and pulse length %s s.",
             seq_id,
             delay,
             pulse_length,
@@ -375,7 +375,8 @@ def _build_excitation_signal(
     frames_to_discard = int((frame_times <= flash_end + 1e-6).sum().item())
     if not 0 < frames_to_discard < frame_times.numel():
         logger.warning(
-            "Skipping Hensel Flash marker for sequence %s: no frames bracket the estimated end at %s s.",
+            "Skipping Hensel Flash marker for sequence %s: need a frame at or before the estimated flash end "
+            "(%s s) and another after it.",
             seq_id,
             flash_end,
         )

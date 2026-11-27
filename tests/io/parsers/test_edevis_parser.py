@@ -159,13 +159,13 @@ def test_hensel_flash_marker(intensity_frames: list[np.ndarray], pulse_length: s
         pytest.param(
             "Hensel Flash",
             {"ExcitationDelay": "0.005s", "ExcitationPulseLength": "0s"},
-            "positive pulse length",
+            "expected delay >= 0 and pulse length > 0, but got delay 0.005 s and pulse length 0.0 s",
             id="zero-pulse-length",
         ),
         pytest.param(
             "Hensel Flash",
             {"ExcitationDelay": "0.01s", "ExcitationPulseLength": "0.01s"},
-            "no frames bracket the estimated end",
+            "need a frame at or before the estimated flash end",
             id="no-frame-after-pulse",
         ),
     ],

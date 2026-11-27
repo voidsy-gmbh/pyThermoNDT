@@ -52,11 +52,10 @@ def _iter_node_differences(
         # Compare the data if the node is of type DataNode
         if isinstance(node1, DataNode) and isinstance(node2, DataNode):
             data1, data2 = node1.data, node2.data
-            if not torch.equal(data1, data2):
-                if data1.shape != data2.shape:
-                    yield f"Data shape mismatch at path {path}: {data1.shape} vs {data2.shape}"
-                else:
-                    yield f"Data content mismatch at path {path}"
+            if data1.shape != data2.shape:
+                yield f"Data shape mismatch at path {path}: {data1.shape} vs {data2.shape}"
+            elif not torch.equal(data1, data2):
+                yield f"Data content mismatch at path {path}"
 
 
 def _iter_attribute_differences(  # pylint: disable=too-many-branches

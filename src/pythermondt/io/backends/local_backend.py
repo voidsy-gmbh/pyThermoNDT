@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from glob import glob
 from urllib.parse import urlparse
 from urllib.request import pathname2url, url2pathname
@@ -112,7 +112,7 @@ class LocalBackend(BaseBackend):
         stat_result = os.stat(normalised)
         return FileInfo(
             path=self._to_url(normalised),
-            last_modified=datetime.fromtimestamp(stat_result.st_mtime_ns / 1e9, tz=timezone.utc),
+            last_modified=datetime.fromtimestamp(stat_result.st_mtime_ns / 1e9, tz=UTC),
             size=stat_result.st_size,
             file_identity=self._identity_from_stat(stat_result),
         )

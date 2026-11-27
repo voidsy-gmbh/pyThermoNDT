@@ -2,11 +2,10 @@ import logging
 import os
 import tempfile
 from io import BytesIO
-from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
 
-IOPathSource: TypeAlias = str | BytesIO | bytes | None
+type IOPathSource = str | BytesIO | bytes | None
 
 
 class IOPathWrapper:

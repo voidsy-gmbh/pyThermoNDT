@@ -118,7 +118,7 @@ markers = [
 # Ruff
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py312"
 exclude = [
     "./examples/*", # Exclude the example notebooks from linting
     "./docs/pyreverse/*", # Exclude the pyreverse output from linting

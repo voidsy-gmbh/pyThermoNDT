@@ -13,6 +13,7 @@ def _iter_node_differences(
     nodes1: NodeAccessor,
     nodes2: NodeAccessor,
     *,
+    check_dtype: bool = True,
     ignore_attribute_nan_inequality: bool = False,
 ) -> Iterator[str]:
     """Compare nodes without depending on the concrete DataContainer class."""
@@ -45,18 +46,19 @@ def _iter_node_differences(
 
         # Compare attributes if the node is of type AttributeNode
         if isinstance(node1, AttributeNode) and isinstance(node2, AttributeNode):
-            attrs1 = dict(node1.attributes)
-            attrs2 = dict(node2.attributes)
-            yield from _iter_attribute_differences(attrs1, attrs2, path, ignore_attribute_nan_inequality)
+            yield from _iter_attribute_differences(
+                dict(node1.attributes), dict(node2.attributes), path, ignore_attribute_nan_inequality
+            )
 
         # Compare the data if the node is of type DataNode
         if isinstance(node1, DataNode) and isinstance(node2, DataNode):
             data1, data2 = node1.data, node2.data
-            if not torch.equal(data1, data2):
-                if data1.shape != data2.shape:
-                    yield f"Data shape mismatch at path {path}: {data1.shape} vs {data2.shape}"
-                else:
-                    yield f"Data content mismatch at path {path}"
+            if data1.shape != data2.shape:
+                yield f"Data shape mismatch at path {path}: {data1.shape} vs {data2.shape}"
+            elif check_dtype and data1.dtype != data2.dtype:
+                yield f"Data dtype mismatch at path {path}: {data1.dtype} vs {data2.dtype}"
+            elif not torch.equal(data1, data2):
+                yield f"Data content mismatch at path {path}"
 
 
 def _iter_attribute_differences(  # pylint: disable=too-many-branches

@@ -23,32 +23,52 @@ def container_pair(sample_tensor: Tensor) -> tuple[DataContainer, DataContainer]
 
 @pytest.mark.parametrize("ignore_attribute_nan_inequality", [False, True])
 @pytest.mark.parametrize(
-    "data1, data2",
+    "data1, data2, expected",
     [
-        (torch.tensor([1, 2]), torch.tensor([1, 2])),
-        (torch.tensor([1, 2]), torch.tensor([1.0, 2.0])),
-        (torch.tensor([1, 2]), torch.tensor([1, 3])),
-        (torch.tensor([1, 2]), torch.tensor([[1, 2]])),
-        (torch.tensor([1.0, float("nan")]), torch.tensor([1.0, float("nan")])),
+        (torch.tensor([1, 2]), torch.tensor([1, 2]), True),
+        (torch.tensor([1, 2]), torch.tensor([1.0, 2.0]), False),
+        (torch.tensor([1, 2]), torch.tensor([1, 3]), False),
+        (torch.tensor([1, 2]), torch.tensor([[1, 2]]), False),
+        (torch.tensor([1.0, float("nan")]), torch.tensor([1.0, float("nan")]), False),
     ],
     ids=["equal", "different-dtypes", "different-values", "different-shapes", "dataset-nans"],
 )
-def test_datasets_follow_torch_equal(
+def test_datasets_require_matching_shape_dtype_and_values(
     container_pair: tuple[DataContainer, DataContainer],
     data1: Tensor,
     data2: Tensor,
+    expected: bool,
     ignore_attribute_nan_inequality: bool,
 ):
-    """Keep torch.equal behavior even when attribute NaN inequality is ignored."""
+    """Check dataset equality independently of the attribute NaN option."""
     left, right = container_pair
     left.update_dataset("/Values", data1)
     right.update_dataset("/Values", data2)
-    expected = torch.equal(data1, data2)
 
     assert containers_equal(left, right, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality) is expected
     differences = list(container_diff(left, right, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality))
     assert (differences == []) is expected
     assert (left == right) is expected
+
+
+@pytest.mark.parametrize("right_value", [0.5, 0.25], ids=["equal-values", "different-values"])
+def test_dataset_dtype_check_can_be_disabled(
+    container_pair: tuple[DataContainer, DataContainer], monkeypatch: pytest.MonkeyPatch, right_value: float
+):
+    """Report the dtype before comparing values, unless the dtype check is disabled."""
+    left, right = container_pair
+    left.update_dataset("/Values", torch.tensor([0.5], dtype=torch.float32))
+    right.update_dataset("/Values", torch.tensor([right_value], dtype=torch.float64))
+    tensor_equal = Mock(wraps=torch.equal)
+    monkeypatch.setattr(torch, "equal", tensor_equal)
+
+    assert list(container_diff(left, right)) == ["Data dtype mismatch at path /Values: torch.float32 vs torch.float64"]
+    tensor_equal.assert_not_called()
+
+    expected_equal = right_value == 0.5
+    assert containers_equal(left, right, check_dtype=False) is expected_equal
+    expected_diff = [] if expected_equal else ["Data content mismatch at path /Values"]
+    assert list(container_diff(left, right, check_dtype=False)) == expected_diff
 
 
 @pytest.mark.parametrize(
@@ -328,7 +348,7 @@ def test_node_and_shape_reports(container_pair: tuple[DataContainer, DataContain
         right.add_group("/", "Values")
         expected = "Node type mismatch at path /Values: NodeType.DATASET vs NodeType.GROUP"
     else:
-        right.update_dataset("/Values", torch.ones(3))
+        right.update_dataset("/Values", torch.ones(3, dtype=torch.float64))
         expected = "Data shape mismatch at path /Values: torch.Size([2, 2]) vs torch.Size([3])"
 
     assert list(container_diff(left, right)) == [expected]

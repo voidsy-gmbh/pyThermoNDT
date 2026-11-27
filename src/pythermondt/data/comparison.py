@@ -8,6 +8,7 @@ def containers_equal(
     container1: DataContainer,
     container2: DataContainer,
     *,
+    check_dtype: bool = True,
     ignore_attribute_nan_inequality: bool = False,
 ) -> bool:
     """Compare two DataContainers for equality.
@@ -21,7 +22,7 @@ def containers_equal(
     Attributes use Python equality, including numeric equivalence and shared-object identity.
     NumPy-array attributes compare by shape and value without a dtype restriction.
 
-    Datasets always use ``torch.equal``: shapes and values must match, but dtypes need not match.
+    Dataset shapes and dtypes are checked before comparing values with ``torch.equal``.
     Dataset NaNs remain unequal, even when ``ignore_attribute_nan_inequality=True``.
 
     **Note**: Dataset values are compared without numerical tolerance. Containers with the same initial data
@@ -30,6 +31,7 @@ def containers_equal(
     Args:
         container1 (DataContainer): First container.
         container2 (DataContainer): Second container.
+        check_dtype (bool): Require matching dataset dtypes. Defaults to True.
         ignore_attribute_nan_inequality (bool, optional): If True, treat independently created NaNs in attributes
             as equal, including nested values and NumPy arrays. Does not affect dataset tensors. Default is False.
 
@@ -39,7 +41,9 @@ def containers_equal(
     Raises:
         TypeError: Either argument is not a DataContainer.
     """
-    diffs = container_diff(container1, container2, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality)
+    diffs = container_diff(
+        container1, container2, check_dtype=check_dtype, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality
+    )
     return next(diffs, None) is None
 
 
@@ -47,14 +51,15 @@ def container_diff(
     container1: DataContainer,
     container2: DataContainer,
     *,
+    check_dtype: bool = True,
     ignore_attribute_nan_inequality: bool = False,
 ) -> Iterator[str]:
     """Return the differences between two DataContainers.
 
     Uses the same comparison rules as ``containers_equal``. Attribute reports include nested keys, indices,
-    and differing values. Dataset reports include shape/content mismatches, not individual tensor elements.
+    and differing values. Dataset reports give the first mismatch per dataset: shape, dtype, or contents.
 
-    Datasets always use ``torch.equal``. Dataset NaNs remain unequal, even when
+    Dataset values are compared with ``torch.equal``. Dataset NaNs remain unequal, even when
     ``ignore_attribute_nan_inequality=True``.
 
     Returns a lazy, single-pass iterator. Use ``list(...)`` or ``sorted(...)`` to collect the differences.
@@ -62,6 +67,7 @@ def container_diff(
     Args:
         container1 (DataContainer): First container.
         container2 (DataContainer): Second container.
+        check_dtype (bool): Report differing dataset dtypes without comparing their values. Defaults to True.
         ignore_attribute_nan_inequality (bool, optional): If True, treat independently created NaNs in attributes
             as equal, including nested values and NumPy arrays. Does not affect dataset tensors. Default is False.
 
@@ -78,4 +84,6 @@ def container_diff(
 
     # Compare the nodes of both containers
     nodes1, nodes2 = container1.nodes, container2.nodes
-    yield from _iter_node_differences(nodes1, nodes2, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality)
+    yield from _iter_node_differences(
+        nodes1, nodes2, check_dtype=check_dtype, ignore_attribute_nan_inequality=ignore_attribute_nan_inequality
+    )

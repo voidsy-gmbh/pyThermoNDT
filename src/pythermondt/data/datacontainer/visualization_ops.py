@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
 # Type aliases for visualization options
-FrameOption: TypeAlias = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
-OverlayColorOption: TypeAlias = Literal["red", "green", "blue"]
+type FrameOption = Literal["ShowGroundTruth", "OverlayGroundTruth", ""]
+type OverlayColorOption = Literal["red", "green", "blue"]
 
 
 def _create_overlay_rgba(

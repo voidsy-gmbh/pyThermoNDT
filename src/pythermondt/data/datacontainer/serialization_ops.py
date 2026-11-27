@@ -2,7 +2,7 @@ import json
 from collections.abc import ItemsView
 from dataclasses import fields
 from io import BytesIO
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 
 import h5py
 import numpy as np
@@ -15,7 +15,7 @@ from .group_ops import GroupOps
 from .node import AttributeTypes, DataNode, GroupNode, RootNode
 from .utils import validate_path
 
-CompressionType: TypeAlias = Literal["lzf", "gzip", "none"]
+type CompressionType = Literal["lzf", "gzip", "none"]
 
 
 class SerializationOps(BaseOps):

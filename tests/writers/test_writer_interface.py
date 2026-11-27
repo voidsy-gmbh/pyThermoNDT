@@ -1,14 +1,15 @@
 from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from pythermondt.config import settings
 from pythermondt.data import DataContainer, container_diff
 from pythermondt.io import LocalBackend
 from pythermondt.io.parsers import HDF5Parser
-from pythermondt.writers import LocalWriter
+from pythermondt.writers import LocalWriter, base_writer
 from tests.support.storage import StorageTestContext
 from tests.utils import format_container_diff
 from tests.writers.conftest import HDF5TestCorpus
@@ -101,6 +102,34 @@ def test_process_parallel_local(
             f"Container at {dest_file.name} (index {original_idx}) does not match original:\n"
             f"{format_container_diff(differences)}"
         )
+
+
+@pytest.mark.parametrize(
+    ("num_files", "num_workers", "pool_size"),
+    [(0, None, None), (1, None, None), (2, None, 2), (2, 24, 2), (3, 2, 2)],
+)
+def test_process_parallel_limits_workers(
+    num_files: int,
+    num_workers: int | None,
+    pool_size: int | None,
+    tmp_path: Path,
+    test_container: DataContainer,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(settings, "num_workers", 24)
+    reader = MagicMock()
+    reader.__len__.return_value = num_files
+    reader.__getitem__.return_value = test_container
+    writer = LocalWriter(str(tmp_path))
+
+    with patch.object(base_writer, "ThreadPool", wraps=base_writer.ThreadPool) as pool:
+        writer.process_parallel(reader, num_workers=num_workers)
+
+    if pool_size is None:
+        pool.assert_not_called()
+    else:
+        pool.assert_called_once_with(processes=pool_size)
+    assert {file.name for file in tmp_path.glob("*.hdf5")} == {f"{index}.hdf5" for index in range(num_files)}
 
 
 @pytest.mark.parametrize("num_files", [1, 10, 12], ids=["unit", "tens", "teens"])

@@ -98,7 +98,8 @@ class BaseWriter(ABC):
             self.write(container, file_name, compression, compression_opts)
 
         # Use ThreadPool for writing in parallel ==> I/O bound task
-        workers = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        worker_limit = max(num_workers, 1) if num_workers is not None else settings.num_workers
+        workers = min(worker_limit, n)
         desc = f"{self.__class__.__name__} - Writing files with {workers} workers"
         if workers > 1:
             with ThreadPool(processes=workers) as pool:

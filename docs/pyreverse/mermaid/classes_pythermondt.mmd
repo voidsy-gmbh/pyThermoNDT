@@ -88,19 +88,6 @@ classDiagram
     write_file(data: IOPathWrapper, file_path: str)* None
   }
   style BaseBackend fill:#BBCC33
-  class BaseDataset {
-    cache_built : bool
-    files : list[str]
-    parent : 'BaseDataset | None'
-    transform : _BaseTransform | None
-    build_cache(mode: CacheMode, num_workers: int | None)
-    get_transform_chain() _BaseTransform
-    load_raw_data(idx: int)* DataContainer
-    memory_bytes() int
-    print_memory_usage()
-    release_cache(gc_collect: bool)
-  }
-  style BaseDataset fill:#44BB99
   class BaseNode {
     name : str
     type : NodeType
@@ -119,18 +106,19 @@ classDiagram
   style BaseParser fill:#BBCC33
   class BaseReader {
     backend : BaseBackend
-    cache_files : bool
     download_files : bool
     file_entries : list[FileInfo]
     file_filter : Callable[[FileInfo], bool] | None
     file_names : list[str]
     file_uris : list[str]
     files : list[str]
+    listing_ttl : float | None
     manifest_path : str
     num_files : int | None
     parser : type[BaseParser] | None
     reader_cache_dir : str
     remote_source : bool
+    clear_listing_cache() None
     download(file_paths: list[str] | None, num_workers: int | None, force: bool)
     items(by: ItemsByPath, reverse: bool) Iterator[tuple[str, DataContainer]]
     read_file(file_path: str) DataContainer
@@ -201,6 +189,11 @@ classDiagram
     update_datasets()
   }
   style DatasetOps fill:#99DDFF
+  class DeriveField {
+    fn : Callable[[DataContainer], 'torch.Tensor | bool | float']
+    name : str
+  }
+  style DeriveField fill:#44BB99
   class DeserializationOps {
     deserialize(hdf5_data: BytesIO)
     load_from_hdf5(path: str)
@@ -294,6 +287,7 @@ classDiagram
     toggle_annotation(event)
     toggle_groundtruth(event)
     update_frame(frame_idx: float)
+    update_overlay_options(overlay_color: OverlayColorOption, overlay_alpha: float) None
   }
   style InteractiveAnalyzer fill:#99DDFF
   class LocalBackend {
@@ -357,6 +351,19 @@ classDiagram
     forward(container: DataContainer) DataContainer
   }
   style PulsePhaseThermography fill:#EEDD88
+  class PyThermoNDTDataset {
+    cache_built : bool
+    files : list[str]
+    parent : 'PyThermoNDTDataset | None'
+    transform : _BaseTransform | None
+    build_cache(mode: CacheMode, num_workers: int | None)
+    get_transform_chain() _BaseTransform
+    load_raw_data(idx: int)* DataContainer
+    memory_bytes() int
+    print_memory_usage()
+    release_cache(gc_collect: bool)
+  }
+  style PyThermoNDTDataset fill:#44BB99
   class RandomCompose {
     p
     transforms : Sequence[_BaseTransform]
@@ -472,7 +479,7 @@ classDiagram
   }
   style Unit fill:#99DDFF
   class VisualizationOps {
-    analyse_interactive(overlay_color: OverlayColorOption, overlay_alpha: float)
+    analyse_interactive(overlay_color: OverlayColorOption, overlay_alpha: float) 'VisualizationOps.InteractiveAnalyzer'
     release_interactive_analyzer(analyzer: 'VisualizationOps.InteractiveAnalyzer') None
     show_frame(frame_number: int, option: FrameOption, cmap: str, overlay_color: OverlayColorOption, overlay_alpha: float)
     show_pixel_profile(pixel_pos_x: int, pixel_pos_y: int)
@@ -511,8 +518,8 @@ classDiagram
   VisualizationOps --|> DatasetOps
   VisualizationOps --|> GroupOps
   ThermoContainer --|> DataContainer
-  IndexedThermoDataset --|> BaseDataset
-  ThermoDataset --|> BaseDataset
+  IndexedThermoDataset --|> PyThermoNDTDataset
+  ThermoDataset --|> PyThermoNDTDataset
   AzureBlobBackend --|> BaseBackend
   LocalBackend --|> BaseBackend
   AzureBlobClientOptions --|> BackendClientOptions

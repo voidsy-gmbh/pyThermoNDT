@@ -2,9 +2,15 @@ classDiagram
   class data {
   }
   style data fill:#77AADD
+  class comparison {
+  }
+  style comparison fill:#77AADD
   class datacontainer {
   }
   style datacontainer fill:#77AADD
+  class _comparison {
+  }
+  style _comparison fill:#77AADD
   class attribute_ops {
   }
   style attribute_ops fill:#77AADD
@@ -44,20 +50,25 @@ classDiagram
   class utils {
   }
   style utils fill:#77AADD
+  data --> comparison
   data --> datacontainer
   data --> thermo_container
+  comparison --> datacontainer
+  comparison --> _comparison
   datacontainer --> core
   datacontainer --> node
+  _comparison --> base
+  _comparison --> node
   attribute_ops --> base
   attribute_ops --> node
   base --> node
   base --> utils
+  core --> _comparison
   core --> attribute_ops
   core --> dataset_ops
   core --> group_ops
   core --> node
   core --> serialization_ops
-  core --> utils
   core --> visualization_ops
   dataset_ops --> base
   dataset_ops --> node

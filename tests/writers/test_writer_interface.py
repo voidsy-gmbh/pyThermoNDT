@@ -105,31 +105,35 @@ def test_process_parallel_local(
 
 
 @pytest.mark.parametrize(
-    ("num_files", "num_workers", "pool_size"),
-    [(0, None, None), (1, None, None), (2, None, 2), (2, 24, 2), (3, 2, 2)],
+    ("num_files", "num_workers", "pool_sizes"),
+    [
+        pytest.param(0, None, [], id="empty-reader"),
+        pytest.param(1, None, [], id="single-file"),
+        pytest.param(2, None, [2], id="cap-default-two-files"),
+        pytest.param(4, None, [4], id="cap-default-four-files"),
+        pytest.param(2, 24, [2], id="cap-explicit"),
+        pytest.param(3, 2, [2], id="respect-explicit-limit"),
+    ],
 )
+@pytest.mark.parametrize("storage_context", [LocalBackend], indirect=True)
 def test_process_parallel_limits_workers(
     num_files: int,
     num_workers: int | None,
-    pool_size: int | None,
-    tmp_path: Path,
-    test_container: DataContainer,
+    pool_sizes: list[int],
+    storage_context: StorageTestContext,
+    hdf5_test_corpus: Callable[[int], HDF5TestCorpus],
     monkeypatch: pytest.MonkeyPatch,
 ):
+    """Cap the pool at the file count and skip it for fewer than two files."""
     monkeypatch.setattr(settings, "num_workers", 24)
-    reader = MagicMock()
-    reader.__len__.return_value = num_files
-    reader.__getitem__.return_value = test_container
-    writer = LocalWriter(str(tmp_path))
+    storage_context.prepare_files(hdf5_test_corpus(num_files).files)
+    reader = storage_context.make_reader(parser=HDF5Parser)
+    writer = storage_context.make_writer()
 
     with patch.object(base_writer, "ThreadPool", wraps=base_writer.ThreadPool) as pool:
         writer.process_parallel(reader, num_workers=num_workers)
 
-    if pool_size is None:
-        pool.assert_not_called()
-    else:
-        pool.assert_called_once_with(processes=pool_size)
-    assert {file.name for file in tmp_path.glob("*.hdf5")} == {f"{index}.hdf5" for index in range(num_files)}
+    assert [call.kwargs["processes"] for call in pool.call_args_list] == pool_sizes
 
 
 @pytest.mark.parametrize("num_files", [1, 10, 12], ids=["unit", "tens", "teens"])

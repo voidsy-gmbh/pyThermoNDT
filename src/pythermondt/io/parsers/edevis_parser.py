@@ -248,7 +248,8 @@ class EdevisParser(BaseParser):
                     domain_unit = None
                     frame_unit = None
                     num_frames = len(frames)
-                    domain_values = torch.zeros(num_frames, dtype=torch.float32)
+                    # Preserve the precision of times and frequencies read from XML.
+                    domain_values = torch.zeros(num_frames, dtype=torch.float64)
                     frame_data = torch.zeros((height, width, num_frames), dtype=frame_dtype[bit_depth])
 
                     for i, frame in enumerate(frames):
@@ -385,7 +386,7 @@ def _build_excitation_signal(
     # Estimate the flash signal as a Dirac pulse constructed from metadata.
     # Detecting the flash end is the responsibility of RemoveFlash.
     marker_index = frames_to_discard - 1
-    excitation_signal = torch.zeros_like(frame_times)
+    excitation_signal = torch.zeros_like(frame_times, dtype=torch.float32)
     excitation_signal[marker_index] = 1
     logger.debug(
         "Hensel Flash marker for sequence %s: frame %s, estimated pulse end %s s.",

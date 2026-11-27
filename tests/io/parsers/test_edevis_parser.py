@@ -112,9 +112,16 @@ def test_intensity_frames_and_time_domain(intensity_frames: list[np.ndarray]):
     tdata = parsed.get_dataset("/Data/Tdata")
     assert tdata.dtype == torch.uint16
     assert torch.equal(tdata, torch.from_numpy(np.stack(intensity_frames, axis=-1)))
-    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.0, 0.02]))
+    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.0, 0.02], dtype=torch.float64))
     assert parsed.get_unit("/Data/Tdata").quantity == "arbitrary"
     assert parsed.get_unit("/MetaData/DomainValues").name == "second"
+
+
+def test_frame_times_keep_precision_at_nonzero_origin(intensity_frames: list[np.ndarray]):
+    """Keep timestamps 1 ms apart even when float32 would round them to the same value."""
+    parsed = EdevisParser.parse(_build_edevis_file(intensity_frames, ["65536s", "65536.001s"]))
+
+    assert parsed.get_dataset("/MetaData/DomainValues").tolist() == [65536.0, 65536.001]
 
 
 @pytest.mark.parametrize(
@@ -210,7 +217,7 @@ def test_complex_frames_and_frequency_domain():
     tdata = parsed.get_dataset("/Data/Tdata")
     assert tdata.dtype == torch.complex64
     assert torch.equal(tdata, torch.from_numpy(np.stack(frames, axis=-1)))
-    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.1, 0.2]))
+    assert torch.allclose(parsed.get_dataset("/MetaData/DomainValues"), torch.tensor([0.1, 0.2], dtype=torch.float64))
     assert parsed.get_unit("/MetaData/DomainValues").name == "hertz"
     assert parsed.get_dataset("/MetaData/ExcitationSignal").numel() == 0
 

@@ -1,7 +1,7 @@
 import logging
 import tarfile
 import xml.etree.ElementTree as ET
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import IntEnum
 from xml.etree.ElementTree import Element
 
@@ -143,7 +143,8 @@ class EdevisParser(BaseParser):
                         "IntegrationMode",
                         *excitation_fields,
                     ]
-                    metadata.update(extract_metadata_from_xml(sequence_info, target_fields))
+                    sequence_metadata = extract_metadata_from_xml(sequence_info, target_fields)
+                    metadata.update(sequence_metadata)
 
                     # Determine width and height from the sequence info
                     if "Window" not in metadata:
@@ -324,24 +325,74 @@ class EdevisParser(BaseParser):
                         "found" if container.get_dataset("/MetaData/LookUpTable").numel() else "absent",
                     )
 
-                # # Create a simple excitation signal based on pulse length and domain values
-                # # TODO: This is a simplified approach - actual signal might need more processing
-                # excitation_signal = np.zeros_like(domain_values)
-                # if data_type == 2:  # Only for time domain
-                #     # Set signal to 1 for the duration of the pulse
-                #     excitation_signal[domain_values <= pulse_length] = 1
-
-                # container.update_dataset("/MetaData/ExcitationSignal", excitation_signal)
+                    if domain_unit == second:
+                        excitation_signal = _build_excitation_signal(seq_id, domain_values, metadata, sequence_metadata)
+                        if excitation_signal is not None:
+                            container.update_dataset("/MetaData/ExcitationSignal", excitation_signal)
 
                 # Add metadata to the container
                 if metadata:
                     container.add_attributes("/MetaData", **metadata)
-
-                # Return the container
                 return container
 
         except Exception as e:
             raise ValueError(f"Error parsing Edevis file: {e}") from e
+
+
+def _build_excitation_signal(
+    seq_id: int,
+    frame_times: torch.Tensor,
+    metadata: Mapping[str, str | int],
+    sequence_metadata: Mapping[str, str],
+) -> torch.Tensor | None:
+    """Construct a frame-aligned signal from timing metadata, when supported."""
+    if metadata.get("MeasurementMode") != "Pulse" or metadata.get("ExcitationDeviceSelection") != "Hensel Flash":
+        return None
+
+    # Read timing from SequenceInfo because the file-level settings can differ.
+    try:
+        delay = float(sequence_metadata.get("ExcitationDelay", "").removesuffix("s"))
+        pulse_length = float(sequence_metadata.get("ExcitationPulseLength", "").removesuffix("s"))
+    except ValueError:
+        logger.warning(
+            "Skipping Hensel Flash marker for sequence %s: missing or invalid "
+            "ExcitationDelay or ExcitationPulseLength in SequenceInfo.",
+            seq_id,
+        )
+        return None
+
+    if not (delay >= 0 and pulse_length > 0):
+        logger.warning(
+            "Skipping Hensel Flash marker for sequence %s: expected a nonnegative delay and positive "
+            "pulse length; got %s s and %s s.",
+            seq_id,
+            delay,
+            pulse_length,
+        )
+        return None
+    flash_end = delay + pulse_length
+    # Allow one microsecond of timestamp rounding at the estimated pulse end.
+    frames_to_discard = int((frame_times <= flash_end + 1e-6).sum().item())
+    if not 0 < frames_to_discard < frame_times.numel():
+        logger.warning(
+            "Skipping Hensel Flash marker for sequence %s: no frames bracket the estimated end at %s s.",
+            seq_id,
+            flash_end,
+        )
+        return None
+
+    # Estimate the flash signal as a Dirac pulse constructed from metadata.
+    # Detecting the flash end is the responsibility of RemoveFlash.
+    marker_index = frames_to_discard - 1
+    excitation_signal = torch.zeros_like(frame_times)
+    excitation_signal[marker_index] = 1
+    logger.debug(
+        "Hensel Flash marker for sequence %s: frame %s, estimated pulse end %s s.",
+        seq_id,
+        marker_index,
+        flash_end,
+    )
+    return excitation_signal
 
 
 def _domain_value(frame: Element, field: str, unit_suffix: str, seq_id: int, index: int) -> float:
